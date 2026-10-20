@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Only the cache directory, and only the invoices folder in it.
+
+    A FileProvider shares a file by handing out a content:// URI that the
+    receiving app is granted read access to through the intent itself. That is
+    why this app can still declare no storage permission: nothing is opened up,
+    one file is offered, and only to whichever app the shop picks.
+-->
+<paths>
+    <cache-path name="invoices" path="invoices/" />
+</paths>

@@ -1,0 +1,119 @@
+<resources>
+    <string name="app_name">Facture Maroc</string>
+
+    <!-- Invoice builder -->
+    <string name="search_hint">Search item, brand or service</string>
+    <string name="filter_brand">Brand</string>
+    <string name="filter_any_brand">Any brand</string>
+    <string name="clear_filters">Clear filters</string>
+
+    <string name="results_count">%1$d items</string>
+    <string name="results_count_one">1 item</string>
+    <string name="no_results_title">Nothing matches</string>
+    <string name="no_results_body">Try a different search, or add it by hand.</string>
+
+    <!-- Invoice fields -->
+    <string name="invoice_number">Invoice number</string>
+    <string name="invoice_date">Date</string>
+    <string name="client">Client</string>
+    <string name="supplier">Supplier</string>
+    <string name="items">Items</string>
+    <string name="add_item">Add item</string>
+    <string name="save_and_add">Save and add</string>
+    <string name="add_to_invoice">Add to invoice</string>
+    <string name="new_item">New item</string>
+    <string name="item_name">What it is</string>
+    <string name="item_price">Price each (DH)</string>
+    <string name="item_unit">Per</string>
+    <string name="item_unit_placeholder">per tyre · per wheel · per hour</string>
+    <string name="quantity">Qty</string>
+    <string name="discount">Disc %</string>
+    <string name="price">Price</string>
+    <string name="total">Total</string>
+    <string name="discount_percent">Discount %</string>
+    <string name="vat_label">TVA %</string>
+    <string name="vat_info">set in shop details</string>
+    <string name="total_ttc">Total TTC</string>
+    <string name="payment">Payment</string>
+    <string name="payment_cash">Espèces</string>
+    <string name="payment_check">Chèque</string>
+    <string name="payment_transfer">Virement bancaire</string>
+    <string name="payment_card">Carte bancaire</string>
+    <string name="document_type_facture">Facture</string>
+    <string name="document_type_devis">Devis</string>
+    <string name="document_type_bon_commande">Bon de commande</string>
+    <string name="document_type_ticket">Ticket</string>
+    <string name="validity_date">Validité jusqu\'au</string>
+
+    <!-- Client fields -->
+    <string name="client_name">Client</string>
+    <string name="client_address">Address</string>
+    <string name="client_ice">ICE</string>
+    <string name="client_if">IF</string>
+    <string name="client_rc">RC</string>
+    <string name="client_patente">Patente</string>
+    <string name="client_cnss">CNSS</string>
+    <string name="client_phone">Phone</string>
+    <string name="client_email">Email</string>
+    <string name="client_vat_exempt">VAT exempt</string>
+
+    <!-- Shop details -->
+    <string name="shop_name">Company name</string>
+    <string name="shop_address">Company address</string>
+    <string name="shop_ice">ICE</string>
+    <string name="shop_if">IF</string>
+    <string name="shop_rc">RC</string>
+    <string name="shop_patente">Patente</string>
+    <string name="shop_cnss">CNSS</string>
+    <string name="shop_logo">Logo</string>
+    <string name="shop_vat">TVA default %</string>
+    <string name="shop_vat_info">applied after discount</string>
+
+    <!-- Invoice document -->
+    <string name="amount_in_words">Amount in words</string>
+    <string name="amount_in_words_prefix">ARRÊTÉE LA PRÉSENTE FACTURE À LA SOMME DE :</string>
+
+    <!-- Actions -->
+    <string name="preview">Preview</string>
+    <string name="create_and_share">Create and share</string>
+    <string name="preparing">Preparing…</string>
+    <string name="share_invoice_sheet">Share invoice</string>
+    <string name="clear_invoice">Clear this invoice?</string>
+    <string name="clear_invoice_body">The lines are removed. Saved clients are not.</string>
+    <string name="clear">Clear</string>
+    <string name="keep">Keep</string>
+    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="add">Add</string>
+    <string name="remove">Remove</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+
+    <!-- Empty states -->
+    <string name="no_items_yet">No items yet</string>
+    <string name="no_items_body">Search for one below, or write it in by hand.</string>
+    <string name="no_items_saved_yet">Nothing saved yet</string>
+    <string name="nothing_matches">Nothing matches</string>
+
+    <!-- Messages -->
+    <string name="invoice_written_success">Invoice written successfully.</string>
+    <string name="invoice_write_failed">The invoice could not be written.</string>
+    <string name="invoice_no_receiver">The invoice was made, but no app on this phone can send a PDF.</string>
+    <string name="invoice_shared">Invoice shared.</string>
+
+    <!-- Footer -->
+    <string name="footer">The invoice is a PDF. Nothing is recorded: this app keeps no sales.</string>
+
+    <!-- Shop details screen -->
+    <string name="shop_details">Shop details</string>
+    <string name="shop_details_desc">Set your company info once; it prints on every invoice.</string>
+
+    <!-- Item management -->
+    <string name="item_management">My items and services</string>
+    <string name="item_management_desc">Save what you sell that is not a tyre here — a fitting, a service, a part — and it is one tap away on every invoice from now on.</string>
+    <string name="item_name_label">Label</string>
+    <string name="item_price_label">Price</string>
+    <string name="item_unit_label">Unit</string>
+    <string name="items_saved">saved items</string>
+</resources>

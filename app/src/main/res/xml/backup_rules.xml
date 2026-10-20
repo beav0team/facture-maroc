@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Backs up everything the app writes to its own files directory:
+
+    filesDir/dataset/        - the bundled catalogue (if any)
+    filesDir/saved_items.json - the shop's own items and services
+    filesDir/*.png / *.jpg   - shop logos picked from the photo picker
+
+    Shared preferences are backed up automatically when this file is set,
+    which covers the invoice counter and dismissed logo banners.
+
+    Nothing in cache/ is backed up: generated invoices are not worth the
+    bytes, and the cache is cleared on uninstall anyway.
+-->
+<full-backup-content>
+    <include domain="file" path="." />
+    <include domain="sharedpref" path="." />
+</full-backup-content>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.FactureMaroc" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">@color/color_primary</item>
+        <item name="android:colorPrimaryDark">@color/color_primary_dark</item>
+        <item name="android:colorAccent">@color/color_secondary</item>
+        <item name="android:windowBackground">@color/color_background</item>
+    </style>
+</resources>
