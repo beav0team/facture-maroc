@@ -79,3 +79,6 @@ fastlane/test_output/**/*.png
 # Temporary files
 *.tmp
 *.temp
+
+# Signing secrets: only keystore.properties.example is committed
+keystore.properties
