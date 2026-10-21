@@ -1,5 +1,8 @@
 package com.yassine.facturemaroc.invoice
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -10,6 +13,8 @@ import android.text.StaticLayout
 import android.text.TextDirectionHeuristics
 import android.text.TextPaint
 import android.text.TextUtils
+import com.yassine.facturemaroc.data.InvoiceDesign
+import com.yassine.facturemaroc.data.InvoiceDesignStore
 
 object PdfText {
 
@@ -130,9 +135,9 @@ object PdfText {
      * than fail to be produced. A file that is not a decodable image is treated
      * the same way as no file at all.
      */
-    fun loadShopLogo(context: android.content.Context, design: InvoiceDesign): android.graphics.Bitmap? {
+    fun loadShopLogo(context: Context, design: InvoiceDesign): Bitmap? {
         if (!design.logoEnabled) return null
-        val file = InvoiceDesignStore.logoFile(context)
+        val file = InvoiceDesignStore(context).logoFile(context)
         if (!file.isFile) return null
         return runCatching { BitmapFactory.decodeFile(file.path) }.getOrNull()
     }

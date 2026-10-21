@@ -1,10 +1,13 @@
 package com.yassine.facturemaroc.ui
 
 import android.content.Context
-import android.widget.Toast
+import android.net.Uri
+import android.os.Environment
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,70 +17,84 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Factory
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.KeyboardOptions
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.yassine.facturemaroc.data.AmountWords
 import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceData
+import com.yassine.facturemaroc.data.InvoiceDesign
 import com.yassine.facturemaroc.data.InvoiceLine
-import com.yassine.facturemaroc.data.InvoicePdf
-import com.yassine.facturemaroc.data.InvoiceViewModel
+import com.yassine.facturemaroc.data.InvoiceTemplate
 import com.yassine.facturemaroc.data.PaymentMethod
+import com.yassine.facturemaroc.data.ShopSettings
+import com.yassine.facturemaroc.data.ShopSettingsStore
+import com.yassine.facturemaroc.invoice.InvoicePdf
+import com.yassine.facturemaroc.data.InvoiceViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,724 +106,645 @@ fun InvoiceScreen(
     onOpenShopSettings: () -> Unit,
     onOpenClients: () -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val invoice by viewModel.invoice.collectAsState()
+    val shop by viewModel.shopSettings.collectAsState()
+    val design by viewModel.design.collectAsState()
+    var showItemPicker by remember { mutableStateOf(false) }
+    var showClientPicker by remember { mutableStateOf(false) }
+    var showDesignPicker by remember { mutableStateOf(false) }
+    var showDiscountDialog by remember { mutableStateOf(false) }
+    var showPaymentDialog by remember { mutableStateOf(false) }
+    var showDocTypeMenu by remember { mutableStateOf(false) }
 
-    val lines by viewModel.lines.collectAsState()
-    val client by viewModel.client.collectAsState()
-    val discount by viewModel.discountPercent.collectAsState()
-    val payment by viewModel.paymentMethod.collectAsState()
-    val shop by viewModel.shop.collectAsState()
-    val clients by viewModel.clients.clients.collectAsState()
-    val suppliers by viewModel.suppliers.clients.collectAsState()
-    val documentType by viewModel.documentType.collectAsState()
-    val validityDate by viewModel.validityDate.collectAsState()
-    val supplier by viewModel.supplier.collectAsState()
-
-    var clientMenuOpen by remember { mutableStateOf(false) }
-    var supplierMenuOpen by remember { mutableStateOf(false) }
-    var sharing by remember { mutableStateOf(false) }
-    var confirmClear by remember { mutableStateOf(false) }
-    var picking by remember { mutableStateOf(false) }
-    var previewOpen by remember { mutableStateOf(false) }
-
-    val preview = remember(lines, client, discount, payment, shop, documentType, validityDate, supplier) {
-        InvoiceData(
-            number = viewModel.nextNumber(),
-            date = InvoicePdf.today(),
-            client = client,
-            lines = lines,
-            discountPercent = discount,
-            vatPercent = shop.vatPercent,
-            paymentMethod = payment,
-            documentType = documentType,
-            validityDate = validityDate,
-            supplier = supplier,
-        )
-    }
-
-    val shopIncomplete = shop.name.isBlank()
+    val lines = invoice.lines
+    val client = invoice.client
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(preview.header) },
+                title = { Text("New Invoice") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.Close, contentDescription = "Close")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { confirmClear = true }, enabled = lines.isNotEmpty()) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Clear the invoice")
+                    IconButton(onClick = onOpenShopSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Shop settings")
+                    }
+                    IconButton(onClick = { showItemPicker = true }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Add item")
+                    }
+                    IconButton(onClick = { showDesignPicker = true }) {
+                        Icon(Icons.Filled.PictureAsPdf, contentDescription = "Design")
+                    }
+                    IconButton(onClick = {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            val outcome = viewModel.shareInvoice()
+                            when (outcome) {
+                                is InvoicePdf.Outcome.Shared -> snackbarHostState.showSnackbar("Invoice shared")
+                                is InvoicePdf.Outcome.NoReceiver -> snackbarHostState.showSnackbar("PDF saved but no app to open it")
+                                is InvoicePdf.Outcome.NotWritten -> snackbarHostState.showSnackbar("Failed to create PDF")
+                            }
+                        }
+                    }) {
+                        Icon(Icons.Filled.Share, contentDescription = "Generate PDF")
+                    }
+                    IconButton(onClick = { showDocTypeMenu = true }) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Document type")
                     }
                 },
+                colors = TopAppBarDefaults.mediumTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
             )
         },
-    ) { padding ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            if (shopIncomplete) {
-                NoticeCard(
-                    "Your shop details are not filled in yet.",
-                    "An invoice without the shop's name and ICE is not a document a customer can rely on.",
-                ) {
-                    onOpenShopSettings()
-                }
-            }
-
-            DocumentTypeSelector(
-                currentType = documentType,
-                onSelect = { viewModel.setDocumentType(it) },
-            )
-
-            Spacer(Modifier.height(4.dp))
-
-            if (documentType == DocumentType.DEVIS) {
-                OutlinedTextField(
-                    value = validityDate.orEmpty(),
-                    onValueChange = { viewModel.setValidityDate(it.ifBlank { null }) },
-                    label = { Text("Validité jusqu'au") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                )
-            }
-
-            if (documentType == DocumentType.BON_DE_COMMANDE) {
-                SupplierSelector(
-                    supplier = supplier,
-                    suppliers = suppliers,
-                    onSelect = { viewModel.setSupplier(it) },
-                    onOpenManage = { supplierMenuOpen = true },
-                )
-                if (supplierMenuOpen) {
-                    SupplierDropdown(
-                        suppliers = suppliers,
-                        onSelect = { viewModel.setSupplier(it); supplierMenuOpen = false },
-                        onOpenManage = { supplierMenuOpen = false; onOpenClients() },
-                        onDismiss = { supplierMenuOpen = false },
-                    )
-                }
-            } else {
+    ) { innerPadding ->
+        Box(Modifier.fillMaxSize()) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(scrollState)
+            ) {
                 ClientSelector(
                     client = client,
-                    clients = clients,
-                    onChange = { viewModel.setClient(it) },
-                    onOpenManage = { clientMenuOpen = true },
+                    onClick = { showClientPicker = true },
                 )
-                if (clientMenuOpen) {
-                    ClientDropdown(
-                        clients = clients,
-                        onSelect = { viewModel.setClient(it); clientMenuOpen = false },
-                        onOpenManage = { clientMenuOpen = false; onOpenClients() },
-                        onDismiss = { clientMenuOpen = false },
-                    )
-                }
-            }
 
-            if (lines.isEmpty()) {
-                EmptyInvoice()
-            } else {
-                HorizontalDivider()
-                lines.forEachIndexed { index, line ->
-                    InvoiceLineRow(
-                        line = line,
-                        onSetQuantity = { viewModel.setQuantity(index, it) },
-                        onPriceChange = { viewModel.setUnitPrice(index, it) },
-                        onDiscountChange = { viewModel.setLineDiscount(index, it) },
-                        onRemove = { viewModel.remove(index) },
-                    )
-                }
-                HorizontalDivider()
-            }
+                Spacer(Modifier.height(8.dp))
 
-            OutlinedButton(
-                onClick = { picking = true },
-                shape = MaterialTheme.shapes.extraLarge,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    if (lines.isEmpty()) "Add items" else "Add more items"
+                DocumentTypeSelector(
+                    docType = invoice.documentType,
+                    onClick = { showDocTypeMenu = true },
                 )
-            }
 
-            HorizontalDivider()
+                Spacer(Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = if (discount == 0) "" else discount.toString(),
-                onValueChange = { viewModel.setDiscount(it.filter(Char::isDigit).take(2).toIntOrNull() ?: 0) },
-                label = { Text("Discount %") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Number),
-            )
-
-            Text(
-                "TVA ${trimPercentForUi(shop.vatPercent)}%  ·  set in shop details",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp),
-            )
-
-            Row(
-                Modifier.fillMaxWidth().padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text("Total TTC", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text(
-                    invoiceMoney(preview.total),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-
-            if (discount > 0) {
-                TotalLine("Discount −${trimPercentForUi(discount.toDouble())}%", "−" + invoiceMoney(preview.discountAmount))
-            }
-            TotalLine("TVA ${trimPercentForUi(preview.effectiveVatPercent)}%", invoiceMoney(preview.vatAmount))
-
-            Text(
-                preview.amountInWords,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 6.dp),
-            )
-
-            if (documentType == DocumentType.FACTURE) {
-                Text(
-                    "Payment",
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    PaymentMethod.entries.forEach { method ->
-                        FilterChip(
-                            selected = payment == method,
-                            onClick = { viewModel.setPaymentMethod(method) },
-                            label = { Text(method.french) },
-                        )
+                if (lines.isEmpty()) {
+                    EmptyLinesState(onAddItem = { showItemPicker = true })
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        itemsIndexed(lines) { index, line ->
+                            InvoiceLineRow(
+                                line = line,
+                                index = index,
+                                onEdit = { l: InvoiceLine -> viewModel.updateLine(index, l) },
+                                onDelete = { viewModel.removeLine(index) },
+                                onSetQuantity = { q: Int -> viewModel.setQuantity(index, q) },
+                            )
+                        }
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
+
+                TotalsSection(
+                    subtotal = invoice.subtotal,
+                    discountPercent = invoice.discountPercent,
+                    vatPercent = shop.vatPercent,
+                    onDiscountClick = { showDiscountDialog = true },
+                    onPaymentClick = { showPaymentDialog = true },
+                )
+
+                Spacer(Modifier.height(100.dp))
             }
 
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                OutlinedButton(
-                    onClick = { previewOpen = true },
-                    shape = MaterialTheme.shapes.extraLarge,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Icon(Icons.Filled.Visibility, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Preview")
-                }
-                Button(
-                    onClick = {
-                        scope.launch {
-                            sharing = true
-                            val outcome = viewModel.shareInvoice()
-                            sharing = false
-                            val message = when (outcome) {
-                                is InvoicePdf.Outcome.Shared -> null
-                                is InvoicePdf.Outcome.NotWritten ->
-                                    "The invoice could not be written."
-                                is InvoicePdf.Outcome.NoReceiver ->
-                                    "The invoice was made, but no app on this phone can send a PDF."
-                            }
-                            message?.let {
-                                Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    },
-                    enabled = lines.isNotEmpty() && !sharing,
-                    shape = MaterialTheme.shapes.extraLarge,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Icon(Icons.Filled.Share, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(if (sharing) "Preparing…" else "Create and share")
-                }
-            }
+            ExtendedFloatingActionButton(
+                onClick = { showItemPicker = true },
+                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                text = { Text("Add item") },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+            )
+        }
 
-            Text(
-                "The invoice is a PDF. Nothing is recorded: this app keeps no sales.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 16.dp),
+        if (showItemPicker) {
+            ItemPickerSheet(
+                context = context,
+                onPickLine = { line ->
+                    viewModel.addLine(line)
+                    showItemPicker = false
+                },
+                onDismiss = { showItemPicker = false },
+            )
+        }
+
+        if (showClientPicker) {
+            ClientPickerSheet(
+                onPickClient = { client ->
+                    viewModel.setClient(client)
+                    showClientPicker = false
+                },
+                onDismiss = { showClientPicker = false },
+            )
+        }
+
+        if (showDesignPicker) {
+            DesignPickerSheet(
+                design = design,
+                onPickDesign = { viewModel.setDesign(it) },
+                onDismiss = { showDesignPicker = false },
+            )
+        }
+
+        if (showDiscountDialog) {
+            DiscountDialog(
+                current = invoice.discountPercent,
+                onSet = {
+                    viewModel.setDiscountPercent(it)
+                    showDiscountDialog = false
+                },
+                onDismiss = { showDiscountDialog = false },
+            )
+        }
+
+        if (showPaymentDialog) {
+            PaymentDialog(
+                current = invoice.paymentMethod,
+                onSet = {
+                    viewModel.setPaymentMethod(it)
+                    showPaymentDialog = false
+                },
+                onDismiss = { showPaymentDialog = false },
+            )
+        }
+
+        if (showDocTypeMenu) {
+            DocTypeDropdownMenu(
+                expanded = showDocTypeMenu,
+                onDismissRequest = { showDocTypeMenu = false },
+                viewModel = viewModel,
             )
         }
     }
+}
 
-    if (previewOpen) {
-        PreviewModal(
-            viewModel = viewModel,
-            data = preview,
-            onDismiss = { previewOpen = false },
+@Composable
+fun DocTypeDropdownMenu(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    viewModel: InvoiceViewModel,
+) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismissRequest,
+    ) {
+        DropdownMenuItem(
+            text = { Text("Facture") },
+            onClick = { viewModel.setDocumentType(DocumentType.FACTURE); onDismissRequest() },
+        )
+        DropdownMenuItem(
+            text = { Text("Devis") },
+            onClick = { viewModel.setDocumentType(DocumentType.DEVIS); onDismissRequest() },
+        )
+        DropdownMenuItem(
+            text = { Text("Bon de commande") },
+            onClick = { viewModel.setDocumentType(DocumentType.BON_DE_COMMANDE); onDismissRequest() },
+        )
+        DropdownMenuItem(
+            text = { Text("Ticket (80mm)") },
+            onClick = { viewModel.setDocumentType(DocumentType.TICKET); onDismissRequest() },
         )
     }
+}
 
-    if (picking) {
-        ItemPickerSheet(
-            context = context,
-            onPickLine = { line -> viewModel.addLine(line) },
-            onDismiss = { picking = false },
-        )
+@Composable
+private fun ClientSelector(
+    client: InvoiceClient?,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        ),
+    ) {
+        Row(
+            Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Filled.ReceiptLong,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    client?.name ?: "Select client",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (client != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (client != null) {
+                    Text(
+                        client.address ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            Icon(
+                Icons.Filled.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
+}
 
-    if (confirmClear) {
-        AlertDialog(
-            onDismissRequest = { confirmClear = false },
-            title = { Text("Clear this invoice?") },
-            text = { Text("The lines are removed. Saved clients are not.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.clear()
-                    confirmClear = false
-                }) { Text("Clear") }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmClear = false }) { Text("Keep") }
-            },
-        )
+@Composable
+private fun DocumentTypeSelector(
+    docType: DocumentType,
+    onClick: () -> Unit,
+) {
+    Text(
+        text = docType.label,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable(onClick = onClick)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+        style = MaterialTheme.typography.bodyMedium,
+        textAlign = TextAlign.Center,
+    )
+}
+
+@Composable
+private fun EmptyLinesState(onAddItem: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onAddItem)
+            .padding(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        ),
+    ) {
+        Column(
+            Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(
+                Icons.Filled.Add,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(48.dp),
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "No items yet",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Tap to add your first item",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
 @Composable
 private fun InvoiceLineRow(
     line: InvoiceLine,
+    index: Int,
+    onEdit: (InvoiceLine) -> Unit,
+    onDelete: () -> Unit,
     onSetQuantity: (Int) -> Unit,
-    onPriceChange: (Double) -> Unit,
-    onDiscountChange: (Int) -> Unit,
-    onRemove: () -> Unit,
 ) {
     Card(
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        line.lineLabel,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                IconButton(onClick = onRemove) {
-                    Icon(
-                        Icons.Filled.Delete,
-                        contentDescription = "Remove this line",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                QtyStepper(line.quantity, onSetQuantity)
-                OutlinedTextField(
-                    value = priceText(line.unitPrice),
-                    onValueChange = { view ->
-                        onPriceChange(view.replace(',', '.').toDoubleOrNull() ?: 0.0)
-                    },
-                    label = { Text("Price") },
-                    singleLine = true,
-                    modifier = Modifier.width(92.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                )
-                OutlinedTextField(
-                    value = if (line.lineDiscountPercent == 0) "" else line.lineDiscountPercent.toString(),
-                    onValueChange = { view ->
-                        onDiscountChange(view.filter(Char::isDigit).take(2).toIntOrNull() ?: 0)
-                    },
-                    label = { Text("Disc %") },
-                    singleLine = true,
-                    modifier = Modifier.width(64.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    invoiceMoney(line.total),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.End,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun QtyStepper(
-    quantity: Int,
-    onQuantity: (Int) -> Unit,
-) {
-    var typing by remember { mutableStateOf(false) }
-
-    Row(
         modifier = Modifier
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
-        verticalAlignment = Alignment.CenterVertically,
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
     ) {
-        IconButton(onClick = { onQuantity(quantity - 1) }, modifier = Modifier.size(34.dp)) {
-            Icon(
-                Icons.Filled.Remove,
-                contentDescription = "One fewer",
-                modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Text(
-            "$quantity",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier
-                .width(30.dp)
-                .clip(CircleShape)
-                .clickable { typing = true }
-                .semantics {
-                    contentDescription = "$quantity in the invoice. Tap to type a different number"
-                },
-            textAlign = TextAlign.Center,
-        )
-        IconButton(onClick = { onQuantity(quantity + 1) }, modifier = Modifier.size(34.dp)) {
-            Icon(
-                Icons.Filled.Add,
-                contentDescription = "One more",
-                modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        }
-    }
-
-    if (typing) {
-        QuantityDialog(
-            quantity = quantity,
-            onConfirm = {
-                typing = false
-                onQuantity(it)
-            },
-            onDismiss = { typing = false },
-        )
-    }
-}
-
-@Composable
-private fun QuantityDialog(
-    quantity: Int,
-    onConfirm: (Int) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var text by remember { mutableStateOf("$quantity") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("How many items?") },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { input -> text = input.filter { it.isDigit() }.take(4) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Done,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(text.toIntOrNull()?.coerceAtLeast(1) ?: 1) }) {
-                Text("Set")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
-    )
-}
-
-@Composable
-private fun TotalLine(label: String, value: String) {
-    Row(
-        Modifier.fillMaxWidth().padding(top = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun EmptyInvoice() {
-    Column(
-        Modifier.fillMaxWidth().padding(vertical = 28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(
-            Icons.Filled.ReceiptLong,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(40.dp),
-        )
-        Spacer(Modifier.height(10.dp))
-        Text("No items yet", style = MaterialTheme.typography.titleLarge)
-        Text(
-            "Search for one below, or write it in by hand.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun NoticeCard(
-    title: String,
-    body: String,
-    onFix: () -> Unit,
-) {
-    Card(
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-        ),
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onFix),
-    ) {
-        Column(Modifier.padding(14.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall)
-            Text(body, style = MaterialTheme.typography.bodySmall)
-            Spacer(Modifier.height(6.dp))
-            AssistChip(onClick = onFix, label = { Text("Fill in shop details") })
-        }
-    }
-}
-
-private fun invoiceMoney(value: Double): String =
-    String.format(Locale.US, "%.2f", value) + " DH"
-
-private fun priceText(value: Double): String =
-    if (value == Math.floor(value) && !value.isInfinite()) value.toLong().toString()
-    else String.format(Locale.US, "%.2f", value)
-
-private fun trimPercentForUi(value: Double): String =
-    if (value == value.toLong().toDouble()) value.toLong().toString()
-    else String.format(Locale.US, "%.1f", value)
-
-@Composable
-private fun DocumentTypeSelector(
-    currentType: DocumentType,
-    onSelect: (DocumentType) -> Unit,
-) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        DocumentType.entries.forEach { type ->
-            FilterChip(
-                selected = type == currentType,
-                onClick = { onSelect(type) },
-                label = { Text(type.label) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun ClientSelector(
-    client: InvoiceClient,
-    clients: List<InvoiceClient>,
-    onChange: (InvoiceClient) -> Unit,
-    onOpenManage: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        OutlinedTextField(
-            value = client.name,
-            onValueChange = { onChange(client.copy(name = it)) },
-            label = { Text("Client") },
-            singleLine = true,
-            modifier = Modifier.weight(1f),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-        )
-        OutlinedButton(
-            onClick = onOpenManage,
-            shape = MaterialTheme.shapes.extraLarge,
-        ) {
-            Icon(Icons.Filled.Person, contentDescription = "Saved clients", modifier = Modifier.size(18.dp))
-        }
-    }
-}
-
-@Composable
-private fun ClientDropdown(
-    clients: List<InvoiceClient>,
-    onSelect: (InvoiceClient) -> Unit,
-    onOpenManage: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    DropdownMenu(
-        expanded = true,
-        onDismissRequest = onDismiss,
-    ) {
-        clients.forEach { saved ->
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        saved.name + if (saved.phone.isNotBlank()) "  ·  ${saved.phone}" else "",
-                    )
-                },
-                onClick = { onSelect(saved) },
-            )
-        }
-        if (clients.isEmpty()) {
-            DropdownMenuItem(
-                text = { Text("No clients saved yet") },
-                onClick = onDismiss,
-                enabled = false,
-            )
-        }
-        HorizontalDivider()
-        DropdownMenuItem(
-            text = { Text("Manage clients") },
-            leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
-            onClick = onOpenManage,
-        )
-    }
-}
-
-@Composable
-private fun SupplierSelector(
-    supplier: InvoiceClient?,
-    suppliers: List<InvoiceClient>,
-    onSelect: (InvoiceClient?) -> Unit,
-    onOpenManage: () -> Unit,
-) {
-    val display = supplier?.name ?: "Select a supplier"
-    OutlinedTextField(
-        value = display,
-        onValueChange = { /* read-only, opened via button */ },
-        label = { Text("Supplier") },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-        trailingIcon = {
-            OutlinedButton(
-                onClick = onOpenManage,
-                shape = MaterialTheme.shapes.extraLarge,
-            ) {
-                Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-            }
-        },
-        readOnly = true,
-    )
-}
-
-@Composable
-private fun SupplierDropdown(
-    suppliers: List<InvoiceClient>,
-    onSelect: (InvoiceClient?) -> Unit,
-    onOpenManage: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    DropdownMenu(
-        expanded = true,
-        onDismissRequest = onDismiss,
-    ) {
-        suppliers.forEach { saved ->
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        saved.name + if (saved.phone.isNotBlank()) "  ·  ${saved.phone}" else "",
-                    )
-                },
-                onClick = { onSelect(saved) },
-            )
-        }
-        DropdownMenuItem(
-            text = { Text("No supplier") },
-            onClick = { onSelect(null as InvoiceClient?) },
-        )
-        HorizontalDivider()
-        DropdownMenuItem(
-            text = { Text("Manage suppliers") },
-            leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
-            onClick = onOpenManage,
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PreviewModal(
-    viewModel: InvoiceViewModel,
-    data: InvoiceData,
-    onDismiss: () -> Unit,
-) {
-    val scope = rememberCoroutineScope()
-    val bitmapState = remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-    val loading = remember { mutableStateOf(true) }
-
-    LaunchedEffect(data) {
-        loading.value = true
-        bitmapState.value = null
-        val bmp = viewModel.previewBitmap(595)
-        bitmapState.value = bmp
-        loading.value = false
-    }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+        Column(Modifier.padding(12.dp)) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Preview — ${data.header} n° ${data.number}", style = MaterialTheme.typography.titleMedium)
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Filled.Close, contentDescription = "Close preview")
+                Text(
+                    line.description,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    IconButton(onClick = { onSetQuantity(line.quantity - 1) }) {
+                        Icon(Icons.Filled.Cancel, contentDescription = "Decrease")
+                    }
+                    Text(
+                        line.quantity.toString(),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.width(40.dp),
+                    )
+                    IconButton(onClick = { onSetQuantity(line.quantity + 1) }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Increase")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        (line.unitPrice * line.quantity * (1 - line.lineDiscountPercent / 100)).asDirhams(),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            if (loading.value) {
-                androidx.compose.material3.CircularProgressIndicator(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(
+                    value = line.unitPrice.toString(),
+                    onValueChange = { input ->
+                        val price = input.replace(',', '.').toDoubleOrNull() ?: line.unitPrice
+                        onEdit(line.copy(unitPrice = price))
+                    },
+                    label = { Text("Price") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 )
-            } else {
-                bitmapState.value?.let { bmp ->
-                    androidx.compose.ui.graphics.ImageBitmap(bmp)
+                OutlinedTextField(
+                    value = line.lineDiscountPercent.toString(),
+                    onValueChange = { input ->
+                        val disc = input.toIntOrNull() ?: line.lineDiscountPercent
+                        onEdit(line.copy(lineDiscountPercent = disc.coerceIn(0, 100)))
+                    },
+                    label = { Text("Disc %") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+                OutlinedTextField(
+                    value = line.unit,
+                    onValueChange = { onEdit(line.copy(unit = it)) },
+                    label = { Text("Per") },
+                    placeholder = { Text("per tyre") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(onClick = { /* Edit functionality - placeholder */ }) {
+                    Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Edit")
                 }
+                TextButton(onClick = onDelete) {
+                    Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                    Spacer(Modifier.width(4.dp))
+                    Text("Delete")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TotalsSection(
+    subtotal: Double,
+    discountPercent: Int,
+    vatPercent: Double,
+    onDiscountClick: () -> Unit,
+    onPaymentClick: () -> Unit,
+) {
+    val discountAmount = subtotal * discountPercent / 100
+    val afterDiscount = subtotal - discountAmount
+    val vatAmount = afterDiscount * vatPercent / 100
+    val total = afterDiscount + vatAmount
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text("Subtotal", style = MaterialTheme.typography.bodyMedium)
+                Text(subtotal.asDirhams(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+            }
+            if (discountPercent > 0) {
+                Spacer(Modifier.height(4.dp))
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("Discount ($discountPercent%)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("-${discountAmount.asDirhams()}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text("After discount", style = MaterialTheme.typography.bodyMedium)
+                Text(afterDiscount.asDirhams(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text("VAT (${vatPercent.trimZeros()}%)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(vatAmount.asDirhams(), style = MaterialTheme.typography.bodyMedium)
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text("Total", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(total.asDirhams(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text("Amount in words", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    AmountWords.sentence(total),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Button(
+                    onClick = onDiscountClick,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Discount")
+                }
+                Button(
+                    onClick = onPaymentClick,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Payment")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiscountDialog(
+    current: Int,
+    onSet: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var text by remember { mutableStateOf(current.toString()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Discount %") },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it.filter { it.isDigit() } },
+                label = { Text("Discount percentage (0-100)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onSet(text.toIntOrNull()?.coerceIn(0, 100) ?: 0) }) { Text("OK") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun PaymentDialog(
+    current: PaymentMethod,
+    onSet: (PaymentMethod) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Payment method") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                PaymentMethod.entries.forEach { method ->
+                    Text(
+                        text = method.french,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .clickable {
+                                onSet(method)
+                            }
+                            .background(
+                                if (method == current) MaterialTheme.colorScheme.primaryContainer
+                                else MaterialTheme.colorScheme.surface,
+                            ),
+                        color = if (method == current) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
+}
+
+@Composable
+private fun DesignPickerSheet(
+    design: InvoiceDesign,
+    onPickDesign: (InvoiceDesign) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    if (expanded) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable { expanded = false }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+                    .padding(16.dp)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .clickable { },
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("Invoice design", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(16.dp))
+                InvoiceTemplate.entries.forEach { t ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp)
+                            .clickable { onPickDesign(design.copy(template = t)); expanded = false },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(t.label, style = MaterialTheme.typography.bodyLarge)
+                        if (t == design.template) {
+                            Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClientPickerSheet(
+    onPickClient: (InvoiceClient) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    if (expanded) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable { expanded = false }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+                    .padding(16.dp)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .clickable { },
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("Select client", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(16.dp))
+                Text("Client picker - coming soon", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }

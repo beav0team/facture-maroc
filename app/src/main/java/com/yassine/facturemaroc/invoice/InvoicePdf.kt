@@ -1,7 +1,7 @@
 package com.yassine.facturemaroc.invoice
 
-import android.content.ClipData
 import android.content.Context
+import android.content.ClipData
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -13,6 +13,10 @@ import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.yassine.facturemaroc.data.InvoiceData
+import com.yassine.facturemaroc.data.InvoiceDesign
+import com.yassine.facturemaroc.data.InvoiceTemplate
+import com.yassine.facturemaroc.data.ShopSettings
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -76,8 +80,6 @@ object InvoicePdf {
         android.util.Log.i(TAG, "pdf written ${file.name} ${file.length()} bytes ${width}x$height ${template.id}")
         file
     } catch (e: Exception) {
-        // Logged rather than swallowed: this is the document a customer receives,
-        // and a silent failure here is a failure at the counter with no reason.
         android.util.Log.w(TAG, "could not write the invoice PDF", e)
         null
     }
@@ -104,23 +106,11 @@ object InvoicePdf {
                 clipData = ClipData.newUri(context.contentResolver, "invoice", uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            // The flag goes on the chooser, not on the intent it wraps.
-            //
-            // The chooser is started from the Application context, because the PDF
-            // is built off the main thread where there is no Activity to hand, and
-            // Android refuses a bare startActivity from a non-Activity context. A
-            // flag on the wrapped SEND intent is carried into the chooser as an
-            // extra rather than as a launch flag, so the chooser itself is still
-            // launched without one and the share fails on every device — with the
-            // document written correctly and nothing to show for it.
             val chooser = Intent.createChooser(send, "Share invoice")
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(chooser)
             Outcome.Shared(file)
         } catch (e: Exception) {
-            // Usually nothing on the device that accepts a PDF. Said out loud
-            // rather than failing silently at the counter, and the file is still
-            // on disk so it can be sent later from the file manager.
             android.util.Log.w(TAG, "could not hand the invoice to another app", e)
             Outcome.NoReceiver(file)
         }
@@ -151,34 +141,52 @@ object InvoicePdf {
         shop: ShopSettings,
         design: InvoiceDesign,
         widthPx: Int,
-    ): Bitmap? = try {
+    ): Bitmap? {
         val template = design.template
-        val height = if (template.isRoll) ticketHeight(data, shop, design) else PAGE_H
-        val width = if (template.isRoll) TICKET_W else PAGE_W
+        val scale = widthPx.toDouble() / (if (template.isRoll) TICKET_W else PAGE_W).toDouble()
+        val height = if (template.isRoll) {
+            (ticketHeight(data, shop, design) * scale).toInt()
+        } else {
+            (PAGE_H * scale).toInt()
+        }
 
-        val scale = widthPx.toFloat() / width
-        val bitmap = Bitmap.createBitmap(
-            widthPx,
-            (height * scale).toInt().coerceAtLeast(1),
-            Bitmap.Config.ARGB_8888,
-        )
-        val canvas = Canvas(bitmap)
-        canvas.drawColor(Color.WHITE)
-        canvas.save()
-        canvas.scale(scale, scale)
-        rendererFor(template).draw(context, canvas, data, shop, design)
-        canvas.restore()
-        android.util.Log.i(TAG, "preview ${template.id} ${widthPx}x${bitmap.height}")
-        bitmap
-    } catch (e: Exception) {
-        // Logged rather than swallowed. A blank preview with nothing on the
-        // screen is undiagnosable without this, and this is the one place a
-        // rendering fault shows up before it reaches a customer's invoice.
-        android.util.Log.w(TAG, "preview failed for ${design.templateId}", e)
-        null
+        // A rendering fault has to come back as "no preview", not as an
+        // exception: this runs on a background dispatcher with nothing to catch
+        // it, so throwing here kills the screen that was merely drawing a
+        // mock-up. The log line is what makes the blank preview diagnosable.
+        return try {
+            val bitmap = Bitmap.createBitmap(widthPx, height, Bitmap.Config.ARGB_8888).apply {
+                eraseColor(Color.WHITE)
+            }
+            val canvas = Canvas(bitmap)
+            canvas.scale(scale.toFloat(), scale.toFloat())
+            rendererFor(template).draw(context, canvas, data, shop, design)
+            bitmap
+        } catch (e: Exception) {
+            android.util.Log.w("InvoicePdf", "preview failed for ${template.id}", e)
+            null
+        }
     }
 
-    private const val TAG = "InvoicePdf"
+    private fun ticketHeight(
+        data: InvoiceData,
+        shop: ShopSettings,
+        design: InvoiceDesign,
+    ): Int {
+        val margin = 15f
+        val w = TICKET_W - margin * 2
+        var h = 10f + 8f + (if (shop.address.isNotBlank()) 7f else 0f) + 4f + 14f + 10f + 4f
+        data.lines.forEach { line ->
+            val itemName = PdfText.paint(7f, Color.BLACK)
+            val lineH = kotlin.math.max(PdfText.height(line.lineLabel, itemName, w.toInt() - 25 - 4, 2) + 1f, 11f)
+            h += lineH
+            if (line.unitPrice > 0) h += 7f
+        }
+        h += 6f + 8f
+        if (data.discountPercent > 0) h += 8f
+        h += 10f + 14f + 20f + 8f
+        return h.toInt()
+    }
 
     private fun rendererFor(template: InvoiceTemplate): PdfRenderer = when (template) {
         InvoiceTemplate.CLASSIQUE -> ClassiqueRenderer()
@@ -187,24 +195,7 @@ object InvoicePdf {
         InvoiceTemplate.TICKET -> TicketRenderer()
     }
 
-    /**
-     * How tall a till roll needs to be for this sale.
-     *
-     * A roll is cut to fit, so the height is worked out from the content rather
-     * than fixed: the header, a fixed allowance per line, the totals block and a
-     * foot. Overrunning it would silently drop the amount in words off the
-     * bottom of the receipt, which is the one line that must not be lost.
-     */
-    private fun ticketHeight(data: InvoiceData, shop: ShopSettings, design: InvoiceDesign): Int {
-        var h = 150f
-        h += shop.legalIdentifierList.size * 12f
-        data.lines.forEach { h += if (it.description.length > 30) 26f else 16f }
-        h += 110f
-        if (design.logoEnabled) h += 40f
-        return h.toInt().coerceAtLeast(240)
-    }
-
-    /** The date as a Moroccan invoice prints it. */
-    fun today(): String =
-        SimpleDateFormat("dd/MM/yyyy", Locale.US).format(java.util.Date())
+    fun today(): String = SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE).format(Date())
 }
+
+const val TAG = "InvoicePdf"

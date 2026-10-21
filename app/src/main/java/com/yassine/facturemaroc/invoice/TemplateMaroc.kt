@@ -1,12 +1,17 @@
 package com.yassine.facturemaroc.invoice
 
+import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import com.yassine.facturemaroc.data.InvoiceData
+import com.yassine.facturemaroc.data.InvoiceDesign
+import com.yassine.facturemaroc.data.ShopSettings
 
 class MarocRenderer : PdfRenderer {
 
     override fun draw(
+        context: Context,
         canvas: Canvas,
         data: InvoiceData,
         shop: ShopSettings,
@@ -74,15 +79,15 @@ class MarocRenderer : PdfRenderer {
         y += 16f
 
         data.lines.forEachIndexed { index, line ->
-            val rowH = kotlin.math.max(PdfText.height(line.lineLabel, cell, colDesc - 12, 2) + 7f, 18f)
+            val rowH = kotlin.math.max(PdfText.height(line.lineLabel, cell, (colDesc - 12).toInt(), 2) + 7f, 18f)
             // Alternating row shading
             if (index % 2 == 1) {
                 canvas.drawRect(margin, y, margin + w, y + rowH, Paint().apply { color = Color.parseColor("#F5F5F5") })
             }
             canvas.drawText(line.quantity.toString(), margin + 6f, y + 4f, cell)
-            PdfText.draw(canvas, line.lineLabel, margin + colQty + 6f, y + 4f, cell, colDesc - 12, maxLines = 2)
-            PdfText.draw(canvas, PdfText.money(line.unitPrice), margin + colQty + colDesc + 8f, y + 5f, cellRight, colUnit - 8)
-            PdfText.draw(canvas, PdfText.money(line.total), margin + colQty + colDesc + colUnit + 12f, y + 5f, cellRight, colTotal - 8)
+            PdfText.draw(canvas, line.lineLabel, margin + colQty + 6f, y + 4f, cell, (colDesc - 12).toInt(), maxLines = 2)
+            PdfText.draw(canvas, PdfText.money(line.unitPrice), margin + colQty + colDesc + 8f, y + 5f, cellRight, (colUnit - 8).toInt())
+            PdfText.draw(canvas, PdfText.money(line.total), margin + colQty + colDesc + colUnit + 12f, y + 5f, cellRight, (colTotal - 8).toInt())
             y += rowH
         }
 
@@ -95,7 +100,7 @@ class MarocRenderer : PdfRenderer {
         y += 14f
 
         if (data.discountPercent > 0) {
-            canvas.drawText("Discount −${trimPercent(data.discountPercent)}%", totalsStart, y, cellRight)
+            canvas.drawText("Discount −${trimPercent(data.discountPercent.toDouble())}%", totalsStart, y, cellRight)
             canvas.drawText("−${PdfText.money(data.discountAmount)}", margin + colQty + colDesc + colUnit + 12f, y, cellRight)
             y += 14f
         }

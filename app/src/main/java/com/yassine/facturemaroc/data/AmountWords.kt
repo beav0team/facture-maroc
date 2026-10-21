@@ -83,15 +83,16 @@ object AmountWords {
                 } else {
                     "$t-${units[unit]}"
                 }
+            }
         }
         if (n < 1000) {
             val hundred = n / 100
             val remainder = n % 100
             val h = if (hundred == 1) "CENT" else "${units[hundred]} CENT"
             return if (remainder == 0) {
-                if (hundred > 1) "$hS" else h
+                if (hundred > 1) "$h S" else h
             } else {
-                if (hundred > 1) "$hS ${numberToWords(remainder)}" else "$h ${numberToWords(remainder)}"
+                if (hundred > 1) "$h S ${numberToWords(remainder)}" else "$h ${numberToWords(remainder)}"
             }
         }
         if (n < 1_000_000) {

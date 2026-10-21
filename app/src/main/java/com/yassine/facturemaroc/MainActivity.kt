@@ -7,15 +7,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModelProvider
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.ui.InvoiceScreen
-import com.yassine.facturemaroc.ui.ShopDetailsScreen
 import com.yassine.facturemaroc.ui.SavedItemListScreen
-import androidx.lifecycle.ViewModelProvider
+import com.yassine.facturemaroc.ui.ShopDetailsScreen
 
 class MainActivity : ComponentActivity() {
 

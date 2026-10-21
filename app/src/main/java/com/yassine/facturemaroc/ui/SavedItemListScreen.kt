@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.layout.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -35,14 +35,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.KeyboardOptions
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yassine.facturemaroc.data.SavedItem
 import com.yassine.facturemaroc.data.SavedItemStore
-import com.yassine.facturemaroc.ui.SavedItemEditor
-import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun SavedItemListScreen(
@@ -111,7 +107,7 @@ fun SavedItemListScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 items(items, key = { it.label }) { item ->
-                    SavedItemRow(
+                    SavedItemListRow(
                         item = item,
                         onEdit = { },
                         onDelete = { store.delete(item) },
@@ -123,8 +119,8 @@ fun SavedItemListScreen(
         if (creating) {
             SavedItemEditor(
                 initial = SavedItem(label = "", price = 0.0),
-                onSave = {
-                    store.save(it)
+                onSave = { newItem ->
+                    store.save(newItem)
                     creating = false
                 },
                 onDismiss = { creating = false },
@@ -134,7 +130,7 @@ fun SavedItemListScreen(
 }
 
 @Composable
-private fun SavedItemRow(
+private fun SavedItemListRow(
     item: SavedItem,
     onEdit: () -> Unit,
     onDelete: () -> Unit,

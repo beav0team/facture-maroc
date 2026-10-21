@@ -13,9 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * is not possible with SharedPreferences, but writes are atomic at the
  * framework level and the file is small.
  */
-class ShopSettingsStore(context: Context) {
-
-    private const val PREFS = "shop_settings"
+class ShopSettingsStore(private val context: Context) {
 
     private val _settings = MutableStateFlow(load(context))
     val settings: StateFlow<ShopSettings> = _settings.asStateFlow()
@@ -58,13 +56,27 @@ class ShopSettingsStore(context: Context) {
 
     companion object {
         private const val PREFS = "shop_settings"
+
+        fun write(context: Context, settings: ShopSettings) {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            prefs.edit().apply {
+                putString("name", settings.name)
+                putString("address", settings.address)
+                putString("ice", settings.ice)
+                putString("ifNumber", settings.ifNumber)
+                putString("rc", settings.rc)
+                putString("patente", settings.patente)
+                putString("cnss", settings.cnss)
+                putString("logoBytes", settings.logoBytes?.let { android.util.Base64.encodeToString(it, android.util.Base64.DEFAULT) })
+                putFloat("vatPercent", settings.vatPercent.toFloat())
+                apply()
+            }
+        }
     }
 }
 
 /** Client store — saved clients for quick selection on invoices. */
-class ClientStore(context: Context) {
-
-    private const val PREFS = "client_store"
+class ClientStore(private val context: Context) {
 
     private val _clients = MutableStateFlow(load(context))
     val clients: StateFlow<List<InvoiceClient>> = _clients.asStateFlow()
@@ -79,17 +91,17 @@ class ClientStore(context: Context) {
         } else {
             existing.add(client.copy(name = client.name.trim()))
         }
-        persist(existing, context)
+        persist(existing)
     }
 
     fun delete(client: InvoiceClient) {
         val key = client.name.trim().lowercase()
-        persist(_clients.value.filterNot { it.name.trim().lowercase() == key }, context)
+        persist(_clients.value.filterNot { it.name.trim().lowercase() == key })
     }
 
     fun read(context: Context): List<InvoiceClient> = load(context)
 
-    private fun persist(list: List<InvoiceClient>, context: Context) {
+    private fun persist(list: List<InvoiceClient>) {
         _clients.value = list
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val array = org.json.JSONArray()

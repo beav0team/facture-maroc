@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import com.yassine.facturemaroc.invoice.InvoicePdf
 
 /**
  * The invoice being written, and the shop and design it will be printed with.
@@ -48,8 +49,32 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     private val _shop = MutableStateFlow(ShopSettings())
     val shop: StateFlow<ShopSettings> = _shop.asStateFlow()
 
+    // Alias for compatibility
+    val shopSettings: StateFlow<ShopSettings> = shop
+
     private val _design = MutableStateFlow(InvoiceDesign.default())
     val design: StateFlow<InvoiceDesign> = _design.asStateFlow()
+
+    /** Combined invoice state for the builder screen. */
+    private val _invoice = MutableStateFlow(buildInvoiceData())
+    val invoice: StateFlow<InvoiceData> = _invoice
+
+    private fun buildInvoiceData(): InvoiceData = InvoiceData(
+        number = InvoiceNumber.peek(getApplication(), _documentType.value),
+        date = InvoicePdf.today(),
+        client = _client.value,
+        lines = _lines.value,
+        discountPercent = _discountPercent.value,
+        vatPercent = _shop.value.vatPercent,
+        paymentMethod = _paymentMethod.value,
+        documentType = _documentType.value,
+        validityDate = _validityDate.value,
+        supplier = _supplier.value,
+    )
+
+    private fun refreshInvoice() {
+        _invoice.value = buildInvoiceData()
+    }
 
     /** How many lines are on the draft, which is what the top bar badge shows. */
     val lineCount: Int get() = _lines.value.sumOf { it.quantity }
@@ -70,6 +95,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 if (it === existing) it.copy(quantity = it.quantity + 1) else it
             }
         }
+        refreshInvoice()
     }
 
     fun setQuantity(index: Int, quantity: Int) {
@@ -83,6 +109,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _lines.value = _lines.value.mapIndexed { i, line ->
             if (i == index) line.copy(quantity = quantity) else line
         }
+        refreshInvoice()
     }
 
     /** Changes the unit price, which is how a negotiated price is recorded. */
@@ -90,6 +117,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _lines.value = _lines.value.mapIndexed { i, line ->
             if (i == index) line.copy(unitPrice = price.coerceAtLeast(0.0)) else line
         }
+        refreshInvoice()
     }
 
     /** Applies a discount to this line only, before the invoice-level discount. */
@@ -97,14 +125,26 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _lines.value = _lines.value.mapIndexed { i, line ->
             if (i == index) line.copy(lineDiscountPercent = percent.coerceIn(0, 100)) else line
         }
+        refreshInvoice()
     }
 
     fun remove(index: Int) {
         _lines.value = _lines.value.filterIndexed { i, _ -> i != index }
+        refreshInvoice()
+    }
+
+    fun removeLine(index: Int) = remove(index)
+
+    fun updateLine(index: Int, line: InvoiceLine) {
+        _lines.value = _lines.value.mapIndexed { i, l ->
+            if (i == index) line else l
+        }
+        refreshInvoice()
     }
 
     fun setClient(client: InvoiceClient) {
         _client.value = client
+        refreshInvoice()
     }
 
     /** Remembers the client for next time, but only if there is something to. */
@@ -113,12 +153,14 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         if (current.name.isNotBlank()) clients.save(current)
     }
 
-    fun setDiscount(percent: Int) {
+    fun setDiscountPercent(percent: Int) {
         _discountPercent.value = percent.coerceIn(0, 100)
+        refreshInvoice()
     }
 
     fun setPaymentMethod(method: PaymentMethod) {
         _paymentMethod.value = method
+        refreshInvoice()
     }
 
     fun setDocumentType(type: DocumentType) {
@@ -126,53 +168,29 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         // Reset type-specific fields when switching
         if (type != DocumentType.DEVIS) _validityDate.value = null
         if (type != DocumentType.BON_DE_COMMANDE) _supplier.value = null
+        refreshInvoice()
     }
 
     fun setValidityDate(date: String?) {
         _validityDate.value = date
+        refreshInvoice()
     }
 
     fun setSupplier(supplier: InvoiceClient?) {
         _supplier.value = supplier
+        refreshInvoice()
     }
 
     fun updateShop(settings: ShopSettings) {
-        ShopSettingsStore.write(getApplication(), settings)
+        ShopSettingsStore.write(getApplication<Application>(), settings)
         _shop.value = settings
+        refreshInvoice()
     }
 
-    fun updateDesign(design: InvoiceDesign) {
-        InvoiceDesignStore.write(getApplication(), design)
+    fun setDesign(design: InvoiceDesign) {
+        InvoiceDesignStore.write(getApplication<Application>(), design)
         _design.value = design
-    }
-
-    /**
-     * Reads the picked logo and stores it.
-     *
-     * The bytes are copied into the app's own files directory rather than keeping
-     * the URI, because the grant behind a photo-picker URI does not outlive the
-     * process. Holding the URI would mean the logo silently disappeared from the
-     * next invoice.
-     */
-    suspend fun chooseLogo(uri: Uri): Boolean = withContext(Dispatchers.IO) {
-        val resolver = getApplication<Application>().contentResolver
-        val bytes = runCatching {
-            resolver.openInputStream(uri)?.use { it.readBytes() }
-        }.getOrNull() ?: return@withContext false
-
-        // A screenshot or a photo can be several megabytes. The logo is drawn at
-        // 40pt on the page, so decoding a huge original onto a PDF is memory
-        // spent for no visible gain.
-        if (bytes.size > MAX_LOGO_BYTES) return@withContext false
-
-        val stored = InvoiceDesignStore.saveLogo(getApplication(), bytes)
-        if (stored) _design.value = InvoiceDesignStore.read(getApplication())
-        stored
-    }
-
-    fun removeLogo() {
-        InvoiceDesignStore.removeLogo(getApplication())
-        _design.value = InvoiceDesignStore.read(getApplication())
+        refreshInvoice()
     }
 
     /**
@@ -184,7 +202,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * invoice, because it is the same number every time.
      */
     fun buildData(): InvoiceData = InvoiceData(
-        number = InvoiceNumber.consume(getApplication(), _documentType.value),
+        number = InvoiceNumber.consume(getApplication<Application>(), _documentType.value),
         date = InvoicePdf.today(),
         client = _client.value,
         lines = _lines.value,
@@ -198,7 +216,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     /** The draft as it currently stands, for the live preview in the design screen. */
     fun previewData(): InvoiceData = InvoiceData(
-        number = InvoiceNumber.peek(getApplication(), _documentType.value),
+        number = InvoiceNumber.peek(getApplication<Application>(), _documentType.value),
         date = InvoicePdf.today(),
         client = _client.value,
         lines = _lines.value,
@@ -211,7 +229,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     )
 
     /** Peek at the next invoice number without consuming it. */
-    fun nextNumber(): String = InvoiceNumber.peek(getApplication(), _documentType.value)
+    fun nextNumber(): String = InvoiceNumber.peek(getApplication<Application>(), _documentType.value)
 
     /** Clears the draft after a document has been produced. */
     fun clear() {
@@ -220,12 +238,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _paymentMethod.value = PaymentMethod.CASH
         _validityDate.value = null
         _supplier.value = null
+        refreshInvoice()
     }
 
     /** Renders the current draft to a bitmap, for the design screen preview. */
     suspend fun previewBitmap(widthPx: Int): Bitmap? = withContext(Dispatchers.Default) {
         InvoicePdf.preview(
-            getApplication(),
+            getApplication<Application>(),
             previewData(),
             _shop.value,
             _design.value,
@@ -243,7 +262,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      */
     suspend fun shareInvoice(): InvoicePdf.Outcome = withContext(Dispatchers.IO) {
         val data = buildData()
-        val outcome = InvoicePdf.share(getApplication(), data, _shop.value, _design.value)
+        val outcome = InvoicePdf.share(getApplication<Application>(), data, _shop.value, _design.value)
         if (outcome is InvoicePdf.Outcome.Shared) clear()
         outcome
     }

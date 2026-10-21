@@ -14,7 +14,11 @@ import java.io.File
 data class InvoiceDesign(
     val template: InvoiceTemplate = InvoiceTemplate.CLASSIQUE,
     val logoEnabled: Boolean = true,
-)
+) {
+    companion object {
+        fun default(): InvoiceDesign = InvoiceDesign()
+    }
+}
 
 enum class InvoiceTemplate(val id: String, val label: String, val isRoll: Boolean) {
     CLASSIQUE("classique", "Classique", false),
@@ -30,8 +34,6 @@ enum class InvoiceTemplate(val id: String, val label: String, val isRoll: Boolea
 
 /** Persisted invoice design — template choice and logo on/off. */
 class InvoiceDesignStore(context: Context) {
-
-    private const val PREFS = "invoice_design"
 
     private val _design = MutableStateFlow(load(context))
     val design: StateFlow<InvoiceDesign> = _design.asStateFlow()
@@ -74,5 +76,14 @@ class InvoiceDesignStore(context: Context) {
 
     companion object {
         private const val PREFS = "invoice_design"
+
+        fun write(context: Context, design: InvoiceDesign) {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            prefs.edit().apply {
+                putString("template", design.template.id)
+                putBoolean("logoEnabled", design.logoEnabled)
+                apply()
+            }
+        }
     }
 }

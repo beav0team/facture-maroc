@@ -34,8 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.yassine.facturemaroc.data.ShopSettings
 import com.yassine.facturemaroc.data.ShopSettingsStore
@@ -61,7 +61,7 @@ fun ShopDetailsScreen(
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Vertical.Center,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 "Shop details",
@@ -168,7 +168,7 @@ fun ShopDetailsScreen(
 
         Row(
             Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Vertical.Center,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 "Logo",
@@ -198,9 +198,9 @@ fun ShopDetailsScreen(
                         cnss = cnss,
                         vatPercent = vatPercent,
                     ))
-                onBack()
-            },
-            shape = MaterialTheme.shapes.extraLarge,
+                    onBack()
+                },
+                shape = MaterialTheme.shapes.extraLarge,
             ) {
                 Text("Save shop details")
             }

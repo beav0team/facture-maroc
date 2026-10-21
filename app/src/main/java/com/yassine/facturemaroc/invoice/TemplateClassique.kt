@@ -1,12 +1,17 @@
 package com.yassine.facturemaroc.invoice
 
+import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import com.yassine.facturemaroc.data.InvoiceData
+import com.yassine.facturemaroc.data.InvoiceDesign
+import com.yassine.facturemaroc.data.ShopSettings
 
 class ClassiqueRenderer : PdfRenderer {
 
     override fun draw(
+        context: Context,
         canvas: Canvas,
         data: InvoiceData,
         shop: ShopSettings,
@@ -77,11 +82,11 @@ class ClassiqueRenderer : PdfRenderer {
 
         // Line items
         data.lines.forEach { line ->
-            val rowH = kotlin.math.max(PdfText.height(line.lineLabel, cell, colDesc, 2) + 8f, 20f)
+            val rowH = kotlin.math.max(PdfText.height(line.lineLabel, cell, colDesc.toInt(), 2) + 8f, 20f)
             canvas.drawText(line.quantity.toString(), margin, y + 4f, cell)
-            PdfText.draw(canvas, line.lineLabel, margin + colQty + 6f, y + 4f, cell, colDesc, maxLines = 2)
-            PdfText.draw(canvas, PdfText.money(line.unitPrice), margin + colQty + colDesc + 8f, y + 5f, cellRight, colUnit)
-            PdfText.draw(canvas, PdfText.money(line.total), margin + colQty + colDesc + colUnit + 12f, y + 5f, cellRight, colTotal)
+            PdfText.draw(canvas, line.lineLabel, margin + colQty + 6f, y + 4f, cell, colDesc.toInt(), maxLines = 2)
+            PdfText.draw(canvas, PdfText.money(line.unitPrice), margin + colQty + colDesc + 8f, y + 5f, cellRight, colUnit.toInt())
+            PdfText.draw(canvas, PdfText.money(line.total), margin + colQty + colDesc + colUnit + 12f, y + 5f, cellRight, colTotal.toInt())
             y += rowH
         }
 
@@ -93,7 +98,7 @@ class ClassiqueRenderer : PdfRenderer {
         y += 14f
 
         if (data.discountPercent > 0) {
-            canvas.drawText("Discount −${trimPercent(data.discountPercent)}%", margin + colQty + colDesc + colUnit, y, cellRight)
+            canvas.drawText("Discount −${trimPercent(data.discountPercent.toDouble())}%", margin + colQty + colDesc + colUnit, y, cellRight)
             canvas.drawText("−${PdfText.money(data.discountAmount)}", margin + colQty + colDesc + colUnit + 12f, y, cellRight)
             y += 14f
         }

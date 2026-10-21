@@ -1,12 +1,17 @@
 package com.yassine.facturemaroc.invoice
 
+import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import com.yassine.facturemaroc.data.InvoiceData
+import com.yassine.facturemaroc.data.InvoiceDesign
+import com.yassine.facturemaroc.data.ShopSettings
 
 class TicketRenderer : PdfRenderer {
 
     override fun draw(
+        context: Context,
         canvas: Canvas,
         data: InvoiceData,
         shop: ShopSettings,
@@ -45,9 +50,9 @@ class TicketRenderer : PdfRenderer {
         data.lines.forEach { line ->
             canvas.drawText(line.quantity.toString(), margin, y, cellBold)
             val itemName = PdfText.paint(7f, Color.BLACK)
-            PdfText.draw(canvas, line.lineLabel, margin + 12f, y, itemName, w - 25f - 4, maxLines = 2)
-            val lineHeight = PdfText.height(line.lineLabel, itemName, w - 25f - 4, 2).toFloat()
-            PdfText.draw(canvas, PdfText.money(line.total), w - margin - 25f, y, cellRight, 25f)
+            PdfText.draw(canvas, line.lineLabel, margin + 12f, y, itemName, (w - 25f - 4).toInt(), maxLines = 2)
+            val lineHeight = PdfText.height(line.lineLabel, itemName, (w - 25f - 4).toInt(), 2).toFloat()
+            PdfText.draw(canvas, PdfText.money(line.total), w - margin - 25f, y, cellRight, 25)
             y += kotlin.math.max(lineHeight, 11f)
 
             // Price per unit on second line if there's room
@@ -65,7 +70,7 @@ class TicketRenderer : PdfRenderer {
         y += 8f
 
         if (data.discountPercent > 0) {
-            canvas.drawText("Discount −${trimPercent(data.discountPercent)}%", margin, y, cell)
+            canvas.drawText("Discount −${trimPercent(data.discountPercent.toDouble())}%", margin, y, cell)
             canvas.drawText("−${PdfText.money(data.discountAmount)}", w - margin - 30f, y, cellRight)
             y += 8f
         }
