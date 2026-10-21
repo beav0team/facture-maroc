@@ -2,6 +2,7 @@ package com.yassine.facturemaroc
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -12,10 +13,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import com.yassine.facturemaroc.data.InvoiceViewModel
-import com.yassine.facturemaroc.ui.InvoiceScreen
-import com.yassine.facturemaroc.ui.SavedItemListScreen
+import com.yassine.facturemaroc.ui.BuilderScreen
+import com.yassine.facturemaroc.ui.FactureMarocTheme
+import com.yassine.facturemaroc.ui.HomeScreen
 import com.yassine.facturemaroc.ui.ShopDetailsScreen
 
 class MainActivity : ComponentActivity() {
@@ -24,41 +27,60 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val viewModel: InvoiceViewModel = ViewModelProvider(this)[InvoiceViewModel::class.java]
         setContent {
-            FactureMarocApp(viewModel = viewModel, context = this)
+            FactureMarocTheme {
+                FactureMarocApp(viewModel = viewModel)
+            }
         }
     }
 }
 
+/** Where the user is. Three places, one back behaviour. */
+private sealed interface Destination {
+    data object Home : Destination
+    data object Builder : Destination
+    data object Settings : Destination
+}
+
 @Composable
-fun FactureMarocApp(viewModel: InvoiceViewModel, context: android.content.Context) {
-    var currentScreen by remember { mutableStateOf<Screen>(Screen.Invoice) }
+fun FactureMarocApp(viewModel: InvoiceViewModel) {
+    var destination by remember { mutableStateOf<Destination>(Destination.Home) }
+    val context = LocalContext.current
+
+    BackHandler(enabled = destination != Destination.Home) {
+        if (destination == Destination.Builder) viewModel.saveDraftNow()
+        destination = Destination.Home
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        when (currentScreen) {
-            Screen.Invoice -> InvoiceScreen(
+        when (destination) {
+            Destination.Home -> HomeScreen(
+                viewModel = viewModel,
+                onNewInvoice = { client ->
+                    viewModel.newDraft()
+                    if (client != null) viewModel.setClient(client)
+                    destination = Destination.Builder
+                },
+                onOpenRecord = { record ->
+                    viewModel.loadRecord(record)
+                    destination = Destination.Builder
+                },
+                onOpenSettings = { destination = Destination.Settings },
+            )
+
+            Destination.Builder -> BuilderScreen(
+                viewModel = viewModel,
+                onBack = { destination = Destination.Home },
+                onOpenSettings = { destination = Destination.Settings },
+            )
+
+            Destination.Settings -> ShopDetailsScreen(
                 context = context,
                 viewModel = viewModel,
-                onBack = { },
-                onOpenShopSettings = { currentScreen = Screen.ShopDetails },
-                onOpenClients = { },
-            )
-            Screen.ShopDetails -> ShopDetailsScreen(
-                context = context,
-                onBack = { currentScreen = Screen.Invoice },
-            )
-            Screen.ItemList -> SavedItemListScreen(
-                context = context,
-                onBack = { currentScreen = Screen.Invoice },
+                onBack = { destination = Destination.Home },
             )
         }
     }
-}
-
-enum class Screen {
-    Invoice,
-    ShopDetails,
-    ItemList,
 }

@@ -21,12 +21,18 @@ object AmountWords {
         "QUATRE-VINGT", "QUATRE-VINGT"
     )
 
-    fun sentence(amount: Double): String {
+    fun sentence(amount: Double, documentType: DocumentType = DocumentType.FACTURE): String {
         val dirhams = Math.floor(amount).toInt()
         val centimes = Math.round((amount - dirhams) * 100).toInt()
         val dirhamsText = if (dirhams == 0) "ZÉRO" else numberToWords(dirhams)
         val centimesText = if (centimes == 0) "" else numberToWords(centimes)
-        return "ARRÊTÉE LA PRÉSENTE FACTURE À LA SOMME DE : $dirhamsText ${if (dirhams == 1) "DIRHAM" else "DIRHAMS"}${if (centimesText.isNotEmpty()) " ET $centimesText ${if (centimes == 1) "CENTIME" else "CENTIMES"}" else ""}."
+        val opening = when (documentType) {
+            DocumentType.DEVIS -> "ARRÊTÉ LE PRÉSENT DEVIS À LA SOMME DE :"
+            DocumentType.BON_DE_COMMANDE -> "ARRÊTÉ LE PRÉSENT BON DE COMMANDE À LA SOMME DE :"
+            DocumentType.FACTURE, DocumentType.TICKET ->
+                "ARRÊTÉE LA PRÉSENTE FACTURE À LA SOMME DE :"
+        }
+        return "$opening $dirhamsText ${if (dirhams == 1) "DIRHAM" else "DIRHAMS"}${if (centimesText.isNotEmpty()) " ET $centimesText ${if (centimes == 1) "CENTIME" else "CENTIMES"}" else ""}."
     }
 
     private fun numberToWords(n: Int): String {
@@ -90,9 +96,12 @@ object AmountWords {
             val remainder = n % 100
             val h = if (hundred == 1) "CENT" else "${units[hundred]} CENT"
             return if (remainder == 0) {
-                if (hundred > 1) "$h S" else h
+                // "cent" takes an s only when it ends the number: deux cents,
+                // but deux cent un. A stray space before that s turns the word
+                // into three ("cent s trente"), which is what this used to do.
+                if (hundred > 1) h + "S" else h
             } else {
-                if (hundred > 1) "$h S ${numberToWords(remainder)}" else "$h ${numberToWords(remainder)}"
+                "$h ${numberToWords(remainder)}"
             }
         }
         if (n < 1_000_000) {

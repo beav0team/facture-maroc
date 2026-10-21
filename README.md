@@ -1,99 +1,157 @@
 # Facture Maroc
 
-An offline Android app for a Moroccan shop that needs to hand a customer a
-proper document: a facture, a devis, a bon de commande, or an 80mm ticket.
+**Facturation hors ligne pour les commerçants marocains.**
+Factures, devis, bons de commande et tickets — avec ICE, IF, RC, patente, CNSS,
+TVA et montant en toutes lettres.
 
-Nothing leaves the phone. The app declares **no permissions at all** — no
-internet, no storage, no contacts. Documents are written to the app's own cache
-and shared through a `FileProvider`, which hands the receiving app permission
-for that one file through the intent itself. Sharing a document the app made is
-not the same permission as reading the user's files, and this app never asks for
-the second one.
+Version **0.3.0** (versionCode 4) · Android 8.0+ (minSdk 26) · Français.
 
-## What it does
+<img src="play_store/screenshots/01-factures.png" width="260" alt="Écran Factures">
 
-Build a document on one screen: lines at the top, where the typing happens, then
-the client, the discount, the payment method and the totals.
+## Ce que fait l’application
 
-- **Lines** come from a tyre-free catalogue of **my items and services** (a
-  fitting, an alignment, labour) or are typed **by hand**. A saved item is a label
-  and a price; raising its price next month does not change a document that is
-  already written, because the price is copied onto the line.
-- **Quantity** is a stepper or a typed number. **Unit price** is typeable, which
-  is how a negotiated price is recorded.
-- **Clients** are typed per document. This release does not keep a client list
-  yet, and nothing is recorded about a sale once the PDF is written.
-- **Document types**: facture, devis (with a validity date), bon de commande
-  (which asks for a supplier instead of a client) and ticket. Each has its own
-  number counter: `F-20261021-0001`, `D-…`, `BC-…`, `T-…`.
+Trois onglets, pas de détour :
 
-### On the document
+- **Factures** — brouillons et documents émis, total facturé du mois, recherche,
+  duplication, suppression, export XML.
+- **Clients** — carnet d’adresses avec adresse, ICE, IF, RC, patente, CNSS et
+  téléphone ; le client se remplit sur la facture en un tap.
+- **Articles** — catalogue de prestations et de produits, **rangé en dossiers**
+  (« Prestations », « Produits », ou tout autre dossier créé par le commerce).
 
-- The shop's name, address, phone and logo, plus the identifiers a Moroccan
-  document is expected to carry: **ICE, IF, RC, Patente and CNSS**, printed only
-  when they are filled in. There is deliberately **no timbre fiscal** — the stamp
-  duty was abolished in Morocco in 2020, so a field for it would only invite a
-  number that no longer exists.
-- **HT, TVA and TTC**, with the rate set once in the shop's details and defaulting
-  to 20%. TVA is applied **after** any discount, which is the order the tax
-  authority expects.
-- **The total spelled out in French**, on the line a Moroccan document uses:
-  `ARRÊTÉE LA PRÉSENTE FACTURE À LA SOMME DE : …`. It is generated from the same
-  rounded total that is printed, never typed, and it is the line that makes the
-  document hard to alter by hand. The French rules that are easy to get wrong are
-  the ones that matter here: `soixante-dix`, `quatre-vingts`, `quatre-vingt-un`,
-  `cent` against `cents`, and the centimes.
-- Amounts in French formatting: `1 390,00 DH`.
+Dans le constructeur de document :
 
-### Four templates
+- **Facture, devis, bon de commande, ticket 80 mm**.
+- Lignes prises dans le catalogue ou **tapées à la main**, quantité et prix
+  modifiables, remise par ligne et remise générale.
+- **TVA configurable** (20 % par défaut), **exonération par ligne** pour les
+  ventes export ou les organismes concernés.
+- **Montant total écrit en toutes lettres**, en français.
+- Quatre modèles PDF : **Classique, Moderne, Facture Maroc, Ticket**.
+- Logo du commerce, coordonnées et mentions légales sur chaque document.
 
-Chosen because they print differently, not merely because they look different.
-The design screen previews the **real PDF** — the preview is drawn by the same
-code that writes the file.
+Les documents sont générés en PDF dans le cache de l’application, puis remis au
+sélecteur Android. L’application n’a **aucun accès à vos données** : elle ne
+demande ni Internet, ni stockage, ni contacts.
 
-| Template | For |
-|---|---|
-| **Classique** | Coloured header, alternating rows. The safe all-rounder. |
-| **Moderne** | Rules instead of fills. Stays readable photocopied in black and white. |
-| **Facture Maroc** | Boxed header, full grid on the table, signature space for the stamp. |
-| **Ticket** | An 80mm till roll, cut to the length of the sale. Monochrome, because a thermal printer cannot print an accent colour. |
+## Confidentialité
 
-## What it deliberately does not do
+- Aucun compte, aucune publicité, aucun traceur, aucun serveur.
+- Les données restent dans l’espace privé de l’application.
+- Les PDF, XML et sauvegardes ne sortent que sur une action de l’utilisateur.
+- La sauvegarde automatique d’Android, si elle est activée sur le téléphone,
+  peut copier les données dans le compte Google de l’utilisateur ; c’est le
+  système Android qui la gère, pas l’application.
 
-- **No payment status, no credit tracking.** This app writes documents; it does
-  not know what is owed. That needs a receivables ledger, and a second ledger in
-  a second app is how two ledgers start disagreeing.
-- **No stock, no reports, no cloud.** Nothing is recorded, so there is nothing to
-  report on.
-- **No account, no sign-in, no analytics.**
+Politique complète : [`docs/privacy.html`](docs/privacy.html) — publiée sur
+GitHub Pages à l’adresse
+`https://beav0team.github.io/facture-maroc/privacy.html`.
 
-A draft is held in memory: it survives a rotation but not the app being closed.
-A number is only spent when a document is really produced, so browsing the
-builder never leaves a gap in the sequence.
+> **Sauvegarde et restauration** : Android peut sauvegarder l’application, mais
+> l’application fournit aussi son propre fichier de sauvegarde (Paramètres →
+> Sauvegarde). Ce fichier contient toutes les données, **y compris les clients**,
+> et n’est **pas chiffré**. Gardez-le dans un endroit sûr.
 
-## Status
+## Construire
 
-**0.1.0** — the first version that builds and runs. Four templates, four document
-types, saved items, numbering, zero permissions. There are **no unit tests** in
-this repository yet; the rendering and the French number-to-words rules are the
-two places where tests belong.
-
-The invoicing code was first written for **Tyre Finder**, an app that prices tyres
-for a Moroccan shop, and this app is that work without the catalogue: the same
-templates, the same amount-in-words rules, the same "print it and record
-nothing" scope.
-
-## Building
-
-Requires **JDK 17 or newer** and the Gradle wrapper in this repository.
+Prérequis : JDK 21 et le SDK Android (compileSdk 35). Le projet utilise le
+wrapper Gradle fourni.
 
 ```bash
-./gradlew :app:assembleDebug
-./gradlew :app:assembleRelease     # R8, signed
+export JAVA_HOME="$HOME/.local/jdk"      # ou votre JDK 21
+./gradlew testDebugUnitTest             # 60 tests JVM
+./gradlew assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
+./gradlew bundleRelease                 # app/build/outputs/bundle/release/app-release.aab
+./gradlew assembleRelease               # app/build/outputs/apk/release/app-release.apk
 ```
 
-Release builds read `keystore.properties`, which is not in the repository. Copy
-`keystore.properties.example` and point it at your own keystore; without it the
-release build is unsigned.
+### Signature
 
-Stack: AGP 8.7.3, Kotlin 2.1.0, Compose (BOM 2024.12.01), minSdk 26, targetSdk 35.
+La release est signée avec le keystore déclaré dans `keystore.properties`.
+Ce fichier est **ignoré par Git** ; `keystore.properties.example` montre les
+clés attendues. Ne commitez jamais le keystore ni ses mots de passe.
+
+Le même keystore que la version 0.1.0 est utilisé, pour que les mises à jour
+s’installent par-dessus l’application existante. Une rotation de mot de passe
+`keytool -storepasswd` conserve le certificat et n’empêche pas les mises à jour.
+
+## Tests
+
+**60 tests JVM**, sans Android instrumenté :
+
+| Suite | Ce qu’elle protège |
+|---|---|
+| `AmountWordsTest` | Nombres en lettres, accords de « cent », centimes, type de document |
+| `InvoiceDataTest` | Sous-total, remise, TVA, exonération, arrondis au centime |
+| `InvoiceJsonTest` | Aller-retour JSON sans perdre un champ imprimé |
+| `InvoiceValidationTest` | Champs obligatoires et blocage des documents incomplets |
+| `InvoiceXmlTest` | Structure XML, échappement, totaux et numéro |
+| `BackupTest` | Sauvegarde, restauration, compatibilité, plafond de taille, dossiers |
+| `SavedItemTest` | Articles, dossiers, doublons, migration v1 → v2 |
+| `InvoiceSummaryTest` | Le total du mois exclut devis, bons de commande et brouillons |
+
+Les captures Play utilisent un jeu de démonstration (« Atelier Atlas »), jamais
+les données d’un client réel.
+
+## Données et formats
+
+Tout est local, en JSON ou dans les préférences Android :
+
+- `filesDir/invoices.json` — brouillons et documents émis.
+- `filesDir/saved_items.json` — articles et dossiers (format v2).
+- `filesDir/shop_logo.png` — logo copié depuis le sélecteur de photos.
+- Préférences — commerce, clients, compteurs de numérotation, design.
+
+**Sauvegarde** : un seul fichier JSON versionné (format 1) contenant commerce,
+logo, clients, articles, dossiers, factures, compteurs et préférences. La
+restauration valide le fichier puis remplace les données après confirmation.
+
+**XML** : espace de noms `urn:facture-maroc:invoice:1.0`, écrit avec le numéro
+définitif du document. Un export XML réussi consomme le numéro et marque le
+document comme émis ; un échec remet le compteur en place.
+
+## Structure
+
+```
+app/src/main/java/com/yassine/facturemaroc/
+├── MainActivity.kt            navigation entre les trois onglets et le constructeur
+├── data/                      modèles, stores JSON, sauvegarde, numérotation
+├── invoice/                   rendu PDF (4 modèles), XML, validation
+└── ui/                        Compose : accueil, constructeur, éditeurs, pickers
+```
+
+Architecture volontairement simple : une activité, Compose Material 3, des
+`StateFlow` exposés par les stores, aucune injection de dépendances, aucune
+base de données, aucun appel réseau.
+
+## Limites connues
+
+- Ce n’est **pas un logiciel de comptabilité certifié**. Les mentions
+  obligatoires (ICE, IF, RC, patente, CNSS, TVA) doivent être validées par le
+  comptable du commerce.
+- Pas de suivi des paiements, de crédit client, de stock ni de rapports : choix
+  de périmètre de cette version.
+- Pas encore de synchronisation cloud ni de connexion Google. Une sauvegarde
+  cloud facultative viendra plus tard, dans une version séparée, avec sa propre
+  mise à jour de la politique de confidentialité.
+- Application mono-appareil ; le transfert passe par le fichier de sauvegarde.
+- Interface en français uniquement.
+
+## Play Store
+
+Les ressources sont prêtes dans `play_store/` :
+
+- `icon-512.png`, `feature-graphic-1024x500.png` ;
+- `screenshots/` — quatre captures 1080 × 2160 ;
+- `listing-fr.md` — titre, descriptions, catégorie, Data Safety, classification.
+
+Le compte Play Console n’est pas encore créé. Il faudra y renseigner l’adresse
+e-mail de contact (obligatoire et vérifiée par Google) et publier l’AAB signé.
+
+## Historique
+
+- **0.3.0** — refonte en trois onglets, constructeur unique, clients et articles
+  enregistrés, dossiers, validation, export XML, sauvegarde/restauration locale,
+  nouvelle icône et ressources Play.
+- **0.1.0** — première version fonctionnelle : documents, PDF, montant en
+  lettres, modèles, logo et mentions légales.

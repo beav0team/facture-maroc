@@ -3,8 +3,8 @@ package com.yassine.facturemaroc.data
 /**
  * Something the shop sells that is not from a catalogue.
  *
- * A wheel alignment. A valve. A tube. Labour at an hourly rate. A service the
- * shop always provides at the same agreed price.
+ * A service call. A delivery. Labour at an hourly rate. A product the shop
+ * always sells at the same agreed price.
  *
  * The model is Bookipi's and it is deliberately small: a label and a price.
  * That app has been invoicing from a phone for years and the whole item
@@ -22,7 +22,7 @@ data class SavedItem(
     /** The price for one of them, before any discount and before TVA. */
     val price: Double,
     /**
-     * How it is sold: `per tyre`, `per wheel`, `per hour`.
+     * How it is sold: `heure`, `jour`, `kg`, `unité`.
      *
      * Appended to the label rather than kept as a separate column on the
      * document, because a line on an invoice reads as one phrase and a
@@ -30,11 +30,15 @@ data class SavedItem(
      * before they can price the line against a competitor's.
      */
     val unit: String = "",
+    /**
+     * The folder the article is filed under.
+     *
+     * Empty is a real answer — "Sans dossier" — not a missing value: an article
+     * does not have to belong to a folder. Folders are a way to keep a long list
+     * readable, never a requirement for saving something.
+     */
+    val folder: String = "",
 ) {
-    /** The line as it appears on the document. */
-    val description: String
-        get() = if (unit.isBlank()) label.trim() else "${label.trim()} ($unit)"
-
     /**
      * The saved item as an invoice line.
      *
@@ -44,7 +48,7 @@ data class SavedItem(
      * made.
      */
     fun toLine(quantity: Int = 1): InvoiceLine = InvoiceLine(
-        description = description,
+        description = label.trim(),
         quantity = quantity,
         unitPrice = price,
         unit = unit,

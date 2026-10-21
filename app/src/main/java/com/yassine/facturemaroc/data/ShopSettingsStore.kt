@@ -47,9 +47,10 @@ class ShopSettingsStore(private val context: Context) {
             rc = prefs.getString("rc", "") ?: "",
             patente = prefs.getString("patente", "") ?: "",
             cnss = prefs.getString("cnss", "") ?: "",
-            logoBytes = prefs.getString("logoBytes", "")?.let {
-                android.util.Base64.decode(it, android.util.Base64.DEFAULT)
-            },
+            logoBytes = prefs.getString("logoBytes", null)
+                ?.takeIf { it.isNotBlank() }
+                ?.let { android.util.Base64.decode(it, android.util.Base64.DEFAULT) }
+                ?.takeIf { it.isNotEmpty() },
             vatPercent = prefs.getFloat("vatPercent", 20.0f).toDouble(),
         )
     }
@@ -100,6 +101,15 @@ class ClientStore(private val context: Context) {
     }
 
     fun read(context: Context): List<InvoiceClient> = load(context)
+
+    /** Replaces the whole list, for a backup restore. */
+    fun replaceAll(clients: List<InvoiceClient>) {
+        persist(
+            clients
+                .filter { it.name.isNotBlank() }
+                .distinctBy { it.name.trim().lowercase() },
+        )
+    }
 
     private fun persist(list: List<InvoiceClient>) {
         _clients.value = list

@@ -4,7 +4,34 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- A receipt with a torn bottom edge. Everything stays inside the 66dp
+         adaptive-icon safe zone so a round or squircle launcher mask cannot
+         cut the seal off. -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,54m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+        android:pathData="M36,28 H72 V76 L69,73.5 L66,76 L63,73.5 L60,76 L57,73.5 L54,76 L51,73.5 L48,76 L45,73.5 L42,76 L39,73.5 L36,76 Z" />
+
+    <path
+        android:fillColor="#1D4ED8"
+        android:pathData="M42,40 h24 v2.5 h-24 z" />
+    <path
+        android:fillColor="#1D4ED8"
+        android:fillAlpha="0.82"
+        android:pathData="M42,47 h24 v2.5 h-24 z" />
+    <path
+        android:fillColor="#1D4ED8"
+        android:fillAlpha="0.62"
+        android:pathData="M42,54 h16 v2.5 h-16 z" />
+
+    <path
+        android:fillColor="#FFD93B"
+        android:pathData="M68,68 m-8.5,0 a8.5,8.5 0 1,1 17,0 a8.5,8.5 0 1,1 -17,0" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#12337E"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M63.5,68 L66.5,71 L73,64" />
 </vector>

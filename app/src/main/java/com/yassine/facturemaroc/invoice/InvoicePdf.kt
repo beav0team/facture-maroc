@@ -87,9 +87,9 @@ object InvoicePdf {
     /**
      * Builds the PDF and hands it to the share sheet, in one pass.
      *
-     * A single call because building the document consumes an invoice number, so
-     * checking whether it works and then building it again would skip a number
-     * in the sequence for no reason.
+     * The caller reserves the number first and puts it back if this returns
+     * anything but [Outcome.Shared], so a document that was never handed over
+     * does not leave a hole in the invoice sequence.
      */
     fun share(
         context: Context,

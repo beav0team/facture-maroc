@@ -2,15 +2,15 @@
 <!--
     Backs up everything the app writes to its own files directory:
 
-    filesDir/dataset/        - the bundled catalogue (if any)
+    filesDir/invoices.json    - every document, draft or issued
     filesDir/saved_items.json - the shop's own items and services
-    filesDir/*.png / *.jpg   - shop logos picked from the photo picker
+    filesDir/shop_logo.png    - the logo picked from the photo picker
 
     Shared preferences are backed up automatically when this file is set,
-    which covers the invoice counter and dismissed logo banners.
+    which covers the shop's identity, the clients and the invoice counters.
 
-    Nothing in cache/ is backed up: generated invoices are not worth the
-    bytes, and the cache is cleared on uninstall anyway.
+    Nothing in cache/ is backed up: a generated PDF can be rendered again
+    from the record, and the cache is cleared on uninstall anyway.
 -->
 <full-backup-content>
     <include domain="file" path="." />
