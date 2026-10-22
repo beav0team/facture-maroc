@@ -1,7 +1,9 @@
 package com.yassine.facturemaroc.ui
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,15 +30,23 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.yassine.facturemaroc.data.InvoiceDesign
 import com.yassine.facturemaroc.data.InvoiceTemplate
+import com.yassine.facturemaroc.data.InvoiceViewModel
 
 /**
  * Chooses the document's paper layout, by looking at it.
@@ -44,16 +54,32 @@ import com.yassine.facturemaroc.data.InvoiceTemplate
  * Four thumbnails rather than four names: "Facture Maroc" and "Classique" mean
  * nothing to a shop until it has seen both, and a template chosen by name is
  * chosen by accident.
+ *
+ * Each thumbnail is a real PDF render of the template with the current draft data,
+ * so the preview matches the document that comes out of the printer. A hand-drawn
+ * sketch is shown while the render loads or if rendering fails.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DesignPickerSheet(
+    viewModel: InvoiceViewModel,
     design: InvoiceDesign,
     onSelect: (InvoiceDesign) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val templates = InvoiceTemplate.entries
+    val density = LocalDensity.current
+    val widthPx = (density.density * 72f).toInt()
+
+    /** One live render per template, populated asynchronously as they load. */
+    val previews = remember { mutableStateMapOf<InvoiceTemplate, Bitmap?>() }
+
+    templates.forEach { template ->
+        LaunchedEffect(template) {
+            previews[template] = viewModel.previewBitmapFor(template, widthPx)
+        }
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
@@ -79,6 +105,7 @@ fun DesignPickerSheet(
                     pair.forEach { template ->
                         TemplateCard(
                             template = template,
+                            preview = previews[template],
                             selected = template == design.template,
                             onClick = { onSelect(design.copy(template = template)) },
                             modifier = Modifier.weight(1f),
@@ -118,6 +145,7 @@ fun DesignPickerSheet(
 @Composable
 private fun TemplateCard(
     template: InvoiceTemplate,
+    preview: Bitmap?,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -159,7 +187,16 @@ private fun TemplateCard(
                     color = Color.White,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 ) {
-                    TemplateSketch(template)
+                    if (preview != null) {
+                        Image(
+                            bitmap = preview.asImageBitmap(),
+                            contentDescription = "Aperçu du modèle ${template.label}",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        TemplateSketch(template)
+                    }
                 }
             }
             Spacer(Modifier.height(8.dp))

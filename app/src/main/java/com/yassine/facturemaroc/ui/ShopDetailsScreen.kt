@@ -67,6 +67,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.yassine.facturemaroc.data.InvoiceDesignStore
 import com.yassine.facturemaroc.data.InvoiceViewModel
+import com.yassine.facturemaroc.data.DocumentType
+import com.yassine.facturemaroc.data.InvoiceNumber
 import com.yassine.facturemaroc.data.Backup
 import com.yassine.facturemaroc.data.BackupData
 import com.yassine.facturemaroc.data.BackupExportOutcome
@@ -138,6 +140,9 @@ fun ShopDetailsScreen(
 
     var pendingRestore by remember { mutableStateOf<BackupData?>(null) }
     var restoring by remember { mutableStateOf(false) }
+    var invoiceCounterText by remember(settings.invoiceCounter) {
+        mutableStateOf(settings.invoiceCounter.toString())
+    }
 
     val exportBackup = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json"),
@@ -169,6 +174,7 @@ fun ShopDetailsScreen(
 
     fun save() {
         val vat = vatText.replace(',', '.').toDoubleOrNull()?.coerceIn(0.0, 100.0) ?: 20.0
+        val counter = invoiceCounterText.toIntOrNull()?.coerceAtLeast(1) ?: settings.invoiceCounter
         viewModel.updateShop(
             settings.copy(
                 name = name.trim(),
@@ -179,8 +185,10 @@ fun ShopDetailsScreen(
                 patente = patente.trim(),
                 cnss = cnss.trim(),
                 vatPercent = vat,
+                invoiceCounter = counter,
             ),
         )
+        InvoiceNumber.rewind(context, DocumentType.FACTURE, counter)
         onBack()
     }
 
@@ -479,6 +487,27 @@ fun ShopDetailsScreen(
                             "Les factures sont numérotées automatiquement et sans trou. " +
                                 "Le numéro est pris au moment où vous partagez le PDF, pas à l'ouverture de l'écran.",
                             style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = invoiceCounterText,
+                            onValueChange = { invoiceCounterText = it.filter { it.isDigit() } },
+                            label = { Text("Prochain numéro de facture") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done,
+                            ),
+                            supportingText = {
+                                Text(
+                                    "Le prochain document partagé portera le numéro ${InvoiceNumber.peek(context, DocumentType.FACTURE)}. " +
+                                        "Enregistrer pour appliquer le nouveau compteur.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            },
                         )
                     }
                 }

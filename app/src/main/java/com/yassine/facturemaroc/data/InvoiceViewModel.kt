@@ -366,6 +366,24 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
+     * Renders a thumbnail preview of [template] with the current draft data and shop settings.
+     *
+     * Used by the design picker so the shop can see what each template actually looks like,
+     * instead of a hand-drawn sketch. Nothing is consumed: it peeks the number and renders
+     * a copy of the design carrying the requested template.
+     */
+    suspend fun previewBitmapFor(template: InvoiceTemplate, widthPx: Int): Bitmap? =
+        withContext(Dispatchers.Default) {
+            InvoicePdf.preview(
+                getApplication<Application>(),
+                previewData(),
+                _shop.value,
+                _design.value.copy(template = template),
+                widthPx,
+            )
+        }
+
+    /**
      * Renders the invoice and hands it to the share sheet.
      *
      * The document is written to the history only when it was really produced

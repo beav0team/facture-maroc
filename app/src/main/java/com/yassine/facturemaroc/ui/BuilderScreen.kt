@@ -3,6 +3,7 @@ package com.yassine.facturemaroc.ui
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,12 +66,14 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -112,6 +115,17 @@ fun BuilderScreen(
     val lines = invoice.lines
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+
+    /** Live PDF preview of the current draft, rendered by the same code that writes the file. */
+    var previewBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+    LaunchedEffect(invoice, design) {
+        if (invoice.lines.isEmpty()) {
+            previewBitmap = null
+        } else {
+            previewBitmap = viewModel.previewBitmap(720)
+        }
+    }
 
     var showItemPicker by remember { mutableStateOf(false) }
     var showClientPicker by remember { mutableStateOf(false) }
@@ -358,6 +372,24 @@ fun BuilderScreen(
                     AmountWordsCard(invoice.amountInWords)
                 }
             }
+
+            if (previewBitmap != null) {
+                val bitmap = previewBitmap
+                item(key = "preview") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .padding(vertical = 8.dp),
+                    ) {
+                        Image(
+                            bitmap = bitmap!!.asImageBitmap(),
+                            contentDescription = "Aperçu du document",
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -415,6 +447,7 @@ fun BuilderScreen(
 
     if (showDesignPicker) {
         DesignPickerSheet(
+            viewModel = viewModel,
             design = design,
             onSelect = viewModel::setDesign,
             onDismiss = { showDesignPicker = false },
