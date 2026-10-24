@@ -79,6 +79,12 @@ class BackupTest {
         "devis" to 3,
         "bon_commande" to 1,
         "ticket" to 2,
+        "avoir" to 1,
+        "proforma" to 1,
+        "acompte" to 1,
+        "regul" to 1,
+        "simplifiee" to 1,
+        "export" to 1,
     )
 
     private fun fullBackup(): String = Backup.build(

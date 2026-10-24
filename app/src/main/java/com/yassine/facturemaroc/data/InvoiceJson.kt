@@ -81,6 +81,9 @@ object InvoiceJson {
         } else {
             put("supplier", clientToJson(data.supplier))
         }
+        put("referenceNumber", data.referenceNumber)
+        put("incoterm", data.incoterm)
+        put("vatNotApplicable", data.vatNotApplicable)
     }
 
     /**
@@ -129,6 +132,9 @@ object InvoiceJson {
                 obj.optString("validityDate", "").ifBlank { null }
             },
             supplier = if (obj.isNull("supplier")) null else obj.optJSONObject("supplier")?.let(::clientFromJson),
+            referenceNumber = obj.optString("referenceNumber", ""),
+            incoterm = obj.optString("incoterm", ""),
+            vatNotApplicable = obj.optBoolean("vatNotApplicable", false),
         )
     }
 }

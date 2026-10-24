@@ -23,6 +23,12 @@ data class InvoiceData(
     val validityDate: String? = null,
     /** For Bon de commande — the supplier instead of a client. */
     val supplier: InvoiceClient? = null,
+    /** For avoir / régularisation / acompte — the invoice this relates to. */
+    val referenceNumber: String = "",
+    /** For export — the Incoterms, printed only when filled. */
+    val incoterm: String = "",
+    /** Auto-entrepreneur: TVA non applicable, whatever the configured rate. */
+    val vatNotApplicable: Boolean = false,
 ) {
     val subtotal: Double get() = lines.sumOf { it.total }
 
@@ -33,9 +39,15 @@ data class InvoiceData(
     val totalExcludingVat: Double
         get() = money(subtotal - discountAmount)
 
-    /** Effective VAT: 0 if client is exempt, otherwise the set rate. */
+    /** Effective VAT: 0 for an auto-entrepreneur or an exempt client. */
     val effectiveVatPercent: Double
-        get() = if (client.vatExempt) 0.0 else vatPercent
+        get() = if (vatNotApplicable || client.vatExempt) 0.0 else vatPercent
+
+    /** Whether this document carries a reference to another invoice. */
+    val showReferenceField: Boolean get() = documentType.isReferenceDocument
+
+    /** Whether this document prints an Incoterms line (export only). */
+    val showIncoterm: Boolean get() = documentType == DocumentType.EXPORT
 
     /** The part of the invoice that carries TVA. Exempt lines never do. */
     val taxableSubtotal: Double

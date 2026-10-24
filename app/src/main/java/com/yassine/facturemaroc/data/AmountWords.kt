@@ -29,7 +29,13 @@ object AmountWords {
         val opening = when (documentType) {
             DocumentType.DEVIS -> "ARRÊTÉ LE PRÉSENT DEVIS À LA SOMME DE :"
             DocumentType.BON_DE_COMMANDE -> "ARRÊTÉ LE PRÉSENT BON DE COMMANDE À LA SOMME DE :"
-            DocumentType.FACTURE, DocumentType.TICKET ->
+            DocumentType.AVOIR -> "ARRÊTÉ LE PRÉSENT AVOIR À LA SOMME DE :"
+            DocumentType.PROFORMA -> "ARRÊTÉ LE PRÉSENT PROFORMA À LA SOMME DE :"
+            DocumentType.ACOMPTE -> "ARRÊTÉ LE PRÉSENT ACOMPTE À LA SOMME DE :"
+            DocumentType.REGULARISATION ->
+                "ARRÊTÉE LA PRÉSENTE RÉGULARISATION À LA SOMME DE :"
+            DocumentType.FACTURE, DocumentType.TICKET, DocumentType.SIMPLIFIEE,
+            DocumentType.EXPORT ->
                 "ARRÊTÉE LA PRÉSENTE FACTURE À LA SOMME DE :"
         }
         return "$opening $dirhamsText ${if (dirhams == 1) "DIRHAM" else "DIRHAMS"}${if (centimesText.isNotEmpty()) " ET $centimesText ${if (centimes == 1) "CENTIME" else "CENTIMES"}" else ""}."

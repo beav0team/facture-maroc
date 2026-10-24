@@ -1,6 +1,8 @@
 package com.yassine.facturemaroc.data
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class InvoiceDataTest {
@@ -98,5 +100,77 @@ class InvoiceDataTest {
         )
 
         assertEquals(true, data.amountInWords.contains("LE PRÉSENT DEVIS"))
+    }
+
+    @Test
+    fun `auto entrepreneur charges no tax whatever the configured rate`() {
+        val data = InvoiceData(
+            number = "F-20260101-0001",
+            date = "01/01/2026",
+            client = InvoiceClient(name = "Client"),
+            lines = listOf(InvoiceLine("Produit", quantity = 1, unitPrice = 100.0)),
+            vatPercent = 20.0,
+            vatNotApplicable = true,
+        )
+
+        assertEquals(0.0, data.effectiveVatPercent, 0.001)
+        assertEquals(0.0, data.vatAmount, 0.001)
+        assertEquals(100.0, data.total, 0.001)
+    }
+
+    @Test
+    fun `an exempt client still pays no tax even when auto entrepreneur is off`() {
+        val data = InvoiceData(
+            number = "F-20260101-0001",
+            date = "01/01/2026",
+            client = InvoiceClient(name = "Export", vatExempt = true),
+            lines = listOf(InvoiceLine("Produit", quantity = 1, unitPrice = 100.0)),
+            vatPercent = 20.0,
+            vatNotApplicable = false,
+        )
+
+        assertEquals(0.0, data.effectiveVatPercent, 0.001)
+        assertEquals(0.0, data.vatAmount, 0.001)
+    }
+
+    @Test
+    fun `a credit note carries the invoice it replaces`() {
+        val data = InvoiceData(
+            number = "A-20260101-0001",
+            date = "01/01/2026",
+            client = InvoiceClient(name = "Client"),
+            lines = listOf(InvoiceLine("Produit", quantity = 1, unitPrice = 100.0)),
+            documentType = DocumentType.AVOIR,
+            referenceNumber = "F-20260101-0042",
+        )
+
+        assertTrue(data.showReferenceField)
+        assertEquals("F-20260101-0042", data.referenceNumber)
+        assertTrue(data.amountInWords.contains("LE PRÉSENT AVOIR"))
+    }
+
+    @Test
+    fun `an export carries its incoterm`() {
+        val data = InvoiceData(
+            number = "E-20260101-0001",
+            date = "01/01/2026",
+            client = InvoiceClient(name = "Client"),
+            lines = listOf(InvoiceLine("Produit", quantity = 1, unitPrice = 100.0)),
+            documentType = DocumentType.EXPORT,
+            incoterm = "FOB Casablanca",
+        )
+
+        assertTrue(data.showIncoterm)
+        assertEquals("FOB Casablanca", data.incoterm)
+    }
+
+    @Test
+    fun `an ordinary invoice has neither reference nor incoterm`() {
+        val data = invoice(InvoiceLine("Produit", quantity = 1, unitPrice = 100.0))
+
+        assertFalse(data.showReferenceField)
+        assertFalse(data.showIncoterm)
+        assertEquals("", data.referenceNumber)
+        assertEquals("", data.incoterm)
     }
 }

@@ -40,6 +40,16 @@ class TicketRenderer : PdfRenderer {
         canvas.drawText(data.date, margin + 90f, y, cellRight)
         y += 14f
 
+        if (data.showReferenceField && data.referenceNumber.isNotBlank()) {
+            canvas.drawText(
+                "Annule et remplace la facture N° ${data.referenceNumber}",
+                margin,
+                y,
+                cell,
+            )
+            y += 10f
+        }
+
         // Client
         canvas.drawText(data.client.name, margin, y, cell)
         y += 10f
@@ -75,13 +85,23 @@ class TicketRenderer : PdfRenderer {
             y += 8f
         }
 
-        canvas.drawText("TVA ${trimPercent(data.effectiveVatPercent)}%", margin, y, cell)
-        canvas.drawText(PdfText.money(data.vatAmount), w - margin - 30f, y, cellRight)
-        y += 10f
+        if (data.vatNotApplicable) {
+            canvas.drawText("TVA non applicable", margin, y, cell)
+            y += 8f
+        } else {
+            canvas.drawText("TVA ${trimPercent(data.effectiveVatPercent)}%", margin, y, cell)
+            canvas.drawText(PdfText.money(data.vatAmount), w - margin - 30f, y, cellRight)
+            y += 10f
+        }
 
         canvas.drawText("Total TTC", margin, y, cellBold)
         canvas.drawText(PdfText.money(data.total), w - margin - 30f, y, cellRight)
         y += 14f
+
+        if (data.showIncoterm && data.incoterm.isNotBlank()) {
+            canvas.drawText("Incoterms : ${data.incoterm}", margin, y, cell)
+            y += 10f
+        }
 
         // Footer
         canvas.drawText("Thank you for your business", margin, y, cell)

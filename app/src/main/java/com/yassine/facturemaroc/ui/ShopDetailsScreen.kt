@@ -44,6 +44,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -104,6 +105,9 @@ fun ShopDetailsScreen(
     var cnss by remember(settings.cnss) { mutableStateOf(settings.cnss) }
     var vatText by remember(settings.vatPercent) {
         mutableStateOf(settings.vatPercent.trimZeros())
+    }
+    var vatNotApplicable by remember(settings.vatNotApplicable) {
+        mutableStateOf(settings.vatNotApplicable)
     }
     var logoVersion by remember { mutableIntStateOf(0) }
 
@@ -185,6 +189,7 @@ fun ShopDetailsScreen(
                 patente = patente.trim(),
                 cnss = cnss.trim(),
                 vatPercent = vat,
+                vatNotApplicable = vatNotApplicable,
                 invoiceCounter = counter,
             ),
         )
@@ -415,6 +420,29 @@ fun ShopDetailsScreen(
                             Text("20 % est le taux normal au Maroc. 0 pour une activité exonérée.")
                         },
                     )
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Switch(
+                            checked = vatNotApplicable,
+                            onCheckedChange = { vatNotApplicable = it },
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                "Auto-entrepreneur",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                "TVA non applicable sur les documents de ce magasin.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                            )
+                        }
+                    }
                 }
             }
 

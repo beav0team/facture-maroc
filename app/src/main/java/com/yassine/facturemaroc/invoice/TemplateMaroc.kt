@@ -64,6 +64,16 @@ class MarocRenderer : PdfRenderer {
         canvas.drawText(data.date, margin + 200f, y, cellRight)
         y += 20f
 
+        if (data.showReferenceField && data.referenceNumber.isNotBlank()) {
+            canvas.drawText(
+                "Annule et remplace la facture N° ${data.referenceNumber}",
+                margin,
+                y,
+                cell,
+            )
+            y += 20f
+        }
+
         // Gridded line items table
         val colQty = 40f
         val colDesc = w - colQty - 140f
@@ -105,13 +115,23 @@ class MarocRenderer : PdfRenderer {
             y += 14f
         }
 
-        canvas.drawText("TVA ${trimPercent(data.effectiveVatPercent)}%", totalsStart, y, cellRight)
-        canvas.drawText(PdfText.money(data.vatAmount), margin + colQty + colDesc + colUnit + 12f, y, cellRight)
-        y += 16f
+        if (data.vatNotApplicable) {
+            canvas.drawText("TVA non applicable", totalsStart, y, cellRight)
+            y += 14f
+        } else {
+            canvas.drawText("TVA ${trimPercent(data.effectiveVatPercent)}%", totalsStart, y, cellRight)
+            canvas.drawText(PdfText.money(data.vatAmount), margin + colQty + colDesc + colUnit + 12f, y, cellRight)
+            y += 16f
+        }
 
         canvas.drawText("Total TTC", totalsStart, y, cellBold)
         canvas.drawText(PdfText.money(data.total), margin + colQty + colDesc + colUnit + 12f, y, cellBold)
         y += 20f
+
+        if (data.showIncoterm && data.incoterm.isNotBlank()) {
+            canvas.drawText("Incoterms : ${data.incoterm}", margin, y, cell)
+            y += 20f
+        }
 
         // Signature space
         canvas.drawText("Signature", margin, y + 10f, cellBold)

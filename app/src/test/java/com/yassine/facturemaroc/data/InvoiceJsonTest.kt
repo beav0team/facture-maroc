@@ -2,6 +2,7 @@ package com.yassine.facturemaroc.data
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class InvoiceJsonTest {
@@ -31,6 +32,9 @@ class InvoiceJsonTest {
         documentType = DocumentType.DEVIS,
         validityDate = "31/12/2026",
         supplier = InvoiceClient(name = "Fournisseur SARL", ice = "009876543000012"),
+        referenceNumber = "F-20260101-0042",
+        incoterm = "FOB Casablanca",
+        vatNotApplicable = false,
     )
 
     @Test
@@ -60,5 +64,26 @@ class InvoiceJsonTest {
         assertEquals(emptyList<InvoiceLine>(), restored.lines)
         assertEquals(DocumentType.FACTURE, restored.documentType)
         assertEquals(PaymentMethod.CASH, restored.paymentMethod)
+        assertEquals("", restored.referenceNumber)
+        assertEquals("", restored.incoterm)
+        assertEquals(false, restored.vatNotApplicable)
+    }
+
+    @Test
+    fun `a credit note keeps its reference and its own opening in words`() {
+        val creditNote = InvoiceData(
+            number = "A-20260101-0001",
+            date = "01/01/2026",
+            client = InvoiceClient(name = "Client"),
+            lines = listOf(InvoiceLine("Produit", quantity = 1, unitPrice = 100.0)),
+            documentType = DocumentType.AVOIR,
+            referenceNumber = "F-20260101-0042",
+        )
+
+        val restored = InvoiceJson.dataFromJson(InvoiceJson.dataToJson(creditNote))
+
+        assertEquals(DocumentType.AVOIR, restored.documentType)
+        assertEquals("F-20260101-0042", restored.referenceNumber)
+        assertTrue(restored.amountInWords.contains("LE PRÉSENT AVOIR"))
     }
 }

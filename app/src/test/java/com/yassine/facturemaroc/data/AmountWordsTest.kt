@@ -63,4 +63,46 @@ class AmountWordsTest {
 
         assertTrue(sentence.startsWith("ARRÊTÉ LE PRÉSENT BON DE COMMANDE"))
     }
+
+    @Test
+    fun `a credit note is arrested as a credit note`() {
+        val sentence = AmountWords.sentence(100.0, DocumentType.AVOIR)
+
+        assertTrue(sentence.startsWith("ARRÊTÉ LE PRÉSENT AVOIR"))
+    }
+
+    @Test
+    fun `a proforma is arrested as a proforma`() {
+        val sentence = AmountWords.sentence(100.0, DocumentType.PROFORMA)
+
+        assertTrue(sentence.startsWith("ARRÊTÉ LE PRÉSENT PROFORMA"))
+    }
+
+    @Test
+    fun `a down payment is arrested as a down payment`() {
+        val sentence = AmountWords.sentence(100.0, DocumentType.ACOMPTE)
+
+        assertTrue(sentence.startsWith("ARRÊTÉ LE PRÉSENT ACOMPTE"))
+    }
+
+    @Test
+    fun `an adjustment is arrested as an adjustment`() {
+        val sentence = AmountWords.sentence(100.0, DocumentType.REGULARISATION)
+
+        assertTrue(sentence.startsWith("ARRÊTÉE LA PRÉSENTE RÉGULARISATION"))
+    }
+
+    @Test
+    fun `a simplified invoice stays in the invoice family`() {
+        val sentence = AmountWords.sentence(100.0, DocumentType.SIMPLIFIEE)
+
+        assertTrue(sentence.startsWith("ARRÊTÉE LA PRÉSENTE FACTURE"))
+    }
+
+    @Test
+    fun `an export invoice stays in the invoice family`() {
+        val sentence = AmountWords.sentence(100.0, DocumentType.EXPORT)
+
+        assertTrue(sentence.startsWith("ARRÊTÉE LA PRÉSENTE FACTURE"))
+    }
 }

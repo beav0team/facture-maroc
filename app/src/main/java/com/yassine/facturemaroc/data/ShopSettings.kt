@@ -18,6 +18,8 @@ data class ShopSettings(
     val logoBytes: ByteArray? = null,
     /** Default TVA rate applied after discount. Morocco's standard is 20. */
     val vatPercent: Double = 20.0,
+    /** Auto-entrepreneur: TVA non applicable, le taux saisi est ignoré. */
+    val vatNotApplicable: Boolean = false,
     /** Prochain numéro de facture utilisé par la numérotation automatique. 1 par défaut. */
     val invoiceCounter: Int = 1,
 ) {

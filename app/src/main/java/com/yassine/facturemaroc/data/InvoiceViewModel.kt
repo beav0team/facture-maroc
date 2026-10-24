@@ -50,6 +50,12 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     private val _validityDate = MutableStateFlow<String?>(null)
     val validityDate: StateFlow<String?> = _validityDate.asStateFlow()
 
+    private val _referenceNumber = MutableStateFlow("")
+    val referenceNumber: StateFlow<String> = _referenceNumber.asStateFlow()
+
+    private val _incoterm = MutableStateFlow("")
+    val incoterm: StateFlow<String> = _incoterm.asStateFlow()
+
     private val _supplier = MutableStateFlow<InvoiceClient?>(null)
     val supplier: StateFlow<InvoiceClient?> = _supplier.asStateFlow()
 
@@ -93,10 +99,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         lines = _lines.value,
         discountPercent = _discountPercent.value,
         vatPercent = _shop.value.vatPercent,
+        vatNotApplicable = _shop.value.vatNotApplicable,
         paymentMethod = _paymentMethod.value,
         documentType = _documentType.value,
         validityDate = _validityDate.value,
         supplier = _supplier.value,
+        referenceNumber = _referenceNumber.value,
+        incoterm = _incoterm.value,
     )
 
     private fun refreshInvoice() {
@@ -227,6 +236,16 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         refreshInvoice()
     }
 
+    fun setReferenceNumber(reference: String) {
+        _referenceNumber.value = reference.trim()
+        refreshInvoice()
+    }
+
+    fun setIncoterm(incoterm: String) {
+        _incoterm.value = incoterm.trim()
+        refreshInvoice()
+    }
+
     fun updateShop(settings: ShopSettings) {
         ShopSettingsStore.write(getApplication<Application>(), settings)
         _shop.value = settings
@@ -271,6 +290,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _paymentMethod.value = data.paymentMethod
         _documentType.value = data.documentType
         _validityDate.value = data.validityDate
+        _referenceNumber.value = data.referenceNumber
+        _incoterm.value = data.incoterm
         _supplier.value = data.supplier
         refreshInvoice()
     }
@@ -283,6 +304,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _paymentMethod.value = PaymentMethod.CASH
         _documentType.value = DocumentType.FACTURE
         _validityDate.value = null
+        _referenceNumber.value = ""
+        _incoterm.value = ""
         _supplier.value = null
         refreshInvoice()
     }
@@ -339,10 +362,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         lines = _lines.value,
         discountPercent = _discountPercent.value,
         vatPercent = _shop.value.vatPercent,
+        vatNotApplicable = _shop.value.vatNotApplicable,
         paymentMethod = _paymentMethod.value,
         documentType = _documentType.value,
         validityDate = _validityDate.value,
         supplier = _supplier.value,
+        referenceNumber = _referenceNumber.value,
+        incoterm = _incoterm.value,
     )
 
     /** The draft as it currently stands, for a preview. */

@@ -118,6 +118,49 @@ class InvoiceXmlTest {
                 data.copy(documentType = DocumentType.BON_DE_COMMANDE, number = "BC-20261021-0001"),
             ),
         )
+        assertEquals(
+            "avoir_A-20261021-0001.xml",
+            InvoiceXml.fileName(data.copy(documentType = DocumentType.AVOIR, number = "A-20261021-0001")),
+        )
+        assertEquals(
+            "proforma_PF-20261021-0001.xml",
+            InvoiceXml.fileName(data.copy(documentType = DocumentType.PROFORMA, number = "PF-20261021-0001")),
+        )
+        assertEquals(
+            "export_E-20261021-0001.xml",
+            InvoiceXml.fileName(data.copy(documentType = DocumentType.EXPORT, number = "E-20261021-0001")),
+        )
+    }
+
+    @Test
+    fun `a credit note carries the invoice it replaces`() {
+        val creditNote = data.copy(
+            documentType = DocumentType.AVOIR,
+            number = "A-20261021-0001",
+            referenceNumber = "F-20261021-0042",
+        )
+
+        val xml = InvoiceXml.build(creditNote, shop)
+
+        assertTrue(xml.contains("type=\"avoir\""))
+        assertTrue(
+            xml.contains("<ReferenceFacture>Annule et remplace la facture N° F-20261021-0042</ReferenceFacture>"),
+        )
+        assertTrue(xml.contains("ARRÊTÉ LE PRÉSENT AVOIR"))
+    }
+
+    @Test
+    fun `an export carries its incoterm`() {
+        val export = data.copy(
+            documentType = DocumentType.EXPORT,
+            number = "E-20261021-0001",
+            incoterm = "FOB Casablanca",
+        )
+
+        val xml = InvoiceXml.build(export, shop)
+
+        assertTrue(xml.contains("type=\"export\""))
+        assertTrue(xml.contains("<Incoterms>FOB Casablanca</Incoterms>"))
     }
 
     @Test

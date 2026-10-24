@@ -83,6 +83,13 @@ object InvoiceXml {
         element("TotalTTC", money(data.total), indent = 4)
         append("  </Totaux>\n")
 
+        data.referenceNumber.takeIf { it.isNotBlank() }?.let {
+            append("  <ReferenceFacture>Annule et remplace la facture N° $it</ReferenceFacture>\n")
+        }
+        data.incoterm.takeIf { it.isNotBlank() }?.let {
+            append("  <Incoterms>$it</Incoterms>\n")
+        }
+
         if (data.documentType == DocumentType.FACTURE) {
             append("  <Paiement>\n")
             element("Mode", data.paymentMethod.french, indent = 4)
@@ -100,6 +107,12 @@ object InvoiceXml {
             DocumentType.DEVIS -> "devis"
             DocumentType.BON_DE_COMMANDE -> "bon_commande"
             DocumentType.TICKET -> "ticket"
+            DocumentType.AVOIR -> "avoir"
+            DocumentType.PROFORMA -> "proforma"
+            DocumentType.ACOMPTE -> "acompte"
+            DocumentType.REGULARISATION -> "regul"
+            DocumentType.SIMPLIFIEE -> "simplifiee"
+            DocumentType.EXPORT -> "export"
         }
         val number = data.number.ifBlank { "document" }
         return "${prefix}_$number.xml"

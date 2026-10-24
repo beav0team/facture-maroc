@@ -55,6 +55,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -63,6 +64,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -274,6 +277,50 @@ fun BuilderScreen(
                     selected = invoice.documentType,
                     onSelect = viewModel::setDocumentType,
                 )
+            }
+
+            if (invoice.showReferenceField) {
+                item(key = "reference") {
+                    Column(Modifier.padding(horizontal = 16.dp)) {
+                        Text(
+                            "Référence du document",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        OutlinedTextField(
+                            value = invoice.referenceNumber,
+                            onValueChange = { viewModel.setReferenceNumber(it) },
+                            label = { Text("Annule et remplace la facture N°") },
+                            placeholder = { Text("Ex: F-20261001-0042") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        )
+                    }
+                }
+            }
+
+            if (invoice.showIncoterm) {
+                item(key = "incoterm") {
+                    Column(Modifier.padding(horizontal = 16.dp)) {
+                        Text(
+                            "Incoterms",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        OutlinedTextField(
+                            value = invoice.incoterm,
+                            onValueChange = { viewModel.setIncoterm(it) },
+                            label = { Text("Incoterms (ex: FOB, EXW, CIF)") },
+                            placeholder = { Text("Facultatif") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        )
+                    }
+                }
             }
 
             item(key = "client") {

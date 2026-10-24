@@ -1,8 +1,9 @@
 # Facture Maroc
 
 **Facturation hors ligne pour les commerçants marocains.**
-Factures, devis, bons de commande et tickets — avec ICE, IF, RC, patente, CNSS,
-TVA et montant en toutes lettres.
+Factures, devis, bons de commande, tickets, avoirs, proformas, acomptes,
+régularisations, factures simplifiées et factures à l'export — avec ICE, IF, RC,
+patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
 Version **0.3.0** (versionCode 4) · Android 8.0+ (minSdk 26) · Français.
 
@@ -21,12 +22,18 @@ Trois onglets, pas de détour :
 
 Dans le constructeur de document :
 
-- **Facture, devis, bon de commande, ticket 80 mm**.
+- **Type de document** : facture, devis, bon de commande, ticket 80 mm, avoir,
+  proforma, acompte, régularisation, facture simplifiée, facture à l'export.
+  Chacun a sa propre séquence de numérotation (`F-`, `D-`, `BC-`, `T-`, `A-`,
+  `PF-`, `AC-`, `REG-`, `FS-`, `E-`).
 - Lignes prises dans le catalogue ou **tapées à la main**, quantité et prix
   modifiables, remise par ligne et remise générale.
-- **TVA configurable** (20 % par défaut), **exonération par ligne** pour les
-  ventes export ou les organismes concernés.
-- **Montant total écrit en toutes lettres**, en français.
+- **TVA configurable** (20 % par défaut), **exonération par ligne** et **mode
+  auto-entrepreneur** (TVA non applicable sur tous les documents du magasin).
+- Avoir, acompte et régularisation portent une **référence** ("Annule et
+  remplace la facture N° …") ; l'export porte un **Incoterms** facultatif.
+- **Montant total écrit en toutes lettres**, en français, avec l'ouverture
+  adaptée au type de document.
 - Quatre modèles PDF : **Classique, Moderne, Facture Maroc, Ticket**.
 - Logo du commerce, coordonnées et mentions légales sur chaque document.
 
@@ -150,6 +157,12 @@ e-mail de contact (obligatoire et vérifiée par Google) et publier l’AAB sign
 
 ## Historique
 
+- **0.4.0** — nouveaux types de document : avoir, proforma, acompte,
+  régularisation, facture simplifiée, facture à l'export, chacun avec sa propre
+  numérotation ; référence ("Annule et remplace la facture N° …") sur les avoirs,
+  acomptes et régularisations ; Incoterms sur l'export ; montant en toutes
+  lettres adapté au type de document ; mode auto-entrepreneur (TVA non
+  applicable).
 - **0.3.0** — refonte en trois onglets, constructeur unique, clients et articles
   enregistrés, dossiers, validation, export XML, sauvegarde/restauration locale,
   nouvelle icône et ressources Play.
