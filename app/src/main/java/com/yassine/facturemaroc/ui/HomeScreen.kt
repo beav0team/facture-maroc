@@ -1040,9 +1040,12 @@ private fun ItemsTab(
     onCreateFolder: () -> Unit,
     onManageFolders: () -> Unit,
 ) {
+    val itemsWithoutFolder = items.filter { it.folder.isBlank() }
+
+    // Determine which items to show based on selected folder
     val scoped = remember(items, selectedFolder) {
         if (selectedFolder == null) {
-            items
+            itemsWithoutFolder
         } else {
             items.filter { it.folder.equals(selectedFolder, ignoreCase = true) }
         }
@@ -1054,109 +1057,176 @@ private fun ItemsTab(
         }
     }
 
-    Column(Modifier.fillMaxSize()) {
-        FolderFilterRow(
-            folders = folders,
-            selected = selectedFolder,
-            onSelect = onSelectFolder,
-        )
-
-        if (filtered.isEmpty()) {
-            Box(
-                Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.TopCenter,
-            ) {
-                EmptyState(
-                    icon = Icons.Filled.Inventory2,
-                    title = when {
-                        items.isEmpty() -> "Aucun article enregistré"
-                        selectedFolder != null && query.isBlank() -> "Dossier vide"
-                        else -> "Aucun résultat"
-                    },
-                    message = when {
-                        items.isEmpty() -> {
-                            "Ajoutez ce que vous vendez souvent — une prestation, un produit, " +
-                                "une pièce — et retrouvez-le en un geste sur chaque facture."
-                        }
-                        selectedFolder != null && query.isBlank() -> {
-                            if (selectedFolder.isEmpty()) {
-                                "Aucun article n'est encore rangé dans « Sans dossier »."
-                            } else {
-                                "Ajoutez un article à « $selectedFolder » ou choisissez un autre dossier."
-                            }
-                        }
-                        else -> "Essayez un autre mot."
-                    },
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 104.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        // Folder cards section — shown at root level only
+        if (selectedFolder == null) {
+            item {
+                FolderCard(
+                    title = "Tous",
+                    subtitle = "${items.size} article${if (items.size > 1) "s" else ""}",
+                    onClick = { onSelectFolder(null) },
+                    isSelected = false,
                 )
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 104.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                item(key = "count") {
-                    ItemsHeading(
-                        title = if (selectedFolder == null) {
-                            "Articles et services"
-                        } else {
-                            selectedFolder.ifBlank { "Sans dossier" }
-                        },
-                        count = filtered.size,
-                        onCreateFolder = onCreateFolder,
-                        onManageFolders = onManageFolders,
+            item {
+                FolderCard(
+                    title = "Sans dossier",
+                    subtitle = "${itemsWithoutFolder.size} article${if (itemsWithoutFolder.size > 1) "s" else ""}",
+                    onClick = { onSelectFolder("") },
+                    isSelected = false,
+                )
+            }
+            if (folders.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Mes Dossiers",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp),
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
-                items(filtered, key = { "item-${it.label.lowercase()}" }) { item ->
-                    ItemCard(item = item, onClick = { onEdit(item) }, onDelete = { onDelete(item) })
+                items(folders, key = { "folder-$it" }) { folder ->
+                    val count = items.count { it.folder.equals(folder, ignoreCase = true) }
+                    FolderCard(
+                        title = folder,
+                        subtitle = "$count article${if (count > 1) "s" else ""}",
+                        onClick = { onSelectFolder(folder) },
+                        isSelected = false,
+                    )
                 }
+            }
+            item {
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+
+        // Items heading
+        item {
+            val headerTitle = when {
+                selectedFolder == null -> "Articles et services"
+                selectedFolder.isEmpty() -> "Sans dossier"
+                else -> selectedFolder
+            }
+            ItemsHeading(
+                title = headerTitle,
+                count = filtered.size,
+                onCreateFolder = onCreateFolder,
+                onManageFolders = onManageFolders,
+            )
+        }
+
+        if (filtered.isEmpty()) {
+            item {
+                Box(
+                    Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.TopCenter,
+                ) {
+                    EmptyState(
+                        icon = Icons.Filled.Inventory2,
+                        title = when {
+                            items.isEmpty() -> "Aucun article enregistré"
+                            selectedFolder != null && query.isBlank() -> "Dossier vide"
+                            else -> "Aucun résultat"
+                        },
+                        message = when {
+                            items.isEmpty() -> {
+                                "Ajoutez ce que vous vendez souvent — une prestation, un produit, " +
+                                    "une pièce — et retrouvez-le en un geste sur chaque facture."
+                            }
+                            selectedFolder != null && query.isBlank() -> {
+                                if (selectedFolder.isEmpty()) {
+                                    "Aucun article n'est encore rangé dans « Sans dossier »."
+                                } else {
+                                    "Ajoutez un article à « $selectedFolder » ou choisissez un autre dossier."
+                                }
+                            }
+                            else -> "Essayez un autre mot."
+                        },
+                    )
+                }
+            }
+        } else {
+            items(filtered, key = { "item-${it.label.lowercase()}" }) { item ->
+                ItemCard(item = item, onClick = { onEdit(item) }, onDelete = { onDelete(item) })
             }
         }
     }
 }
 
 /**
- * The row of folder filters above the articles.
- *
- * "Sans dossier" is a real choice, not the absence of one, so it appears beside
- * the folders rather than being reachable only by clearing the filter. The
- * manage button is a separate control because tapping a chip should filter,
- * never open an editor.
+ * A tappable card representing a folder, showing its name and item count.
  */
 @Composable
-private fun FolderFilterRow(
-    folders: List<String>,
-    selected: String?,
-    onSelect: (String?) -> Unit,
+private fun FolderCard(
+    title: String,
+    subtitle: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
 ) {
-    LazyRow(
+    val color = if (isSelected) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    Card(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = color),
+        border = BorderStroke(
+            1.dp,
+            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(start = 16.dp, top = 2.dp, end = 16.dp, bottom = 2.dp),
     ) {
-        item(key = "all") {
-            ChoiceChip(
-                label = "Tous",
-                selected = selected == null,
-                onClick = { onSelect(null) },
-            )
-        }
-        item(key = "none") {
-            ChoiceChip(
-                label = "Sans dossier",
-                selected = selected == "",
-                onClick = { onSelect("") },
-            )
-        }
-        items(folders, key = { "folder-$it" }) { folder ->
-            ChoiceChip(
-                label = folder,
-                selected = selected == folder,
-                onClick = { onSelect(folder) },
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier
+                    .size(44.dp)
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
+                        CircleShape,
+                    )
+                    .padding(4.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.CreateNewFolder,
+                    contentDescription = null,
+                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Icon(
+                Icons.Filled.ExpandMore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
