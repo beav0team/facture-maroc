@@ -6,6 +6,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -69,6 +71,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -78,6 +81,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -257,24 +261,37 @@ fun HomeScreen(
                 title = {
                     if (articlesInList) {
                         Column {
-                            Text(
-                                when {
-                                    showAllArticles -> "Tous les articles"
-                                    articleFolder?.isEmpty() == true -> "Sans dossier"
-                                    // The whole path, because a sub-folder called
-                                    // "Hiver" says nothing about where it is, and
-                                    // the shop may have two of them.
-                                    else -> SavedItemStore.display(articleFolder.orEmpty())
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                Text(
+                                    when {
+                                        showAllArticles -> "Tous les articles"
+                                        articleFolder?.isEmpty() == true -> "Sans dossier"
+                                        // Just the folder's own name: the path
+                                        // under it says where it lives.
+                                        else -> SavedItemStore.nameOf(articleFolder.orEmpty())
+                                    },
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    countLine(articleScopeItems.size, subFolders.size),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                )
+                            }
+                            Breadcrumb(
+                                path = articleFolder.orEmpty(),
+                                allArticles = showAllArticles,
+                                onNavigate = { target ->
+                                    inFolder = target
+                                    showAllArticles = false
+                                    query = ""
                                 },
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                countLine(articleScopeItems.size, subFolders.size),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     } else {
@@ -353,25 +370,55 @@ fun HomeScreen(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    when (tab) {
-                        HomeTab.INVOICES -> onNewInvoice(null)
-                        HomeTab.CLIENTS -> {
-                            editingClient = null
-                            clientEditorOpen = true
-                        }
-                        HomeTab.ARTICLES -> {
-                            editingItem = null
-                            itemEditorOpen = true
-                        }
+            Column(horizontalAlignment = Alignment.End) {
+                /*
+                 * Folders get their own button on the Articles tab. The tile at
+                 * the end of the grid only exists when there is a grid: with an
+                 * empty catalogue it is never drawn, which left a fresh install
+                 * with no way to create the first folder at all. A button in the
+                 * corner is there whatever the shelf holds.
+                 */
+                if (tab == HomeTab.ARTICLES) {
+                    SmallFloatingActionButton(
+                        onClick = {
+                            if (showAllArticles) inFolder = null
+                            renamingFolder = null
+                            folderEditorOpen = true
+                        },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    ) {
+                        Icon(
+                            Icons.Filled.CreateNewFolder,
+                            contentDescription = if (inFolder.isNullOrEmpty() || showAllArticles) {
+                                "Nouveau dossier"
+                            } else {
+                                "Nouveau sous-dossier"
+                            },
+                        )
                     }
-                },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = MaterialTheme.shapes.large,
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = fabLabel)
+                    Spacer(Modifier.height(12.dp))
+                }
+                FloatingActionButton(
+                    onClick = {
+                        when (tab) {
+                            HomeTab.INVOICES -> onNewInvoice(null)
+                            HomeTab.CLIENTS -> {
+                                editingClient = null
+                                clientEditorOpen = true
+                            }
+                            HomeTab.ARTICLES -> {
+                                editingItem = null
+                                itemEditorOpen = true
+                            }
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = MaterialTheme.shapes.large,
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = fabLabel)
+                }
             }
         },
     ) { padding ->
@@ -482,6 +529,7 @@ fun HomeScreen(
                                 articles = articleScopeItems,
                                 subFolders = subFolders,
                                 allItems = items,
+                                allArticles = showAllArticles,
                                 onOpenFolder = { path ->
                                     inFolder = path
                                     query = ""
@@ -689,8 +737,12 @@ fun HomeScreen(
                     val created = viewModel.savedItems.createFolder(name, inFolder.orEmpty())
                     if (created != null) {
                         // A folder made while standing in another one opens, so
-                        // the shop can put something in it straight away.
+                        // the shop can put something in it straight away. It
+                        // also leaves "Tous les articles": otherwise the bar
+                        // would name the whole catalogue while the list shows
+                        // the folder that was just made.
                         inFolder = created
+                        showAllArticles = false
                         folderEditorOpen = false
                     } else {
                         scope.launch { snackbar.showSnackbar("Ce dossier existe déjà ici.") }
@@ -1350,6 +1402,89 @@ private fun countLine(articles: Int, folders: Int): String {
     return "$items · $folders sous-dossier${if (folders > 1) "s" else ""}"
 }
 
+/** One step of the breadcrumb. `path` is null for the folder grid itself. */
+private data class Crumb(val label: String, val path: String?)
+
+/**
+ * Every step from the Articles grid down to the folder on screen.
+ *
+ * The bar used to print the whole path in one Text, which ellipsized a deep
+ * folder at whatever the bar could hold and could only be left one level at a
+ * time. Here each step is tappable, so the shop jumps straight to any parent.
+ */
+private fun crumbsFor(path: String, allArticles: Boolean): List<Crumb> {
+    val root = Crumb("Articles", null)
+    if (allArticles) return listOf(root, Crumb("Tous les articles", null))
+    if (path.isEmpty()) return listOf(root, Crumb("Sans dossier", ""))
+    val parts = path.split(SavedItemStore.SEPARATOR).filter { it.isNotEmpty() }
+    val crumbs = mutableListOf(root)
+    parts.forEachIndexed { index, name ->
+        crumbs += Crumb(
+            name,
+            parts.take(index + 1).joinToString(SavedItemStore.SEPARATOR),
+        )
+    }
+    return crumbs
+}
+
+/**
+ * The path to the open folder, on one scrollable line.
+ *
+ * Ancestors are buttons; the last step is the folder itself and does nothing.
+ * The row opens scrolled to its end so the deepest folder — the one the shop is
+ * actually standing in — is what a narrow screen shows, instead of the start.
+ */
+@Composable
+private fun Breadcrumb(
+    path: String,
+    allArticles: Boolean,
+    onNavigate: (String?) -> Unit,
+) {
+    val crumbs = remember(path, allArticles) { crumbsFor(path, allArticles) }
+    val scroll = rememberScrollState()
+    // maxValue is 0 until the row has been measured; reading it as a key makes
+    // the effect run again once it knows how far it can scroll.
+    LaunchedEffect(crumbs, scroll.maxValue) {
+        scroll.scrollTo(scroll.maxValue)
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(scroll),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        crumbs.forEachIndexed { index, crumb ->
+            if (index > 0) {
+                Text(
+                    "›",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
+            }
+            val current = index == crumbs.lastIndex
+            Text(
+                crumb.label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (current) FontWeight.SemiBold else FontWeight.Normal,
+                color = if (current) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+                maxLines = 1,
+                modifier = if (current) {
+                    Modifier
+                } else {
+                    Modifier
+                        .clickable { onNavigate(crumb.path) }
+                        .padding(vertical = 2.dp)
+                },
+            )
+        }
+    }
+}
+
 /**
  * The Articles tab at rest: the folders, not the articles.
  *
@@ -1447,6 +1582,8 @@ private fun FolderContents(
     onDeleteFolder: (String) -> Unit,
     onEdit: (SavedItem) -> Unit,
     onDelete: (SavedItem) -> Unit,
+    /** The "Tous les articles" view: same grid, but nothing is a sub-folder. */
+    allArticles: Boolean = false,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -1466,7 +1603,10 @@ private fun FolderContents(
             )
         }
         item(key = "new-subfolder") {
-            NewFolderTile(onCreateFolder, label = "Nouveau sous-dossier")
+            NewFolderTile(
+                onCreateFolder,
+                label = if (allArticles) "Nouveau dossier" else "Nouveau sous-dossier",
+            )
         }
         if (articles.isNotEmpty()) {
             item(key = "articles-heading", span = { GridItemSpan(maxLineSpan) }) {
@@ -1479,7 +1619,11 @@ private fun FolderContents(
         } else {
             item(key = "no-articles", span = { GridItemSpan(maxLineSpan) }) {
                 Text(
-                    "Aucun article directement dans ce dossier.",
+                    if (allArticles) {
+                        "Aucun article enregistré."
+                    } else {
+                        "Aucun article directement dans ce dossier."
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
