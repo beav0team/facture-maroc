@@ -25,6 +25,7 @@ object InvoiceJson {
         put("phone", client.phone)
         put("email", client.email)
         put("vatExempt", client.vatExempt)
+        put("role", client.role.id)
     }
 
     fun clientFromJson(obj: JSONObject?): InvoiceClient =
@@ -39,6 +40,9 @@ object InvoiceJson {
             phone = obj.optString("phone", ""),
             email = obj.optString("email", ""),
             vatExempt = obj.optBoolean("vatExempt", false),
+            // A record written before suppliers existed is a client: it was
+            // offered in the client picker and nothing else.
+            role = PartyRole.fromId(obj.optString("role", PartyRole.CLIENT.id)),
         )
 
     fun lineToJson(line: InvoiceLine): JSONObject = JSONObject().apply {

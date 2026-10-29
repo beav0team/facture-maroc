@@ -44,19 +44,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yassine.facturemaroc.data.InvoiceClient
+import com.yassine.facturemaroc.data.PartyRole
 
 /**
- * Picks a saved client, or writes a new one without leaving the invoice.
+ * Picks a saved client or supplier, or writes a new one without leaving the
+ * invoice.
  *
- * The create form is the same [ClientEditorDialog] the Clients tab uses, so a
- * client created mid-invoice is a real client, not a second-class copy with
- * fewer fields.
+ * The create form is the same [ClientEditorDialog] the directory uses, so a
+ * party created mid-invoice is a real record, not a second-class copy with
+ * fewer fields. [role] decides both which records are offered and what the new
+ * one will be, because a list of suppliers on a customer invoice is not a
+ * helpful shortcut.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientPickerSheet(
     title: String,
     clients: List<InvoiceClient>,
+    role: PartyRole,
     onPick: (InvoiceClient) -> Unit,
     onCreate: (InvoiceClient) -> Unit,
     onClear: () -> Unit,
@@ -67,9 +72,12 @@ fun ClientPickerSheet(
     var query by remember { mutableStateOf("") }
     var creating by remember { mutableStateOf(false) }
 
-    val filtered = remember(clients, query) {
+    val noun = role.label.lowercase()
+    val saved = remember(clients, role) { clients.filter { it.role == role } }
+
+    val filtered = remember(saved, query) {
         val q = query.trim().lowercase()
-        if (q.isBlank()) clients else clients.filter {
+        if (q.isBlank()) saved else saved.filter {
             listOf(it.name, it.phone, it.email, it.ice)
                 .any { field -> field.lowercase().contains(q) }
         }
@@ -98,7 +106,7 @@ fun ClientPickerSheet(
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = { Text("Rechercher un client") },
+                placeholder = { Text("Rechercher un $noun") },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 singleLine = true,
                 shape = MaterialTheme.shapes.large,
@@ -109,10 +117,10 @@ fun ClientPickerSheet(
 
             if (filtered.isEmpty()) {
                 Text(
-                    if (clients.isEmpty()) {
-                        "Aucun client enregistré. Créez le premier ci-dessous."
+                    if (saved.isEmpty()) {
+                        "Aucun $noun enregistré. Créez le premier ci-dessous."
                     } else {
-                        "Aucun client ne correspond à « $query »."
+                        "Aucun $noun ne correspond à « $query »."
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -159,7 +167,7 @@ fun ClientPickerSheet(
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Nouveau client")
+                Text("Nouveau $noun")
             }
 
             Spacer(Modifier.height(20.dp))
@@ -169,6 +177,7 @@ fun ClientPickerSheet(
     if (creating) {
         ClientEditorDialog(
             initial = null,
+            defaultRole = role,
             onSave = { client ->
                 creating = false
                 onCreate(client)

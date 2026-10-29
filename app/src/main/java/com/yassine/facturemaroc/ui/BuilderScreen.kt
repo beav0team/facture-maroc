@@ -86,6 +86,7 @@ import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceLine
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.PaymentMethod
+import com.yassine.facturemaroc.data.PartyRole
 import com.yassine.facturemaroc.data.XmlExportOutcome
 import com.yassine.facturemaroc.invoice.InvoicePdf
 import com.yassine.facturemaroc.invoice.InvoiceValidation
@@ -323,12 +324,17 @@ fun BuilderScreen(
                 }
             }
 
-            item(key = "client") {
-                ClientBlock(
-                    client = invoice.client,
-                    onPick = { showClientPicker = true },
-                    onClear = viewModel::clearClient,
-                )
+            // One party block, always the one the document prints: the client
+            // on a sale, the supplier on a bon de commande. A "Client" field on
+            // an order form only invited the shop to type itself in.
+            if (invoice.documentType != DocumentType.BON_DE_COMMANDE) {
+                item(key = "client") {
+                    ClientBlock(
+                        client = invoice.client,
+                        onPick = { showClientPicker = true },
+                        onClear = viewModel::clearClient,
+                    )
+                }
             }
 
             if (invoice.documentType == DocumentType.BON_DE_COMMANDE) {
@@ -455,6 +461,7 @@ fun BuilderScreen(
         ClientPickerSheet(
             title = "Choisir un client",
             clients = clients,
+            role = PartyRole.CLIENT,
             onPick = {
                 viewModel.setClient(it)
                 showClientPicker = false
@@ -477,6 +484,7 @@ fun BuilderScreen(
         ClientPickerSheet(
             title = "Choisir un fournisseur",
             clients = clients,
+            role = PartyRole.SUPPLIER,
             onPick = {
                 viewModel.setSupplier(it)
                 showSupplierPicker = false

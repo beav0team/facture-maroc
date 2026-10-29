@@ -68,6 +68,17 @@ object PdfText {
         canvas.restore()
     }
 
+    /**
+     * The text with its hard line breaks turned into `, `.
+     *
+     * For a slot that has one line on the page — a shop's address inside a
+     * header — where a newline stored in the address would otherwise break the
+     * line and push the rest into an ellipsis, printing "142 boulevard
+     * Mohammed V..." and losing the city.
+     */
+    fun oneline(text: String): String =
+        text.trim().replace(Regex("\\s*\\r?\\n\\s*"), ", ")
+
     /** How tall [text] will be when drawn into [width]. */
     fun height(text: String, paint: TextPaint, width: Int, maxLines: Int = Int.MAX_VALUE): Int {
         if (text.isBlank() || width <= 0) return 0
@@ -99,6 +110,18 @@ object PdfText {
      */
     fun money(value: Double): String =
         String.format(java.util.Locale.FRANCE, "%,.2f", value) + " DH"
+
+    /**
+     * A percentage the way the rest of the document writes numbers: `20%`, and
+     * `5,5%` with a comma, because an amount and the rate applied to it appear
+     * on the same line and one of them cannot use the other separator.
+     */
+    fun percent(value: Double): String =
+        if (value == value.toLong().toDouble()) {
+            value.toLong().toString()
+        } else {
+            String.format(java.util.Locale.FRANCE, "%.1f", value)
+        }
 
     /**
      * Draws [logo] fitted inside a box [box] tall, with its left edge at [x] and

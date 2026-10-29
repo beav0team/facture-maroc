@@ -23,17 +23,22 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Renders one invoice onto one page of PDF.
+ * Renders an invoice onto one or more pages of PDF.
  *
  * A template is this interface and nothing else. The four layouts differ in where
  * they put things, not in what they are required to say, so every template
  * receives the same [InvoiceData], the same shop details and the same design
  * settings and is answerable for the drawing only.
+ *
+ * It draws on a [PageSurface] rather than a canvas because a long invoice does
+ * not fit on one A4: the renderer, which is the only code that knows where a row
+ * ends, asks for the next page itself. A template that never asks stays a
+ * one-page document, which is what the 80mm ticket is.
  */
 interface PdfRenderer {
     fun draw(
         context: Context,
-        canvas: Canvas,
+        surface: PageSurface,
         data: InvoiceData,
         shop: ShopSettings,
         design: InvoiceDesign,
@@ -54,9 +59,6 @@ object InvoicePdf {
     private const val PAGE_W = 595
     private const val PAGE_H = 842
 
-    /** A receipt roll: 80mm wide, and as tall as the sale needs. */
-    private const val TICKET_W = 226
-
     fun createPdf(
         context: Context,
         data: InvoiceData,
@@ -64,20 +66,26 @@ object InvoicePdf {
         design: InvoiceDesign,
     ): File? = try {
         val template = design.template
-        val height = if (template.isRoll) ticketHeight(data, shop, design) else PAGE_H
-        val width = if (template.isRoll) TICKET_W else PAGE_W
+        val height = if (template.isRoll) {
+            TicketRenderer.height(data, shop, design)
+        } else {
+            PAGE_H
+        }
+        val width = if (template.isRoll) TicketRenderer.WIDTH.toInt() else PAGE_W
 
         val dir = java.io.File(context.cacheDir, "invoices").apply { mkdirs() }
         val file = java.io.File(dir, "facture_${data.number}.pdf")
+        var pages = 0
         file.outputStream().use { out ->
             val doc = PdfDocument()
-            val page = doc.startPage(PdfDocument.PageInfo.Builder(width, height, 1).create())
-            rendererFor(template).draw(context, page.canvas, data, shop, design)
-            doc.finishPage(page)
+            val pager = DocumentPager(doc, width, height)
+            rendererFor(template).draw(context, pager, data, shop, design)
+            pager.finish()
+            pages = pager.pageCount
             doc.writeTo(out)
             doc.close()
         }
-        android.util.Log.i(TAG, "pdf written ${file.name} ${file.length()} bytes ${width}x$height ${template.id}")
+        android.util.Log.i(TAG, "pdf written ${file.name} ${file.length()} bytes ${width}x$height ${template.id} $pages page(s)")
         file
     } catch (e: Exception) {
         android.util.Log.w(TAG, "could not write the invoice PDF", e)
@@ -143,9 +151,10 @@ object InvoicePdf {
         widthPx: Int,
     ): Bitmap? {
         val template = design.template
-        val scale = widthPx.toDouble() / (if (template.isRoll) TICKET_W else PAGE_W).toDouble()
+        val scale = widthPx.toDouble() /
+            (if (template.isRoll) TicketRenderer.WIDTH.toDouble() else PAGE_W.toDouble())
         val height = if (template.isRoll) {
-            (ticketHeight(data, shop, design) * scale).toInt()
+            (TicketRenderer.height(data, shop, design) * scale).toInt()
         } else {
             (PAGE_H * scale).toInt()
         }
@@ -160,7 +169,10 @@ object InvoicePdf {
             }
             val canvas = Canvas(bitmap)
             canvas.scale(scale.toFloat(), scale.toFloat())
-            rendererFor(template).draw(context, canvas, data, shop, design)
+            // One page only: a renderer that asks for a second sheet is told no
+            // and stops, so the preview shows the first page of the real
+            // document instead of stacking page two on top of page one.
+            rendererFor(template).draw(context, PreviewSurface(canvas), data, shop, design)
             bitmap
         } catch (e: Exception) {
             android.util.Log.w("InvoicePdf", "preview failed for ${template.id}", e)
@@ -168,30 +180,12 @@ object InvoicePdf {
         }
     }
 
-    private fun ticketHeight(
-        data: InvoiceData,
-        shop: ShopSettings,
-        design: InvoiceDesign,
-    ): Int {
-        val margin = 15f
-        val w = TICKET_W - margin * 2
-        var h = 10f + 8f + (if (shop.address.isNotBlank()) 7f else 0f) + 4f + 14f + 10f + 4f
-        data.lines.forEach { line ->
-            val itemName = PdfText.paint(7f, Color.BLACK)
-            val lineH = kotlin.math.max(PdfText.height(line.lineLabel, itemName, w.toInt() - 25 - 4, 2) + 1f, 11f)
-            h += lineH
-            if (line.unitPrice > 0) h += 7f
-        }
-        h += 6f + 8f
-        if (data.discountPercent > 0) h += 8f
-        h += 10f + 14f + 20f + 8f
-        return h.toInt()
-    }
-
     private fun rendererFor(template: InvoiceTemplate): PdfRenderer = when (template) {
         InvoiceTemplate.CLASSIQUE -> ClassiqueRenderer()
         InvoiceTemplate.MODERNE -> ModerneRenderer()
         InvoiceTemplate.MAROC -> MarocRenderer()
+        InvoiceTemplate.EPURE -> EpureRenderer()
+        InvoiceTemplate.BANDEAU -> BandeauRenderer()
         InvoiceTemplate.TICKET -> TicketRenderer()
     }
 

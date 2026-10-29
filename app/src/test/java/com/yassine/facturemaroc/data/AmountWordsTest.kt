@@ -1,6 +1,7 @@
 package com.yassine.facturemaroc.data
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -48,6 +49,52 @@ class AmountWordsTest {
     @Test
     fun `seventy-one keeps its et`() {
         assertTrue(AmountWords.sentence(71.0).contains("SOIXANTE ET ONZE DIRHAMS"))
+    }
+
+    @Test
+    fun `thousands keep the mille after their multiplier`() {
+        // The multiplier used to be returned on its own, so 2 000 read
+        // "DEUX DIRHAMS" — an invoice ten times too small in words.
+        assertTrue(AmountWords.sentence(2_000.0).contains("DEUX MILLE DIRHAMS"))
+        assertTrue(
+            AmountWords.sentence(52_152.0)
+                .contains("CINQUANTE-DEUX MILLE CENT CINQUANTE-DEUX DIRHAMS"),
+        )
+        assertTrue(AmountWords.sentence(80_000.0).contains("QUATRE-VINGT MILLE DIRHAMS"))
+        assertTrue(AmountWords.sentence(200_000.0).contains("DEUX CENT MILLE DIRHAMS"))
+    }
+
+    @Test
+    fun `cent and vingt lose their s before mille`() {
+        // "mille" is a numeral adjective, so the hundreds that end the
+        // multiplier stay singular: deux cent mille, quatre-vingt mille.
+        assertFalse(AmountWords.sentence(200_000.0).contains("CENTS MILLE"))
+        assertFalse(AmountWords.sentence(80_000.0).contains("VINGTS MILLE"))
+        // ...but a hundred that ends the whole amount keeps it.
+        assertTrue(AmountWords.sentence(200.0).contains("DEUX CENTS DIRHAMS"))
+    }
+
+    @Test
+    fun `mille takes no s and no un`() {
+        assertTrue(AmountWords.sentence(1_000.0).contains("MILLE DIRHAMS"))
+        assertFalse(AmountWords.sentence(1_000.0).contains("UN MILLE"))
+        assertFalse(AmountWords.sentence(2_000.0).contains("MILLES"))
+    }
+
+    @Test
+    fun `a million is spelled and the rest of the amount follows it`() {
+        assertTrue(
+            AmountWords.sentence(1_200_000.0).contains("UN MILLION DEUX CENT MILLE DIRHAMS"),
+        )
+    }
+
+    @Test
+    fun `an amount that ends in a round hundred cents`() {
+        // 123.00 must not print "et zéro centime", which reads as a mistake.
+        val sentence = AmountWords.sentence(123.0)
+
+        assertTrue(sentence.contains("CENT VINGT-TROIS DIRHAMS."))
+        assertFalse(sentence.contains("CENTIME"))
     }
 
     @Test

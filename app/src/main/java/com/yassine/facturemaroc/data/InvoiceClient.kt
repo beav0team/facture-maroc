@@ -1,5 +1,24 @@
 package com.yassine.facturemaroc.data
 
+/**
+ * Whether a saved party sells to the shop or buys from it.
+ *
+ * The same record shape is used for both because they are the same thing to a
+ * printer — a name, an address and a set of legal numbers — and because a shop
+ * with two unrelated address books would type the same garage in twice. The
+ * role is what tells the pickers apart: a client list offered when invoicing,
+ * a supplier list offered on a bon de commande.
+ */
+enum class PartyRole(val id: String, val label: String, val plural: String) {
+    CLIENT("client", "Client", "Clients"),
+    SUPPLIER("supplier", "Fournisseur", "Fournisseurs"),
+    ;
+
+    companion object {
+        fun fromId(id: String?): PartyRole = entries.firstOrNull { it.id == id } ?: CLIENT
+    }
+}
+
 /** Who the invoice is for. A saved client, or one typed in for this sale only. */
 data class InvoiceClient(
     val name: String,
@@ -18,10 +37,34 @@ data class InvoiceClient(
     val email: String = "",
     /** True for clients exempt from TVA (export, certain gov bodies). */
     val vatExempt: Boolean = false,
+    /**
+     * Client or supplier. Written on the record rather than inferred from where
+     * it is used, so a supplier picked for a bon de commande is still a
+     * supplier in the directory afterwards.
+     */
+    val role: PartyRole = PartyRole.CLIENT,
 ) {
     /** Legal ID fields that are non-empty, joined for printing. */
     val legalIdentifierList: List<String>
         get() = listOf(ice, ifNumber, rc, patente, cnss).filter { it.isNotBlank() }
+
+    /**
+     * The same identifiers with their names in front: `ICE : 001234567000025`.
+     *
+     * Printed as labels because a bare `001234567000025` is a number nobody can
+     * identify, and a customer querying an invoice cannot tell whether it is an
+     * ICE or a phone number. Same order everywhere, so two documents from the
+     * same shop agree.
+     */
+    val legalIdentifierLabels: List<String>
+        get() = listOf(
+            "ICE" to ice,
+            "IF" to ifNumber,
+            "RC" to rc,
+            "Patente" to patente,
+            "CNSS" to cnss,
+        ).filter { it.second.isNotBlank() }
+            .map { (label, value) -> "$label : ${value.trim()}" }
 }
 
 /** How the invoice was paid. Printed on the document, never tracked. */

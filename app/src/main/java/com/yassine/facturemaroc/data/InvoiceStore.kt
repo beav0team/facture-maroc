@@ -44,9 +44,17 @@ data class InvoiceRecord(
      */
     val stockApplied: Boolean = false,
 ) {
-    /** What the history list calls it. A blank client is a walk-in sale. */
+    /**
+     * What the history list calls it.
+     *
+     * The party the document is addressed to, which is the supplier on a bon
+     * de commande — the list used to read `client.name` and titled every order
+     * form with the shop's own name, because on that document the shop *is*
+     * the client. A blank party falls back to the document's type rather than
+     * to an empty row.
+     */
     val title: String
-        get() = data.client.name.trim().ifBlank { "Client de passage" }
+        get() = data.partyName.trim().ifBlank { data.documentType.label }
 
     val isDraft: Boolean get() = status == InvoiceStatus.DRAFT
 }

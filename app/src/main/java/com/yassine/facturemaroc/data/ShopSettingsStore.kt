@@ -25,6 +25,8 @@ class ShopSettingsStore(private val context: Context) {
         prefs.edit().apply {
             putString("name", settings.name)
             putString("address", settings.address)
+            putString("phone", settings.phone)
+            putString("email", settings.email)
             putString("ice", settings.ice)
             putString("ifNumber", settings.ifNumber)
             putString("rc", settings.rc)
@@ -47,6 +49,8 @@ class ShopSettingsStore(private val context: Context) {
         return ShopSettings(
             name = prefs.getString("name", "") ?: "",
             address = prefs.getString("address", "") ?: "",
+            phone = prefs.getString("phone", "") ?: "",
+            email = prefs.getString("email", "") ?: "",
             ice = prefs.getString("ice", "") ?: "",
             ifNumber = prefs.getString("ifNumber", "") ?: "",
             rc = prefs.getString("rc", "") ?: "",
@@ -70,6 +74,8 @@ class ShopSettingsStore(private val context: Context) {
             prefs.edit().apply {
                 putString("name", settings.name)
                 putString("address", settings.address)
+                putString("phone", settings.phone)
+                putString("email", settings.email)
                 putString("ice", settings.ice)
                 putString("ifNumber", settings.ifNumber)
                 putString("rc", settings.rc)
@@ -93,9 +99,11 @@ class ClientStore(private val context: Context) {
 
     fun save(client: InvoiceClient) {
         if (client.name.isBlank()) return
-        val key = client.name.trim().lowercase()
+        // Keyed by name *and* role: a garage can be a supplier and a customer,
+        // and the two records say different things about the relationship.
+        val key = key(client.name, client.role)
         val existing = _clients.value.toMutableList()
-        val index = existing.indexOfFirst { it.name.trim().lowercase() == key }
+        val index = existing.indexOfFirst { key(it.name, it.role) == key }
         if (index >= 0) {
             existing[index] = client.copy(name = client.name.trim())
         } else {
@@ -105,9 +113,12 @@ class ClientStore(private val context: Context) {
     }
 
     fun delete(client: InvoiceClient) {
-        val key = client.name.trim().lowercase()
-        persist(_clients.value.filterNot { it.name.trim().lowercase() == key })
+        val key = key(client.name, client.role)
+        persist(_clients.value.filterNot { key(it.name, it.role) == key })
     }
+
+    /** The saved parties of one kind, in the order they were saved. */
+    fun of(role: PartyRole): List<InvoiceClient> = _clients.value.filter { it.role == role }
 
     fun read(context: Context): List<InvoiceClient> = load(context)
 
@@ -116,9 +127,12 @@ class ClientStore(private val context: Context) {
         persist(
             clients
                 .filter { it.name.isNotBlank() }
-                .distinctBy { it.name.trim().lowercase() },
+                .distinctBy { key(it.name, it.role) },
         )
     }
+
+    private fun key(name: String, role: PartyRole): String =
+        "${role.id}:${name.trim().lowercase()}"
 
     private fun persist(list: List<InvoiceClient>) {
         _clients.value = list
@@ -136,6 +150,7 @@ class ClientStore(private val context: Context) {
                 put("phone", c.phone)
                 put("email", c.email)
                 put("vatExempt", c.vatExempt)
+                put("role", c.role.id)
             })
         }
         prefs.edit().putString("clients", array.toString()).apply()
@@ -160,6 +175,7 @@ class ClientStore(private val context: Context) {
                         phone = obj.optString("phone", ""),
                         email = obj.optString("email", ""),
                         vatExempt = obj.optBoolean("vatExempt", false),
+                        role = PartyRole.fromId(obj.optString("role", PartyRole.CLIENT.id)),
                     )
                 }
             }

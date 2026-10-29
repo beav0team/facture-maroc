@@ -15,6 +15,8 @@ class BackupTest {
     private val shop = ShopSettings(
         name = "Atelier A&B",
         address = "12 rue des Fleurs, Casablanca",
+        phone = "0522334455",
+        email = "atelier@exemple.ma",
         ice = "001234567000089",
         ifNumber = "12345678",
         rc = "98765",
@@ -34,6 +36,12 @@ class BackupTest {
             vatExempt = true,
         ),
         InvoiceClient(name = "Client de passage"),
+        InvoiceClient(
+            name = "Grossiste Pneus Atlas",
+            address = "Avenue des Fès, Casablanca",
+            ice = "007711223000045",
+            role = PartyRole.SUPPLIER,
+        ),
     )
     private val items = listOf(
         SavedItem("Main-d'œuvre", 250.0, "heure", folder = "Prestations"),

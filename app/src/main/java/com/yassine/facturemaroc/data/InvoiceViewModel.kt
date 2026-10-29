@@ -423,13 +423,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * instead of a hand-drawn sketch. Nothing is consumed: it peeks the number and renders
      * a copy of the design carrying the requested template.
      */
-    suspend fun previewBitmapFor(template: InvoiceTemplate, widthPx: Int): Bitmap? =
+    suspend fun previewBitmapFor(design: InvoiceDesign, widthPx: Int): Bitmap? =
         withContext(Dispatchers.Default) {
             InvoicePdf.preview(
                 getApplication<Application>(),
                 previewData(),
                 _shop.value,
-                _design.value.copy(template = template),
+                design,
                 widthPx,
             )
         }

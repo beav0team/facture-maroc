@@ -94,9 +94,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceRecord
 import com.yassine.facturemaroc.data.InvoiceViewModel
+import com.yassine.facturemaroc.data.PartyRole
 import com.yassine.facturemaroc.data.SavedItem
 import com.yassine.facturemaroc.data.SavedItemStore
 import com.yassine.facturemaroc.data.StockMovement
@@ -128,6 +130,7 @@ private enum class HomeTab(val label: String) {
 fun HomeScreen(
     viewModel: InvoiceViewModel,
     onNewInvoice: (InvoiceClient?) -> Unit,
+    onNewOrder: (InvoiceClient) -> Unit,
     onOpenRecord: (InvoiceRecord) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -140,6 +143,15 @@ fun HomeScreen(
     var tabIndex by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable { mutableStateOf("") }
     val tab = HomeTab.entries[tabIndex]
+
+    /*
+     * Which half of the directory is on screen. The tab stays "Clients" because
+     * that is the word a shop uses for the whole address book, and the two
+     * chips split it: a supplier is the same record shape, and a separate tab
+     * would make two kinds of party look like two kinds of screen.
+     */
+    var partyRoleIndex by rememberSaveable { mutableIntStateOf(0) }
+    val partyRole = PartyRole.entries[partyRoleIndex]
 
     var clientEditorOpen by remember { mutableStateOf(false) }
     var editingClient by remember { mutableStateOf<InvoiceClient?>(null) }
@@ -195,7 +207,7 @@ fun HomeScreen(
 
     val fabLabel = when (tab) {
         HomeTab.INVOICES -> "Nouvelle facture"
-        HomeTab.CLIENTS -> "Nouveau client"
+        HomeTab.CLIENTS -> "Nouveau ${partyRole.label.lowercase()}"
         HomeTab.ARTICLES -> "Nouvel article"
     }
 
@@ -375,6 +387,23 @@ fun HomeScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
 
+            if (tab == HomeTab.CLIENTS) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    PartyRole.entries.forEachIndexed { index, candidate ->
+                        ChoiceChip(
+                            label = candidate.plural,
+                            selected = partyRole == candidate,
+                            onClick = { partyRoleIndex = index },
+                        )
+                    }
+                }
+            }
+
             when (tab) {
                 HomeTab.INVOICES -> InvoicesTab(
                     records = records,
@@ -396,11 +425,13 @@ fun HomeScreen(
                     clients = clients,
                     records = records,
                     query = query,
+                    role = partyRole,
                     onEdit = {
                         editingClient = it
                         clientEditorOpen = true
                     },
                     onInvoice = { onNewInvoice(it) },
+                    onOrder = { onNewOrder(it) },
                     onDelete = { deleteClient = it },
                 )
 
@@ -500,12 +531,18 @@ fun HomeScreen(
             onDismiss = { clientEditorOpen = false },
             onSave = { updated ->
                 val previous = editingClient
-                if (previous != null && !previous.name.equals(updated.name, ignoreCase = true)) {
+                if (previous != null &&
+                    (!previous.name.equals(updated.name, ignoreCase = true) ||
+                        previous.role != updated.role)
+                ) {
+                    // Renamed, or moved to the other half of the directory:
+                    // either way the old key must go or the shop keeps a ghost.
                     viewModel.clients.delete(previous)
                 }
                 viewModel.clients.save(updated)
                 clientEditorOpen = false
             },
+            defaultRole = editingClient?.role ?: partyRole,
         )
     }
 
@@ -1065,13 +1102,18 @@ private fun ClientsTab(
     clients: List<InvoiceClient>,
     records: List<InvoiceRecord>,
     query: String,
+    role: PartyRole,
     onEdit: (InvoiceClient) -> Unit,
     onInvoice: (InvoiceClient) -> Unit,
+    onOrder: (InvoiceClient) -> Unit,
     onDelete: (InvoiceClient) -> Unit,
 ) {
-    val filtered = remember(clients, query) {
+    val noun = role.label.lowercase()
+    val saved = remember(clients, role) { clients.filter { it.role == role } }
+
+    val filtered = remember(saved, query) {
         val q = query.trim().lowercase()
-        if (q.isBlank()) clients else clients.filter {
+        if (q.isBlank()) saved else saved.filter {
             listOf(it.name, it.phone, it.email, it.ice).any { field -> field.lowercase().contains(q) }
         }
     }
@@ -1079,10 +1121,16 @@ private fun ClientsTab(
     if (filtered.isEmpty()) {
         EmptyState(
             icon = Icons.Filled.People,
-            title = if (clients.isEmpty()) "Aucun client enregistré" else "Aucun résultat",
-            message = if (clients.isEmpty()) {
-                "Enregistrez vos clients une fois. Sur chaque facture, leur nom, ICE et adresse " +
-                    "se remplissent sans les retaper."
+            title = if (saved.isEmpty()) "Aucun $noun enregistré" else "Aucun résultat",
+            message = if (saved.isEmpty()) {
+                when (role) {
+                    PartyRole.CLIENT ->
+                        "Enregistrez vos clients une fois. Sur chaque facture, leur nom, ICE et adresse " +
+                            "se remplissent sans les retaper."
+                    PartyRole.SUPPLIER ->
+                        "Enregistrez vos fournisseurs une fois. Un bon de commande reprend leur nom, " +
+                            "ICE et adresse sans les retaper."
+                }
             } else {
                 "Essayez un autre nom, un téléphone ou un ICE."
             },
@@ -1096,16 +1144,27 @@ private fun ClientsTab(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item(key = "count") {
-            SectionHeading("Clients enregistrés", trailing = "${filtered.size}")
+            SectionHeading(
+                if (role == PartyRole.CLIENT) "Clients enregistrés" else "Fournisseurs enregistrés",
+                trailing = "${filtered.size}",
+            )
         }
-        items(filtered, key = { "client-${it.name.lowercase()}" }) { client ->
+        items(filtered, key = { "${role.id}-${it.name.lowercase()}" }) { client ->
             ClientCard(
                 client = client,
-                documentCount = records.count {
-                    !it.isDraft && it.data.client.name.equals(client.name, ignoreCase = true)
+                documentCount = records.count { record ->
+                    !record.isDraft && when (role) {
+                        PartyRole.CLIENT ->
+                            record.data.documentType != DocumentType.BON_DE_COMMANDE &&
+                                record.data.client.name.equals(client.name, ignoreCase = true)
+                        PartyRole.SUPPLIER ->
+                            record.data.documentType == DocumentType.BON_DE_COMMANDE &&
+                                record.data.supplier?.name
+                                    ?.equals(client.name, ignoreCase = true) == true
+                    }
                 },
                 onClick = { onEdit(client) },
-                onInvoice = { onInvoice(client) },
+                onDocument = { if (role == PartyRole.CLIENT) onInvoice(client) else onOrder(client) },
                 onDelete = { onDelete(client) },
             )
         }
@@ -1117,7 +1176,7 @@ private fun ClientCard(
     client: InvoiceClient,
     documentCount: Int,
     onClick: () -> Unit,
-    onInvoice: () -> Unit,
+    onDocument: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
@@ -1196,11 +1255,19 @@ private fun ClientCard(
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     DropdownMenuItem(
-                        text = { Text("Facturer ce client") },
+                        text = {
+                            Text(
+                                if (client.role == PartyRole.SUPPLIER) {
+                                    "Bon de commande à ce fournisseur"
+                                } else {
+                                    "Facturer ce client"
+                                },
+                            )
+                        },
                         leadingIcon = { Icon(Icons.Filled.ReceiptLong, contentDescription = null) },
                         onClick = {
                             menuOpen = false
-                            onInvoice()
+                            onDocument()
                         },
                     )
                     DropdownMenuItem(

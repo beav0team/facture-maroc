@@ -15,8 +15,10 @@ Trois onglets, pas de détour :
 
 - **Factures** — brouillons et documents émis, total facturé du mois, recherche,
   duplication, suppression, export XML.
-- **Clients** — carnet d’adresses avec adresse, ICE, IF, RC, patente, CNSS et
-  téléphone ; le client se remplit sur la facture en un tap.
+- **Clients** — carnet d’adresses avec adresse, ICE, IF, RC, patente, CNSS,
+  téléphone et e-mail ; le client se remplit sur la facture en un tap. L’onglet
+  tient les deux carnets sous les puces **Clients / Fournisseurs** : un
+  fournisseur a les mêmes champs, et c’est lui qui remplit le bon de commande.
 - **Articles** — votre **inventaire** : chaque produit porte sa quantité en stock,
   son prix d'achat, son prix de vente et son code-barres (tapé ou **scanné avec
   l'appareil photo**) ; les prestations n'ont
@@ -39,6 +41,9 @@ Dans le constructeur de document :
   proforma, acompte, régularisation, facture simplifiée, facture à l'export.
   Chacun a sa propre séquence de numérotation (`F-`, `D-`, `BC-`, `T-`, `A-`,
   `PF-`, `AC-`, `REG-`, `FS-`, `E-`).
+- Un **bon de commande** est adressé au **fournisseur** : il prend la place du
+  client sur le document, et le carnet des fournisseurs le propose. Un bon de
+  commande sans fournisseur n’affiche pas de destinataire inventé.
 - Lignes prises dans le catalogue ou **tapées à la main**, quantité et prix
   modifiables, remise par ligne et remise générale.
 - **TVA configurable** (20 % par défaut), **exonération par ligne** et **mode
@@ -51,8 +56,16 @@ Dans le constructeur de document :
   remplace la facture N° …") ; l'export porte un **Incoterms** facultatif.
 - **Montant total écrit en toutes lettres**, en français, avec l'ouverture
   adaptée au type de document.
-- Quatre modèles PDF : **Classique, Moderne, Facture Maroc, Ticket**.
-- Logo du commerce, coordonnées et mentions légales sur chaque document.
+- **Six modèles PDF** : **Classique** (sobre, sans couleur), **Moderne** (titre
+  large et filet de couleur), **Facture Maroc** (grille TVA et mentions
+  légales), **Épuré** (typographique, beaucoup de blanc), **Bandeau** (bandeaux
+  de couleur en haut et en bas) et **Ticket** (rouleau 80 mm).
+- L’écran **Modèle de document** montre les six rendus réels, laisse choisir la
+  **couleur d’accent** (huit teintes) et règle ce qui s’imprime : logo,
+  identifiants légaux, montant en lettres, mode de règlement, pied de page.
+  Chaque interrupteur change l’aperçu et le document.
+- Logo du commerce, **téléphone et e-mail**, coordonnées et mentions légales sur
+  chaque document.
 
 Les documents sont générés en PDF dans le cache de l’application, puis remis au
 sélecteur Android. L’application n’a **aucun accès à vos données** : elle ne
@@ -105,12 +118,16 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 
 ## Tests
 
-**156 tests JVM**, plus deux tests instrumentés :
+**199 tests JVM**, plus sept tests instrumentés :
 
 | Suite | Ce qu’elle protège |
 |---|---|
-| `AmountWordsTest` | Nombres en lettres, accords de « cent », centimes, type de document |
-| `InvoiceDataTest` | Sous-total, remise, TVA, exonération, arrondis au centime |
+| `AmountWordsTest` | Nombres en lettres, accords de « cent » et « vingt » devant mille, centimes, type de document |
+| `InvoiceDataTest` | Sous-total, remise, TVA, exonération, arrondis au centime, destinataire d’un bon de commande |
+| `InvoiceDesignTest` | Couleur d’accent lue sans planter, huit teintes distinctes, interrupteurs par défaut |
+| `PdfTotalsTest` | Géométrie du bloc des totaux : le libellé s’arrête avant le montant |
+| `PdfTextTest` | Montants et pourcentages à la française, adresse sur une ligne |
+| `PageFlowTest` | Où couper une page, ce qui se répète en haut de la suivante |
 | `InvoiceJsonTest` | Aller-retour JSON sans perdre un champ imprimé |
 | `InvoiceValidationTest` | Champs obligatoires et blocage des documents incomplets |
 | `InvoiceXmlTest` | UBL 2.1 : espaces de noms, codes de type, totaux, échappement, document relu par un parseur |
@@ -130,8 +147,15 @@ les données d’un client réel.
 ### Tests sur l’appareil
 
 ```bash
-./gradlew connectedDebugAndroidTest   # 2 tests instrumentés
+./gradlew connectedDebugAndroidTest   # 7 tests instrumentés
 ```
+
+`InvoicePdfPagesTest` compte les feuilles d’un vrai PDF avec le lecteur
+d’Android, pour chaque modèle : une vente de trois lignes tient sur une page, une
+vente de quarante lignes se coupe en deux, **chaque feuille porte de l’encre** et
+le rouleau 80 mm ne se coupe jamais. C’est le rendu et l’écrivain du PDF qui
+s’accordent dans le même test — un modèle qui décide de paginer puis continue de
+dessiner sur la première feuille passerait tous les tests JVM.
 
 `BarcodeDecodeTest` ouvre un vrai EAN-13 (image livrée dans `androidTest/assets`,
 produite par `python-barcode`, pas dessinée à la main), le fait décoder par le
@@ -185,7 +209,7 @@ toute façon sur le même téléphone que celui qui peut réécrire l'archive.
 app/src/main/java/com/yassine/facturemaroc/
 ├── MainActivity.kt            navigation entre les trois onglets et le constructeur
 ├── data/                      modèles, stores JSON, sauvegarde, numérotation
-├── invoice/                   rendu PDF (4 modèles), XML, validation
+├── invoice/                   rendu PDF (6 modèles), pagination, XML, validation
 └── ui/                        Compose : accueil, constructeur, éditeurs, pickers
 ```
 
@@ -198,8 +222,8 @@ base de données, aucun appel réseau.
 - Ce n’est **pas un logiciel de comptabilité certifié**. Les mentions
   obligatoires (ICE, IF, RC, patente, CNSS, TVA) doivent être validées par le
   comptable du commerce.
-- Pas de suivi des paiements, de crédit client, de stock ni de rapports : choix
-  de périmètre de cette version.
+- Pas de suivi des paiements, de crédit client ni de rapports : choix de
+  périmètre de cette version.
 - Pas encore de synchronisation cloud ni de connexion Google. Une sauvegarde
   cloud facultative viendra plus tard, dans une version séparée, avec sa propre
   mise à jour de la politique de confidentialité.
@@ -224,6 +248,20 @@ e-mail de contact (obligatoire et vérifiée par Google) et publier l’AAB sign
 
 ## Historique
 
+- **0.7.0** — **refonte des modèles** : six rendus au lieu de quatre — Classique
+  (sobre, sans couleur), Moderne et Facture Maroc (les deux repris de Tyre
+  Finder), Épuré, Bandeau et le Ticket 80 mm —, tous **paginés** quand la vente
+  dépasse une feuille, avec l'en-tête du document répété et `Page 1 / 2` au pied ;
+  l'écran **Modèle de document** montre les six rendus réels (pas des vignettes
+  dessinées), laisse choisir la **couleur d'accent** parmi huit teintes et règle
+  cinq interrupteurs — logo, identifiants légaux, montant en lettres, mode de
+  règlement, pied de page — qui changent l'aperçu et le document ; **les
+  fournisseurs deviennent des tiers à part entière** : même fiche que les clients
+  (ICE, IF, RC, patente, CNSS, téléphone, e-mail), onglet Clients scindé en
+  Clients / Fournisseurs, un bon de commande adressé au fournisseur sans jamais
+  retomber sur le nom du magasin, et une icône « bon de commande » sur sa fiche ;
+  téléphone et e-mail du magasin imprimés ; « vingt » et « cent » ne prennent plus
+  leur *s* devant *mille* (80 000 se lit « quatre-vingt mille »).
 - **0.6.0** — **inventaire** : quantité en stock, prix d'achat (marge affichée) et
   code-barres par article, prestations sans quantité ; les articles vivent dans
   une **grille de dossiers** qu'on ouvre et qu'on quitte comme dans un gestionnaire

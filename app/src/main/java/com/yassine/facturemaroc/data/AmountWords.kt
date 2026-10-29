@@ -113,7 +113,19 @@ object AmountWords {
         if (n < 1_000_000) {
             val thousand = n / 1000
             val remainder = n % 1000
-            val t = if (thousand == 1) "MILLE" else numberToWords(thousand)
+            // "mille" is invariable and always follows the multiplier:
+            // 52 152 reads "cinquante-deux mille cent cinquante-deux". The
+            // multiplier used to be returned on its own, so every amount from
+            // 2 000 up lost the "mille" and read as a smaller number.
+            //
+            // "cent" and "vingt" take their s only when they end the number
+            // *and* no numeral adjective follows. "mille" is one, so 200 000
+            // is "deux cent mille" and 80 000 is "quatre-vingt mille" — the
+            // same rule that makes 200 "deux cents".
+            val multiplier = if (thousand == 1) "" else numberToWords(thousand)
+                .replace(Regex("CENTS$"), "CENT")
+                .replace(Regex("VINGTS$"), "VINGT")
+            val t = if (thousand == 1) "MILLE" else "$multiplier MILLE"
             return if (remainder == 0) {
                 t
             } else {

@@ -173,4 +173,102 @@ class InvoiceDataTest {
         assertEquals("", data.referenceNumber)
         assertEquals("", data.incoterm)
     }
+
+    @Test
+    fun `a bon de commande is addressed to the supplier, not the client`() {
+        val data = InvoiceData(
+            number = "BC-20260101-0001",
+            date = "01/01/2026",
+            client = InvoiceClient(name = "Le magasin"),
+            supplier = InvoiceClient(name = "Grossiste Atlas", ice = "007711223000045"),
+            lines = listOf(InvoiceLine("Pneu", quantity = 1, unitPrice = 100.0)),
+            documentType = DocumentType.BON_DE_COMMANDE,
+        )
+
+        assertEquals("Grossiste Atlas", data.partyName)
+        assertEquals("Fournisseur", data.partyLabel)
+        assertEquals("007711223000045", data.party.ice)
+    }
+
+    @Test
+    fun `an order form with no supplier names nobody`() {
+        val data = InvoiceData(
+            number = "BC-20260101-0001",
+            date = "01/01/2026",
+            client = InvoiceClient(name = "Le magasin"),
+            lines = listOf(InvoiceLine("Pneu", quantity = 1, unitPrice = 100.0)),
+            documentType = DocumentType.BON_DE_COMMANDE,
+        )
+
+        assertEquals("", data.partyName)
+        assertEquals("Fournisseur", data.partyLabel)
+    }
+
+    @Test
+    fun `a sale with no identified buyer is a walk-in, not a blank`() {
+        val data = invoice(
+            InvoiceLine("Pneu", quantity = 1, unitPrice = 100.0),
+            client = InvoiceClient(name = ""),
+        )
+
+        assertEquals("Client de passage", data.partyName)
+        assertEquals("Client", data.partyLabel)
+    }
+
+    @Test
+    fun `the history titles an order form with its supplier`() {
+        val record = InvoiceRecord(
+            id = "r1",
+            data = InvoiceData(
+                number = "BC-20260101-0001",
+                date = "01/01/2026",
+                client = InvoiceClient(name = "Mon magasin"),
+                supplier = InvoiceClient(name = "Grossiste Atlas"),
+                lines = emptyList(),
+                documentType = DocumentType.BON_DE_COMMANDE,
+            ),
+            status = InvoiceStatus.ISSUED,
+            createdAt = 1L,
+            updatedAt = 1L,
+        )
+
+        // Not "Mon magasin": on a bon de commande the shop is the client, and
+        // a history that named the shop on every order form was unreadable.
+        assertEquals("Grossiste Atlas", record.title)
+    }
+
+    @Test
+    fun `a walk-in sale is still titled as one`() {
+        val record = InvoiceRecord(
+            id = "r2",
+            data = invoice(
+                InvoiceLine("Pneu", quantity = 1, unitPrice = 100.0),
+                client = InvoiceClient(name = ""),
+            ),
+            status = InvoiceStatus.ISSUED,
+            createdAt = 1L,
+            updatedAt = 1L,
+        )
+
+        assertEquals("Client de passage", record.title)
+    }
+
+    @Test
+    fun `an order form with no supplier falls back to its type`() {
+        val record = InvoiceRecord(
+            id = "r3",
+            data = InvoiceData(
+                number = "BC-20260101-0002",
+                date = "01/01/2026",
+                client = InvoiceClient(name = "Mon magasin"),
+                lines = emptyList(),
+                documentType = DocumentType.BON_DE_COMMANDE,
+            ),
+            status = InvoiceStatus.DRAFT,
+            createdAt = 1L,
+            updatedAt = 1L,
+        )
+
+        assertEquals("Bon de commande", record.title)
+    }
 }

@@ -99,6 +99,40 @@ data class InvoiceData(
     /** Header text for the document: "FACTURE", "DEVIS", "BON DE COMMANDE". */
     val header: String get() = documentType.label
 
+    /**
+     * The party the document is addressed to.
+     *
+     * A bon de commande is written by the shop *to* a supplier, so the supplier
+     * takes the place the client occupies on every other document. The client
+     * field is not printed on it at all: the shop is the client.
+     */
+    val party: InvoiceClient
+        get() = if (documentType == DocumentType.BON_DE_COMMANDE) {
+            // Never the client: on an order form the client field holds the
+            // shop, and printing the shop's own name and ICE under
+            // "Fournisseur" would address the order to its author.
+            supplier ?: InvoiceClient(name = "")
+        } else {
+            client
+        }
+
+    /** What the party block is headed: "Client" or "Fournisseur". */
+    val partyLabel: String
+        get() = if (documentType == DocumentType.BON_DE_COMMANDE) "Fournisseur" else "Client"
+
+    /**
+     * The party's name as printed.
+     *
+     * A sale with no identified buyer is still a sale, and "Client de passage"
+     * is the term the shop already uses in its history. A bon de commande with
+     * no supplier says nothing rather than inventing one, because naming a
+     * supplier that did not supply anything is worse than a blank line.
+     */
+    val partyName: String
+        get() = party.name.trim().ifBlank {
+            if (documentType == DocumentType.BON_DE_COMMANDE) "" else "Client de passage"
+        }
+
     /** Whether this document shows payment method (Facture only). */
     val showPaymentMethod: Boolean get() = documentType == DocumentType.FACTURE
 

@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
+import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.ui.BuilderScreen
 import com.yassine.facturemaroc.ui.FactureMarocTheme
@@ -61,6 +62,16 @@ fun FactureMarocApp(viewModel: InvoiceViewModel) {
                 onNewInvoice = { client ->
                     viewModel.newDraft()
                     if (client != null) viewModel.setClient(client)
+                    destination = Destination.Builder
+                },
+                onNewOrder = { supplier ->
+                    // A bon de commande is addressed to a supplier, so opening
+                    // it from the suppliers list has to switch the document
+                    // type as well — otherwise the supplier would be typed in
+                    // as the customer of a facture.
+                    viewModel.newDraft()
+                    viewModel.setDocumentType(DocumentType.BON_DE_COMMANDE)
+                    viewModel.setSupplier(supplier)
                     destination = Destination.Builder
                 },
                 onOpenRecord = { record ->

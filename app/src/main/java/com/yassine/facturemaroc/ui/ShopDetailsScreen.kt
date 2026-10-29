@@ -99,6 +99,8 @@ fun ShopDetailsScreen(
 
     var name by remember(settings.name) { mutableStateOf(settings.name) }
     var address by remember(settings.address) { mutableStateOf(settings.address) }
+    var phone by remember(settings.phone) { mutableStateOf(settings.phone) }
+    var email by remember(settings.email) { mutableStateOf(settings.email) }
     var ice by remember(settings.ice) { mutableStateOf(settings.ice) }
     var ifNumber by remember(settings.ifNumber) { mutableStateOf(settings.ifNumber) }
     var rc by remember(settings.rc) { mutableStateOf(settings.rc) }
@@ -187,6 +189,8 @@ fun ShopDetailsScreen(
             settings.copy(
                 name = name.trim(),
                 address = address.trim(),
+                phone = phone.trim(),
+                email = email.trim(),
                 ice = ice.trim(),
                 ifNumber = ifNumber.trim(),
                 rc = rc.trim(),
@@ -353,6 +357,30 @@ fun ShopDetailsScreen(
                         minLines = 2,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     )
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedTextField(
+                            value = phone,
+                            onValueChange = { phone = it },
+                            label = { Text("Téléphone") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Phone,
+                                imeAction = ImeAction.Next,
+                            ),
+                        )
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("E-mail") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Email,
+                                imeAction = ImeAction.Next,
+                            ),
+                        )
+                    }
                 }
             }
 

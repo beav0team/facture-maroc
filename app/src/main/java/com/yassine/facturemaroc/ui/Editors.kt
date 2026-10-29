@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceLine
+import com.yassine.facturemaroc.data.PartyRole
 import com.yassine.facturemaroc.data.PriceBasis
 import com.yassine.facturemaroc.data.SavedItem
 import com.yassine.facturemaroc.data.SavedItemStore
@@ -60,19 +61,26 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Create or edit a client.
+ * Create or edit a client or a supplier.
  *
  * The legal identifiers are behind a disclosure because a walk-in customer is
  * a name and nothing else, and five tax fields on the first screen make the
  * common case look like paperwork.
+ *
+ * [defaultRole] is what a record created from here is, unless the shop says
+ * otherwise with the chips: the picker that opened the dialog knows whether it
+ * was opened for a client or a supplier, and the dialog must not silently
+ * turn a supplier into a client.
  */
 @Composable
 fun ClientEditorDialog(
     initial: InvoiceClient?,
     onSave: (InvoiceClient) -> Unit,
     onDismiss: () -> Unit,
+    defaultRole: PartyRole = PartyRole.CLIENT,
 ) {
     var name by remember(initial) { mutableStateOf(initial?.name ?: "") }
+    var role by remember(initial, defaultRole) { mutableStateOf(initial?.role ?: defaultRole) }
     var phone by remember(initial) { mutableStateOf(initial?.phone ?: "") }
     var email by remember(initial) { mutableStateOf(initial?.email ?: "") }
     var address by remember(initial) { mutableStateOf(initial?.address ?: "") }
@@ -86,7 +94,14 @@ fun ClientEditorDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initial == null) "Nouveau client" else "Modifier le client") },
+        title = {
+            Text(
+                when {
+                    initial == null -> "Nouveau ${role.label.lowercase()}"
+                    else -> "Modifier le ${role.label.lowercase()}"
+                },
+            )
+        },
         text = {
             Column(
                 Modifier
@@ -94,6 +109,15 @@ fun ClientEditorDialog(
                     .padding(vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PartyRole.entries.forEach { candidate ->
+                        ChoiceChip(
+                            label = candidate.label,
+                            selected = role == candidate,
+                            onClick = { role = candidate },
+                        )
+                    }
+                }
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -217,6 +241,7 @@ fun ClientEditorDialog(
                             phone = phone.trim(),
                             email = email.trim(),
                             vatExempt = vatExempt,
+                            role = role,
                         ),
                     )
                 },

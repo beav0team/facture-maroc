@@ -62,6 +62,11 @@ object Backup {
             JSONObject().apply {
                 put("template", design.template.id)
                 put("logoEnabled", design.logoEnabled)
+                put("accent", design.accent)
+                put("showAmountWords", design.showAmountWords)
+                put("showLegalIdentifiers", design.showLegalIdentifiers)
+                put("showPaymentMethod", design.showPaymentMethod)
+                put("showFooter", design.showFooter)
             },
         )
         put(
@@ -174,6 +179,14 @@ object Backup {
             design = InvoiceDesign(
                 template = InvoiceTemplate.fromId(designObject?.optString("template")),
                 logoEnabled = designObject?.optBoolean("logoEnabled", true) ?: true,
+                // A backup written before the switches existed means the
+                // defaults, which is the document it was made from.
+                accent = designObject?.optString("accent", InvoiceDesign.DEFAULT_ACCENT)
+                    ?.takeIf { it.isNotBlank() } ?: InvoiceDesign.DEFAULT_ACCENT,
+                showAmountWords = designObject?.optBoolean("showAmountWords", true) ?: true,
+                showLegalIdentifiers = designObject?.optBoolean("showLegalIdentifiers", true) ?: true,
+                showPaymentMethod = designObject?.optBoolean("showPaymentMethod", true) ?: true,
+                showFooter = designObject?.optBoolean("showFooter", true) ?: true,
             ),
             logo = logo,
             clients = clients,
@@ -245,6 +258,8 @@ object Backup {
     private fun shopToJson(shop: ShopSettings): JSONObject = JSONObject().apply {
         put("name", shop.name)
         put("address", shop.address)
+        put("phone", shop.phone)
+        put("email", shop.email)
         put("ice", shop.ice)
         put("ifNumber", shop.ifNumber)
         put("rc", shop.rc)
@@ -260,6 +275,8 @@ object Backup {
     private fun shopFromJson(obj: JSONObject): ShopSettings = ShopSettings(
         name = obj.optString("name", ""),
         address = obj.optString("address", ""),
+        phone = obj.optString("phone", ""),
+        email = obj.optString("email", ""),
         ice = obj.optString("ice", ""),
         ifNumber = obj.optString("ifNumber", ""),
         rc = obj.optString("rc", ""),
