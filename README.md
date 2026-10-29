@@ -5,7 +5,7 @@ Factures, devis, bons de commande, tickets, avoirs, proformas, acomptes,
 régularisations, factures simplifiées et factures à l'export — avec ICE, IF, RC,
 patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
-Version **0.6.0** (versionCode 7) · Android 8.0+ (minSdk 26) · Français.
+Version **0.7.1** (versionCode 9) · Android 8.0+ (minSdk 26) · Français.
 
 <img src="play_store/screenshots/01-factures.png" width="260" alt="Écran Factures">
 
@@ -106,7 +106,7 @@ wrapper Gradle fourni.
 
 ```bash
 export JAVA_HOME="$HOME/.local/jdk"      # ou votre JDK 21
-./gradlew testDebugUnitTest             # 156 tests JVM
+./gradlew testDebugUnitTest             # 223 tests JVM
 ./gradlew assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew bundleRelease                 # app/build/outputs/bundle/release/app-release.aab
 ./gradlew assembleRelease               # app/build/outputs/apk/release/app-release.apk
@@ -124,7 +124,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 
 ## Tests
 
-**199 tests JVM**, plus sept tests instrumentés :
+**223 tests JVM**, plus sept tests instrumentés :
 
 | Suite | Ce qu’elle protège |
 |---|---|
@@ -254,6 +254,26 @@ e-mail de contact (obligatoire et vérifiée par Google) et publier l’AAB sign
 
 ## Historique
 
+- **0.7.1** — corrections trouvées en relisant le code source de bout en bout,
+  toutes capables de mettre un chiffre faux sous les yeux d'un client.
+  **Enregistrer les paramètres remettait le compteur de factures à 1** : changer
+  le logo réattribuait `F-…-0001` au document suivant. **Fermer le sélecteur de
+  partage émettait la facture** : le brouillon disparaissait, le stock bougeait et
+  le numéro était dépensé pour un document que personne n'avait envoyé —
+  l'application demande maintenant « Document envoyé ? », et « Non » garde le
+  brouillon et rend le numéro. **Les lignes imprimées ne s'additionnaient pas au
+  sous-total** (trois fois `99,99 TTC` donnaient 249,98 en face de trois `83,33`)
+  et **un prix TTC dépendait du client présent au moment où la ligne était
+  ajoutée** : il est désormais mémorisé et relu quand le client change.
+  Ensuite, sept défauts plus silencieux : renommer un article ou un client
+  **écrasait la fiche qui portait déjà ce nom** (et sa quantité en stock) ; le
+  **total du mois** ignorait les factures simplifiées et à l'export et ne
+  retranchait pas les avoirs ; le **XML d'un bon de commande** nommait le client
+  là où le papier nomme le fournisseur ; **Template Maroc** imprimait les
+  identifiants du client même interrupteur coupé ; l'**archive** se déclarait
+  intacte quand son journal avait été supprimé ; la **sauvegarde** pouvait
+  produire un fichier que l'application refusait ensuite de restaurer ; et le
+  contrôle de total comparait une valeur avec elle-même.
 - **0.7.0** — **refonte des modèles** : six rendus au lieu de quatre — Classique
   (sobre, sans couleur), Moderne et Facture Maroc (les deux repris de Tyre
   Finder), Épuré, Bandeau et le Ticket 80 mm —, tous **paginés** quand la vente
