@@ -186,3 +186,28 @@ class ClientStore(private val context: Context) {
         private const val PREFS = "client_store"
     }
 }
+
+/**
+ * Whether [name] already belongs to a party other than [excluding].
+ *
+ * A client is stored under name and role, which is the pair that decides what a
+ * save replaces. Renaming onto a name the directory already holds would
+ * overwrite that party — its ICE, its address — instead of adding a second one,
+ * so the screen asks this before it saves.
+ *
+ * The role is part of the answer on purpose: a garage can be a client and a
+ * supplier at once, and the two records say different things.
+ */
+fun List<InvoiceClient>.nameTaken(
+    name: String,
+    role: PartyRole,
+    excluding: InvoiceClient? = null,
+): Boolean {
+    val target = name.trim()
+    val kept = excluding?.takeIf { it.role == role }?.name?.trim()
+    return any {
+        it.role == role &&
+            it.name.trim().equals(target, ignoreCase = true) &&
+            !(kept != null && it.name.trim().equals(kept, ignoreCase = true))
+    }
+}

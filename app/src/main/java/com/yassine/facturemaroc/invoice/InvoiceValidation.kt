@@ -100,7 +100,25 @@ object InvoiceValidation {
         // the centime, then summed. If this disagrees with the stored total, one
         // of them is lying and the document must not leave the phone.
         val recomputedSubtotal = round(data.lines.sumOf { round(it.total) })
-        val recomputedTotal = round(data.totalExcludingVat + data.vatAmount)
+
+        // The total, rebuilt from the lines rather than from the figures it is
+        // made of: `totalExcludingVat + vatAmount` is true by construction and
+        // could never fail. This repeats [InvoiceData]'s arithmetic on purpose —
+        // a second reading of the same lines is the only way to catch a total
+        // that was edited, or a formula that drifted.
+        val exactSubtotal = data.lines.sumOf { it.total }
+        val exactTaxable = data.lines.filterNot { it.taxExempt }.sumOf { it.total }
+        val exactDiscount = exactSubtotal * data.discountPercent.coerceIn(0, 100) / 100.0
+        val taxableNet = if (exactSubtotal == 0.0) {
+            0.0
+        } else {
+            exactTaxable - exactDiscount * (exactTaxable / exactSubtotal)
+        }
+        val recomputedTotal = round(
+            exactSubtotal - exactDiscount +
+                taxableNet * data.effectiveVatPercent.coerceAtLeast(0.0) / 100.0,
+        )
+
         if (!nearlyEqual(recomputedSubtotal, data.subtotal) || !nearlyEqual(recomputedTotal, data.total)) {
             add(
                 ValidationIssue(

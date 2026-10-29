@@ -4,6 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -96,6 +97,21 @@ class BackupTest {
     )
 
     private fun fullBackup(): String = Backup.build(
+        shop = shop,
+        design = design,
+        logo = logo,
+        clients = clients,
+        items = items,
+        invoices = invoices,
+        counters = counters,
+        folders = folders,
+        exportedAt = 1_234L,
+    )
+
+    private fun export(
+        logo: ByteArray?,
+        invoices: List<InvoiceRecord> = this.invoices,
+    ): Backup.Built = Backup.buildForExport(
         shop = shop,
         design = design,
         logo = logo,
@@ -270,5 +286,63 @@ class BackupTest {
 
         assertTrue(outcome is BackupReadOutcome.Failed)
         assertTrue((outcome as BackupReadOutcome.Failed).message.contains("8 Mo"))
+    }
+
+    @Test
+    fun `a logo that would push the file over the cap is left out`() {
+        // The picker allows a 4 MiB logo, which Base64 turns into 5.6 MB. With a
+        // few hundred documents carrying real descriptions, the file crosses the
+        // 8 MB the importer accepts — a backup that exists and can never be
+        // restored. Everything the shop cannot retype survives without it.
+        val huge = ByteArray(4 * 1024 * 1024) { 0x42 }
+        val fat = InvoiceRecord(
+            id = "fat",
+            data = InvoiceData(
+                number = "F-FAT",
+                date = "21/10/2026",
+                client = InvoiceClient(name = "Client"),
+                lines = listOf(InvoiceLine("L".repeat(20_000), quantity = 1, unitPrice = 100.0)),
+            ),
+            status = InvoiceStatus.ISSUED,
+            createdAt = 0,
+            updatedAt = 0,
+        )
+
+        val built = export(logo = huge, invoices = List(150) { fat })
+
+        assertFalse(built.logoIncluded)
+        assertTrue(built.json.toByteArray(Charsets.UTF_8).size <= Backup.MAX_BYTES)
+        val restored = Backup.parse(built.json)
+        assertNull(restored.logo)
+        assertEquals(150, restored.invoices.size)
+    }
+
+    @Test
+    fun `a logo that fits is kept, and the file is still readable`() {
+        val built = export(logo = logo)
+
+        assertTrue(built.logoIncluded)
+        assertArrayEquals(logo, Backup.parse(built.json).logo)
+    }
+
+    @Test
+    fun `a backup the app could not restore is refused instead of written`() {
+        // 60 documents of ~200 kB of remarks: over the cap even without a logo.
+        val fat = InvoiceRecord(
+            id = "fat",
+            data = InvoiceData(
+                number = "F-1",
+                date = "21/10/2026",
+                client = InvoiceClient(name = "Client"),
+                lines = listOf(InvoiceLine("L".repeat(200_000), quantity = 1, unitPrice = 100.0)),
+            ),
+            status = InvoiceStatus.ISSUED,
+            createdAt = 0,
+            updatedAt = 0,
+        )
+
+        val error = runCatching { export(logo = null, invoices = List(60) { fat }) }.exceptionOrNull()
+
+        assertTrue(error is Backup.TooLargeException)
     }
 }

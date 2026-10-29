@@ -36,6 +36,19 @@ object Backup {
 
     private const val MAX_LOGO_BYTES = 4 * 1024 * 1024
 
+    /** A backup ready to write, and whether its logo made it in. */
+    data class Built(
+        val json: String,
+        val logoIncluded: Boolean,
+    )
+
+    /**
+     * The whole shop as JSON, with no size limit.
+     *
+     * Used by a restore test and by [buildForExport], which is the only caller
+     * that writes a file. Kept uncapped so a test can build a small backup
+     * without going near the file system.
+     */
     fun build(
         shop: ShopSettings,
         design: InvoiceDesign,
@@ -108,6 +121,57 @@ object Backup {
             JSONArray().apply { invoices.forEach { put(InvoiceJson.recordToJson(it)) } },
         )
     }.toString(2)
+
+    /**
+     * The backup to write to a file, never larger than [read] will accept.
+     *
+     * The cap used to be enforced on import only, so a shop with a big logo
+     * could export a file that its own restore then refused — the backup looked
+     * done and was worth nothing. The logo is the only part that can be left out
+     * without losing a document, so an oversized payload is rebuilt without it
+     * and [Built.logoIncluded] says so. When even that does not fit, the file is
+     * refused here rather than written broken.
+     */
+    fun buildForExport(
+        shop: ShopSettings,
+        design: InvoiceDesign,
+        logo: ByteArray?,
+        clients: List<InvoiceClient>,
+        items: List<SavedItem>,
+        invoices: List<InvoiceRecord>,
+        counters: Map<String, Int>,
+        folders: List<String> = emptyList(),
+        exportedAt: Long = System.currentTimeMillis(),
+    ): Built {
+        fun render(withLogo: ByteArray?) = build(
+            shop = shop,
+            design = design,
+            logo = withLogo,
+            clients = clients,
+            items = items,
+            invoices = invoices,
+            counters = counters,
+            folders = folders,
+            exportedAt = exportedAt,
+        )
+
+        val full = render(logo)
+        if (full.sizeInBytes() <= MAX_BYTES) return Built(full, logoIncluded = logo != null)
+        if (logo == null) throw TooLargeException(TOO_LARGE)
+        val trimmed = render(null)
+        if (trimmed.sizeInBytes() > MAX_BYTES) throw TooLargeException(TOO_LARGE)
+        return Built(trimmed, logoIncluded = false)
+    }
+
+    /** The shop's data does not fit in a file this app would accept back. */
+    class TooLargeException(message: String) : Exception(message)
+
+    /** What the import cap is measured against, so the two agree. */
+    private fun String.sizeInBytes(): Int = toByteArray(Charsets.UTF_8).size
+
+    private const val TOO_LARGE =
+        "Cette sauvegarde dépasserait 8 Mo même sans le logo. Elle n'a pas été écrite : " +
+            "envoyez plutôt un export des factures par lots."
 
     /**
      * Reads a file, refusing anything that is not a complete backup.
@@ -316,5 +380,12 @@ sealed interface BackupReadOutcome {
 /** What writing a backup file produced. */
 sealed interface BackupExportOutcome {
     data object Saved : BackupExportOutcome
+
+    /** Written without the logo: with it, the file would not have fitted. */
+    data object SavedWithoutLogo : BackupExportOutcome
+
+    /** The shop's data does not fit in a file the app could restore. */
+    data class TooLarge(val message: String) : BackupExportOutcome
+
     data object Failed : BackupExportOutcome
 }

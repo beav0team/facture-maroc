@@ -104,6 +104,10 @@ import com.yassine.facturemaroc.data.SavedItemStore
 import com.yassine.facturemaroc.data.StockMovement
 import com.yassine.facturemaroc.data.XmlExportOutcome
 import com.yassine.facturemaroc.data.billedInMonth
+import com.yassine.facturemaroc.data.billedTotalInMonth
+import com.yassine.facturemaroc.data.creditedInMonth
+import com.yassine.facturemaroc.data.labelTaken
+import com.yassine.facturemaroc.data.nameTaken
 import com.yassine.facturemaroc.invoice.InvoiceXml
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -531,16 +535,28 @@ fun HomeScreen(
             onDismiss = { clientEditorOpen = false },
             onSave = { updated ->
                 val previous = editingClient
-                if (previous != null &&
-                    (!previous.name.equals(updated.name, ignoreCase = true) ||
-                        previous.role != updated.role)
-                ) {
-                    // Renamed, or moved to the other half of the directory:
-                    // either way the old key must go or the shop keeps a ghost.
-                    viewModel.clients.delete(previous)
+                val target = updated.name.trim()
+                // A client is keyed by name and role, which is the pair the
+                // store replaces on, so a rename onto a name the directory
+                // already holds would overwrite that party — its ICE, its
+                // address — instead of adding a second one.
+                if (clients.nameTaken(target, updated.role, excluding = previous)) {
+                    val kind = if (updated.role == PartyRole.CLIENT) "clients" else "fournisseurs"
+                    scope.launch {
+                        snackbar.showSnackbar("« $target » existe déjà dans vos $kind.")
+                    }
+                } else {
+                    if (previous != null &&
+                        (!previous.name.equals(updated.name, ignoreCase = true) ||
+                            previous.role != updated.role)
+                    ) {
+                        // Renamed, or moved to the other half of the directory:
+                        // either way the old key must go or the shop keeps a ghost.
+                        viewModel.clients.delete(previous)
+                    }
+                    viewModel.clients.save(updated)
+                    clientEditorOpen = false
                 }
-                viewModel.clients.save(updated)
-                clientEditorOpen = false
             },
             defaultRole = editingClient?.role ?: partyRole,
         )
@@ -558,17 +574,15 @@ fun HomeScreen(
             onDismiss = { itemEditorOpen = false },
             onSave = { updated ->
                 val previous = editingItem
-                // The label is the catalogue's key. Saving a "new" article under
-                // a name that is already taken would replace that product —
-                // including the quantity on its shelf — with a fresh row at
-                // zero. Better to say so and let the shop open the real one.
-                val clash = previous == null && items.any {
-                    it.label.trim().equals(updated.label.trim(), ignoreCase = true)
-                }
-                if (clash) {
+                val target = updated.label.trim()
+                // The label is the catalogue's key. Saving under a name that is
+                // already taken replaces that article — including the quantity
+                // on its shelf — with a fresh row at zero, so a rename onto an
+                // existing name is refused exactly like a fresh duplicate.
+                if (items.labelTaken(target, excluding = previous)) {
                     scope.launch {
                         snackbar.showSnackbar(
-                            "« ${updated.label.trim()} » existe déjà. Ouvrez-le pour le modifier.",
+                            "« $target » existe déjà. Ouvrez-le pour le modifier.",
                         )
                     }
                 } else {
@@ -891,7 +905,13 @@ private fun MonthSummary(records: List<InvoiceRecord>) {
     val issuedThisMonth = remember(records, monthStamp) {
         records.billedInMonth(monthStamp)
     }
-    val total = issuedThisMonth.sumOf { it.data.total }
+    val creditedThisMonth = remember(records, monthStamp) {
+        records.creditedInMonth(monthStamp)
+    }
+    // Less the credit notes: a facture cancelled by an avoir billed nothing.
+    val total = remember(records, monthStamp) {
+        records.billedTotalInMonth(monthStamp)
+    }
 
     Card(
         shape = MaterialTheme.shapes.large,
@@ -922,10 +942,25 @@ private fun MonthSummary(records: List<InvoiceRecord>) {
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    when (issuedThisMonth.size) {
-                        0 -> "Aucune facture émise ce mois-ci"
-                        1 -> "1 facture émise ce mois-ci"
-                        else -> "${issuedThisMonth.size} factures émises ce mois-ci"
+                    // The total is net of the credit notes, so the count has to
+                    // say so: "1 facture" next to a zero total reads as a bug
+                    // unless the avoir is named.
+                    when {
+                        issuedThisMonth.isEmpty() && creditedThisMonth.isEmpty() ->
+                            "Aucune facture émise ce mois-ci"
+
+                        creditedThisMonth.isEmpty() && issuedThisMonth.size == 1 ->
+                            "1 facture émise ce mois-ci"
+
+                        creditedThisMonth.isEmpty() ->
+                            "${issuedThisMonth.size} factures émises ce mois-ci"
+
+                        else ->
+                            "${issuedThisMonth.size} facture" +
+                                (if (issuedThisMonth.size > 1) "s" else "") +
+                                " et ${creditedThisMonth.size} avoir" +
+                                (if (creditedThisMonth.size > 1) "s" else "") +
+                                " ce mois-ci"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),

@@ -112,12 +112,18 @@ object InvoiceXml {
         }
 
         // --- sequence 32..34: parties
+        //
+        // The shop issues the document, so it is the supplier party whichever
+        // type this is. The customer party is [InvoiceData.party] and not
+        // [InvoiceData.client] for the same reason the paper prints it: on a bon
+        // de commande the recipient is the supplier, and a file that names the
+        // client there contradicts the document it claims to be.
         x.open("cac:AccountingSupplierParty")
         party(x, shop.asClient())
         x.close("cac:AccountingSupplierParty")
 
         x.open("cac:AccountingCustomerParty")
-        party(x, data.client)
+        party(x, data.party)
         x.close("cac:AccountingCustomerParty")
 
         // --- sequence 40: how it was paid (an invoice only, as on paper)

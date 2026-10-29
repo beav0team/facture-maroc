@@ -394,3 +394,25 @@ class SavedItemStore(context: Context) {
         }
     }
 }
+
+/**
+ * Whether [label] already names an article other than [excluding].
+ *
+ * The label is the catalogue's key: [SavedItemStore.save] replaces by it, and an
+ * invoice line is matched to the shelf by it. Two articles therefore cannot
+ * share one — a rename onto a taken name would silently replace the article
+ * that holds it, and the quantity on its shelf with it.
+ *
+ * [excluding] is the article being edited, which is not a clash with itself.
+ * Kept out of the screen, where it was `previous == null &&`, so the rule can be
+ * tested without Compose.
+ */
+fun List<SavedItem>.labelTaken(label: String, excluding: SavedItem? = null): Boolean {
+    val target = label.trim()
+    val kept = excluding?.label?.trim()
+    return any {
+        val current = it.label.trim()
+        current.equals(target, ignoreCase = true) &&
+            !(kept != null && current.equals(kept, ignoreCase = true))
+    }
+}

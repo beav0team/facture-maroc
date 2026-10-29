@@ -91,4 +91,28 @@ class InvoiceValidationTest {
 
         assertTrue(InvoiceValidation.validate(data).none { it.code == ValidationCode.TOTAL_MISMATCH })
     }
+
+    @Test
+    fun `three TTC lines that round to a different sum are not accused`() {
+        // 99,99 TTC is 83,325 HT: the printed subtotal is 249,99 while the exact
+        // sum is 249,975. The validator has to re-add the way the page does, or
+        // it would block every invoice with a price like this.
+        val line = InvoiceLine("Pose", 1, 99.99 / 1.2)
+        val data = invoice(lines = listOf(line, line, line))
+
+        assertTrue(InvoiceValidation.validate(data).none { it.code == ValidationCode.TOTAL_MISMATCH })
+    }
+
+    @Test
+    fun `an exempt line and a discount still re-add to the stored total`() {
+        val data = invoice(
+            lines = listOf(
+                InvoiceLine("Conseil", 1, 100.0, taxExempt = true),
+                InvoiceLine("Produit", 1, 200.0),
+            ),
+            discount = 10,
+        )
+
+        assertTrue(InvoiceValidation.validate(data).none { it.code == ValidationCode.TOTAL_MISMATCH })
+    }
 }

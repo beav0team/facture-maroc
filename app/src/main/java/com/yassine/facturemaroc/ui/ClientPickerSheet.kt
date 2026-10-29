@@ -180,7 +180,15 @@ fun ClientPickerSheet(
             defaultRole = role,
             onSave = { client ->
                 creating = false
-                onCreate(client)
+                // Keyed by name and role, so "saving" a name the directory
+                // already holds replaces that party — its ICE, its address — with
+                // the few fields typed here. A name that already exists is not a
+                // new client; it is that client, and picking it keeps its file.
+                val existing = saved.firstOrNull {
+                    it.name.trim().equals(client.name.trim(), ignoreCase = true) &&
+                        it.role == client.role
+                }
+                if (existing != null) onPick(existing) else onCreate(client)
             },
             onDismiss = { creating = false },
         )

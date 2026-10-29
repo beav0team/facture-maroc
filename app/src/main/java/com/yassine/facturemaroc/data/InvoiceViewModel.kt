@@ -648,22 +648,40 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * The logo is read from the file the PDF renderer reads, not from the
      * unused `logoBytes` field in settings, so a restored phone prints the same
      * header as the one that made the backup.
+     *
+     * The file is only written when the app could read it back: a backup over
+     * the import cap is refused with a reason rather than saved and refused at
+     * restore time, and a logo that alone pushes it over is dropped with a
+     * message the shop can act on.
      */
     suspend fun exportBackup(uri: Uri): BackupExportOutcome = withContext(Dispatchers.IO) {
         val app = getApplication<Application>()
         val logoFile = InvoiceDesignStore(app).logoFile(app)
         val logo = runCatching { if (logoFile.isFile) logoFile.readBytes() else null }.getOrNull()
-        val json = Backup.build(
-            shop = _shop.value,
-            design = _design.value,
-            logo = logo,
-            clients = clients.clients.value,
-            items = savedItems.items.value,
-            invoices = invoices.invoices.value,
-            counters = InvoiceNumber.counters(app),
-            folders = savedItems.folders.value,
-        )
-        if (writeText(uri, json)) BackupExportOutcome.Saved else BackupExportOutcome.Failed
+        val built = runCatching {
+            Backup.buildForExport(
+                shop = _shop.value,
+                design = _design.value,
+                logo = logo,
+                clients = clients.clients.value,
+                items = savedItems.items.value,
+                invoices = invoices.invoices.value,
+                counters = InvoiceNumber.counters(app),
+                folders = savedItems.folders.value,
+            )
+        }.getOrElse { error ->
+            return@withContext if (error is Backup.TooLargeException) {
+                BackupExportOutcome.TooLarge(error.message.orEmpty())
+            } else {
+                BackupExportOutcome.Failed
+            }
+        }
+        if (!writeText(uri, built.json)) return@withContext BackupExportOutcome.Failed
+        if (built.logoIncluded || logo == null) {
+            BackupExportOutcome.Saved
+        } else {
+            BackupExportOutcome.SavedWithoutLogo
+        }
     }
 
     /**

@@ -295,6 +295,23 @@ class InvoiceArchive(root: File) {
      */
     fun verify(): ArchiveVerification {
         synchronized(lock) {
+            if (!ledger.isFile) {
+                // No journal at all. A shop that never exported an XML has
+                // nothing to verify, which is fine; but if documents were stored
+                // and the journal that chained them is gone, the archive just
+                // lost the only thing that proves they were issued in order.
+                val stored = documents.listFiles()?.count { it.isFile } ?: 0
+                return if (stored == 0) {
+                    ArchiveVerification(0, true)
+                } else {
+                    ArchiveVerification(
+                        entries = 0,
+                        ok = false,
+                        problem = "Le journal de l'archive n'est plus là : $stored " +
+                            "document(s) exporté(s) n'ont plus d'entrée pour les rattacher.",
+                    )
+                }
+            }
             val entries = runCatching { readLedger() }.getOrNull()
                 ?: return ArchiveVerification(
                     entries = 0,

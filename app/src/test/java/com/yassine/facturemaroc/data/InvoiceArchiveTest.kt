@@ -276,4 +276,17 @@ class InvoiceArchiveTest {
         assertTrue(archive.entries().isEmpty())
         assertEquals("Aucun document dans l'archive.", verification.message)
     }
+
+    @Test
+    fun `a deleted journal with documents on disk is not reported as clean`() {
+        archive.record(data, xmlFor("F-1"))
+        File(root, "archive/ledger.jsonl").delete()
+
+        // The documents are still there, so the archive is not empty: it lost
+        // the only thing that proved they were issued in order.
+        val verification = archive.verify()
+
+        assertFalse(verification.ok)
+        assertTrue(verification.problem!!.contains("journal"))
+    }
 }

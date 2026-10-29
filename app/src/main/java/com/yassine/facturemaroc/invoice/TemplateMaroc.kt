@@ -109,7 +109,14 @@ class MarocRenderer : PdfRenderer {
         val partyDetail = listOf(
             PdfText.oneline(data.party.address),
             data.party.phone,
-            data.party.legalIdentifierLabels.joinToString("   ·   "),
+            // The switch that hides the shop's identifiers hides the client's
+            // too: a shop that turned it off for its own documents did not mean
+            // "print the customer's ICE instead".
+            if (design.showLegalIdentifiers) {
+                data.party.legalIdentifierLabels.joinToString("   ·   ")
+            } else {
+                ""
+            },
         ).filter { it.isNotBlank() }.joinToString("   ·   ")
         if (partyDetail.isNotBlank()) {
             PdfText.draw(canvas, partyDetail, margin + 8f, y + 35f, body, contentW - 20, maxLines = 1)

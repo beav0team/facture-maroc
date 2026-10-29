@@ -165,9 +165,19 @@ fun ShopDetailsScreen(
     ) { uri: Uri? ->
         if (uri != null) {
             scope.launch {
-                when (viewModel.exportBackup(uri)) {
+                when (val outcome = viewModel.exportBackup(uri)) {
                     BackupExportOutcome.Saved ->
                         snackbar.showSnackbar("Sauvegarde exportée.")
+
+                    BackupExportOutcome.SavedWithoutLogo ->
+                        snackbar.showSnackbar(
+                            "Sauvegarde exportée sans le logo : avec lui, le fichier " +
+                                "aurait dépassé la taille que l'application sait relire.",
+                        )
+
+                    is BackupExportOutcome.TooLarge ->
+                        snackbar.showSnackbar(outcome.message)
+
                     BackupExportOutcome.Failed ->
                         snackbar.showSnackbar("La sauvegarde n'a pas pu être écrite.")
                 }

@@ -168,6 +168,35 @@ class InvoiceXmlTest {
     }
 
     @Test
+    fun `an order form names the supplier as the party it is addressed to`() {
+        val order = data.copy(
+            documentType = DocumentType.BON_DE_COMMANDE,
+            number = "BC-20261021-0001",
+            supplier = InvoiceClient(name = "Grossiste Atlas", ice = "007711223000045"),
+        )
+
+        val bc = InvoiceXml.build(order, shop)
+
+        // The paper prints the supplier under "Fournisseur"; the file has to put
+        // the same party in the slot that says who the document is addressed to.
+        val customer = section(bc, "cac:AccountingCustomerParty")
+        assertTrue(customer.contains("Grossiste Atlas"))
+        assertTrue(customer.contains("007711223000045"))
+        assertFalse(customer.contains("Client &quot;Export&quot;"))
+    }
+
+    @Test
+    fun `a plain invoice still addresses the client`() {
+        val customer = section(xml, "cac:AccountingCustomerParty")
+
+        assertTrue(customer.contains("Client &quot;Export&quot; &amp; Fils"))
+        assertFalse(customer.contains("Atelier A&amp;B"))
+    }
+
+    private fun section(xml: String, tag: String): String =
+        xml.substringAfter("<$tag>").substringBefore("</$tag>")
+
+    @Test
     fun `a quote is a proforma and never an amount owed`() {
         val quote = data.copy(
             documentType = DocumentType.DEVIS,
