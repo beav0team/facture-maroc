@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
@@ -43,6 +44,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -50,7 +52,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceLine
+import com.yassine.facturemaroc.data.PriceBasis
 import com.yassine.facturemaroc.data.SavedItem
+import com.yassine.facturemaroc.data.SavedItemStore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -228,7 +232,19 @@ fun ClientEditorDialog(
     )
 }
 
-/** Create or edit one of the shop's own articles or services. */
+/**
+ * Create or edit one of the shop's own articles or services.
+ *
+ * A product and a service share this dialog because they share a shelf. The one
+ * question that separates them is "does it get counted?", and it is asked with a
+ * switch rather than by sending the shop to a second screen to decide which kind
+ * of thing it is about to type.
+ *
+ * [pricesIncludeVat] and [vatPercent] are passed in so the sale price is asked
+ * for in the basis the shop actually quotes — typing 150 into a field labelled
+ * "prix de vente" and finding 180 on the invoice is the kind of surprise that
+ * makes a shopkeeper stop trusting the app.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemEditorDialog(
@@ -237,8 +253,11 @@ fun ItemEditorDialog(
     onDismiss: () -> Unit,
     folders: List<String> = emptyList(),
     defaultFolder: String = "",
+    pricesIncludeVat: Boolean = false,
+    vatPercent: Double = 0.0,
 ) {
     var label by remember(initial) { mutableStateOf(initial?.label ?: "") }
+    var barcode by remember(initial) { mutableStateOf(initial?.barcode ?: "") }
     var unit by remember(initial) { mutableStateOf(initial?.unit ?: "") }
     var folder by remember(initial) {
         mutableStateOf(initial?.folder ?: defaultFolder)
@@ -247,36 +266,88 @@ fun ItemEditorDialog(
     var priceText by remember(initial) {
         mutableStateOf(initial?.price?.takeIf { it > 0.0 }?.trimZeros() ?: "")
     }
+    var purchaseText by remember(initial) {
+        mutableStateOf(initial?.purchasePrice?.takeIf { it > 0.0 }?.trimZeros() ?: "")
+    }
+    // A new article is assumed to be something on a shelf, because that is what
+    // a shop's catalogue mostly is. Editing an old one keeps whatever it was.
+    var tracksStock by remember(initial) { mutableStateOf(initial?.stock != null || initial == null) }
+    var stockText by remember(initial) {
+        mutableStateOf(initial?.stock?.toString() ?: "0")
+    }
+    var scanning by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    // Hidden on a device with no camera, where a button could only fail.
+    val canScan = remember(context) { hasCamera(context) }
+
     val price = priceText.replace(',', '.').toDoubleOrNull() ?: 0.0
+    val purchase = purchaseText.replace(',', '.').toDoubleOrNull() ?: 0.0
+    val stock = stockText.toIntOrNull()?.coerceAtLeast(0) ?: 0
+    val saleExVat = if (pricesIncludeVat) PriceBasis.excludingVat(price, vatPercent) else price
+    val margin = if (purchase > 0.0 && price > 0.0) saleExVat - purchase else null
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initial == null) "Nouvel article" else "Modifier l'article") },
+        title = {
+            Text(
+                when {
+                    initial != null -> "Modifier l'article"
+                    tracksStock -> "Nouvel article en stock"
+                    else -> "Nouvelle prestation"
+                },
+            )
+        },
         text = {
             Column(
                 Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(
-                    "Ce que vous vendez souvent, avec son prix. Il sera proposé en un geste " +
-                        "sur chaque facture.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
                     label = { Text("Désignation *") },
-                    placeholder = { Text("Prestation, main-d'œuvre, produit…") },
+                    placeholder = { Text("Pneu 205/55 R16, montage, valve…") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = barcode,
+                    // A scanned Code 128 label can carry letters, so the field
+                    // takes whatever the scanner read rather than forcing digits.
+                    onValueChange = { barcode = it },
+                    label = { Text("Code-barres (facultatif)") },
+                    placeholder = { Text("Les chiffres sous les barres") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Ascii,
+                        imeAction = ImeAction.Next,
+                    ),
+                    trailingIcon = {
+                        if (canScan) {
+                            IconButton(onClick = { scanning = true }) {
+                                Icon(
+                                    Icons.Filled.QrCodeScanner,
+                                    contentDescription = "Scanner le code-barres",
+                                )
+                            }
+                        }
+                    },
                 )
                 OutlinedTextField(
                     value = priceText,
                     onValueChange = { input ->
                         priceText = input.filter { it.isDigit() || it == '.' || it == ',' }
                     },
-                    label = { Text("Prix unitaire (DH) *") },
+                    label = {
+                        Text(
+                            when {
+                                !pricesIncludeVat -> "Prix de vente (DH HT) *"
+                                vatPercent > 0.0 -> "Prix de vente (DH TTC) *"
+                                else -> "Prix de vente (DH) *"
+                            },
+                        )
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(
@@ -285,19 +356,84 @@ fun ItemEditorDialog(
                     ),
                 )
                 OutlinedTextField(
-                    value = unit,
-                    onValueChange = { unit = it },
-                    label = { Text("Unité (facultatif)") },
-                    placeholder = { Text("heure, jour, unité, kg…") },
+                    value = purchaseText,
+                    onValueChange = { input ->
+                        purchaseText = input.filter { it.isDigit() || it == '.' || it == ',' }
+                    },
+                    label = { Text("Prix d'achat (DH HT, facultatif)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = ImeAction.Next,
+                    ),
                 )
+                if (margin != null) {
+                    Text(
+                        "Marge : ${margin.asDirhams()} par unité" +
+                            if (purchase > 0.0) {
+                                " (${((margin / purchase) * 100.0).let { Math.round(it).toInt() }} %)"
+                            } else {
+                                ""
+                            },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (margin < 0) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (tracksStock) {
+                        OutlinedTextField(
+                            value = stockText,
+                            onValueChange = { input -> stockText = input.filter { it.isDigit() }.take(6) },
+                            label = { Text("En stock") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next,
+                            ),
+                        )
+                    }
+                    OutlinedTextField(
+                        value = unit,
+                        onValueChange = { unit = it },
+                        label = { Text("Unité") },
+                        placeholder = { Text("unité, heure, kg") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("C'est une prestation", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "Aucune quantité à décompter.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = !tracksStock,
+                        onCheckedChange = { service -> tracksStock = !service },
+                    )
+                }
                 ExposedDropdownMenuBox(
                     expanded = folderMenuOpen,
                     onExpandedChange = { folderMenuOpen = it },
                 ) {
                     OutlinedTextField(
-                        value = folder.ifBlank { "Sans dossier" },
+                        value = if (folder.isBlank()) "Sans dossier" else SavedItemStore.display(folder),
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Dossier") },
@@ -319,11 +455,13 @@ fun ItemEditorDialog(
                                 folderMenuOpen = false
                             },
                         )
-                        folders.forEach { name ->
+                        folders.forEach { path ->
                             DropdownMenuItem(
-                                text = { Text(name) },
+                                // The path, not just the name: "Hiver" can
+                                // exist under two different folders.
+                                text = { Text(SavedItemStore.display(path)) },
                                 onClick = {
-                                    folder = name
+                                    folder = path
                                     folderMenuOpen = false
                                 },
                             )
@@ -341,6 +479,9 @@ fun ItemEditorDialog(
                             price = price,
                             unit = unit.trim(),
                             folder = folder.trim(),
+                            barcode = barcode.trim(),
+                            purchasePrice = purchase,
+                            stock = if (tracksStock) stock else null,
                         ),
                     )
                 },
@@ -354,30 +495,62 @@ fun ItemEditorDialog(
             TextButton(onClick = onDismiss) { Text("Annuler") }
         },
     )
+
+    if (scanning) {
+        BarcodeScannerDialog(
+            onScanned = { value ->
+                barcode = value
+                scanning = false
+            },
+            onDismiss = { scanning = false },
+        )
+    }
 }
 
 /**
  * Names a folder, or renames one.
  *
  * Both actions ask for exactly one thing, so they share a dialog: the only
- * difference is the title and whether the field starts filled.
+ * difference is the title and whether the field starts filled. [parent] is the
+ * folder the new one is created inside, and is drawn rather than typed: a path
+ * assembled by hand is a path with a typo in it, and a folder nobody can reach
+ * is worse than no folder.
  */
 @Composable
 fun FolderEditorDialog(
     initial: String?,
     onSave: (String) -> Unit,
     onDismiss: () -> Unit,
+    parent: String = "",
 ) {
     var name by remember(initial) { mutableStateOf(initial ?: "") }
+    // The separator is what makes a path a path, so a name carrying one would
+    // silently create two levels instead of one folder called "A/B".
+    val invalid = name.contains(SavedItemStore.SEPARATOR)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initial == null) "Nouveau dossier" else "Renommer le dossier") },
+        title = {
+            Text(
+                when {
+                    initial != null -> "Renommer le dossier"
+                    parent.isNotEmpty() -> "Nouveau sous-dossier"
+                    else -> "Nouveau dossier"
+                },
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    "Un dossier range les articles qui vont ensemble — boissons, prestations, " +
-                        "pièces. Les articles restent utilisables sur toutes les factures.",
+                    if (parent.isEmpty()) {
+                        "Un dossier range les articles qui vont ensemble — boissons, prestations, " +
+                            "pièces. Les dossiers peuvent contenir d'autres dossiers, et les " +
+                            "articles restent utilisables sur toutes les factures."
+                    } else {
+                        "Il sera créé dans « ${SavedItemStore.display(parent)} ». Un sous-dossier " +
+                            "sert à ranger ce qui va ensemble à l'intérieur d'un rayon — les pneus " +
+                            "d'hiver sous Pneus."
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -387,6 +560,12 @@ fun FolderEditorDialog(
                     label = { Text("Nom du dossier *") },
                     placeholder = { Text("Boissons, Prestations, Pièces…") },
                     singleLine = true,
+                    isError = invalid,
+                    supportingText = if (invalid) {
+                        { Text("Le caractère « / » sert à séparer les dossiers.") }
+                    } else {
+                        null
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 )
@@ -395,7 +574,7 @@ fun FolderEditorDialog(
         confirmButton = {
             Button(
                 onClick = { onSave(name.trim()) },
-                enabled = name.isNotBlank(),
+                enabled = name.isNotBlank() && !invalid,
                 shape = MaterialTheme.shapes.small,
             ) {
                 Text("Enregistrer")
@@ -407,104 +586,6 @@ fun FolderEditorDialog(
     )
 }
 
-/**
- * The list of folders, with the two actions that can change one.
- *
- * Renaming and deleting are here rather than hidden behind a long-press: a
- * folder chip is a filter, and a filter that quietly becomes an editor when
- * held is a trap. Counts are shown because the question "what is in this one?"
- * comes before "what do I do with it?".
- */
-@Composable
-fun ManageFoldersDialog(
-    folders: List<String>,
-    counts: Map<String, Int>,
-    onCreate: () -> Unit,
-    onRename: (String) -> Unit,
-    onDelete: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Dossiers d'articles") },
-        text = {
-            Column(
-                Modifier
-                    .verticalScroll(rememberScrollState())
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                if (folders.isEmpty()) {
-                    Text(
-                        "Aucun dossier. Créez-en un pour séparer, par exemple, les prestations " +
-                            "des produits que vous vendez.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                folders.forEach { folder ->
-                    val count = counts[folder] ?: 0
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            Icons.Filled.Folder,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp),
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                folder,
-                                style = MaterialTheme.typography.titleSmall,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                when (count) {
-                                    0 -> "Aucun article"
-                                    1 -> "1 article"
-                                    else -> "$count articles"
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        IconButton(onClick = { onRename(folder) }) {
-                            Icon(
-                                Icons.Filled.Edit,
-                                contentDescription = "Renommer $folder",
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                        IconButton(onClick = { onDelete(folder) }) {
-                            Icon(
-                                Icons.Filled.Delete,
-                                contentDescription = "Supprimer $folder",
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = onCreate, shape = MaterialTheme.shapes.small) {
-                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Nouveau dossier")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Fermer") }
-        },
-    )
-}
 
 /**
  * One invoice line, including the fields that are quick to change on the phone:
@@ -513,14 +594,27 @@ fun ManageFoldersDialog(
 @Composable
 fun LineEditorDialog(
     initial: InvoiceLine,
+    vatPercent: Double = 0.0,
+    pricesIncludeVat: Boolean = false,
     onSave: (InvoiceLine) -> Unit,
     onDelete: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
+    // The shop quotes its prices one way; this dialog has to speak that way or
+    // editing a line would silently move its price by the TVA rate every time
+    // it is opened. An exempt line has no TVA inside it, so it is shown as-is.
+    val ttcBasis = pricesIncludeVat && !initial.taxExempt && vatPercent > 0.0
     var description by remember(initial) { mutableStateOf(initial.description) }
     var unit by remember(initial) { mutableStateOf(initial.unit) }
     var quantityText by remember(initial) { mutableStateOf(initial.quantity.toString()) }
-    var priceText by remember(initial) { mutableStateOf(initial.unitPrice.trimZeros()) }
+    var priceText by remember(initial) {
+        mutableStateOf(
+            (
+                if (ttcBasis) PriceBasis.includingVat(initial.unitPrice, vatPercent)
+                else initial.unitPrice
+                ).trimZeros(),
+        )
+    }
     var discountText by remember(initial) {
         mutableStateOf(if (initial.lineDiscountPercent > 0) initial.lineDiscountPercent.toString() else "")
     }
@@ -574,7 +668,7 @@ fun LineEditorDialog(
                         onValueChange = { input ->
                             priceText = input.filter { it.isDigit() || it == '.' || it == ',' }
                         },
-                        label = { Text("Prix unitaire (DH)") },
+                        label = { Text(if (ttcBasis) "Prix unitaire TTC (DH)" else "Prix unitaire (DH)") },
                         singleLine = true,
                         modifier = Modifier.weight(1.3f),
                         keyboardOptions = KeyboardOptions(
@@ -652,7 +746,13 @@ fun LineEditorDialog(
                             description = description.trim(),
                             unit = unit.trim(),
                             quantity = quantity,
-                            unitPrice = price,
+                            // Shown TTC means given TTC: converted once, here,
+                            // because the invoice stores HT.
+                            unitPrice = if (ttcBasis) {
+                                PriceBasis.excludingVat(price, vatPercent)
+                            } else {
+                                price
+                            },
                             lineDiscountPercent = discount,
                             taxExempt = taxExempt,
                         ),

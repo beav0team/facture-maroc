@@ -5,7 +5,7 @@ Factures, devis, bons de commande, tickets, avoirs, proformas, acomptes,
 régularisations, factures simplifiées et factures à l'export — avec ICE, IF, RC,
 patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
-Version **0.3.0** (versionCode 4) · Android 8.0+ (minSdk 26) · Français.
+Version **0.6.0** (versionCode 7) · Android 8.0+ (minSdk 26) · Français.
 
 <img src="play_store/screenshots/01-factures.png" width="260" alt="Écran Factures">
 
@@ -17,8 +17,21 @@ Trois onglets, pas de détour :
   duplication, suppression, export XML.
 - **Clients** — carnet d’adresses avec adresse, ICE, IF, RC, patente, CNSS et
   téléphone ; le client se remplit sur la facture en un tap.
-- **Articles** — catalogue de prestations et de produits, **rangé en dossiers**
-  (« Prestations », « Produits », ou tout autre dossier créé par le commerce).
+- **Articles** — votre **inventaire** : chaque produit porte sa quantité en stock,
+  son prix d'achat, son prix de vente et son code-barres (tapé ou **scanné avec
+  l'appareil photo**) ; les prestations n'ont
+  pas de quantité. Le tout **rangé en dossiers** (« Pneus », « Prestations », ou
+  tout autre dossier créé par le commerce), et **un dossier peut en contenir un
+  autre** : les pneus d'hiver se rangent sous Pneus, et le fil d'Ariane rappelle
+  où l'on est. Un dossier s'ouvre comme dans une application de fichiers et se
+  referme par la flèche retour, un niveau à la fois.
+
+Le stock se met à jour tout seul : émettre une facture, un ticket, une facture
+simplifiée ou un export retire les quantités vendues ; un avoir les remet ; un
+devis, une proforma ou un bon de commande ne touche à rien. Supprimer une facture
+émise remet le stock. Une ligne est reconnue par sa désignation : renommer un
+article entre le brouillon et l'émission d'une facture empêche la déduction, et
+c'est le seul cas où la quantité ne suit pas.
 
 Dans le constructeur de document :
 
@@ -30,6 +43,10 @@ Dans le constructeur de document :
   modifiables, remise par ligne et remise générale.
 - **TVA configurable** (20 % par défaut), **exonération par ligne** et **mode
   auto-entrepreneur** (TVA non applicable sur tous les documents du magasin).
+- **Prix HT ou TTC au choix** : le commerce décide s'il tape ses prix hors taxe
+  (« TVA en sus ») ou taxe comprise (« TVA incluse »). La facture montre toujours
+  HT + TVA, comme l'exige un document ; un prix tapé TTC est divisé une seule
+  fois, à l'entrée, et ressort au centime près.
 - Avoir, acompte et régularisation portent une **référence** ("Annule et
   remplace la facture N° …") ; l'export porte un **Incoterms** facultatif.
 - **Montant total écrit en toutes lettres**, en français, avec l'ouverture
@@ -39,7 +56,11 @@ Dans le constructeur de document :
 
 Les documents sont générés en PDF dans le cache de l’application, puis remis au
 sélecteur Android. L’application n’a **aucun accès à vos données** : elle ne
-demande ni Internet, ni stockage, ni contacts.
+demande ni Internet, ni stockage, ni contacts. La seule permission est
+**l’appareil photo**, et seulement pour lire le code-barres d’un article au
+moment où vous touchez le bouton « scanner » ; refusez-la et le code se tape à
+la main. La lecture se fait sur le téléphone, aucune image n’est enregistrée ni
+envoyée.
 
 ## Confidentialité
 
@@ -61,12 +82,12 @@ GitHub Pages à l’adresse
 
 ## Construire
 
-Prérequis : JDK 21 et le SDK Android (compileSdk 35). Le projet utilise le
+Prérequis : JDK 21 et le SDK Android (compileSdk 36). Le projet utilise le
 wrapper Gradle fourni.
 
 ```bash
 export JAVA_HOME="$HOME/.local/jdk"      # ou votre JDK 21
-./gradlew testDebugUnitTest             # 60 tests JVM
+./gradlew testDebugUnitTest             # 156 tests JVM
 ./gradlew assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew bundleRelease                 # app/build/outputs/bundle/release/app-release.aab
 ./gradlew assembleRelease               # app/build/outputs/apk/release/app-release.apk
@@ -84,7 +105,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 
 ## Tests
 
-**60 tests JVM**, sans Android instrumenté :
+**156 tests JVM**, plus deux tests instrumentés :
 
 | Suite | Ce qu’elle protège |
 |---|---|
@@ -92,30 +113,71 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 | `InvoiceDataTest` | Sous-total, remise, TVA, exonération, arrondis au centime |
 | `InvoiceJsonTest` | Aller-retour JSON sans perdre un champ imprimé |
 | `InvoiceValidationTest` | Champs obligatoires et blocage des documents incomplets |
-| `InvoiceXmlTest` | Structure XML, échappement, totaux et numéro |
+| `InvoiceXmlTest` | UBL 2.1 : espaces de noms, codes de type, totaux, échappement, document relu par un parseur |
+| `InvoiceArchiveTest` | Chaîne de hachage : modification, suppression, réordonnancement, document remplacé, journal illisible |
 | `BackupTest` | Sauvegarde, restauration, compatibilité, plafond de taille, dossiers |
-| `SavedItemTest` | Articles, dossiers, doublons, migration v1 → v2 |
+| `SavedItemTest` | Articles, dossiers, doublons, migration v1 → v3 |
+| `StockMovementTest` | Ce qu'une émission retire du stock, ce qu'un devis ne touche pas, ce qu'un avoir remet |
+| `PriceBasisTest` | HT ↔ TTC : conversion, aller-retour d'un prix, total au centime |
+| `SavedItemSearchTest` | La recherche répond au code-barres, aux mots, à la casse et au dossier |
+| `FolderPathTest` | Dossiers imbriqués : parent, enfants, sous-arbre, renommage, suppression, recherche profonde |
+| `BarcodeTest` | Ce qui est gardé d'un code lu : ni saut de ligne, ni zéros perdus |
 | `InvoiceSummaryTest` | Le total du mois exclut devis, bons de commande et brouillons |
 
 Les captures Play utilisent un jeu de démonstration (« Atelier Atlas »), jamais
 les données d’un client réel.
+
+### Tests sur l’appareil
+
+```bash
+./gradlew connectedDebugAndroidTest   # 2 tests instrumentés
+```
+
+`BarcodeDecodeTest` ouvre un vrai EAN-13 (image livrée dans `androidTest/assets`,
+produite par `python-barcode`, pas dessinée à la main), le fait décoder par le
+même client ML Kit que le dialogue de scan, et vérifie que le code relu est
+stocké tel quel. Le premier jet attendait un chiffre de contrôle inventé pour le
+jeu de démonstration : le lecteur avait raison, le test était faux.
+
+L’appareil photo lui-même ne se teste pas sans une caméra braquée sur une boîte :
+ce qui reste à essayer à la main, c’est le viseur, et le fait qu’un scan ferme
+bien le dialogue en laissant le champ rempli.
 
 ## Données et formats
 
 Tout est local, en JSON ou dans les préférences Android :
 
 - `filesDir/invoices.json` — brouillons et documents émis.
-- `filesDir/saved_items.json` — articles et dossiers (format v2).
+- `filesDir/saved_items.json` — inventaire et dossiers (format v3). Un dossier
+  imbriqué s'écrit avec le chemin complet (`"Pneus/Hiver"`), donc un catalogue
+  écrit avant l'imbrication se relit tel quel.
 - `filesDir/shop_logo.png` — logo copié depuis le sélecteur de photos.
+- `filesDir/archive/ledger.jsonl` — chaîne de hachage des XML exportés.
+- `filesDir/archive/documents/<sha256>.xml` — copie exacte de chaque XML exporté.
 - Préférences — commerce, clients, compteurs de numérotation, design.
 
 **Sauvegarde** : un seul fichier JSON versionné (format 1) contenant commerce,
 logo, clients, articles, dossiers, factures, compteurs et préférences. La
 restauration valide le fichier puis remplace les données après confirmation.
 
-**XML** : espace de noms `urn:facture-maroc:invoice:1.0`, écrit avec le numéro
-définitif du document. Un export XML réussi consomme le numéro et marque le
-document comme émis ; un échec remet le compteur en place.
+**XML** : chaque export est écrit en **UBL 2.1**, le format que la DGI a retenu
+pour la facturation électronique. Le type suit les codes UN/CEFACT 1001 (380
+facture, 381 avoir, 384 régularisation, 386 devis et bon de commande), un avoir
+est un `CreditNote` et non une facture, et la devise est `MAD`. L'export porte le
+numéro définitif du document : un succès consomme le numéro et marque le
+document comme émis, un échec le remet en place.
+
+Le profil marocain de la DGI n'est pas encore publié : les champs qu'elle
+rendra obligatoires, et la signature électronique, ne sont donc pas écrits. Le
+fichier est du UBL 2.1 valide, pas encore du UBL « accepté par la DGI », et un
+seul fichier — `invoice/InvoiceXml.kt` — sera à modifier quand le profil sortira.
+
+**Archive** : chaque XML exporté est recopié dans `filesDir/archive/`, nommé par
+son empreinte SHA-256 et enchaîné au précédent. Modifier, retirer ou réordonner
+une ligne du journal, ou remplacer un document, est détecté. C'est une chaîne de
+hachage et non une signature : elle prouve qu'un document n'a pas bougé depuis
+son archivage, elle ne prouve pas qui l'a produit — une clé privée vivrait de
+toute façon sur le même téléphone que celui qui peut réécrire l'archive.
 
 ## Structure
 
@@ -141,6 +203,11 @@ base de données, aucun appel réseau.
 - Pas encore de synchronisation cloud ni de connexion Google. Une sauvegarde
   cloud facultative viendra plus tard, dans une version séparée, avec sa propre
   mise à jour de la politique de confidentialité.
+- L'export XML est du **UBL 2.1 standard**, sans le profil marocain de la DGI
+  (non publié) et sans signature électronique : aucune plateforme de
+  dématérialisation ne l'accepte encore, et rien dans l'application ne prétend
+  le contraire. L'archive détecte une modification, elle n'authentifie pas
+  l'auteur du document.
 - Application mono-appareil ; le transfert passe par le fichier de sauvegarde.
 - Interface en français uniquement.
 
@@ -157,6 +224,25 @@ e-mail de contact (obligatoire et vérifiée par Google) et publier l’AAB sign
 
 ## Historique
 
+- **0.6.0** — **inventaire** : quantité en stock, prix d'achat (marge affichée) et
+  code-barres par article, prestations sans quantité ; les articles vivent dans
+  une **grille de dossiers** qu'on ouvre et qu'on quitte comme dans un gestionnaire
+  de fichiers, et **les dossiers s'imbriquent** (un sous-dossier sous Pneus pour
+  l'hiver, sans limite de profondeur) — un dossier affiche le total de tout son
+  contenu, la recherche descend dans les sous-dossiers, renommer déplace tout le
+  sous-arbre et supprimer remonte les articles d'un cran au lieu de les perdre ;
+  **le stock suit les documents émis** (facture, ticket, simplifiée,
+  export retirent, avoir remet, devis/proforma/bon de commande ne touchent rien) ;
+  **prix HT ou TTC** au choix du commerce, converti une fois à l'entrée pour que
+  la facture reste HT + TVA et que le total retombe sur le prix annoncé ;
+  **lecture du code-barres à l'appareil photo** (la seule permission demandée,
+  et seulement au moment du scan : le code se tape aussi à la main, la lecture
+  se fait sur le téléphone et aucune image ne sort).
+- **0.5.0** — export **UBL 2.1**, le format retenu par la DGI : avoir émis en
+  `CreditNote`, codes de type UN/CEFACT, unités et moyens de paiement codés,
+  TVA ventilée par taux au lieu d'une moyenne, exonération déclarée comme telle
+  plutôt qu'un taux à 0 % ; **archive inviolable** des XML exportés (chaîne
+  SHA-256 et copie des fichiers) ; `targetSdk` 36.
 - **0.4.0** — nouveaux types de document : avoir, proforma, acompte,
   régularisation, facture simplifiée, facture à l'export, chacun avec sa propre
   numérotation ; référence ("Annule et remplace la facture N° …") sur les avoirs,

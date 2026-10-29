@@ -395,6 +395,7 @@ fun BuilderScreen(
                     discountPercent = invoice.discountPercent,
                     paymentMethod = invoice.paymentMethod,
                     vatPercent = invoice.effectiveVatPercent,
+                    pricesIncludeVat = shop.pricesIncludeVat,
                     showPayment = invoice.showPaymentMethod,
                     isDevis = invoice.isDevis,
                     validityDate = invoice.validityDate,
@@ -445,6 +446,8 @@ fun BuilderScreen(
             store = viewModel.savedItems,
             onPickLine = viewModel::addLine,
             onDismiss = { showItemPicker = false },
+            pricesIncludeVat = shop.pricesIncludeVat,
+            vatPercent = invoice.effectiveVatPercent,
         )
     }
 
@@ -531,6 +534,8 @@ fun BuilderScreen(
         } else {
             LineEditorDialog(
                 initial = line,
+                vatPercent = invoice.effectiveVatPercent,
+                pricesIncludeVat = shop.pricesIncludeVat,
                 onSave = {
                     viewModel.updateLine(index, it)
                     editingLine = null
@@ -912,6 +917,7 @@ private fun OptionsCard(
     discountPercent: Int,
     paymentMethod: PaymentMethod,
     vatPercent: Double,
+    pricesIncludeVat: Boolean,
     showPayment: Boolean,
     isDevis: Boolean,
     validityDate: String?,
@@ -969,6 +975,14 @@ private fun OptionsCard(
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
+                if (pricesIncludeVat && vatPercent > 0.0) {
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "prix TTC",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 TextButton(onClick = onOpenSettings) {
                     Text("Modifier")
                 }

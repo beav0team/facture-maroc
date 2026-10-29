@@ -51,29 +51,47 @@ data class InvoiceData(
 
     /** The part of the invoice that carries TVA. Exempt lines never do. */
     val taxableSubtotal: Double
-        get() = money(lines.filterNot { it.taxExempt }.sumOf { it.total })
+        get() = lines.filterNot { it.taxExempt }.sumOf { it.total }
 
     /**
-     * The TVA base after the invoice discount is shared out.
+     * The TVA base before the invoice discount is shared out.
      *
      * The invoice-level discount is spread over every line in proportion to
      * what it is worth, so an exempt line cannot accidentally reduce the tax
-     * that a taxed line owes. When no line is exempt this is exactly
-     * [totalExcludingVat], which is the behaviour every existing invoice has.
+     * that a taxed line owes. Kept unrounded because [total] is derived from
+     * it: rounding here first is what turned `99,99` into `100,00`.
      */
-    val vatBase: Double
+    private val taxableNet: Double
         get() = if (subtotal == 0.0) {
             0.0
         } else {
-            money(taxableSubtotal - discountAmount * (taxableSubtotal / subtotal))
+            taxableSubtotal - discountAmount * (taxableSubtotal / subtotal)
         }
 
-    val vatAmount: Double
-        get() = money(vatBase * effectiveVatPercent.coerceAtLeast(0.0) / 100.0)
+    /** The base a tax office reads: the same figure, to the centime. */
+    val vatBase: Double get() = money(taxableNet)
 
-    /** Total TTC: what the customer pays. The amount spelled out in letters. */
+    /**
+     * TVA actually charged.
+     *
+     * Derived from the total rather than computed from [vatBase], so that
+     * `HT + TVA = TTC` to the centime on every document. A shop that quotes
+     * `99,99 TTC` must see 99,99 on the invoice, and the tax is what makes up
+     * the difference — rounding it independently produces a total a customer
+     * never agreed to.
+     */
+    val vatAmount: Double
+        get() = money(total - totalExcludingVat)
+
+    /**
+     * Total TTC: what the customer pays. The amount spelled out in letters.
+     *
+     * Built from the unrounded figures for the same reason as [vatAmount]: a
+     * price typed TTC and divided by `1 + taux` must return exactly the price
+     * that was typed.
+     */
     val total: Double
-        get() = money(totalExcludingVat + vatAmount)
+        get() = money(subtotal - discountAmount + taxableNet * effectiveVatPercent.coerceAtLeast(0.0) / 100.0)
 
     /** The amount in words, the line that makes the document hard to alter. */
     val amountInWords: String get() = AmountWords.sentence(total, documentType)

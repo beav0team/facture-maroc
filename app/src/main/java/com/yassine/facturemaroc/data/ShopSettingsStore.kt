@@ -32,6 +32,11 @@ class ShopSettingsStore(private val context: Context) {
             putString("cnss", settings.cnss)
             putString("logoBytes", settings.logoBytes?.let { android.util.Base64.encodeToString(it, android.util.Base64.DEFAULT) })
             putFloat("vatPercent", settings.vatPercent.toFloat())
+            // Without these two the auto-entrepreneur switch and the price
+            // basis came back to their defaults on every launch, quietly
+            // re-taxing a shop that had said it was exempt.
+            putBoolean("vatNotApplicable", settings.vatNotApplicable)
+            putBoolean("pricesIncludeVat", settings.pricesIncludeVat)
             apply()
         }
         _settings.value = settings
@@ -52,6 +57,8 @@ class ShopSettingsStore(private val context: Context) {
                 ?.let { android.util.Base64.decode(it, android.util.Base64.DEFAULT) }
                 ?.takeIf { it.isNotEmpty() },
             vatPercent = prefs.getFloat("vatPercent", 20.0f).toDouble(),
+            vatNotApplicable = prefs.getBoolean("vatNotApplicable", false),
+            pricesIncludeVat = prefs.getBoolean("pricesIncludeVat", false),
         )
     }
 
@@ -70,6 +77,8 @@ class ShopSettingsStore(private val context: Context) {
                 putString("cnss", settings.cnss)
                 putString("logoBytes", settings.logoBytes?.let { android.util.Base64.encodeToString(it, android.util.Base64.DEFAULT) })
                 putFloat("vatPercent", settings.vatPercent.toFloat())
+                putBoolean("vatNotApplicable", settings.vatNotApplicable)
+                putBoolean("pricesIncludeVat", settings.pricesIncludeVat)
                 apply()
             }
         }

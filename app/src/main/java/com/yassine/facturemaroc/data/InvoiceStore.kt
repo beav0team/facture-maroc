@@ -33,6 +33,16 @@ data class InvoiceRecord(
     val status: InvoiceStatus,
     val createdAt: Long,
     val updatedAt: Long,
+    /**
+     * Whether issuing this document moved stock, so deleting it may move it back.
+     *
+     * False for anything saved before the inventory existed: those documents
+     * never took a tyre off a shelf, and crediting them on deletion would raise
+     * the count of a product that was never counted. The alternative — deducing
+     * it from the document type — would be right for every document written by
+     * this build and wrong for every document written by the last one.
+     */
+    val stockApplied: Boolean = false,
 ) {
     /** What the history list calls it. A blank client is a walk-in sale. */
     val title: String

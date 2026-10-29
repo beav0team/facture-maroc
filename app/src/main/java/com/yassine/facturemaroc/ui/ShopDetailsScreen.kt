@@ -37,6 +37,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -108,6 +109,9 @@ fun ShopDetailsScreen(
     }
     var vatNotApplicable by remember(settings.vatNotApplicable) {
         mutableStateOf(settings.vatNotApplicable)
+    }
+    var pricesIncludeVat by remember(settings.pricesIncludeVat) {
+        mutableStateOf(settings.pricesIncludeVat)
     }
     var logoVersion by remember { mutableIntStateOf(0) }
 
@@ -190,6 +194,7 @@ fun ShopDetailsScreen(
                 cnss = cnss.trim(),
                 vatPercent = vat,
                 vatNotApplicable = vatNotApplicable,
+                pricesIncludeVat = pricesIncludeVat,
                 invoiceCounter = counter,
             ),
         )
@@ -443,6 +448,37 @@ fun ShopDetailsScreen(
                             )
                         }
                     }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    Text(
+                        "Vos prix sont affichés",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ChoiceChip(
+                            label = "HT — TVA en sus",
+                            selected = !pricesIncludeVat,
+                            onClick = { pricesIncludeVat = false },
+                        )
+                        ChoiceChip(
+                            label = "TTC — TVA incluse",
+                            selected = pricesIncludeVat,
+                            onClick = { pricesIncludeVat = true },
+                        )
+                    }
+                    Text(
+                        if (pricesIncludeVat) {
+                            "Vous tapez le prix que le client paie : l'application en déduit " +
+                                "le HT et la TVA. La facture montre toujours HT + TVA, comme " +
+                                "l'exige une facture."
+                        } else {
+                            "Vous tapez le prix hors taxe : la TVA s'ajoute au total."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 

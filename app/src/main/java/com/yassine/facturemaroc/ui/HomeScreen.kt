@@ -1,6 +1,7 @@
 package com.yassine.facturemaroc.ui
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -19,6 +20,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -26,6 +31,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
@@ -33,6 +39,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.People
@@ -85,10 +93,13 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceRecord
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.SavedItem
+import com.yassine.facturemaroc.data.SavedItemStore
+import com.yassine.facturemaroc.data.StockMovement
 import com.yassine.facturemaroc.data.XmlExportOutcome
 import com.yassine.facturemaroc.data.billedInMonth
 import com.yassine.facturemaroc.invoice.InvoiceXml
@@ -134,11 +145,20 @@ fun HomeScreen(
     var editingClient by remember { mutableStateOf<InvoiceClient?>(null) }
     var itemEditorOpen by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<SavedItem?>(null) }
-    var folderFilter by rememberSaveable { mutableStateOf<String?>(null) }
+    /*
+     * Where the Articles tab is standing.
+     *
+     * `null` is the folder grid. `""` is the articles that belong to no folder,
+     * and any other value is a folder name. The grid's "Tous" tile is a second
+     * flag rather than a sentinel name, because a shop can create a folder
+     * called anything and a name it is allowed to type must never mean
+     * "everything".
+     */
+    var inFolder by rememberSaveable { mutableStateOf<String?>(null) }
+    var showAllArticles by rememberSaveable { mutableStateOf(false) }
     var folderEditorOpen by remember { mutableStateOf(false) }
     var renamingFolder by remember { mutableStateOf<String?>(null) }
     var deleteFolder by remember { mutableStateOf<String?>(null) }
-    var manageFoldersOpen by remember { mutableStateOf(false) }
     var detailRecord by remember { mutableStateOf<InvoiceRecord?>(null) }
     var xmlRecord by remember { mutableStateOf<InvoiceRecord?>(null) }
     var deleteInvoice by remember { mutableStateOf<InvoiceRecord?>(null) }
@@ -179,25 +199,97 @@ fun HomeScreen(
         HomeTab.ARTICLES -> "Nouvel article"
     }
 
+    /*
+     * The Articles tab is a stack — the folder grid, then one folder at each
+     * depth — and both the top bar and the tab content read from these, so the
+     * title can never disagree with the list about which folder is open.
+     *
+     * `null` is the grid, `""` is "Sans dossier", and anything else is a folder
+     * path such as "Pneus/Hiver".
+     */
+    val articleFolder = inFolder
+    val articlesInList = tab == HomeTab.ARTICLES && (showAllArticles || articleFolder != null)
+    val subFolders = remember(folders, articleFolder) {
+        articleFolder?.let { SavedItemStore.children(it, folders) }.orEmpty()
+    }
+    val articleScopeItems = when {
+        showAllArticles || articleFolder == null -> items
+        else -> SavedItemStore.itemsIn(articleFolder, items)
+    }
+
+    // Up one level, not out of the app: the folder grid, then each parent, so
+    // the system back gesture walks the same tree the tiles do.
+    val goUp: () -> Unit = {
+        if (showAllArticles) {
+            showAllArticles = false
+        } else {
+            val path = inFolder
+            inFolder = when {
+                path.isNullOrEmpty() -> null
+                path.contains(SavedItemStore.SEPARATOR) -> SavedItemStore.parentOf(path)
+                else -> null
+            }
+        }
+    }
+    BackHandler(enabled = articlesInList, onBack = goUp)
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            "Facture Maroc",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            shop.name.ifBlank { "Gestion de facturation" },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                    if (articlesInList) {
+                        Column {
+                            Text(
+                                when {
+                                    showAllArticles -> "Tous les articles"
+                                    articleFolder?.isEmpty() == true -> "Sans dossier"
+                                    // The whole path, because a sub-folder called
+                                    // "Hiver" says nothing about where it is, and
+                                    // the shop may have two of them.
+                                    else -> SavedItemStore.display(articleFolder.orEmpty())
+                                },
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                countLine(articleScopeItems.size, subFolders.size),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    } else {
+                        Column {
+                            Text(
+                                "Facture Maroc",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Text(
+                                shop.name.ifBlank { "Gestion de facturation" },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                },
+                navigationIcon = {
+                    if (articlesInList) {
+                        IconButton(onClick = goUp) {
+                            Icon(
+                                Icons.Filled.ArrowBack,
+                                contentDescription = if (articleFolder.orEmpty().contains(SavedItemStore.SEPARATOR)) {
+                                    "Dossier parent"
+                                } else {
+                                    "Retour aux dossiers"
+                                },
+                            )
+                        }
                     }
                 },
                 actions = {
@@ -312,23 +404,92 @@ fun HomeScreen(
                     onDelete = { deleteClient = it },
                 )
 
-                HomeTab.ARTICLES -> ItemsTab(
-                    items = items,
-                    folders = folders,
-                    query = query,
-                    selectedFolder = folderFilter,
-                    onSelectFolder = { folderFilter = it },
-                    onCreateFolder = {
-                        renamingFolder = null
-                        folderEditorOpen = true
-                    },
-                    onManageFolders = { manageFoldersOpen = true },
-                    onEdit = {
-                        editingItem = it
-                        itemEditorOpen = true
-                    },
-                    onDelete = { deleteItem = it },
-                )
+                HomeTab.ARTICLES -> {
+                    /*
+                     * A search typed on the folder grid looks through the whole
+                     * catalogue, because from there the shop is asking "where
+                     * did I put this?". Typed inside a folder it looks through
+                     * that folder and everything below it, because there the
+                     * question is "is it here?" and a tyre filed under
+                     * Pneus/Hiver is still in Pneus.
+                     */
+                    val searching = query.isNotBlank()
+                    val searchingEverything = searching && !articlesInList
+                    when {
+                        searching -> {
+                            val scopeItems = if (searchingEverything) {
+                                items
+                            } else {
+                                SavedItemStore.itemsIn(articleFolder.orEmpty(), items, deep = true)
+                            }
+                            ArticlesList(
+                                // One search rule for the whole app, the same
+                                // one the invoice picker uses, barcode included.
+                                items = remember(scopeItems, query) {
+                                    scopeItems.filter { SavedItemStore.matches(it, query) }
+                                },
+                                // A result can come from a sub-folder, and an
+                                // article the shop cannot place is an article it
+                                // will not find again.
+                                showFolder = searchingEverything || showAllArticles || subFolders.isNotEmpty(),
+                                emptyTitle = "Aucun résultat",
+                                emptyMessage = "Essayez un autre mot.",
+                                onEdit = {
+                                    editingItem = it
+                                    itemEditorOpen = true
+                                },
+                                onDelete = { deleteItem = it },
+                            )
+                        }
+
+                        articlesInList -> {
+                            FolderContents(
+                                articles = articleScopeItems,
+                                subFolders = subFolders,
+                                allItems = items,
+                                onOpenFolder = { path ->
+                                    inFolder = path
+                                    query = ""
+                                },
+                                onCreateFolder = {
+                                    renamingFolder = null
+                                    folderEditorOpen = true
+                                },
+                                onRenameFolder = {
+                                    renamingFolder = it
+                                    folderEditorOpen = true
+                                },
+                                onDeleteFolder = { deleteFolder = it },
+                                onEdit = {
+                                    editingItem = it
+                                    itemEditorOpen = true
+                                },
+                                onDelete = { deleteItem = it },
+                            )
+                        }
+
+                        else -> {
+                            ArticlesFoldersGrid(
+                                items = items,
+                                folders = folders,
+                                onOpenAll = { showAllArticles = true },
+                                onOpenFolder = { path ->
+                                    inFolder = path
+                                    query = ""
+                                },
+                                onCreateFolder = {
+                                    renamingFolder = null
+                                    folderEditorOpen = true
+                                },
+                                onRenameFolder = {
+                                    renamingFolder = it
+                                    folderEditorOpen = true
+                                },
+                                onDeleteFolder = { deleteFolder = it },
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -352,15 +513,34 @@ fun HomeScreen(
         ItemEditorDialog(
             initial = editingItem,
             folders = folders,
-            defaultFolder = folderFilter ?: "",
+            defaultFolder = if (showAllArticles) "" else inFolder.orEmpty(),
+            // The sale price is asked for in the basis the shop quotes, so the
+            // number typed here is the number the customer is told.
+            pricesIncludeVat = shop.pricesIncludeVat,
+            vatPercent = if (shop.vatNotApplicable) 0.0 else shop.vatPercent,
             onDismiss = { itemEditorOpen = false },
             onSave = { updated ->
                 val previous = editingItem
-                if (previous != null && !previous.label.equals(updated.label, ignoreCase = true)) {
-                    viewModel.savedItems.delete(previous)
+                // The label is the catalogue's key. Saving a "new" article under
+                // a name that is already taken would replace that product —
+                // including the quantity on its shelf — with a fresh row at
+                // zero. Better to say so and let the shop open the real one.
+                val clash = previous == null && items.any {
+                    it.label.trim().equals(updated.label.trim(), ignoreCase = true)
                 }
-                viewModel.savedItems.save(updated)
-                itemEditorOpen = false
+                if (clash) {
+                    scope.launch {
+                        snackbar.showSnackbar(
+                            "« ${updated.label.trim()} » existe déjà. Ouvrez-le pour le modifier.",
+                        )
+                    }
+                } else {
+                    if (previous != null && !previous.label.equals(updated.label, ignoreCase = true)) {
+                        viewModel.savedItems.delete(previous)
+                    }
+                    viewModel.savedItems.save(updated)
+                    itemEditorOpen = false
+                }
             },
         )
     }
@@ -392,15 +572,34 @@ fun HomeScreen(
     }
 
     deleteInvoice?.let { record ->
+        // What deletion does now depends on what the document was, so the
+        // sentence has to match. Telling a shop "the line only disappears" and
+        // then quietly adding a tyre back to its shelf is how an app loses
+        // trust over a dialog nobody rereads.
+        val effect = when {
+            record.isDraft -> "Le brouillon disparaît de l'historique."
+            record.stockApplied && StockMovement.direction(record.data.documentType) > 0 ->
+                "Le PDF déjà envoyé reste chez le client ; les quantités rendues par l'avoir sont reprises du stock."
+            record.stockApplied ->
+                "Le PDF déjà envoyé reste chez le client ; les quantités vendues retournent au stock."
+            else -> "Le PDF déjà envoyé reste chez le client ; la ligne disparaît de l'historique."
+        }
         ConfirmDeleteDialog(
-            title = "Supprimer cette facture ?",
-            message = "${record.data.number} · ${record.title} — ${record.data.total.asDirhams()}. " +
-                "Cette action ne touche pas au PDF déjà envoyé, mais la ligne disparaît de l'historique.",
+            title = if (record.isDraft) "Supprimer ce brouillon ?" else "Supprimer ce document ?",
+            message = "${record.data.number} · ${record.title} — ${record.data.total.asDirhams()}. $effect",
             onDismiss = { deleteInvoice = null },
             onConfirm = {
                 viewModel.deleteRecord(record.id)
                 deleteInvoice = null
-                scope.launch { snackbar.showSnackbar("Facture supprimée de l'historique.") }
+                scope.launch {
+                    snackbar.showSnackbar(
+                        if (record.stockApplied) {
+                            "Document supprimé, stock rétabli."
+                        } else {
+                            "Document supprimé de l'historique."
+                        },
+                    )
+                }
             },
         )
     }
@@ -429,50 +628,36 @@ fun HomeScreen(
         )
     }
 
-    if (manageFoldersOpen) {
-        ManageFoldersDialog(
-            folders = folders,
-            counts = items.groupingBy { it.folder }.eachCount(),
-            onCreate = {
-                manageFoldersOpen = false
-                renamingFolder = null
-                folderEditorOpen = true
-            },
-            onRename = { folder ->
-                manageFoldersOpen = false
-                renamingFolder = folder
-                folderEditorOpen = true
-            },
-            onDelete = { folder ->
-                manageFoldersOpen = false
-                deleteFolder = folder
-            },
-            onDismiss = { manageFoldersOpen = false },
-        )
-    }
-
     if (folderEditorOpen) {
         val previous = renamingFolder
         FolderEditorDialog(
-            initial = previous,
+            initial = previous?.let { SavedItemStore.nameOf(it) },
+            parent = if (previous == null) inFolder.orEmpty() else SavedItemStore.parentOf(previous),
             onSave = { name ->
-                val saved = if (previous == null) {
-                    viewModel.savedItems.createFolder(name)
+                if (previous == null) {
+                    val created = viewModel.savedItems.createFolder(name, inFolder.orEmpty())
+                    if (created != null) {
+                        // A folder made while standing in another one opens, so
+                        // the shop can put something in it straight away.
+                        inFolder = created
+                        folderEditorOpen = false
+                    } else {
+                        scope.launch { snackbar.showSnackbar("Ce dossier existe déjà ici.") }
+                    }
                 } else {
-                    viewModel.savedItems.renameFolder(previous, name)
-                }
-                if (saved) {
-                    if (previous != null && folderFilter == previous) folderFilter = name
-                    folderEditorOpen = false
-                } else {
-                    scope.launch {
-                        snackbar.showSnackbar(
-                            if (previous == null) {
-                                "Ce dossier existe déjà."
-                            } else {
-                                "Ce nom est déjà utilisé par un autre dossier."
-                            },
-                        )
+                    val renamed = viewModel.savedItems.renameFolder(previous, name)
+                    if (renamed != null) {
+                        // Renaming the folder that is open (or one above it)
+                        // keeps the shop where it was standing instead of
+                        // dropping it back on the grid.
+                        inFolder?.let { open ->
+                            if (SavedItemStore.isIn(open, previous)) {
+                                inFolder = SavedItemStore.rebase(open, previous, renamed)
+                            }
+                        }
+                        folderEditorOpen = false
+                    } else {
+                        scope.launch { snackbar.showSnackbar("Ce nom est déjà utilisé ici.") }
                     }
                 }
             },
@@ -481,24 +666,39 @@ fun HomeScreen(
     }
 
     deleteFolder?.let { folder ->
-        val count = items.count { it.folder.equals(folder, ignoreCase = true) }
+        val inSubtree = items.count { SavedItemStore.isIn(it.folder, folder) }
+        val subs = folders.count { it != folder && SavedItemStore.isIn(it, folder) }
+        val parent = SavedItemStore.parentOf(folder)
         AlertDialog(
             onDismissRequest = { deleteFolder = null },
-            title = { Text("Supprimer le dossier ?") },
+            title = { Text("Supprimer ce dossier ?") },
             text = {
                 Text(
-                    "« $folder » sera supprimé. " + when (count) {
-                        0 -> "Aucun article n'y est rangé."
-                        1 -> "1 article sera conservé dans « Sans dossier »."
-                        else -> "$count articles seront conservés dans « Sans dossier »."
-                    },
+                    listOf(
+                        "« ${SavedItemStore.nameOf(folder)} » sera supprimé" +
+                            if (subs == 0) {
+                                "."
+                            } else {
+                                " avec ${if (subs == 1) "son sous-dossier" else "ses $subs sous-dossiers"}."
+                            },
+                        when (inSubtree) {
+                            0 -> "Aucun article n'y est rangé."
+                            1 -> "1 article sera conservé dans « ${folderLabel(parent)} »."
+                            else -> "$inSubtree articles seront conservés dans « ${folderLabel(parent)} »."
+                        },
+                    ).joinToString(" "),
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         viewModel.savedItems.deleteFolder(folder)
-                        if (folderFilter == folder) folderFilter = null
+                        // Deleting the folder that is open, or one above it,
+                        // would leave the tab standing on a name that no longer
+                        // exists.
+                        inFolder?.let { open ->
+                            if (SavedItemStore.isIn(open, folder)) inFolder = parent.ifEmpty { null }
+                        }
                         deleteFolder = null
                     },
                 ) {
@@ -511,6 +711,10 @@ fun HomeScreen(
         )
     }
 }
+
+/** "Sans dossier" for the root, the folder's own name otherwise. */
+private fun folderLabel(path: String): String =
+    if (path.isEmpty()) "Sans dossier" else SavedItemStore.nameOf(path)
 
 @Composable
 private fun DeleteSimpleDialog(
@@ -1028,33 +1232,359 @@ private fun ClientCard(
     }
 }
 
+/**
+ * The line under the Articles title: what is on this level, not below it.
+ *
+ * "2 articles · 1 sous-dossier" is honest about a folder whose shelves hold
+ * more, because the tiles underneath say how much each of those holds.
+ */
+private fun countLine(articles: Int, folders: Int): String {
+    val items = when (articles) {
+        0 -> "Aucun article"
+        1 -> "1 article"
+        else -> "$articles articles"
+    }
+    if (folders == 0) return items
+    return "$items · $folders sous-dossier${if (folders > 1) "s" else ""}"
+}
+
+/**
+ * The Articles tab at rest: the folders, not the articles.
+ *
+ * A shop with a hundred articles cannot scan a hundred rows for "Montage", so
+ * the folders come first the way a file manager does it, and the list behind a
+ * tile is short by construction.
+ *
+ * "Tous" is a tile here rather than a filter chip. A chip would sit above the
+ * folders and change what is drawn beneath it; a tile is somewhere the shop
+ * goes and comes back from, which is what a folder and a full list have in
+ * common.
+ */
 @Composable
-private fun ItemsTab(
+private fun ArticlesFoldersGrid(
     items: List<SavedItem>,
     folders: List<String>,
-    query: String,
-    selectedFolder: String?,
-    onSelectFolder: (String?) -> Unit,
-    onEdit: (SavedItem) -> Unit,
-    onDelete: (SavedItem) -> Unit,
+    onOpenAll: () -> Unit,
+    onOpenFolder: (String) -> Unit,
     onCreateFolder: () -> Unit,
-    onManageFolders: () -> Unit,
+    onRenameFolder: (String) -> Unit,
+    onDeleteFolder: (String) -> Unit,
 ) {
-    val itemsWithoutFolder = items.filter { it.folder.isBlank() }
+    if (items.isEmpty() && folders.isEmpty()) {
+        EmptyState(
+            icon = Icons.Filled.Inventory2,
+            title = "Aucun article enregistré",
+            message = "Ajoutez ce que vous vendez souvent — une prestation, un produit, une pièce — " +
+                "et retrouvez-le en un geste sur chaque facture.",
+        )
+        return
+    }
 
-    // Determine which items to show based on selected folder
-    val scoped = remember(items, selectedFolder) {
-        if (selectedFolder == null) {
-            itemsWithoutFolder
-        } else {
-            items.filter { it.folder.equals(selectedFolder, ignoreCase = true) }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 104.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item(key = "all") {
+            FolderTile(
+                title = "Tous",
+                count = items.size,
+                icon = Icons.Filled.Inventory2,
+                onClick = onOpenAll,
+            )
+        }
+        item(key = "unfiled") {
+            FolderTile(
+                title = "Sans dossier",
+                count = items.count { it.folder.isBlank() },
+                icon = Icons.Filled.Inbox,
+                onClick = { onOpenFolder("") },
+            )
+        }
+        gridItems(folders.filter { SavedItemStore.parentOf(it).isEmpty() }, key = { "folder-$it" }) { folder ->
+            FolderTile(
+                title = folder,
+                // Everything the shelf holds, sub-shelves included: "Pneus"
+                // that says 2 while 3 more tyres are filed under Pneus/Hiver
+                // would read as an inventory that lost stock.
+                count = SavedItemStore.itemsIn(folder, items, deep = true).size,
+                icon = Icons.Filled.Folder,
+                onClick = { onOpenFolder(folder) },
+                onRename = { onRenameFolder(folder) },
+                onDelete = { onDeleteFolder(folder) },
+            )
+        }
+        item(key = "new-folder") {
+            NewFolderTile(onCreateFolder)
         }
     }
-    val filtered = remember(scoped, query) {
-        val q = query.trim().lowercase()
-        if (q.isBlank()) scoped else scoped.filter {
-            "${it.label} ${it.unit} ${it.folder}".lowercase().contains(q)
+}
+
+/**
+ * One open folder: the shelves inside it first, then what sits on it directly.
+ *
+ * Both are drawn on one scrolling surface by one grid, because they are one
+ * place: walking into "Pneus" and seeing "Hiver" above the tyres filed
+ * straight there is how a cupboard looks. A second list would need a second
+ * scroll position and a sentence explaining that it is not the whole folder.
+ *
+ * Sub-folder tiles carry everything inside them, sub-shelves included, while
+ * the title above counts what is on this level — a tile that said "2" while
+ * three more tyres sat in Pneus/Hiver would read as inventory that vanished.
+ */
+@Composable
+private fun FolderContents(
+    articles: List<SavedItem>,
+    subFolders: List<String>,
+    allItems: List<SavedItem>,
+    onOpenFolder: (String) -> Unit,
+    onCreateFolder: () -> Unit,
+    onRenameFolder: (String) -> Unit,
+    onDeleteFolder: (String) -> Unit,
+    onEdit: (SavedItem) -> Unit,
+    onDelete: (SavedItem) -> Unit,
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 104.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        gridItems(subFolders, key = { "sub-$it" }) { path ->
+            FolderTile(
+                title = SavedItemStore.nameOf(path),
+                count = SavedItemStore.itemsIn(path, allItems, deep = true).size,
+                icon = Icons.Filled.Folder,
+                onClick = { onOpenFolder(path) },
+                onRename = { onRenameFolder(path) },
+                onDelete = { onDeleteFolder(path) },
+            )
         }
+        item(key = "new-subfolder") {
+            NewFolderTile(onCreateFolder, label = "Nouveau sous-dossier")
+        }
+        if (articles.isNotEmpty()) {
+            item(key = "articles-heading", span = { GridItemSpan(maxLineSpan) }) {
+                SectionHeading(
+                    "Articles",
+                    trailing = "${articles.size} ici",
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+        } else {
+            item(key = "no-articles", span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    "Aucun article directement dans ce dossier.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+        // The alias, because `items` inside a grid scope is the count-based
+        // overload and would take the list for a number of blank cells.
+        gridItems(
+            articles,
+            key = { "item-${it.label.lowercase()}" },
+            span = { GridItemSpan(maxLineSpan) },
+        ) { item ->
+            ItemCard(
+                item = item,
+                showFolder = false,
+                onClick = { onEdit(item) },
+                onDelete = { onDelete(item) },
+            )
+        }
+    }
+}
+
+/**
+ * One square in the folder grid.
+ *
+ * Rename and delete live on the tile itself, in a small overflow menu, rather
+ * than in a separate "manage folders" dialog. The action belongs to the folder
+ * it acts on, and a dialog listing every folder in order to edit one of them
+ * was a second copy of this grid with different controls.
+ */
+@Composable
+private fun FolderTile(
+    title: String,
+    count: Int,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    onRename: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+
+    Card(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(116.dp),
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Box(
+                    Modifier
+                        .size(32.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                // The name sits at the bottom of the tile, the way a file
+                // manager draws it: the icon is what the eye finds, the label is
+                // what confirms it, and the gap between them is what makes a
+                // grid of folders scan faster than a list of rows.
+                Column {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        when (count) {
+                            0 -> "Aucun article"
+                            1 -> "1 article"
+                            else -> "$count articles"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (onRename != null && onDelete != null) {
+                Box(Modifier.align(Alignment.TopEnd)) {
+                    IconButton(
+                        onClick = { menuOpen = true },
+                        modifier = Modifier.size(30.dp),
+                    ) {
+                        Icon(
+                            Icons.Filled.MoreVert,
+                            contentDescription = "Actions sur « $title »",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Renommer") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Filled.Edit,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            },
+                            onClick = {
+                                menuOpen = false
+                                onRename()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Supprimer") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            },
+                            onClick = {
+                                menuOpen = false
+                                onDelete()
+                            },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** The "Nouveau dossier" square that closes the grid. */
+@Composable
+private fun NewFolderTile(onClick: () -> Unit, label: String = "Nouveau dossier") {
+    Card(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(116.dp),
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    Icons.Filled.CreateNewFolder,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * One folder's articles, or the whole catalogue.
+ *
+ * The heading lives in the app bar now, so this is only the rows: the folder
+ * grid cannot be reached from here by accident, and leaving is the back arrow
+ * the app bar owns, which the system back gesture also triggers.
+ */
+@Composable
+private fun ArticlesList(
+    /** Already filtered by [SavedItemStore.matches]; this only draws them. */
+    items: List<SavedItem>,
+    showFolder: Boolean,
+    emptyTitle: String,
+    emptyMessage: String,
+    onEdit: (SavedItem) -> Unit,
+    onDelete: (SavedItem) -> Unit,
+) {
+    if (items.isEmpty()) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+            EmptyState(
+                icon = Icons.Filled.Inventory2,
+                title = emptyTitle,
+                message = emptyMessage,
+            )
+        }
+        return
     }
 
     LazyColumn(
@@ -1062,223 +1592,12 @@ private fun ItemsTab(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 104.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // Folder cards section — shown at root level only
-        if (selectedFolder == null) {
-            item {
-                FolderCard(
-                    title = "Tous",
-                    subtitle = "${items.size} article${if (items.size > 1) "s" else ""}",
-                    onClick = { onSelectFolder(null) },
-                    isSelected = false,
-                )
-            }
-            item {
-                FolderCard(
-                    title = "Sans dossier",
-                    subtitle = "${itemsWithoutFolder.size} article${if (itemsWithoutFolder.size > 1) "s" else ""}",
-                    onClick = { onSelectFolder("") },
-                    isSelected = false,
-                )
-            }
-            if (folders.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Mes Dossiers",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp),
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-                items(folders, key = { "folder-$it" }) { folder ->
-                    val count = items.count { it.folder.equals(folder, ignoreCase = true) }
-                    FolderCard(
-                        title = folder,
-                        subtitle = "$count article${if (count > 1) "s" else ""}",
-                        onClick = { onSelectFolder(folder) },
-                        isSelected = false,
-                    )
-                }
-            }
-            item {
-                Spacer(Modifier.height(8.dp))
-            }
-        }
-
-        // Items heading
-        item {
-            val headerTitle = when {
-                selectedFolder == null -> "Articles et services"
-                selectedFolder.isEmpty() -> "Sans dossier"
-                else -> selectedFolder
-            }
-            ItemsHeading(
-                title = headerTitle,
-                count = filtered.size,
-                onCreateFolder = onCreateFolder,
-                onManageFolders = onManageFolders,
-            )
-        }
-
-        if (filtered.isEmpty()) {
-            item {
-                Box(
-                    Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.TopCenter,
-                ) {
-                    EmptyState(
-                        icon = Icons.Filled.Inventory2,
-                        title = when {
-                            items.isEmpty() -> "Aucun article enregistré"
-                            selectedFolder != null && query.isBlank() -> "Dossier vide"
-                            else -> "Aucun résultat"
-                        },
-                        message = when {
-                            items.isEmpty() -> {
-                                "Ajoutez ce que vous vendez souvent — une prestation, un produit, " +
-                                    "une pièce — et retrouvez-le en un geste sur chaque facture."
-                            }
-                            selectedFolder != null && query.isBlank() -> {
-                                if (selectedFolder.isEmpty()) {
-                                    "Aucun article n'est encore rangé dans « Sans dossier »."
-                                } else {
-                                    "Ajoutez un article à « $selectedFolder » ou choisissez un autre dossier."
-                                }
-                            }
-                            else -> "Essayez un autre mot."
-                        },
-                    )
-                }
-            }
-        } else {
-            items(filtered, key = { "item-${it.label.lowercase()}" }) { item ->
-                ItemCard(item = item, onClick = { onEdit(item) }, onDelete = { onDelete(item) })
-            }
-        }
-    }
-}
-
-/**
- * A tappable card representing a folder, showing its name and item count.
- */
-@Composable
-private fun FolderCard(
-    title: String,
-    subtitle: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-) {
-    val color = if (isSelected) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
-    Card(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = color),
-        border = BorderStroke(
-            1.dp,
-            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier
-                    .size(44.dp)
-                    .background(
-                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
-                        CircleShape,
-                    )
-                    .padding(4.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Filled.CreateNewFolder,
-                    contentDescription = null,
-                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Icon(
-                Icons.Filled.ExpandMore,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-/**
- * The articles heading, with the two folder actions beside it.
- *
- * The actions used to sit at the end of the filter row, where they took enough
- * width that a folder name was cut in half. They belong to the list, not to the
- * filters: creating a folder and managing them are things done to the whole
- * catalogue, while tapping a chip only changes which items are shown.
- */
-@Composable
-private fun ItemsHeading(
-    title: String,
-    count: Int,
-    onCreateFolder: () -> Unit,
-    onManageFolders: () -> Unit,
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(start = 16.dp, end = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            title,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            "$count",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        IconButton(onClick = onCreateFolder) {
-            Icon(
-                Icons.Filled.CreateNewFolder,
-                contentDescription = "Nouveau dossier",
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        }
-        IconButton(onClick = onManageFolders) {
-            Icon(
-                Icons.Filled.MoreVert,
-                contentDescription = "Gérer les dossiers",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        items(items, key = { "item-${it.label.lowercase()}" }) { item ->
+            ItemCard(
+                item = item,
+                showFolder = showFolder,
+                onClick = { onEdit(item) },
+                onDelete = { onDelete(item) },
             )
         }
     }
@@ -1289,9 +1608,14 @@ private fun ItemCard(
     item: SavedItem,
     onClick: () -> Unit,
     onDelete: () -> Unit,
+    /** False inside a folder, where repeating its name on every row is noise. */
+    showFolder: Boolean = true,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
-    val subtitle = listOf(item.folder, item.unit)
+    val subtitle = listOf(
+        if (showFolder) SavedItemStore.display(item.folder) else "",
+        item.unit,
+    )
         .filter { it.isNotBlank() }
         .joinToString(" · ")
 
@@ -1339,12 +1663,33 @@ private fun ItemCard(
                     )
                 }
             }
-            Text(
-                item.price.asDirhams(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    item.price.asDirhams(),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                // A quantity is the difference between a catalogue and an
+                // inventory, so it earns a line of its own rather than being
+                // buried in the subtitle with the folder name.
+                if (item.tracksStock) {
+                    Text(
+                        when (val stock = item.stock) {
+                            null -> ""
+                            0 -> "Épuisé"
+                            1 -> "1 en stock"
+                            else -> "$stock en stock"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (item.outOfStock) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
+            }
             Box {
                 IconButton(onClick = { menuOpen = true }) {
                     Icon(

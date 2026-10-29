@@ -88,6 +88,11 @@ object Backup {
                             put("price", item.price)
                             put("unit", item.unit)
                             put("folder", item.folder)
+                            put("barcode", item.barcode)
+                            put("purchasePrice", item.purchasePrice)
+                            // Absent rather than null for a service, so a backup
+                            // stays readable by an older build of the app.
+                            item.stock?.let { put("stock", it) }
                         },
                     )
                 }
@@ -154,6 +159,12 @@ object Backup {
                 price = obj.optDouble("price", 0.0).let { if (it.isNaN()) 0.0 else it },
                 unit = obj.optString("unit", ""),
                 folder = obj.optString("folder", ""),
+                barcode = obj.optString("barcode", ""),
+                purchasePrice = obj.optDouble("purchasePrice", 0.0).let { if (it.isNaN()) 0.0 else it },
+                // A backup written before the inventory has no quantity, and a
+                // restore must not invent one: those items become services with
+                // no counted stock, which is what they were.
+                stock = if (obj.has("stock") && !obj.isNull("stock")) obj.optInt("stock", 0) else null,
             )
         }.filter { it.label.isNotBlank() && it.price > 0.0 }
         val invoices = root.optJSONArray("invoices").mapObjects(InvoiceJson::recordFromJson)
@@ -240,6 +251,10 @@ object Backup {
         put("patente", shop.patente)
         put("cnss", shop.cnss)
         put("vatPercent", shop.vatPercent)
+        // Optional keys: a backup written before these existed simply has
+        // neither, and restores to the defaults below.
+        put("vatNotApplicable", shop.vatNotApplicable)
+        put("pricesIncludeVat", shop.pricesIncludeVat)
     }
 
     private fun shopFromJson(obj: JSONObject): ShopSettings = ShopSettings(
@@ -251,6 +266,8 @@ object Backup {
         patente = obj.optString("patente", ""),
         cnss = obj.optString("cnss", ""),
         vatPercent = obj.optDouble("vatPercent", 20.0).let { if (it.isNaN()) 20.0 else it },
+        vatNotApplicable = obj.optBoolean("vatNotApplicable", false),
+        pricesIncludeVat = obj.optBoolean("pricesIncludeVat", false),
     )
 }
 

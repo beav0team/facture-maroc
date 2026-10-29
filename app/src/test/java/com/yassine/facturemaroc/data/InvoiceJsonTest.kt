@@ -86,4 +86,38 @@ class InvoiceJsonTest {
         assertEquals("F-20260101-0042", restored.referenceNumber)
         assertTrue(restored.amountInWords.contains("LE PRÉSENT AVOIR"))
     }
+
+    @Test
+    fun `a record remembers whether it moved the shelf`() {
+        val record = InvoiceRecord(
+            id = "r1",
+            data = full,
+            status = InvoiceStatus.ISSUED,
+            createdAt = 1L,
+            updatedAt = 2L,
+            stockApplied = true,
+        )
+
+        val restored = InvoiceJson.recordFromJson(InvoiceJson.recordToJson(record))!!
+
+        assertTrue(restored.stockApplied)
+        assertEquals(record.data, restored.data)
+    }
+
+    @Test
+    fun `a record saved before the inventory reads as having moved nothing`() {
+        // The file written by the previous build has no "stockApplied" key. If
+        // that read back as true, deleting an old invoice would add tyres to a
+        // shelf that never had them taken off.
+        val old = org.json.JSONObject()
+            .put("id", "r1")
+            .put("status", "issued")
+            .put("createdAt", 1L)
+            .put("updatedAt", 2L)
+            .put("data", InvoiceJson.dataToJson(full))
+
+        val restored = InvoiceJson.recordFromJson(old)!!
+
+        assertEquals(false, restored.stockApplied)
+    }
 }

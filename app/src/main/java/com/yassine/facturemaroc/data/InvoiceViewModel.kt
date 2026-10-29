@@ -32,6 +32,15 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     val savedItems = SavedItemStore(application)
     val invoices = InvoiceStore(application)
 
+    /**
+     * The tamper-evident copy of every exported document.
+     *
+     * Separate from [invoices], which is the app's own history and changes when
+     * the app changes. This one holds the bytes that were actually exported, so
+     * "what did we send" survives an app update and a cleared history.
+     */
+    val archive = InvoiceArchive(application.filesDir)
+
     private val _lines = MutableStateFlow<List<InvoiceLine>>(emptyList())
     val lines: StateFlow<List<InvoiceLine>> = _lines.asStateFlow()
 
@@ -124,21 +133,37 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * folding them together would quietly drop the second price.
      */
     fun addLine(line: InvoiceLine) {
+        val entry = inShopPriceBasis(line)
         val existing = _lines.value.firstOrNull {
-            it.description == line.description &&
-                it.unit == line.unit &&
-                it.unitPrice == line.unitPrice &&
-                it.lineDiscountPercent == line.lineDiscountPercent &&
-                it.taxExempt == line.taxExempt
+            it.description == entry.description &&
+                it.unit == entry.unit &&
+                it.unitPrice == entry.unitPrice &&
+                it.lineDiscountPercent == entry.lineDiscountPercent &&
+                it.taxExempt == entry.taxExempt
         }
         _lines.value = if (existing == null) {
-            _lines.value + line
+            _lines.value + entry
         } else {
             _lines.value.map {
-                if (it === existing) it.copy(quantity = it.quantity + line.quantity) else it
+                if (it === existing) it.copy(quantity = it.quantity + entry.quantity) else it
             }
         }
         refreshInvoice()
+    }
+
+    /**
+     * Reads the price of [line] the way the shop quotes it.
+     *
+     * When the shop works TTC, the number it types is the price with TVA
+     * already inside it. The document stores and prints HT, so it is divided
+     * once, here, at the door: every template, the XML and the archive then
+     * keep working on a single basis and a line can never be counted twice.
+     */
+    private fun inShopPriceBasis(line: InvoiceLine): InvoiceLine {
+        val shop = _shop.value
+        if (!shop.pricesIncludeVat || line.taxExempt) return line
+        val rate = if (shop.vatNotApplicable || _client.value.vatExempt) 0.0 else shop.vatPercent
+        return line.copy(unitPrice = PriceBasis.excludingVat(line.unitPrice, rate))
     }
 
     fun setQuantity(index: Int, quantity: Int) {
@@ -149,13 +174,6 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         }
         _lines.value = _lines.value.mapIndexed { i, line ->
             if (i == index) line.copy(quantity = quantity) else line
-        }
-        refreshInvoice()
-    }
-
-    fun setUnitPrice(index: Int, price: Double) {
-        _lines.value = _lines.value.mapIndexed { i, line ->
-            if (i == index) line.copy(unitPrice = price.coerceAtLeast(0.0)) else line
         }
         refreshInvoice()
     }
@@ -181,6 +199,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     fun removeLine(index: Int) = remove(index)
 
+    /**
+     * Replaces one line with an edited copy.
+     *
+     * The price on [line] is already on the document's HT basis: the line
+     * editor converts it on the way out, because only the dialog knows whether
+     * it displayed the shop's TTC price or an exempt one.
+     */
     fun updateLine(index: Int, line: InvoiceLine) {
         _lines.value = _lines.value.mapIndexed { i, l ->
             if (i == index) line else l
@@ -427,6 +452,11 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         val outcome = InvoicePdf.share(app, data, _shop.value, _design.value)
         if (outcome is InvoicePdf.Outcome.Shared) {
             val now = System.currentTimeMillis()
+            // The shelf moves first, then the history records that it did. A
+            // record saying "this moved stock" when it did not would credit the
+            // shelf on deletion, so the flag is only ever written after the
+            // movement returned something it actually changed.
+            val moved = savedItems.applyStockMovement(data).isNotEmpty()
             invoices.upsert(
                 InvoiceRecord(
                     id = draftId,
@@ -434,6 +464,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                     status = InvoiceStatus.ISSUED,
                     createdAt = draftCreatedAt,
                     updatedAt = now,
+                    stockApplied = moved,
                 ),
             )
             newDraft()
@@ -471,10 +502,18 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         val type = _documentType.value
         val before = InvoiceNumber.counters(app)[type.id] ?: 1
         val issued = buildData()
-        if (!writeText(uri, InvoiceXml.build(issued, _shop.value))) {
+        val xml = InvoiceXml.build(issued, _shop.value)
+        if (!writeText(uri, xml)) {
             InvoiceNumber.rewind(app, type, before)
             return@withContext XmlExportOutcome.Failed
         }
+        // Only after the file really reached the user. A full disk or a locked
+        // directory must cost the archive, never the document the shop just
+        // saved, so the failure is swallowed here on purpose: record() reports
+        // it by returning null and verify() will show the hole afterwards.
+        archive.record(issued, xml)
+        // An XML export is an issue: the file left the shop, so the stock does too.
+        val moved = savedItems.applyStockMovement(issued).isNotEmpty()
         invoices.upsert(
             InvoiceRecord(
                 id = draftId,
@@ -482,6 +521,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 status = InvoiceStatus.ISSUED,
                 createdAt = draftCreatedAt,
                 updatedAt = System.currentTimeMillis(),
+                stockApplied = moved,
             ),
         )
         newDraft()
@@ -493,7 +533,9 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         withContext(Dispatchers.IO) {
             if (record.data.lines.isEmpty()) return@withContext XmlExportOutcome.NothingToExport
             val xml = InvoiceXml.build(record.data, _shop.value)
-            if (writeText(uri, xml)) XmlExportOutcome.Saved else XmlExportOutcome.Failed
+            if (!writeText(uri, xml)) return@withContext XmlExportOutcome.Failed
+            archive.record(record.data, xml)
+            XmlExportOutcome.Saved
         }
 
     /**
@@ -588,12 +630,28 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun deleteRecord(id: String) {
+        // An issued document that disappears from the history takes its stock
+        // movement with it, otherwise deleting a mistake would leave the shelf
+        // short by a sale that no longer exists on paper. [InvoiceRecord.stockApplied]
+        // is what decides, not the document type: a facture written before the
+        // inventory existed never took anything off a shelf, and crediting it
+        // now would invent stock. Deleting a draft moves nothing either way.
+        invoices.invoices.value.firstOrNull { it.id == id }
+            ?.takeIf { it.stockApplied }
+            ?.let { savedItems.applyStockMovement(it.data, reversing = true) }
         invoices.delete(id)
         if (id == draftId) newDraft()
     }
 
     /** Saves an issued record as a new draft, keeping the original untouched. */
     fun duplicateRecord(record: InvoiceRecord) {
-        loadRecord(record.copy(id = UUID.randomUUID().toString(), status = InvoiceStatus.DRAFT))
+        loadRecord(
+            record.copy(
+                id = UUID.randomUUID().toString(),
+                status = InvoiceStatus.DRAFT,
+                // The copy has not been issued, so it has moved nothing yet.
+                stockApplied = false,
+            ),
+        )
     }
 }

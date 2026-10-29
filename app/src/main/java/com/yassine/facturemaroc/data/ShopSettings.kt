@@ -20,6 +20,15 @@ data class ShopSettings(
     val vatPercent: Double = 20.0,
     /** Auto-entrepreneur: TVA non applicable, le taux saisi est ignoré. */
     val vatNotApplicable: Boolean = false,
+    /**
+     * True when the shop quotes its prices TTC — TVA already inside them.
+     *
+     * Moroccan shops quote both ways: a garage usually says "150 DH, TVA
+     * comprise", a wholesaler says "125 DH HT". The document is always written
+     * HT + TVA, because that is what an invoice has to show; this flag only
+     * says how the number typed on a line should be read.
+     */
+    val pricesIncludeVat: Boolean = false,
     /** Prochain numéro de facture utilisé par la numérotation automatique. 1 par défaut. */
     val invoiceCounter: Int = 1,
 ) {

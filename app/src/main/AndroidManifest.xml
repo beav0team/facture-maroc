@@ -1,16 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    No permissions are declared on purpose.
+    One permission, and it is optional: the camera, used only to read the
+    barcode off a box into the article's code field.
 
-    The app never touches the network. Invoice PDFs are written to the app's
-    own cache directory and shared through the FileProvider below, which hands
-    out a content:// URI that the receiving app is granted read access to
-    through the intent itself. A shop logo is picked with the same per-file
-    grant from the photo picker, so that needs nothing either. Sharing a
-    document the app made is not the same permission as reading the user's
-    files, and this app does not ask for the second one.
+    Everything else needs nothing. The app never touches the network. Invoice
+    PDFs are written to the app's own cache directory and shared through the
+    FileProvider below, which hands out a content:// URI that the receiving app
+    is granted read access to through the intent itself. A shop logo is picked
+    with the same per-file grant from the photo picker. Sharing a document the
+    app made is not the same permission as reading the user's files, and this
+    app does not ask for the second one.
+
+    The camera feature is declared not required so the app still installs on a
+    device without one; the scanner is a shortcut for typing, and typing still
+    works.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
 
     <application
         android:allowBackup="true"

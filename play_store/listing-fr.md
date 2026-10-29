@@ -61,9 +61,17 @@ Une question, une idée ? Ouvrez un ticket sur github.com/beav0team/facture-maro
 - **Achats intégrés** : Non
 - **Suivi publicitaire** : Non
 
-Justification : l’application ne demande aucun accès aux données et ne déclare
-pas la permission `INTERNET`. Les PDF, XML et sauvegardes ne sortent que par une
+Justification : l’application ne transmet aucune donnée et ne déclare pas la
+permission `INTERNET`. Les PDF, XML et sauvegardes ne sortent que par une
 action explicite de l’utilisateur (sélecteur Android ou sélecteur de fichiers).
+
+**Une seule permission : `CAMERA`**, demandée au moment où le commerce touche
+le bouton « scanner », et refusée sans conséquence — le code-barres se saisit
+aussi à la main. Elle sert à lire un code-barres ; la reconnaissance se fait sur
+le téléphone (modèle ML Kit embarqué, aucun service Google requis, aucun réseau),
+et aucune image n’est enregistrée ni transmise. Dans le formulaire Sécurité des
+données, répondre « Photos et vidéos » → **non collecté / non partagé** : rien ne
+quitte l’appareil.
 
 ### Accès à l’application
 

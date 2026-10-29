@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -62,6 +64,9 @@ fun ItemPickerSheet(
     store: SavedItemStore,
     onPickLine: (InvoiceLine) -> Unit,
     onDismiss: () -> Unit,
+    /** The shop's price basis, so a new article is priced the way the shop quotes. */
+    pricesIncludeVat: Boolean = false,
+    vatPercent: Double = 0.0,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val folders by store.folders.collectAsState()
@@ -160,13 +165,26 @@ fun ItemPickerSheet(
         ItemEditorDialog(
             initial = null,
             onSave = { item ->
-                store.save(item)
-                onPickLine(item.toLine())
+                // The label is the catalogue's key, so a second article under
+                // the same name would replace the first — and with it the
+                // quantity on the shelf. A name that already exists is not a
+                // new article; it is that article, and it goes on the invoice.
+                val existing = store.items.value.firstOrNull {
+                    it.label.trim().equals(item.label.trim(), ignoreCase = true)
+                }
+                if (existing != null) {
+                    onPickLine(existing.toLine())
+                } else {
+                    store.save(item)
+                    onPickLine(item.toLine())
+                }
                 addedCount++
                 creating = false
             },
             onDismiss = { creating = false },
             folders = folders,
+            pricesIncludeVat = pricesIncludeVat,
+            vatPercent = vatPercent,
         )
     }
 }
@@ -181,17 +199,46 @@ private fun ArticlesSource(
 ) {
     val items by store.items.collectAsState()
     val shown = remember(items, query) { store.search(query) }
+    var scanning by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val canScan = remember(context) { hasCamera(context) }
 
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
         placeholder = { Text("Rechercher dans mes articles") },
         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+        // The counter is where a box is opened, so the scan belongs here too:
+        // typing thirteen digits in front of a customer is the slow path.
+        trailingIcon = if (canScan) {
+            {
+                IconButton(onClick = { scanning = true }) {
+                    Icon(
+                        Icons.Filled.QrCodeScanner,
+                        contentDescription = "Scanner un code-barres",
+                    )
+                }
+            }
+        } else {
+            null
+        },
         singleLine = true,
         shape = MaterialTheme.shapes.large,
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
     )
+
+    if (scanning) {
+        BarcodeScannerDialog(
+            onScanned = { value ->
+                // The code becomes the query, so the item appears in the list
+                // and the shop taps it — the same gesture as a typed search.
+                onQueryChange(value)
+                scanning = false
+            },
+            onDismiss = { scanning = false },
+        )
+    }
 
     Spacer(Modifier.height(8.dp))
 
@@ -264,7 +311,9 @@ private fun SavedArticleRow(item: SavedItem, onClick: () -> Unit) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            val subtitle = listOf(item.folder, item.unit)
+            // The path, drawn with arrows: two folders can hold a "Hiver" and
+            // the shop needs to see which one this article came from.
+            val subtitle = listOf(SavedItemStore.display(item.folder), item.unit)
                 .filter { it.isNotBlank() }
                 .joinToString(" · ")
             if (subtitle.isNotBlank()) {
@@ -281,6 +330,24 @@ private fun SavedArticleRow(item: SavedItem, onClick: () -> Unit) {
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
         )
+        // The shelf the line is about to come off, when there is one. Shown in
+        // the picker because that is the last moment before the shop commits.
+        if (item.tracksStock) {
+            Spacer(Modifier.width(10.dp))
+            Text(
+                when (val stock = item.stock) {
+                    null -> ""
+                    0 -> "Épuisé"
+                    else -> "$stock"
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = if (item.outOfStock) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
     }
 }
 

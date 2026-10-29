@@ -13,14 +13,15 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.yassine.facturemaroc"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.yassine.facturemaroc"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 5
-        versionName = "0.4.0"
+        targetSdk = 36
+        versionCode = 7
+        versionName = "0.6.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -71,6 +72,21 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
+    // Barcode scanning: CameraX draws the viewfinder, ML Kit reads the code.
+    // The bundled barcode model (not the Play-Services one) because a shop's
+    // phone may have no Google services at all and the scanner must work with
+    // the phone in airplane mode.
+    implementation("androidx.camera:camera-camera2:1.4.1")
+    implementation("androidx.camera:camera-lifecycle:1.4.1")
+    implementation("androidx.camera:camera-view:1.4.1")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
+
+    // The scanner can only be checked against a real image on a real device,
+    // so it is checked there rather than left to "it compiles".
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
 }

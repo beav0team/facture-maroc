@@ -98,6 +98,10 @@ object InvoiceJson {
         put("status", record.status.id)
         put("createdAt", record.createdAt)
         put("updatedAt", record.updatedAt)
+        // Written only when it is true, so a file saved before the inventory
+        // existed reads back as a document that moved no stock — which is the
+        // truth about it, and the reason deleting it must not credit the shelf.
+        if (record.stockApplied) put("stockApplied", true)
         put("data", dataToJson(record.data))
     }
 
@@ -109,6 +113,7 @@ object InvoiceJson {
             status = InvoiceStatus.fromId(obj.optString("status", null)),
             createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
             updatedAt = obj.optLong("updatedAt", System.currentTimeMillis()),
+            stockApplied = obj.optBoolean("stockApplied", false),
         )
     }
 
