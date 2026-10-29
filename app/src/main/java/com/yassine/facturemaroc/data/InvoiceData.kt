@@ -30,10 +30,28 @@ data class InvoiceData(
     /** Auto-entrepreneur: TVA non applicable, whatever the configured rate. */
     val vatNotApplicable: Boolean = false,
 ) {
-    val subtotal: Double get() = lines.sumOf { it.total }
+    /**
+     * Total HT as the page adds it up: every line rounded to the centime, then
+     * summed.
+     *
+     * A line can carry a third decimal — `99,99 TTC` is `83,325 HT` — and three
+     * of them summed before rounding give `249,98` while the three lines printed
+     * beside it read `83,33` each. That centime is a total a customer can query
+     * and an importer rejects. Rounding each line first makes the printed column
+     * add up; [total] still comes from the exact figures, so the price the shop
+     * typed is the price the customer pays.
+     */
+    val subtotal: Double get() = money(lines.sumOf { money(it.total) })
+
+    /** The same sum without rounding, kept only so [total] can stay exact. */
+    private val exactSubtotal: Double get() = lines.sumOf { it.total }
 
     val discountAmount: Double
         get() = money(subtotal * discountPercent.coerceIn(0, 100) / 100.0)
+
+    /** The same discount without rounding, for the same reason as [exactSubtotal]. */
+    private val exactDiscount: Double
+        get() = exactSubtotal * discountPercent.coerceIn(0, 100) / 100.0
 
     /** Total HT: what the goods come to before TVA. */
     val totalExcludingVat: Double
@@ -51,21 +69,37 @@ data class InvoiceData(
 
     /** The part of the invoice that carries TVA. Exempt lines never do. */
     val taxableSubtotal: Double
+        get() = money(lines.filterNot { it.taxExempt }.sumOf { money(it.total) })
+
+    /** The same part without rounding, for [exactTaxableNet]. */
+    private val exactTaxable: Double
         get() = lines.filterNot { it.taxExempt }.sumOf { it.total }
 
     /**
-     * The TVA base before the invoice discount is shared out.
+     * The TVA base, on the rounded figures the page prints.
      *
      * The invoice-level discount is spread over every line in proportion to
      * what it is worth, so an exempt line cannot accidentally reduce the tax
-     * that a taxed line owes. Kept unrounded because [total] is derived from
-     * it: rounding here first is what turned `99,99` into `100,00`.
+     * that a taxed line owes.
      */
     private val taxableNet: Double
         get() = if (subtotal == 0.0) {
             0.0
         } else {
             taxableSubtotal - discountAmount * (taxableSubtotal / subtotal)
+        }
+
+    /**
+     * The same base before rounding, which is what [total] is built from.
+     *
+     * Kept unrounded because rounding it first is what turned `99,99` into
+     * `100,00`: the TTC figure has to come back exactly as it was typed.
+     */
+    private val exactTaxableNet: Double
+        get() = if (exactSubtotal == 0.0) {
+            0.0
+        } else {
+            exactTaxable - exactDiscount * (exactTaxable / exactSubtotal)
         }
 
     /** The base a tax office reads: the same figure, to the centime. */
@@ -86,12 +120,17 @@ data class InvoiceData(
     /**
      * Total TTC: what the customer pays. The amount spelled out in letters.
      *
-     * Built from the unrounded figures for the same reason as [vatAmount]: a
-     * price typed TTC and divided by `1 + taux` must return exactly the price
-     * that was typed.
+     * Built from the exact figures for the same reason as [vatAmount]: a price
+     * typed TTC and divided by `1 + taux` must return exactly the price that was
+     * typed. [subtotal] is the rounded view of the same lines, and the centimes
+     * the two disagree on land in [vatAmount] — which is where an accountant
+     * expects an arrondi to sit.
      */
     val total: Double
-        get() = money(subtotal - discountAmount + taxableNet * effectiveVatPercent.coerceAtLeast(0.0) / 100.0)
+        get() = money(
+            exactSubtotal - exactDiscount +
+                exactTaxableNet * effectiveVatPercent.coerceAtLeast(0.0) / 100.0,
+        )
 
     /** The amount in words, the line that makes the document hard to alter. */
     val amountInWords: String get() = AmountWords.sentence(total, documentType)

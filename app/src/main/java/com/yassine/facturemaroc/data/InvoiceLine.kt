@@ -27,6 +27,19 @@ data class InvoiceLine(
      * when it sells a part and exports the fitting.
      */
     val taxExempt: Boolean = false,
+    /**
+     * The price as the shop typed it, when the shop quotes TTC.
+     *
+     * [unitPrice] is always HT, because that is what the document prints. A shop
+     * that says "150 DH, TVA comprise" typed 150, and that number has to survive
+     * a change of buyer: an exempt client pays 150 with no tax inside it, a
+     * taxed one pays 125 + 25. Remembering it here is what lets the invoice
+     * re-read the price when the client changes, instead of freezing the answer
+     * that was true at the moment the line was added.
+     *
+     * Null means the price was already HT, and an HT price never moves.
+     */
+    val ttcPrice: Double? = null,
 ) {
     val total: Double get() =
         quantity * unitPrice * (1.0 - lineDiscountPercent.coerceIn(0, 100) / 100.0)

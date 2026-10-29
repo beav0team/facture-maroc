@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -140,6 +141,9 @@ fun BuilderScreen(
     var editingLine by remember { mutableStateOf<Int?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
     var sharing by remember { mutableStateOf(false) }
+    // Asked of the ViewModel, not a local flag: a rotation must not swallow the
+    // question and leave its number spent.
+    val awaitingShare by viewModel.awaitingShare.collectAsState()
 
     val validationIssues = remember(invoice) { InvoiceValidation.validate(invoice) }
     val blockingIssues = remember(validationIssues) {
@@ -256,9 +260,10 @@ fun BuilderScreen(
                         sharing = true
                         val outcome = viewModel.shareInvoice()
                         sharing = false
-                        if (outcome is InvoicePdf.Outcome.Shared) {
-                            onBack()
-                        } else {
+                        // Written and offered, not yet sent: the ViewModel opens
+                        // the question, and nothing is spent on it until the shop
+                        // answers.
+                        if (outcome !is InvoicePdf.Outcome.HandedOff) {
                             snackbar.showSnackbar(outcome.shareMessage())
                         }
                     }
@@ -555,6 +560,44 @@ fun BuilderScreen(
                 onDismiss = { editingLine = null },
             )
         }
+    }
+
+    // Android cannot say whether the app the shop picked really sent the file:
+    // the chooser answers as soon as it closes, whichever way it went. So the
+    // shop is asked. "Non" keeps the draft and puts the number back, where
+    // treating the launch as delivery used to lose all three.
+    if (awaitingShare) {
+        AlertDialog(
+            onDismissRequest = { scope.launch { viewModel.cancelShared() } },
+            title = { Text("Document envoyé ?") },
+            text = {
+                Text(
+                    "Le PDF est prêt et a été ouvert dans le partage. " +
+                        "Confirmez son envoi pour l'enregistrer dans l'historique " +
+                        "et mettre à jour le stock.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            viewModel.confirmShared()
+                            onBack()
+                        }
+                    },
+                ) { Text("Oui, enregistrer") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            viewModel.cancelShared()
+                            snackbar.showSnackbar("Envoi annulé. Le brouillon est conservé.")
+                        }
+                    },
+                ) { Text("Non, garder le brouillon") }
+            },
+        )
     }
 }
 

@@ -635,7 +635,10 @@ fun LineEditorDialog(
     var priceText by remember(initial) {
         mutableStateOf(
             (
-                if (ttcBasis) PriceBasis.includingVat(initial.unitPrice, vatPercent)
+                // The number the shop typed, when it is still known: converting
+                // the HT price back gives the same figure to the centime, but
+                // only the stored one is exact.
+                if (ttcBasis) initial.ttcPrice ?: PriceBasis.includingVat(initial.unitPrice, vatPercent)
                 else initial.unitPrice
                 ).trimZeros(),
         )
@@ -778,6 +781,10 @@ fun LineEditorDialog(
                             } else {
                                 price
                             },
+                            // Kept so a change of client can re-read the price
+                            // instead of charging a different number than the
+                            // one that was typed.
+                            ttcPrice = if (ttcBasis && !taxExempt) price else null,
                             lineDiscountPercent = discount,
                             taxExempt = taxExempt,
                         ),

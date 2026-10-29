@@ -52,6 +52,9 @@ object InvoiceJson {
         put("unit", line.unit)
         put("lineDiscountPercent", line.lineDiscountPercent)
         put("taxExempt", line.taxExempt)
+        // Written only when the shop quoted TTC, so an HT line stays exactly
+        // what it is: a number that does not depend on who is buying.
+        line.ttcPrice?.let { put("ttcPrice", it) }
     }
 
     fun lineFromJson(obj: JSONObject): InvoiceLine = InvoiceLine(
@@ -61,6 +64,7 @@ object InvoiceJson {
         unit = obj.optString("unit", ""),
         lineDiscountPercent = obj.optInt("lineDiscountPercent", 0).coerceIn(0, 100),
         taxExempt = obj.optBoolean("taxExempt", false),
+        ttcPrice = obj.optDouble("ttcPrice", Double.NaN).let { if (it.isNaN()) null else it },
     )
 
     fun dataToJson(data: InvoiceData): JSONObject = JSONObject().apply {

@@ -171,7 +171,7 @@ fun ConfirmDeleteDialog(
 
 /** What the user is told after pressing a share button. */
 fun InvoicePdf.Outcome.shareMessage(): String = when (this) {
-    is InvoicePdf.Outcome.Shared -> "PDF prêt. Choisissez l'application d'envoi."
+    is InvoicePdf.Outcome.HandedOff -> "PDF prêt. Choisissez l'application d'envoi."
     is InvoicePdf.Outcome.NotWritten -> "Le PDF n'a pas pu être créé. Réessayez."
     is InvoicePdf.Outcome.NoReceiver -> "Le PDF est prêt, mais aucune application ne peut le recevoir."
 }

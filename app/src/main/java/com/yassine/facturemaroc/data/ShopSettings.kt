@@ -32,8 +32,6 @@ data class ShopSettings(
      * says how the number typed on a line should be read.
      */
     val pricesIncludeVat: Boolean = false,
-    /** Prochain numéro de facture utilisé par la numérotation automatique. 1 par défaut. */
-    val invoiceCounter: Int = 1,
 ) {
     /** Legal ID fields that are non-empty, joined for printing. */
     val legalIdentifierList: List<String>

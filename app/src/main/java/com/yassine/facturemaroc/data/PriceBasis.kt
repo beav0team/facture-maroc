@@ -39,4 +39,25 @@ object PriceBasis {
         val gross = price * (1.0 + vatPercent / 100.0)
         return Math.round(gross * 100.0) / 100.0
     }
+
+    /**
+     * The same lines, with every TTC-quoted price re-read at [vatPercent].
+     *
+     * Whether the number the shop typed has TVA inside it depends on who is
+     * buying: an exempt client pays that number with no tax in it, a taxed one
+     * pays it with the tax taken out. Re-reading the price when the client
+     * changes is what keeps the invoice charging the figure that is on the
+     * screen; freezing it at the moment the line was added charges 20 % too
+     * little to an exempt buyer, or 20 % too much when the client goes the
+     * other way.
+     *
+     * A line whose price was typed HT has no [InvoiceLine.ttcPrice] and is
+     * returned untouched: an HT price does not move when the buyer changes.
+     */
+    fun repriceTtcLines(lines: List<InvoiceLine>, vatPercent: Double): List<InvoiceLine> =
+        lines.map { line ->
+            val typed = line.ttcPrice
+            if (typed == null || line.taxExempt) line
+            else line.copy(unitPrice = excludingVat(typed, vatPercent))
+        }
 }

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.UUID
 
 /**
@@ -83,6 +84,15 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     /** The record this draft belongs to, so edits replace it instead of piling up. */
     private var draftId: String = UUID.randomUUID().toString()
     private var draftCreatedAt: Long = System.currentTimeMillis()
+
+    /**
+     * True while a PDF is written and the shop has not said whether it went out.
+     *
+     * Held here rather than in the screen so a rotation cannot swallow the
+     * question and leave its number spent.
+     */
+    private val _awaitingShare = MutableStateFlow(false)
+    val awaitingShare: StateFlow<Boolean> = _awaitingShare.asStateFlow()
 
     /**
      * The number a saved draft is already carrying.
@@ -158,12 +168,19 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * already inside it. The document stores and prints HT, so it is divided
      * once, here, at the door: every template, the XML and the archive then
      * keep working on a single basis and a line can never be counted twice.
+     *
+     * The typed TTC figure is kept on the line as well, because whether it
+     * contains TVA depends on who is buying: see [PriceBasis.repriceTtcLines].
      */
     private fun inShopPriceBasis(line: InvoiceLine): InvoiceLine {
         val shop = _shop.value
         if (!shop.pricesIncludeVat || line.taxExempt) return line
         val rate = if (shop.vatNotApplicable || _client.value.vatExempt) 0.0 else shop.vatPercent
-        return line.copy(unitPrice = PriceBasis.excludingVat(line.unitPrice, rate))
+        val typed = line.unitPrice
+        return line.copy(
+            unitPrice = PriceBasis.excludingVat(typed, rate),
+            ttcPrice = typed,
+        )
     }
 
     fun setQuantity(index: Int, quantity: Int) {
@@ -215,12 +232,32 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     fun setClient(client: InvoiceClient) {
         _client.value = client
+        repriceForClient(client)
         refreshInvoice()
     }
 
     fun clearClient() {
-        _client.value = InvoiceClient(name = "")
+        val empty = InvoiceClient(name = "")
+        _client.value = empty
+        repriceForClient(empty)
         refreshInvoice()
+    }
+
+    /**
+     * Re-reads a TTC price at the rate [client] pays.
+     *
+     * Picking a VAT-exempt client after the lines were entered used to leave
+     * every line priced as if tax were inside it, so the invoice charged the
+     * exempt buyer 20 % less than the number that was on the screen when the
+     * line was added. The typed price is on the line, so the HT figure is
+     * simply read again.
+     */
+    private fun repriceForClient(client: InvoiceClient) {
+        val shop = _shop.value
+        if (!shop.pricesIncludeVat) return
+        if (_lines.value.none { it.ttcPrice != null }) return
+        val rate = if (shop.vatNotApplicable || client.vatExempt) 0.0 else shop.vatPercent
+        _lines.value = PriceBasis.repriceTtcLines(_lines.value, rate)
     }
 
     /** Remembers the client for next time, but only if there is something to. */
@@ -357,6 +394,12 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * that the shop would only have to clean up by hand.
      */
     private fun persistDraft() {
+        // A save that was already in flight when the document was issued must
+        // not write over it: the shop just confirmed the invoice really went
+        // out, and a draft row landing afterwards would quietly take it back.
+        if (invoices.invoices.value.any { it.id == draftId && it.status == InvoiceStatus.ISSUED }) {
+            return
+        }
         val useful = _lines.value.isNotEmpty() || _client.value.name.isNotBlank()
         if (!useful) {
             invoices.delete(draftId)
@@ -435,46 +478,107 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         }
 
     /**
+     * A document that is written and open in the share sheet, waiting for the
+     * shop to say whether it really went out.
+     *
+     * Android cannot answer that question: `startActivity` returns as soon as
+     * the chooser is drawn, and a chooser that is then dismissed looks exactly
+     * like one whose app sent the file. Treating the launch as delivery wiped
+     * the draft, moved the shelf and burned the number for a document that was
+     * never sent.
+     */
+    private data class PendingShare(
+        val type: DocumentType,
+        val counterBefore: Int,
+        val data: InvoiceData,
+        val file: File,
+    )
+
+    private var pendingShare: PendingShare? = null
+
+    /**
      * Renders the invoice and hands it to the share sheet.
      *
-     * The document is written to the history only when it was really produced
-     * and handed over. A failure leaves the lines in place, because a shop whose
-     * phone has no app that accepts a PDF should be able to press the button
-     * again on a different device rather than rebuild the invoice from nothing.
+     * Nothing is archived and no shelf moves here: this only says the PDF was
+     * written and the chooser opened. The shop answers [confirmShared] or
+     * [cancelShared] when it comes back. A failure leaves the lines in place,
+     * because a shop whose phone has no app that accepts a PDF should be able
+     * to press the button again on a different device rather than rebuild the
+     * invoice from nothing.
      */
     suspend fun shareInvoice(): InvoicePdf.Outcome = withContext(Dispatchers.IO) {
         if (_lines.value.isEmpty()) return@withContext InvoicePdf.Outcome.NotWritten
         saveClient()
         val app = getApplication<Application>()
+        // A share that was never answered — the process was killed, or the
+        // question was lost — must not leave its number spent. Its document was
+        // never sent, so the number is simply taken again below.
+        pendingShare?.let { stale ->
+            InvoiceNumber.rewind(app, stale.type, stale.counterBefore)
+            stale.file.delete()
+            pendingShare = null
+            _awaitingShare.value = false
+        }
         val type = _documentType.value
         val before = InvoiceNumber.counters(app)[type.id] ?: 1
         val data = buildData()
         val outcome = InvoicePdf.share(app, data, _shop.value, _design.value)
-        if (outcome is InvoicePdf.Outcome.Shared) {
-            val now = System.currentTimeMillis()
-            // The shelf moves first, then the history records that it did. A
-            // record saying "this moved stock" when it did not would credit the
-            // shelf on deletion, so the flag is only ever written after the
-            // movement returned something it actually changed.
-            val moved = savedItems.applyStockMovement(data).isNotEmpty()
-            invoices.upsert(
-                InvoiceRecord(
-                    id = draftId,
-                    data = data,
-                    status = InvoiceStatus.ISSUED,
-                    createdAt = draftCreatedAt,
-                    updatedAt = now,
-                    stockApplied = moved,
-                ),
-            )
-            newDraft()
-        } else {
-            // The document was never handed over, so the number goes back to
-            // the sequence. A PDF that could not be shared is deleted with it.
-            InvoiceNumber.rewind(app, type, before)
-            if (outcome is InvoicePdf.Outcome.NoReceiver) outcome.file.delete()
+        when (outcome) {
+            is InvoicePdf.Outcome.HandedOff -> {
+                pendingShare = PendingShare(type, before, data, outcome.file)
+                _awaitingShare.value = true
+            }
+
+            else -> {
+                // The document was never handed over, so the number goes back to
+                // the sequence. A PDF that could not be shared is deleted with it.
+                InvoiceNumber.rewind(app, type, before)
+                if (outcome is InvoicePdf.Outcome.NoReceiver) outcome.file.delete()
+            }
         }
-        outcome
+        return@withContext outcome
+    }
+
+    /**
+     * The document really went out: the shelf moves, the history records it, and
+     * the builder starts a fresh draft.
+     */
+    suspend fun confirmShared(): Boolean = withContext(Dispatchers.IO) {
+        val pending = pendingShare ?: return@withContext false
+        pendingShare = null
+        _awaitingShare.value = false
+        // Nothing may rewrite this row as a draft afterwards: the debounced
+        // draft save is cancelled here and refuses to touch an issued record.
+        saveJob?.cancel()
+        // The shelf moves first, then the history records that it did. A record
+        // saying "this moved stock" when it did not would credit the shelf on
+        // deletion, so the flag is only ever written after the movement returned
+        // something it actually changed.
+        val moved = savedItems.applyStockMovement(pending.data).isNotEmpty()
+        invoices.upsert(
+            InvoiceRecord(
+                id = draftId,
+                data = pending.data,
+                status = InvoiceStatus.ISSUED,
+                createdAt = draftCreatedAt,
+                updatedAt = System.currentTimeMillis(),
+                stockApplied = moved,
+            ),
+        )
+        newDraft()
+        true
+    }
+
+    /**
+     * The share was cancelled: the number goes back into the sequence and the
+     * PDF is deleted, but the draft stays exactly as it was.
+     */
+    suspend fun cancelShared() = withContext(Dispatchers.IO) {
+        val pending = pendingShare ?: return@withContext
+        pendingShare = null
+        _awaitingShare.value = false
+        InvoiceNumber.rewind(getApplication(), pending.type, pending.counterBefore)
+        pending.file.delete()
     }
 
     /** Sends a document that already exists again, without consuming a number. */

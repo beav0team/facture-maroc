@@ -51,7 +51,9 @@ Dans le constructeur de document :
 - **Prix HT ou TTC au choix** : le commerce décide s'il tape ses prix hors taxe
   (« TVA en sus ») ou taxe comprise (« TVA incluse »). La facture montre toujours
   HT + TVA, comme l'exige un document ; un prix tapé TTC est divisé une seule
-  fois, à l'entrée, et ressort au centime près.
+  fois, à l'entrée, et ressort au centime près. Ce prix tapé reste sur la ligne :
+  **changer de client le relit**, pour qu'un client exonéré paie le montant
+  affiché et non 20 % de moins.
 - Avoir, acompte et régularisation portent une **référence** ("Annule et
   remplace la facture N° …") ; l'export porte un **Incoterms** facultatif.
 - **Montant total écrit en toutes lettres**, en français, avec l'ouverture
@@ -68,7 +70,11 @@ Dans le constructeur de document :
   chaque document.
 
 Les documents sont générés en PDF dans le cache de l’application, puis remis au
-sélecteur Android. L’application n’a **aucun accès à vos données** : elle ne
+sélecteur Android. Android ne dit pas si ce sélecteur a été utilisé ou refermé :
+l’application demande donc **si le document est bien parti**. « Non » replace le
+numéro dans la séquence et garde le brouillon tel quel ; « Oui » enregistre le
+document dans l’historique et met le stock à jour. Rien n’est consommé avant la
+réponse. L’application n’a **aucun accès à vos données** : elle ne
 demande ni Internet, ni stockage, ni contacts. La seule permission est
 **l’appareil photo**, et seulement pour lire le code-barres d’un article au
 moment où vous touchez le bouton « scanner » ; refusez-la et le code se tape à

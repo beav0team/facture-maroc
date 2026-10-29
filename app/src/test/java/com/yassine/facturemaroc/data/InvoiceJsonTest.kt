@@ -45,6 +45,23 @@ class InvoiceJsonTest {
     }
 
     @Test
+    fun `a TTC price survives the round trip, and an HT line stays HT`() {
+        // The typed price is what lets a change of client re-read the line, so
+        // losing it in the file would make the next buyer's invoice wrong.
+        val data = full.copy(
+            lines = listOf(
+                InvoiceLine("Montage", 1, 125.0, ttcPrice = 150.0),
+                InvoiceLine("Pneu", 1, 83.325),
+            ),
+        )
+
+        val restored = InvoiceJson.dataFromJson(InvoiceJson.dataToJson(data))
+
+        assertEquals(150.0, restored.lines[0].ttcPrice!!, 0.0)
+        assertNull(restored.lines[1].ttcPrice)
+    }
+
+    @Test
     fun `a document without a supplier or a validity date restores as nulls`() {
         val simple = full.copy(documentType = DocumentType.FACTURE, supplier = null, validityDate = null)
 

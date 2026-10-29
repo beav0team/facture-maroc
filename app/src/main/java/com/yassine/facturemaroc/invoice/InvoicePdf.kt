@@ -95,9 +95,11 @@ object InvoicePdf {
     /**
      * Builds the PDF and hands it to the share sheet, in one pass.
      *
-     * The caller reserves the number first and puts it back if this returns
-     * anything but [Outcome.Shared], so a document that was never handed over
-     * does not leave a hole in the invoice sequence.
+     * This does not say the file was sent. `startActivity` returns as soon as
+     * the chooser is drawn, and a chooser that is dismissed straight after
+     * looks exactly like one whose app delivered the file, so the caller has to
+     * ask the shop before it treats the document as issued. The number it
+     * reserved is put back when the shop says no.
      */
     fun share(
         context: Context,
@@ -117,7 +119,7 @@ object InvoicePdf {
             val chooser = Intent.createChooser(send, "Share invoice")
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(chooser)
-            Outcome.Shared(file)
+            Outcome.HandedOff(file)
         } catch (e: Exception) {
             android.util.Log.w(TAG, "could not hand the invoice to another app", e)
             Outcome.NoReceiver(file)
@@ -126,7 +128,14 @@ object InvoicePdf {
 
     /** What came of [share], with the reason in each failure case. */
     sealed interface Outcome {
-        data class Shared(val file: File) : Outcome
+        /**
+         * The PDF was written and the chooser opened.
+         *
+         * Deliberately not called "sent": the file exists and is in front of the
+         * user, and whether it reached anyone is a question only the shop can
+         * answer.
+         */
+        data class HandedOff(val file: File) : Outcome
 
         /** The PDF would not build. Nothing was written. */
         data object NotWritten : Outcome

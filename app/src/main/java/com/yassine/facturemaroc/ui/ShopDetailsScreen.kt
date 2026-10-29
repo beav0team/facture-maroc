@@ -150,8 +150,14 @@ fun ShopDetailsScreen(
 
     var pendingRestore by remember { mutableStateOf<BackupData?>(null) }
     var restoring by remember { mutableStateOf(false) }
-    var invoiceCounterText by remember(settings.invoiceCounter) {
-        mutableStateOf(settings.invoiceCounter.toString())
+    // The number the sequence really holds, read from the counter that consumes
+    // it. Settings used to keep its own copy of this, which nothing ever wrote
+    // back, so the field read 1 on every visit.
+    val currentCounter = remember(settings) {
+        InvoiceNumber.counters(context)[DocumentType.FACTURE.id] ?: 1
+    }
+    var invoiceCounterText by remember(currentCounter) {
+        mutableStateOf(currentCounter.toString())
     }
 
     val exportBackup = rememberLauncherForActivityResult(
@@ -184,7 +190,7 @@ fun ShopDetailsScreen(
 
     fun save() {
         val vat = vatText.replace(',', '.').toDoubleOrNull()?.coerceIn(0.0, 100.0) ?: 20.0
-        val counter = invoiceCounterText.toIntOrNull()?.coerceAtLeast(1) ?: settings.invoiceCounter
+        val counter = invoiceCounterText.toIntOrNull()?.coerceAtLeast(1) ?: currentCounter
         viewModel.updateShop(
             settings.copy(
                 name = name.trim(),
@@ -199,10 +205,15 @@ fun ShopDetailsScreen(
                 vatPercent = vat,
                 vatNotApplicable = vatNotApplicable,
                 pricesIncludeVat = pricesIncludeVat,
-                invoiceCounter = counter,
             ),
         )
-        InvoiceNumber.rewind(context, DocumentType.FACTURE, counter)
+        // Only when the shop really asked for a different number. Rewinding on
+        // every save is what made "change the logo" reissue F-…-0001 on the
+        // next document: the field held a stale 1 and was written back as the
+        // counter for the whole sequence.
+        if (counter != currentCounter) {
+            InvoiceNumber.rewind(context, DocumentType.FACTURE, counter)
+        }
         onBack()
     }
 
@@ -594,8 +605,9 @@ fun ShopDetailsScreen(
                             ),
                             supportingText = {
                                 Text(
-                                    "Le prochain document partagé portera le numéro ${InvoiceNumber.peek(context, DocumentType.FACTURE)}. " +
-                                        "Enregistrer pour appliquer le nouveau compteur.",
+                                    "Numéro que portera le prochain document partagé. " +
+                                        "Ne le changez que pour repartir d'un autre numéro : " +
+                                        "les documents déjà envoyés ne sont pas renumérotés.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )

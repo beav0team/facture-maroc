@@ -96,12 +96,10 @@ object InvoiceValidation {
             )
         }
 
-        // Re-add the lines the way the printed page does. If this disagrees
-        // with the stored total, one of them is lying and the document must not
-        // leave the phone.
-        val recomputedSubtotal = round(data.lines.sumOf { line ->
-            line.quantity * line.unitPrice * (1.0 - line.lineDiscountPercent.coerceIn(0, 100) / 100.0)
-        })
+        // Re-add the lines the way the printed page does: each line rounded to
+        // the centime, then summed. If this disagrees with the stored total, one
+        // of them is lying and the document must not leave the phone.
+        val recomputedSubtotal = round(data.lines.sumOf { round(it.total) })
         val recomputedTotal = round(data.totalExcludingVat + data.vatAmount)
         if (!nearlyEqual(recomputedSubtotal, data.subtotal) || !nearlyEqual(recomputedTotal, data.total)) {
             add(
