@@ -120,12 +120,49 @@ class InvoiceStore(context: Context) {
         return runCatching {
             val root = JSONObject(file.readText())
             val array = root.optJSONArray("invoices") ?: JSONArray()
-            (0 until array.length()).mapNotNull { index ->
-                array.optJSONObject(index)?.let(InvoiceJson::recordFromJson)
-            }.sortedByDescending { it.updatedAt }
+            val objects = (0 until array.length()).mapNotNull { array.optJSONObject(it) }
+            val records = objects.mapNotNull(InvoiceJson::recordFromJson)
+            if (records.size != objects.size) {
+                // A record that will not parse is dropped from the history, and
+                // the next save rewrites the file without it. Keep the original
+                // before that happens.
+                android.util.Log.w(
+                    "InvoiceStore",
+                    "${objects.size - records.size} document(s) in the history could not be read",
+                )
+                quarantine()
+            }
+            records.sortedByDescending { it.updatedAt }
         }.getOrElse {
             android.util.Log.w("InvoiceStore", "the invoice history would not parse", it)
+            quarantine()
             emptyList()
+        }
+    }
+
+    /**
+     * Keeps a copy of a history that would not parse, before anything can
+     * overwrite it.
+     *
+     * The history is loaded once at startup and every later save writes the
+     * whole file, so a single bad read used to destroy every invoice the shop
+     * had on the phone: the next draft save replaced the file with an empty
+     * list. The copy is kept once — the first unreadable file is the one most
+     * likely to still hold every document, and copying on every launch would
+     * fill the phone with the same broken file. It is named so it can be found
+     * and handed back, and the live file is left alone until a save replaces it.
+     */
+    private fun quarantine() {
+        runCatching {
+            val copy = File(file.parentFile, "$FILE-corrompu.json")
+            if (copy.isFile) {
+                android.util.Log.w("InvoiceStore", "an unreadable history is already kept as ${copy.name}")
+                return
+            }
+            file.copyTo(copy, overwrite = false)
+            android.util.Log.w("InvoiceStore", "kept the unreadable history as ${copy.name}")
+        }.onFailure {
+            android.util.Log.w("InvoiceStore", "could not keep a copy of the unreadable history", it)
         }
     }
 

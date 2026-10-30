@@ -106,7 +106,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     private var saveJob: Job? = null
 
     init {
-        _shop.value = ShopSettingsStore(application).read(application)
+        _shop.value = ShopSettingsStore(application).read()
         _design.value = InvoiceDesignStore(application).read(application)
         refreshInvoice()
     }
@@ -203,8 +203,10 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun setLineTaxExempt(index: Int, exempt: Boolean) {
+        val shop = _shop.value
+        val rate = if (shop.vatNotApplicable || _client.value.vatExempt) 0.0 else shop.vatPercent
         _lines.value = _lines.value.mapIndexed { i, line ->
-            if (i == index) line.copy(taxExempt = exempt) else line
+            if (i == index) PriceBasis.withExemption(line, exempt, rate) else line
         }
         refreshInvoice()
     }
@@ -251,10 +253,17 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * exempt buyer 20 % less than the number that was on the screen when the
      * line was added. The typed price is on the line, so the HT figure is
      * simply read again.
+     *
+     * Whether the shop currently quotes TTC has nothing to do with it: that
+     * switch says how the *next* number typed into a field is to be read, not
+     * what an existing line means. A line already carrying a [InvoiceLine.ttcPrice]
+     * was quoted TTC whatever the switch says now, and it keeps that meaning if
+     * the shop moves to HT — otherwise correcting the rate from 10 % to 20 % and
+     * the basis in the same visit left a 1680 DH tyre priced 1527,27 HT and
+     * then taxed to 1832,73 instead of staying 1680.
      */
     private fun repriceForClient(client: InvoiceClient) {
         val shop = _shop.value
-        if (!shop.pricesIncludeVat) return
         if (_lines.value.none { it.ttcPrice != null }) return
         val rate = if (shop.vatNotApplicable || client.vatExempt) 0.0 else shop.vatPercent
         _lines.value = PriceBasis.repriceTtcLines(_lines.value, rate)
@@ -308,9 +317,20 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         refreshInvoice()
     }
 
+    /**
+     * Saves the shop's settings and re-reads the draft at the new rate.
+     *
+     * Changing the TVA rate, or switching it off altogether, after the lines
+     * were typed used to leave every TTC price divided by the *old* rate: a
+     * draft entered at 20 % then moved to 10 % printed an HT figure that no
+     * longer added up to the price the customer was quoted, and the total moved
+     * by the difference. The typed price is on the line, so it is simply read
+     * again under the new settings.
+     */
     fun updateShop(settings: ShopSettings) {
         ShopSettingsStore.write(getApplication<Application>(), settings)
         _shop.value = settings
+        repriceForClient(_client.value)
         refreshInvoice()
     }
 
@@ -339,6 +359,12 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * A draft keeps its identity, so the same history row is updated. An issued
      * document is copied into a fresh draft: it is a receipt of what was sent,
      * and editing it in place would rewrite history and reuse its number.
+     *
+     * The lines are re-read at today's TVA settings on the way in. The stored
+     * HT figure was correct under the rate that was in force when the line was
+     * typed; reopening a draft after the shop corrected its rate used to bring
+     * that old figure back with the new rate applied on top, so a 1680 DH tyre
+     * entered at 10 % and reopened at 20 % totalled 1832,73 instead of 1680.
      */
     fun loadRecord(record: InvoiceRecord) {
         saveJob?.cancel()
@@ -355,6 +381,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _referenceNumber.value = data.referenceNumber
         _incoterm.value = data.incoterm
         _supplier.value = data.supplier
+        repriceForClient(_client.value)
         refreshInvoice()
     }
 

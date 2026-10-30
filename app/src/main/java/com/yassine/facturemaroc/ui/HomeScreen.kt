@@ -2025,14 +2025,22 @@ private fun InvoiceDetailSheet(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(Modifier.height(12.dp))
             DetailRow("Articles", "${record.data.lines.size}")
+            // The same rows the document prints, in the same order: the paper
+            // calls the figure before the discount "Total HT", so a screen that
+            // showed the net one under that name gave two different HT totals
+            // for the same invoice.
+            DetailRow("Sous-total HT", record.data.subtotal.asDirhams())
+            if (record.data.discountPercent > 0) {
+                DetailRow(
+                    "Remise ${record.data.discountPercent} %",
+                    "−${record.data.discountAmount.asDirhams()}",
+                )
+            }
             DetailRow("Total HT", record.data.totalExcludingVat.asDirhams())
             DetailRow(
                 if (record.data.effectiveVatPercent == 0.0) "TVA (exonérée)" else "TVA ${record.data.effectiveVatPercent.trimZeros()} %",
                 record.data.vatAmount.asDirhams(),
             )
-            if (record.data.discountPercent > 0) {
-                DetailRow("Remise", "−${record.data.discountPercent} %")
-            }
             Spacer(Modifier.height(18.dp))
             Button(
                 onClick = onShare,

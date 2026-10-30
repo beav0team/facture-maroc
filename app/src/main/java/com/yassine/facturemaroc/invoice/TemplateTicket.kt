@@ -115,10 +115,17 @@ class TicketRenderer : PdfRenderer {
         // The amount column has to hold "14 304,00 DH" at 8pt. At the first
         // 34 points it clipped to "14 304,0…" on every line of a real sale.
         val amountW = 58f
-        val labelX = margin + 13f
+        // The quantity column is measured rather than fixed: 11 points holds one
+        // digit, so a sale of 120 valves printed "1…" beside the line. The
+        // column is as wide as the longest count on this receipt.
+        val countW = data.lines
+            .maxOfOrNull { smallBold.measureText(it.quantity.toString()) }
+            ?.let { kotlin.math.ceil(it.toDouble()).toFloat() + 1f }
+            ?.coerceAtLeast(11f) ?: 11f
+        val labelX = margin + countW + 3f
         val labelW = (right - amountW - 4f - labelX).toInt()
         data.lines.forEach { line ->
-            PdfText.draw(canvas, line.quantity.toString(), margin, y, smallBold, 11)
+            PdfText.draw(canvas, line.quantity.toString(), margin, y, smallBold, countW.toInt())
             PdfText.draw(canvas, line.lineLabel, labelX, y, item, labelW, maxLines = 2)
             PdfText.draw(
                 canvas, PdfText.money(line.total), right - amountW, y, money, amountW.toInt(),

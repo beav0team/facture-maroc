@@ -5,7 +5,7 @@ Factures, devis, bons de commande, tickets, avoirs, proformas, acomptes,
 régularisations, factures simplifiées et factures à l'export — avec ICE, IF, RC,
 patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
-Version **0.7.1** (versionCode 9) · Android 8.0+ (minSdk 26) · Français.
+Version **0.7.3** (versionCode 11) · Android 8.0+ (minSdk 26) · Français.
 
 <img src="play_store/screenshots/01-factures.png" width="260" alt="Écran Factures">
 
@@ -106,7 +106,7 @@ wrapper Gradle fourni.
 
 ```bash
 export JAVA_HOME="$HOME/.local/jdk"      # ou votre JDK 21
-./gradlew testDebugUnitTest             # 223 tests JVM
+./gradlew testDebugUnitTest             # 227 tests JVM
 ./gradlew assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew bundleRelease                 # app/build/outputs/bundle/release/app-release.aab
 ./gradlew assembleRelease               # app/build/outputs/apk/release/app-release.apk
@@ -124,7 +124,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 
 ## Tests
 
-**223 tests JVM**, plus sept tests instrumentés :
+**227 tests JVM**, plus sept tests instrumentés :
 
 | Suite | Ce qu’elle protège |
 |---|---|
@@ -258,6 +258,32 @@ vérifiée par Google) dans Play Console.
 
 ## Historique
 
+- **0.7.3** — audit complet du code avant la mise en ligne, sept défauts
+  corrigés, tous dans la même zone : un prix que le client a lu sur l'écran et
+  qui ressort différent sur le document.
+  **La case « ligne exonérée de TVA » réinterprétait le prix tapé** : elle était
+  lue sur l'état de la ligne *à l'ouverture* de la boîte de dialogue, pas sur
+  l'interrupteur. Cocher « exonérée » sur `150 DH TTC` divisait donc par 1,20 et
+  le client recevait 125 DH ; décocher laissait une ligne qui n'était plus
+  exonérée facturer le prix HT **plus** la TVA. La conversion suit maintenant
+  l'interrupteur, et le prix tapé est conservé (`150 DH` reste `150 DH`, avec ou
+  sans TVA dedans).
+  **Changer le taux de TVA ne recalculait pas les lignes déjà tapées** : un
+  brouillon saisi à 20 %, corrigé à 10 %, imprimait un HT qui ne correspondait
+  plus au prix annoncé, et le total bougeait d'autant. Le prix d'origine est sur
+  la ligne, il est donc relu au taux courant — et **le brouillon est relu aussi
+  quand on le rouvre**, sinon le vieux HT revenait avec le nouveau taux appliqué
+  par-dessus (un pneu à 1680 DH affichait 1832,73 DH).
+  **Une liste de factures illisible se faisait écraser** : le chargement
+  renvoyait une liste vide et l'enregistrement suivant réécrivait le fichier.
+  L'original est désormais mis de côté (`invoices.json-corrompu.json`) et les
+  documents illisibles sont signalés dans le journal.
+  **Le ticket 80 mm coupait la quantité** : la colonne faisait 11 points, donc
+  « 120 » s'imprimait « 1… ». Elle est mesurée sur la plus longue quantité du
+  ticket. Le panneau de détail montre les mêmes totaux que le papier —
+  « Sous-total HT », « Remise x % » avec son montant, « Total HT » — au lieu de
+  deux HT différents pour la même facture. Enfin le doublon mort de
+  `ShopSettingsStore.write` et son `StateFlow` fantôme sont supprimés.
 - **0.7.2** — **la promesse « aucun accès à Internet » était fausse**, et c'est
   la préparation de la fiche Play Store qui l'a révélé : le manifeste fusionné
   demandait `INTERNET` et `ACCESS_NETWORK_STATE`. Ils ne venaient d'aucune ligne

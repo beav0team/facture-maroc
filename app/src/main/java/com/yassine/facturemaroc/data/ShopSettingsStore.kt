@@ -1,7 +1,6 @@
 package com.yassine.facturemaroc.data
 
 import android.content.Context
-import android.content.SharedPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,37 +11,14 @@ import kotlinx.coroutines.flow.asStateFlow
  * Stored in SharedPreferences (logo bytes as Base64). Written temp-then-rename
  * is not possible with SharedPreferences, but writes are atomic at the
  * framework level and the file is small.
+ *
+ * Reading and writing are separate calls on purpose: [InvoiceViewModel] holds
+ * the settings in its own state, and a second copy living here would go stale
+ * the moment a screen saved through the companion object.
  */
 class ShopSettingsStore(private val context: Context) {
 
-    private val _settings = MutableStateFlow(load(context))
-    val settings: StateFlow<ShopSettings> = _settings.asStateFlow()
-
-    fun read(context: Context): ShopSettings = load(context)
-
-    fun write(context: Context, settings: ShopSettings) {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        prefs.edit().apply {
-            putString("name", settings.name)
-            putString("address", settings.address)
-            putString("phone", settings.phone)
-            putString("email", settings.email)
-            putString("ice", settings.ice)
-            putString("ifNumber", settings.ifNumber)
-            putString("rc", settings.rc)
-            putString("patente", settings.patente)
-            putString("cnss", settings.cnss)
-            putString("logoBytes", settings.logoBytes?.let { android.util.Base64.encodeToString(it, android.util.Base64.DEFAULT) })
-            putFloat("vatPercent", settings.vatPercent.toFloat())
-            // Without these two the auto-entrepreneur switch and the price
-            // basis came back to their defaults on every launch, quietly
-            // re-taxing a shop that had said it was exempt.
-            putBoolean("vatNotApplicable", settings.vatNotApplicable)
-            putBoolean("pricesIncludeVat", settings.pricesIncludeVat)
-            apply()
-        }
-        _settings.value = settings
-    }
+    fun read(): ShopSettings = load(context)
 
     private fun load(context: Context): ShopSettings {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

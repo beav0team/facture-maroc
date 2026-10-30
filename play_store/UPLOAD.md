@@ -9,10 +9,12 @@ et les réponses aux formulaires.
 | Élément | Valeur |
 |---|---|
 | Paquet | `com.yassine.facturemaroc` |
-| Version | `0.7.2` (`versionCode` 10) |
+| Version | `0.7.3` (`versionCode` 11) |
 | Cible | API 36, minimum API 26 |
 | Permissions | `CAMERA` seule, facultative |
 | Fichier | `app/build/outputs/bundle/release/app-release.aab` |
+| Taille | 15 210 219 octets |
+| SHA-256 | `93caaf6599a73d57d27c30a40b3095bb62b1ba9e4996fdd63673d7de6893475b` |
 | Signature | clé de `~/.android/tyre-inventory.jks` (alias `inventory`) |
 
 L'AAB se reconstruit avec `./gradlew :app:bundleRelease`. **Ne jamais téléverser
@@ -58,6 +60,12 @@ un APK** : Play n'accepte que les App Bundles pour une nouvelle application.
 La réponse « aucune donnée collectée » n'est exacte que depuis la 0.7.2 : ML Kit
 ajoutait `INTERNET` par son propre manifeste pour téléverser ses journaux. C'est
 retiré, et `CAMERA` est la seule permission de l'AAB.
+
+La 0.7.3 ne change aucune de ces réponses : c'est un audit du code avant la mise
+en ligne (prix TTC relus au bon taux, brouillon relu à l'ouverture, historique
+illisible mis de côté, colonne de quantité du ticket mesurée). Aucun accès
+réseau n'a été ajouté, et le fichier est celui qui porte le SHA-256 ci-dessus —
+le vérifier avant de le téléverser évite d'envoyer par erreur l'AAB de la 0.7.2.
 
 ## 5. Signature
 

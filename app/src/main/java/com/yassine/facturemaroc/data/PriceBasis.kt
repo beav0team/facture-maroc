@@ -55,9 +55,21 @@ object PriceBasis {
      * returned untouched: an HT price does not move when the buyer changes.
      */
     fun repriceTtcLines(lines: List<InvoiceLine>, vatPercent: Double): List<InvoiceLine> =
-        lines.map { line ->
-            val typed = line.ttcPrice
-            if (typed == null || line.taxExempt) line
-            else line.copy(unitPrice = excludingVat(typed, vatPercent))
-        }
+        lines.map { withExemption(it, it.taxExempt, vatPercent) }
+
+    /**
+     * [line] with [exempt] set, and its price read again if it was quoted TTC.
+     *
+     * Exempting a line does not change the number the customer is told — it
+     * changes whether that number contains tax. `150 DH TTC` becomes `150 DH`
+     * with no TVA, not `125 DH`; and a line that stops being exempt goes back
+     * to `125 + 25`. The typed figure is on the line, so the answer is read
+     * again rather than left at whichever rate happened to be in force when it
+     * was written.
+     */
+    fun withExemption(line: InvoiceLine, exempt: Boolean, vatPercent: Double): InvoiceLine {
+        val typed = line.ttcPrice ?: return line.copy(taxExempt = exempt)
+        val rate = if (exempt) 0.0 else vatPercent
+        return line.copy(taxExempt = exempt, unitPrice = excludingVat(typed, rate))
+    }
 }

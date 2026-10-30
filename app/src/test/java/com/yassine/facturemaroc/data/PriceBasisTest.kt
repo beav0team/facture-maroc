@@ -174,4 +174,81 @@ class PriceBasisTest {
         assertEquals(150.0, data.total, 0.000001)
         assertEquals(0.0, data.vatAmount, 0.0)
     }
+
+    @Test
+    fun `exempting a TTC line keeps the price the customer was told`() {
+        // The shop is working TTC: "150 DH, TVA comprise". Ticking
+        // "ligne exonérée" says that 150 has no tax inside it — it does not say
+        // the customer now pays 125.
+        val taxed = InvoiceLine(
+            description = "Montage",
+            quantity = 1,
+            unitPrice = PriceBasis.excludingVat(150.0, 20.0),
+            ttcPrice = 150.0,
+        )
+
+        val exempt = PriceBasis.withExemption(taxed, exempt = true, vatPercent = 20.0)
+        assertEquals(150.0, exempt.unitPrice, 0.000001)
+        assertEquals(150.0, exempt.ttcPrice ?: Double.NaN, 0.0)
+
+        val data = InvoiceData(
+            number = "F-1",
+            date = "29/10/2026",
+            client = InvoiceClient("Client de passage"),
+            lines = listOf(exempt),
+        )
+        assertEquals(150.0, data.total, 0.000001)
+        assertEquals(0.0, data.vatAmount, 0.0)
+    }
+
+    @Test
+    fun `a line that stops being exempt has the tax taken back out`() {
+        // The same 150, now taxable: 125 HT + 25 TVA, which is the document the
+        // shop would have had if it had never ticked the box.
+        val exempt = InvoiceLine(
+            description = "Montage",
+            quantity = 1,
+            unitPrice = 150.0,
+            taxExempt = true,
+            ttcPrice = 150.0,
+        )
+
+        val taxed = PriceBasis.withExemption(exempt, exempt = false, vatPercent = 20.0)
+        assertEquals(125.0, taxed.unitPrice, 0.000001)
+        assertEquals(150.0, taxed.ttcPrice ?: Double.NaN, 0.0)
+    }
+
+    @Test
+    fun `switching exemption on an HT line only flips the flag`() {
+        // An HT price never had tax inside it, so there is nothing to re-read.
+        val line = InvoiceLine("Pneu", quantity = 1, unitPrice = 125.0)
+
+        val exempt = PriceBasis.withExemption(line, exempt = true, vatPercent = 20.0)
+        assertEquals(125.0, exempt.unitPrice, 0.0)
+        assertEquals(true, exempt.taxExempt)
+    }
+
+    @Test
+    fun `a TTC line keeps its quoted price when the shop changes the rate`() {
+        // Entered at 20 %, then the shop corrects the rate to 10 %: 150 DH TTC
+        // is still 150 DH TTC, and the HT behind it is read again.
+        val line = InvoiceLine(
+            description = "Pose",
+            quantity = 1,
+            unitPrice = PriceBasis.excludingVat(150.0, 20.0),
+            ttcPrice = 150.0,
+        )
+
+        val atTen = PriceBasis.repriceTtcLines(listOf(line), 10.0).single()
+        assertEquals(150.0 / 1.1, atTen.unitPrice, 0.000001)
+
+        val data = InvoiceData(
+            number = "F-1",
+            date = "29/10/2026",
+            client = InvoiceClient("Client de passage"),
+            lines = listOf(atTen),
+            vatPercent = 10.0,
+        )
+        assertEquals(150.0, data.total, 0.000001)
+    }
 }

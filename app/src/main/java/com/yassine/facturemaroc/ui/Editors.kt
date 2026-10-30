@@ -628,7 +628,15 @@ fun LineEditorDialog(
     // The shop quotes its prices one way; this dialog has to speak that way or
     // editing a line would silently move its price by the TVA rate every time
     // it is opened. An exempt line has no TVA inside it, so it is shown as-is.
-    val ttcBasis = pricesIncludeVat && !initial.taxExempt && vatPercent > 0.0
+    //
+    // The answer comes from the switch, not from the line as it was when the
+    // dialog opened: flipping "exemption" here changes whether the number in the
+    // price field has TVA inside it. Reading only the initial flag divided the
+    // typed price by the rate for an exempt line — 150 DH became 125 DH on the
+    // document — and left a line that stopped being exempt charging HT + TVA
+    // instead of the price that was typed.
+    var taxExempt by remember(initial) { mutableStateOf(initial.taxExempt) }
+    val ttcBasis = pricesIncludeVat && !taxExempt && vatPercent > 0.0
     var description by remember(initial) { mutableStateOf(initial.description) }
     var unit by remember(initial) { mutableStateOf(initial.unit) }
     var quantityText by remember(initial) { mutableStateOf(initial.quantity.toString()) }
@@ -646,7 +654,6 @@ fun LineEditorDialog(
     var discountText by remember(initial) {
         mutableStateOf(if (initial.lineDiscountPercent > 0) initial.lineDiscountPercent.toString() else "")
     }
-    var taxExempt by remember(initial) { mutableStateOf(initial.taxExempt) }
 
     val quantity = quantityText.toIntOrNull()?.coerceAtLeast(1) ?: 1
     val price = priceText.replace(',', '.').toDoubleOrNull() ?: 0.0
@@ -783,8 +790,9 @@ fun LineEditorDialog(
                             },
                             // Kept so a change of client can re-read the price
                             // instead of charging a different number than the
-                            // one that was typed.
-                            ttcPrice = if (ttcBasis && !taxExempt) price else null,
+                            // one that was typed. [ttcBasis] is already false
+                            // for an exempt line, which has no TVA inside it.
+                            ttcPrice = if (ttcBasis) price else null,
                             lineDiscountPercent = discount,
                             taxExempt = taxExempt,
                         ),
