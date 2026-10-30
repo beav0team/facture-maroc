@@ -249,11 +249,27 @@ Les ressources sont prêtes dans `play_store/` :
 - `screenshots/` — quatre captures 1080 × 2160 ;
 - `listing-fr.md` — titre, descriptions, catégorie, Data Safety, classification.
 
-Le compte Play Console n’est pas encore créé. Il faudra y renseigner l’adresse
-e-mail de contact (obligatoire et vérifiée par Google) et publier l’AAB signé.
+Le compte Play Console est vérifié depuis le 30 octobre 2026. L’AAB signé se
+construit avec `./gradlew :app:bundleRelease`
+(`app/build/outputs/bundle/release/app-release.aab`) ; il cible l’API 36, le
+minimum exigé par Google pour toute nouvelle application depuis le
+31 août 2026. Il reste à saisir l’adresse e-mail de contact (obligatoire et
+vérifiée par Google) dans Play Console.
 
 ## Historique
 
+- **0.7.2** — **la promesse « aucun accès à Internet » était fausse**, et c'est
+  la préparation de la fiche Play Store qui l'a révélé : le manifeste fusionné
+  demandait `INTERNET` et `ACCESS_NETWORK_STATE`. Ils ne venaient d'aucune ligne
+  du projet mais de `com.google.android.datatransport` (`transport-runtime`,
+  `transport-backend-cct`), la bibliothèque que ML Kit utilise pour **envoyer ses
+  journaux d'usage à Google** ; elle se déclare dans son propre manifeste, donc
+  elle entrait dans l'application sans qu'on l'écrive nulle part. Les deux
+  permissions sont maintenant retirées au moment de la fusion
+  (`tools:node="remove"`), et la reconnaissance du code-barres n'en souffre pas :
+  le modèle embarqué lit sur l'appareil, sans réseau. La fiche Play Store, la
+  politique de confidentialité et le formulaire Sécurité des données disent donc
+  désormais la vérité. **La seule permission reste `CAMERA`.**
 - **0.7.1** — corrections trouvées en relisant le code source de bout en bout,
   toutes capables de mettre un chiffre faux sous les yeux d'un client.
   **Enregistrer les paramètres remettait le compteur de factures à 1** : changer

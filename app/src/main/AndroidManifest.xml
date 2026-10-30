@@ -15,9 +15,31 @@
     device without one; the scanner is a shortcut for typing, and typing still
     works.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <!--
+        Two permissions nobody asked for, which the build had been carrying
+        silently: ML Kit's own manifest pulls in com.google.android.datatransport
+        (transport-runtime and transport-backend-cct), whose whole job is
+        uploading usage logs to Google, and it declares INTERNET and
+        ACCESS_NETWORK_STATE to do it.
+
+        That directly contradicts what this app promises and what the Play
+        listing says: it works offline and nothing leaves the phone. The barcode
+        model is the bundled one, so recognition is entirely on the device and
+        needs neither permission. Removing them is therefore a correction, not a
+        sacrifice — and it is the only way the "no data collected" answer in the
+        Data safety form is literally true.
+    -->
+    <uses-permission
+        android:name="android.permission.INTERNET"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="remove" />
 
     <uses-feature
         android:name="android.hardware.camera.any"

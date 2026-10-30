@@ -1,7 +1,7 @@
 # Facture Maroc — fiche Play Store (français)
 
-État : prête à copier dans Play Console. Le compte développeur n’existe pas
-encore ; l’adresse e-mail de contact doit être fournie à ce moment-là.
+État : prête à copier dans Play Console. Le compte développeur est **vérifié**
+depuis le 30 octobre 2026 ; seule l’adresse e-mail de contact reste à saisir.
 
 ## Identité
 
