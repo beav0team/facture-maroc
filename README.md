@@ -5,7 +5,7 @@ Factures, devis, bons de commande, tickets, avoirs, proformas, acomptes,
 régularisations, factures simplifiées et factures à l'export — avec ICE, IF, RC,
 patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
-Version **0.7.3** (versionCode 11) · Android 8.0+ (minSdk 26) · Français.
+Version **0.8.0** (versionCode 12) · Android 8.0+ (minSdk 26) · Français.
 
 <img src="play_store/screenshots/01-factures.png" width="260" alt="Écran Factures">
 
@@ -111,7 +111,7 @@ wrapper Gradle fourni.
 
 ```bash
 export JAVA_HOME="$HOME/.local/jdk"      # ou votre JDK 21
-./gradlew testDebugUnitTest             # 227 tests JVM
+./gradlew testDebugUnitTest             # 235 tests JVM
 ./gradlew assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew bundleRelease                 # app/build/outputs/bundle/release/app-release.aab
 ./gradlew assembleRelease               # app/build/outputs/apk/release/app-release.apk
@@ -129,7 +129,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 
 ## Tests
 
-**227 tests JVM**, plus sept tests instrumentés :
+**235 tests JVM**, plus sept tests instrumentés :
 
 | Suite | Ce qu’elle protège |
 |---|---|
@@ -264,6 +264,21 @@ vérifiée par Google) dans Play Console.
 
 ## Historique
 
+- **0.8.0** — l'onglet Articles s'ouvre sur **une liste plate** de tout le
+  catalogue, triée par désignation, le chemin du dossier en sous-titre ; les
+  **dossiers deviennent un filtre** (`Tous`, `Sans dossier`, chaque dossier, et
+  un menu pour les chemins complets, sous-dossiers inclus). Ils restent une
+  vraie arborescence : création, renommage et suppression vivent dans l'écran
+  **Dossiers** du bandeau, atteint en un tap. La recherche depuis la liste plate
+  parcourt tout le catalogue, code-barres compris, et le compteur du titre suit
+  la recherche au lieu du catalogue.
+  Chaque commerce choisit les champs de la fiche article — **code-barres, prix
+  d'achat, unité, stock, dossier** — dans **Paramètres → Articles** ; les cinq
+  sont actifs par défaut, donc une installation existante ne voit rien changer.
+  **Masquer un champ n'efface rien** : la valeur reste sur l'article et revient
+  quand le champ est réactivé (un stock masqué ne transforme pas un produit en
+  prestation à la première modification). Les cinq réglages passent dans la
+  sauvegarde, et une sauvegarde antérieure restaure tout visible.
 - **0.7.3** — audit complet du code avant la mise en ligne, sept défauts
   corrigés, tous dans la même zone : un prix que le client a lu sur l'écran et
   qui ressort différent sur le document.
