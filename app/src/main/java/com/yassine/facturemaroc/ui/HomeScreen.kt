@@ -1613,16 +1613,6 @@ private fun ArticlesFoldersGrid(
     onRenameFolder: (String) -> Unit,
     onDeleteFolder: (String) -> Unit,
 ) {
-    if (items.isEmpty() && folders.isEmpty()) {
-        EmptyState(
-            icon = Icons.Filled.Inventory2,
-            title = "Aucun article enregistré",
-            message = "Ajoutez ce que vous vendez souvent — une prestation, un produit, une pièce — " +
-                "et retrouvez-le en un geste sur chaque facture.",
-        )
-        return
-    }
-
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier.fillMaxSize(),
@@ -1630,6 +1620,23 @@ private fun ArticlesFoldersGrid(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        /*
+         * An empty catalogue still gets the grid, not an empty-state screen:
+         * the "Nouveau dossier" tile is the only place a folder is created, so
+         * hiding it behind an empty state left a fresh install with no way to
+         * make the first one at all.
+         */
+        if (items.isEmpty() && folders.isEmpty()) {
+            item(key = "empty-hint", span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    "Aucun article enregistré pour l'instant. Vous pouvez déjà " +
+                        "créer vos dossiers, puis y ranger vos articles.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+            }
+        }
         item(key = "all") {
             FolderTile(
                 title = "Tous",
