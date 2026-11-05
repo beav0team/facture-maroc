@@ -253,12 +253,31 @@ fun HomeScreen(
     val articleFolder = inFolder
     val managingFolders = tab == HomeTab.ARTICLES && foldersOpen
     val itemFields = visibleItemFields(shop)
-    val articleList = remember(items, articleFilter) { filterArticles(items, articleFilter) }
+    /*
+     * The filter the list really applies. A folder can disappear while it is
+     * the active filter (deleted from the folder screen, or its field switched
+     * off in Paramètres), and filtering on a path that no longer exists would
+     * leave an empty list under a chip that cannot clear itself.
+     */
+    val activeArticleFilter = articleFilter?.takeIf { path ->
+        ItemField.FOLDER in itemFields &&
+            (path.isEmpty() || folders.any { it.equals(path, ignoreCase = true) })
+    }
+    val articleList = remember(items, activeArticleFilter) {
+        filterArticles(items, activeArticleFilter)
+    }
     val articleMatches = remember(items, query) {
         if (query.isBlank()) emptyList() else items.filter { SavedItemStore.matches(it, query) }
     }
     val subFolders = remember(folders, articleFolder) {
-        articleFolder?.let { SavedItemStore.children(it, folders) }.orEmpty()
+        // `""` is "Sans dossier", which has no shelves of its own. Without this,
+        // children("") answered every top-level folder and put the whole
+        // cabinet inside the unfiled pile.
+        if (articleFolder.isNullOrEmpty()) {
+            emptyList()
+        } else {
+            SavedItemStore.children(articleFolder, folders)
+        }
     }
     val articleScopeItems = when {
         showAllArticles || articleFolder == null -> items
@@ -287,7 +306,7 @@ fun HomeScreen(
      */
     val newFolderHome = when {
         managingFolders -> if (showAllArticles) "" else inFolder.orEmpty()
-        else -> articleFilter.orEmpty()
+        else -> activeArticleFilter.orEmpty()
     }
     val startNewFolder: (String) -> Unit = { parent ->
         newFolderParent = parent
@@ -645,6 +664,7 @@ fun HomeScreen(
                                 subFolders = subFolders,
                                 allItems = items,
                                 allArticles = showAllArticles,
+                                nested = !articleFolder.isNullOrEmpty(),
                                 onOpenFolder = { path ->
                                     inFolder = path
                                     query = ""
@@ -699,7 +719,7 @@ fun HomeScreen(
                             if (ItemField.FOLDER in itemFields) {
                                 ArticleFilterChips(
                                     folders = folders,
-                                    selected = articleFilter,
+                                    selected = activeArticleFilter,
                                     onSelect = {
                                         articleFilter = it
                                         // A chip is a new question; a search
@@ -777,7 +797,7 @@ fun HomeScreen(
             defaultFolder = when {
                 managingFolders && !showAllArticles -> inFolder.orEmpty()
                 managingFolders -> ""
-                else -> articleFilter.orEmpty()
+                else -> activeArticleFilter.orEmpty()
             },
             fields = itemFields,
             // The sale price is asked for in the basis the shop quotes, so the
@@ -908,6 +928,9 @@ fun HomeScreen(
                         // create twice.
                         inFolder = created
                         showAllArticles = false
+                        // The new folder is what the shop should see, not the
+                        // results of a search typed before it existed.
+                        query = ""
                         if (!managingFolders) foldersOpen = true
                         folderEditorOpen = false
                     } else {
@@ -1757,6 +1780,12 @@ private fun FolderContents(
     onDelete: (SavedItem) -> Unit,
     /** The "Tous les articles" view: same grid, but nothing is a sub-folder. */
     allArticles: Boolean = false,
+    /**
+     * Whether a folder made here can be nested at all. "Sans dossier" has no
+     * shelves of its own, so it offers a plain "Nouveau dossier" rather than
+     * promising a sub-folder it would file at the root anyway.
+     */
+    nested: Boolean = true,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -1778,7 +1807,7 @@ private fun FolderContents(
         item(key = "new-subfolder") {
             NewFolderTile(
                 onCreateFolder,
-                label = if (allArticles) "Nouveau dossier" else "Nouveau sous-dossier",
+                label = if (allArticles || !nested) "Nouveau dossier" else "Nouveau sous-dossier",
             )
         }
         if (articles.isNotEmpty()) {
