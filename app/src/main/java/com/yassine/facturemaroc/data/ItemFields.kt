@@ -43,3 +43,32 @@ fun filterArticles(items: List<SavedItem>, folder: String?): List<SavedItem> = w
     null -> items
     else -> SavedItemStore.itemsIn(folder, items, deep = folder.isNotEmpty())
 }.sortedBy { it.label.lowercase() }
+
+/** What the footer under the Articles list says, already reduced to numbers. */
+data class ArticleSummary(
+    val count: Int,
+    /** Units on the shelf, for the articles that have a quantity. */
+    val units: Int,
+    /** What the shelves are worth at purchase price, when it is known. */
+    val stockValue: Double,
+)
+
+/**
+ * The line under the list: how many articles, how many units, what they cost.
+ *
+ * Only answers a question the shop can see the fields for: with Stock switched
+ * off there are no units to count, and with the purchase price off there is no
+ * value to claim.
+ */
+fun summarizeArticles(items: List<SavedItem>, fields: Set<ItemField>): ArticleSummary {
+    val tracked = if (ItemField.STOCK in fields) items.filter { it.stock != null } else emptyList()
+    return ArticleSummary(
+        count = items.size,
+        units = tracked.sumOf { it.stock ?: 0 },
+        stockValue = if (ItemField.PURCHASE_PRICE in fields) {
+            tracked.sumOf { (it.stock ?: 0) * it.purchasePrice }
+        } else {
+            0.0
+        },
+    )
+}

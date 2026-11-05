@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
@@ -432,36 +433,53 @@ fun ItemEditorDialog(
                         )
                     }
                 }
-                if ((showStock && tracksStock) || showUnit) {
+                if (showStock && tracksStock) {
+                    /*
+                     * The keyboard is for a number from a delivery note; the
+                     * ± next to it is for the far more common "one more came
+                     * in" and "one went out". It is the same gesture a shop
+                     * already uses at the counter.
+                     */
                     Row(
                         Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (showStock && tracksStock) {
-                            OutlinedTextField(
-                                value = stockText,
-                                onValueChange = { input -> stockText = input.filter { it.isDigit() }.take(6) },
-                                label = { Text("En stock") },
-                                singleLine = true,
-                                modifier = Modifier.weight(1f),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Number,
-                                    imeAction = ImeAction.Next,
-                                ),
-                            )
+                        OutlinedTextField(
+                            value = stockText,
+                            onValueChange = { input -> stockText = input.filter { it.isDigit() }.take(6) },
+                            label = { Text("En stock") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next,
+                            ),
+                        )
+                        IconButton(
+                            onClick = {
+                                stockText = (stock - 1).coerceAtLeast(0).toString()
+                            },
+                        ) {
+                            Icon(Icons.Filled.Remove, contentDescription = "Retirer un")
                         }
-                        if (showUnit) {
-                            OutlinedTextField(
-                                value = unit,
-                                onValueChange = { unit = it },
-                                label = { Text("Unité") },
-                                placeholder = { Text("unité, heure, kg") },
-                                singleLine = true,
-                                modifier = Modifier.weight(1f),
-                            )
+                        IconButton(
+                            onClick = {
+                                if (stock < 999_999) stockText = (stock + 1).toString()
+                            },
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = "Ajouter un")
                         }
                     }
+                }
+                if (showUnit) {
+                    OutlinedTextField(
+                        value = unit,
+                        onValueChange = { unit = it },
+                        label = { Text("Unité") },
+                        placeholder = { Text("unité, heure, kg") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
                 if (showStock) {
                     Row(

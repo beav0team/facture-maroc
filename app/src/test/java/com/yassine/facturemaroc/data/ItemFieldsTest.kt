@@ -90,4 +90,31 @@ class ItemFieldsTest {
     fun `a folder nothing is filed in comes back empty, not whole`() {
         assertTrue(filterArticles(catalogue, "Vélo").isEmpty())
     }
+
+    @Test
+    fun `the summary counts units and the money on the shelves`() {
+        val summary = summarizeArticles(catalogue, ItemField.entries.toSet())
+
+        // tyre 12, winter 4, valve 30; the fitting has no quantity.
+        assertEquals(4, summary.count)
+        assertEquals(46, summary.units)
+        // 12 x 700 + 4 x 700 + 30 x 0: the winter tyre inherits the purchase
+        // price from `tyre` through copy(), and the valve has none.
+        assertEquals(11_200.0, summary.stockValue, 0.001)
+    }
+
+    @Test
+    fun `the summary does not count what the shop hid`() {
+        val noStock = summarizeArticles(catalogue, ItemField.entries.toSet() - ItemField.STOCK)
+        assertEquals(0, noStock.units)
+        assertEquals(0.0, noStock.stockValue, 0.001)
+        assertEquals(4, noStock.count)
+
+        val noPurchase = summarizeArticles(
+            catalogue,
+            ItemField.entries.toSet() - ItemField.PURCHASE_PRICE,
+        )
+        assertEquals(46, noPurchase.units)
+        assertEquals(0.0, noPurchase.stockValue, 0.001)
+    }
 }

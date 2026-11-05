@@ -5,7 +5,13 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -43,6 +49,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.MoreVert
@@ -71,6 +78,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -92,6 +100,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -114,9 +125,11 @@ import com.yassine.facturemaroc.data.creditedInMonth
 import com.yassine.facturemaroc.data.filterArticles
 import com.yassine.facturemaroc.data.labelTaken
 import com.yassine.facturemaroc.data.nameTaken
+import com.yassine.facturemaroc.data.summarizeArticles
 import com.yassine.facturemaroc.data.visibleItemFields
 import com.yassine.facturemaroc.invoice.InvoiceXml
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -207,6 +220,7 @@ fun HomeScreen(
     var deleteInvoice by remember { mutableStateOf<InvoiceRecord?>(null) }
     var deleteClient by remember { mutableStateOf<InvoiceClient?>(null) }
     var deleteItem by remember { mutableStateOf<SavedItem?>(null) }
+    var movingItem by remember { mutableStateOf<SavedItem?>(null) }
 
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -656,6 +670,7 @@ fun HomeScreen(
                                     emptyMessage = "Essayez un autre mot.",
                                     onEdit = onEditItem,
                                     onDelete = onDeleteItem,
+                                    onMove = { movingItem = it },
                                 )
                             }
 
@@ -679,6 +694,7 @@ fun HomeScreen(
                                 onDeleteFolder = { deleteFolder = it },
                                 onEdit = onEditItem,
                                 onDelete = onDeleteItem,
+                                onMove = { movingItem = it },
                             )
 
                             else -> ArticlesFoldersGrid(
@@ -713,6 +729,7 @@ fun HomeScreen(
                             emptyMessage = "Essayez un autre mot.",
                             onEdit = onEditItem,
                             onDelete = onDeleteItem,
+                            onMove = { movingItem = it },
                         )
                     } else {
                         Column(Modifier.fillMaxSize()) {
@@ -729,25 +746,29 @@ fun HomeScreen(
                                     },
                                 )
                             }
-                            ArticlesList(
-                                items = articleList,
-                                showFolder = ItemField.FOLDER in itemFields,
-                                fields = itemFields,
-                                emptyTitle = if (items.isEmpty()) {
-                                    "Aucun article enregistré"
-                                } else {
-                                    "Aucun article ici"
-                                },
-                                emptyMessage = if (items.isEmpty()) {
-                                    "Ajoutez ce que vous vendez souvent — une prestation, " +
-                                        "un produit, une pièce — et retrouvez-le en un geste " +
-                                        "sur chaque facture."
-                                } else {
-                                    "Essayez un autre filtre."
-                                },
-                                onEdit = onEditItem,
-                                onDelete = onDeleteItem,
-                            )
+                            Box(Modifier.weight(1f)) {
+                                ArticlesList(
+                                    items = articleList,
+                                    showFolder = ItemField.FOLDER in itemFields,
+                                    fields = itemFields,
+                                    emptyTitle = if (items.isEmpty()) {
+                                        "Aucun article enregistré"
+                                    } else {
+                                        "Aucun article ici"
+                                    },
+                                    emptyMessage = if (items.isEmpty()) {
+                                        "Ajoutez ce que vous vendez souvent — une prestation, " +
+                                            "un produit, une pièce — et retrouvez-le en un geste " +
+                                            "sur chaque facture."
+                                    } else {
+                                        "Essayez un autre filtre."
+                                    },
+                                    onEdit = onEditItem,
+                                    onDelete = onDeleteItem,
+                                    onMove = { movingItem = it },
+                                )
+                            }
+                            ArticlesSummary(items = articleList, fields = itemFields)
                         }
                     }
                 }
@@ -908,6 +929,31 @@ fun HomeScreen(
             onConfirm = {
                 viewModel.savedItems.delete(item)
                 deleteItem = null
+            },
+        )
+    }
+
+    movingItem?.let { item ->
+        FolderPickerDialog(
+            item = item,
+            folders = folders,
+            onDismiss = { movingItem = null },
+            onPick = { path ->
+                movingItem = null
+                // Picking the folder it is already in is not a move: no write,
+                // no message, no reordering of the list under the finger.
+                if (!path.equals(item.folder, ignoreCase = true)) {
+                    viewModel.savedItems.save(item.copy(folder = path))
+                    scope.launch {
+                        snackbar.showSnackbar(
+                            if (path.isBlank()) {
+                                "« ${item.label} » est maintenant sans dossier."
+                            } else {
+                                "« ${item.label} » rangé dans « ${SavedItemStore.display(path)} »."
+                            },
+                        )
+                    }
+                }
             },
         )
     }
@@ -1778,6 +1824,7 @@ private fun FolderContents(
     onDeleteFolder: (String) -> Unit,
     onEdit: (SavedItem) -> Unit,
     onDelete: (SavedItem) -> Unit,
+    onMove: (SavedItem) -> Unit,
     /** The "Tous les articles" view: same grid, but nothing is a sub-folder. */
     allArticles: Boolean = false,
     /**
@@ -1844,6 +1891,7 @@ private fun FolderContents(
                 showFolder = false,
                 onClick = { onEdit(item) },
                 onDelete = { onDelete(item) },
+                onMove = { onMove(item) },
             )
         }
     }
@@ -2008,6 +2056,109 @@ private fun NewFolderTile(onClick: () -> Unit, label: String = "Nouveau dossier"
 }
 
 /**
+ * The one line under the list: how much there is.
+ *
+ * A shop counting its shelves does not want a report — it wants to know that
+ * the filter it just tapped holds 46 tyres and what they cost. Only the parts
+ * whose fields are visible are said, so a shop that hides Stock is not told a
+ * quantity it never records.
+ */
+@Composable
+private fun ArticlesSummary(items: List<SavedItem>, fields: Set<ItemField>) {
+    if (items.isEmpty()) return
+    val summary = remember(items, fields) { summarizeArticles(items, fields) }
+    val style = MaterialTheme.typography.labelMedium
+    val color = MaterialTheme.colorScheme.onSurfaceVariant
+    Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                if (summary.count == 1) "1 article" else "${summary.count} articles",
+                style = style,
+                color = color,
+            )
+            if (summary.units > 0) {
+                Text(
+                    if (summary.units == 1) "1 unité" else "${summary.units} unités",
+                    style = style,
+                    color = color,
+                )
+            }
+            if (summary.stockValue > 0.0) {
+                Text(
+                    "${summary.stockValue.asDirhams()} d'achat",
+                    style = style,
+                    color = color,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Chooses the folder an article moves to.
+ *
+ * Kept as a dialog rather than a drag: moving is rare, and a list of paths is
+ * unambiguous, where dropping a row onto a tile is not.
+ */
+@Composable
+private fun FolderPickerDialog(
+    item: SavedItem,
+    folders: List<String>,
+    onDismiss: () -> Unit,
+    onPick: (String) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Déplacer l'article") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    "« ${item.label} » — choisissez son dossier.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                FolderChoice(
+                    label = "Sans dossier",
+                    selected = item.folder.isBlank(),
+                    onClick = { onPick("") },
+                )
+                folders.forEach { path ->
+                    FolderChoice(
+                        label = SavedItemStore.display(path),
+                        selected = item.folder.equals(path, ignoreCase = true),
+                        onClick = { onPick(path) },
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Annuler") }
+        },
+    )
+}
+
+@Composable
+private fun FolderChoice(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = onClick)
+        Text(label, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+/**
  * The folder filter above the Articles list.
  *
  * The tab lands on the whole catalogue, so a folder is a question the shop asks
@@ -2119,6 +2270,7 @@ private fun ArticlesList(
     emptyMessage: String,
     onEdit: (SavedItem) -> Unit,
     onDelete: (SavedItem) -> Unit,
+    onMove: (SavedItem) -> Unit,
 ) {
     if (items.isEmpty()) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
@@ -2143,8 +2295,34 @@ private fun ArticlesList(
                 fields = fields,
                 onClick = { onEdit(item) },
                 onDelete = { onDelete(item) },
+                onMove = { onMove(item) },
             )
         }
+    }
+}
+
+/**
+ * One of the buttons a swiped row reveals.
+ *
+ * Icon only: three labels in 168 dp clipped "Supprimer" to "Supprime", and the
+ * row already says what it is. The description is kept for TalkBack, which has
+ * no icon to read.
+ */
+@Composable
+private fun QuickAction(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    tint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(22.dp))
     }
 }
 
@@ -2153,6 +2331,7 @@ private fun ItemCard(
     item: SavedItem,
     onClick: () -> Unit,
     onDelete: () -> Unit,
+    onMove: () -> Unit,
     /** Which optional fields the shop asked to see. */
     fields: Set<ItemField> = ItemField.entries.toSet(),
     /** False inside a folder, where repeating its name on every row is noise. */
@@ -2168,13 +2347,81 @@ private fun ItemCard(
         .filter { it.isNotBlank() }
         .joinToString(" · ")
 
+    /*
+     * Slide the row left to reach its three actions, the way StoDo does it.
+     * The card is moved rather than swapped for a menu: a shop that has used
+     * any phone knows the gesture, and the actions stay visible while the row
+     * it belongs to stays readable.
+     */
+    val density = LocalDensity.current
+    /*
+     * Moving is only offered while the folder field is on: a shop that hid
+     * folders should not be asked where to file an article it never files.
+     * Two actions at most — tapping the row already opens the editor, and a
+     * third button pushed the card so far left that its label disappeared.
+     */
+    val canMove = ItemField.FOLDER in fields
+    val actionWidth = 56.dp
+    val revealWidth = with(density) { (actionWidth * (if (canMove) 2 else 1)).toPx() }
+    val offsetX = remember(item.label) { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    val close: () -> Unit = { scope.launch { offsetX.animateTo(0f) } }
+
+    Box(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .matchParentSize()
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (canMove) {
+                QuickAction(
+                    icon = Icons.Filled.FolderOpen,
+                    label = "Déplacer dans un dossier",
+                    modifier = Modifier.width(actionWidth),
+                ) {
+                    close()
+                    onMove()
+                }
+            }
+            QuickAction(
+                icon = Icons.Filled.Delete,
+                label = "Supprimer",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.width(actionWidth),
+            ) {
+                close()
+                onDelete()
+            }
+        }
+
     Card(
-        onClick = onClick,
+        // An open row closes on a tap before it edits: the shop aimed at the
+        // card it can still see, not at the button it just opened.
+        onClick = { if (offsetX.value != 0f) close() else onClick() },
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+            .draggable(
+                orientation = Orientation.Horizontal,
+                state = rememberDraggableState { delta ->
+                    scope.launch {
+                        offsetX.snapTo((offsetX.value + delta).coerceIn(-revealWidth, 0f))
+                    }
+                },
+                onDragStopped = {
+                    // Past a third of the strip it stays open; below that it
+                    // springs back, so a half-swipe never leaves a stuck row.
+                    val target = if (offsetX.value < -revealWidth / 3f) -revealWidth else 0f
+                    offsetX.animateTo(target)
+                },
+            ),
     ) {
         Row(
             Modifier
@@ -2257,6 +2504,16 @@ private fun ItemCard(
                             onClick()
                         },
                     )
+                    if (canMove) {
+                        DropdownMenuItem(
+                            text = { Text("Déplacer dans un dossier") },
+                            leadingIcon = { Icon(Icons.Filled.Folder, contentDescription = null) },
+                            onClick = {
+                                menuOpen = false
+                                onMove()
+                            },
+                        )
+                    }
                     HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text("Supprimer", color = MaterialTheme.colorScheme.error) },
@@ -2275,6 +2532,7 @@ private fun ItemCard(
                 }
             }
         }
+    }
     }
 }
 

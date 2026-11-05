@@ -28,8 +28,12 @@ Trois onglets, pas de détour :
   qu'un endroit où l'on entre : **ils s'imbriquent toujours** (les pneus d'hiver
   se rangent sous Pneus), et se créent, se renomment ou se suppriment depuis
   l'écran **Dossiers** du bandeau du haut.
+  Un **glissement vers la gauche** sur une ligne découvre « déplacer » et
+  « supprimer » sans ouvrir la fiche ; la barre du bas récapitule ce que le
+  filtre contient (articles, unités, valeur d'achat du stock).
   Chaque commerce choisit ce que la fiche article lui demande — code-barres,
-  prix d'achat, unité, stock, dossier — dans **Paramètres → Articles**. Masquer
+  prix d'achat, unité, stock, dossier — dans **Paramètres → Articles**. La
+  quantité se saisit au clavier ou avec les boutons **− / +**. Masquer
   un champ ne l'efface pas : la valeur reste sur l'article et réapparaît si le
   champ est réactivé.
 
@@ -272,6 +276,10 @@ vérifiée par Google) dans Play Console.
   **Dossiers** du bandeau, atteint en un tap. La recherche depuis la liste plate
   parcourt tout le catalogue, code-barres compris, et le compteur du titre suit
   la recherche au lieu du catalogue.
+  Une ligne se fait glisser vers la gauche pour la **déplacer** dans un dossier
+  ou la **supprimer**, et la barre sous la liste compte les articles, les unités
+  et la valeur d'achat du stock affiché. La quantité se saisit aussi avec les
+  boutons − / +.
   Chaque commerce choisit les champs de la fiche article — **code-barres, prix
   d'achat, unité, stock, dossier** — dans **Paramètres → Articles** ; les cinq
   sont actifs par défaut, donc une installation existante ne voit rien changer.
