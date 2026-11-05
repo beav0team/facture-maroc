@@ -39,6 +39,11 @@ class ShopSettingsStore(private val context: Context) {
             vatPercent = prefs.getFloat("vatPercent", 20.0f).toDouble(),
             vatNotApplicable = prefs.getBoolean("vatNotApplicable", false),
             pricesIncludeVat = prefs.getBoolean("pricesIncludeVat", false),
+            showItemBarcode = prefs.getBoolean("showItemBarcode", true),
+            showItemPurchasePrice = prefs.getBoolean("showItemPurchasePrice", true),
+            showItemUnit = prefs.getBoolean("showItemUnit", true),
+            showItemStock = prefs.getBoolean("showItemStock", true),
+            showItemFolder = prefs.getBoolean("showItemFolder", true),
         )
     }
 
@@ -61,6 +66,11 @@ class ShopSettingsStore(private val context: Context) {
                 putFloat("vatPercent", settings.vatPercent.toFloat())
                 putBoolean("vatNotApplicable", settings.vatNotApplicable)
                 putBoolean("pricesIncludeVat", settings.pricesIncludeVat)
+                putBoolean("showItemBarcode", settings.showItemBarcode)
+                putBoolean("showItemPurchasePrice", settings.showItemPurchasePrice)
+                putBoolean("showItemUnit", settings.showItemUnit)
+                putBoolean("showItemStock", settings.showItemStock)
+                putBoolean("showItemFolder", settings.showItemFolder)
                 apply()
             }
         }

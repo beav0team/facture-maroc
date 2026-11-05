@@ -145,6 +145,58 @@ class BackupTest {
     }
 
     @Test
+    fun `a hidden article field survives the round trip`() {
+        val hidden = shop.copy(
+            showItemBarcode = false,
+            showItemPurchasePrice = false,
+            showItemUnit = false,
+            showItemStock = false,
+            showItemFolder = false,
+        )
+        val json = Backup.build(
+            shop = hidden,
+            design = design,
+            logo = logo,
+            clients = clients,
+            items = items,
+            invoices = invoices,
+            counters = counters,
+            folders = folders,
+            exportedAt = 1_234L,
+        )
+
+        val restored = Backup.parse(json)
+
+        assertFalse(restored.shop.showItemBarcode)
+        assertFalse(restored.shop.showItemPurchasePrice)
+        assertFalse(restored.shop.showItemUnit)
+        assertFalse(restored.shop.showItemStock)
+        assertFalse(restored.shop.showItemFolder)
+    }
+
+    @Test
+    fun `a backup from before the article switches restores every field visible`() {
+        val json = mutated {
+            val saved = getJSONObject("shop")
+            saved.remove("showItemBarcode")
+            saved.remove("showItemPurchasePrice")
+            saved.remove("showItemUnit")
+            saved.remove("showItemStock")
+            saved.remove("showItemFolder")
+        }
+
+        val restored = Backup.parse(json)
+
+        // The file was written by a version whose every field was on screen, so
+        // restoring it with fields hidden would be a change nobody asked for.
+        assertTrue(restored.shop.showItemBarcode)
+        assertTrue(restored.shop.showItemPurchasePrice)
+        assertTrue(restored.shop.showItemUnit)
+        assertTrue(restored.shop.showItemStock)
+        assertTrue(restored.shop.showItemFolder)
+    }
+
+    @Test
     fun `a backup from before folders still restores its articles`() {
         val json = mutated {
             remove("folders")

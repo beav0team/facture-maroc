@@ -23,7 +23,7 @@ TOUT AU MÊME ENDROIT
 • Trois onglets : Factures, Clients, Articles.
 • Vos coordonnées et mentions légales (ICE, IF, RC, patente, CNSS) enregistrées une fois.
 • Vos clients réutilisables en un tap, avec leur adresse et leur ICE.
-• Un catalogue d’articles et de services, rangé en dossiers.
+• Un catalogue d’articles et de services : liste complète, dossiers en filtre, champs de la fiche au choix.
 
 DES DOCUMENTS PROPRES
 • Facture, devis, bon de commande et ticket 80 mm.
@@ -97,7 +97,7 @@ quitte l’appareil.
 - `play_store/screenshots/01-factures.png` — écran Factures, 1080 × 2160.
 - `play_store/screenshots/02-builder.png` — écran de création, 1080 × 2160.
 - `play_store/screenshots/03-clients.png` — écran Clients, 1080 × 2160.
-- `play_store/screenshots/04-articles.png` — écran Articles et dossiers, 1080 × 2160.
+- `play_store/screenshots/04-articles.png` — écran Articles, 1080 × 2160.
 
 Les captures utilisent un jeu de démonstration (« Atelier Atlas »), pas les
 données réelles d’un client.

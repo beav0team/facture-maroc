@@ -32,6 +32,24 @@ data class ShopSettings(
      * says how the number typed on a line should be read.
      */
     val pricesIncludeVat: Boolean = false,
+    /*
+     * Which optional fields the shop's articles show.
+     *
+     * A tyre shop fills a barcode and a purchase price on every article; a
+     * plumber selling three services fills neither, and asking both of them for
+     * the same seven fields is what made the article form feel like data entry.
+     * These switch the *form* and the *card*, never the data: hiding a field
+     * keeps whatever is already stored on the article, and turning it back on
+     * shows it again.
+     *
+     * All true by default, so an installation that predates these settings sees
+     * exactly the app it had.
+     */
+    val showItemBarcode: Boolean = true,
+    val showItemPurchasePrice: Boolean = true,
+    val showItemUnit: Boolean = true,
+    val showItemStock: Boolean = true,
+    val showItemFolder: Boolean = true,
 ) {
     /** Legal ID fields that are non-empty, joined for printing. */
     val legalIdentifierList: List<String>

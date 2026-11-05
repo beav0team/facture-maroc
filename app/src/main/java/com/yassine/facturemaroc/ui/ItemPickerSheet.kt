@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yassine.facturemaroc.data.InvoiceLine
+import com.yassine.facturemaroc.data.ItemField
 import com.yassine.facturemaroc.data.SavedItem
 import com.yassine.facturemaroc.data.SavedItemStore
 
@@ -67,6 +68,8 @@ fun ItemPickerSheet(
     /** The shop's price basis, so a new article is priced the way the shop quotes. */
     pricesIncludeVat: Boolean = false,
     vatPercent: Double = 0.0,
+    /** The optional fields the shop asked to see — same rule as the Articles tab. */
+    fields: Set<ItemField> = ItemField.entries.toSet(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val folders by store.folders.collectAsState()
@@ -117,6 +120,7 @@ fun ItemPickerSheet(
                         addedCount++
                     },
                     onCreate = { creating = true },
+                    fields = fields,
                 )
 
                 PickerSource.FREE -> FreeEntry(
@@ -185,6 +189,7 @@ fun ItemPickerSheet(
             folders = folders,
             pricesIncludeVat = pricesIncludeVat,
             vatPercent = vatPercent,
+            fields = fields,
         )
     }
 }
@@ -196,6 +201,7 @@ private fun ArticlesSource(
     onQueryChange: (String) -> Unit,
     onAdd: (SavedItem) -> Unit,
     onCreate: () -> Unit,
+    fields: Set<ItemField>,
 ) {
     val items by store.items.collectAsState()
     val shown = remember(items, query) { store.search(query) }
@@ -209,8 +215,10 @@ private fun ArticlesSource(
         placeholder = { Text("Rechercher dans mes articles") },
         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
         // The counter is where a box is opened, so the scan belongs here too:
-        // typing thirteen digits in front of a customer is the slow path.
-        trailingIcon = if (canScan) {
+        // typing thirteen digits in front of a customer is the slow path. It
+        // follows the Barcode switch: a shop that does not label its articles
+        // is not offered a scanner that could only find nothing.
+        trailingIcon = if (ItemField.BARCODE in fields && canScan) {
             {
                 IconButton(onClick = { scanning = true }) {
                     Icon(
@@ -259,7 +267,7 @@ private fun ArticlesSource(
         contentPadding = PaddingValues(vertical = 4.dp),
     ) {
         items(shown, key = { it.label.lowercase() }) { item ->
-            SavedArticleRow(item = item, onClick = { onAdd(item) })
+            SavedArticleRow(item = item, fields = fields, onClick = { onAdd(item) })
         }
         if (shown.isEmpty() && items.isNotEmpty()) {
             item(key = "no-match") {
@@ -282,7 +290,11 @@ private fun ArticlesSource(
 }
 
 @Composable
-private fun SavedArticleRow(item: SavedItem, onClick: () -> Unit) {
+private fun SavedArticleRow(
+    item: SavedItem,
+    fields: Set<ItemField>,
+    onClick: () -> Unit,
+) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -313,7 +325,10 @@ private fun SavedArticleRow(item: SavedItem, onClick: () -> Unit) {
             )
             // The path, drawn with arrows: two folders can hold a "Hiver" and
             // the shop needs to see which one this article came from.
-            val subtitle = listOf(SavedItemStore.display(item.folder), item.unit)
+            val subtitle = listOf(
+                if (ItemField.FOLDER in fields) SavedItemStore.display(item.folder) else "",
+                if (ItemField.UNIT in fields) item.unit else "",
+            )
                 .filter { it.isNotBlank() }
                 .joinToString(" · ")
             if (subtitle.isNotBlank()) {
@@ -332,7 +347,7 @@ private fun SavedArticleRow(item: SavedItem, onClick: () -> Unit) {
         )
         // The shelf the line is about to come off, when there is one. Shown in
         // the picker because that is the last moment before the shop commits.
-        if (item.tracksStock) {
+        if (item.tracksStock && ItemField.STOCK in fields) {
             Spacer(Modifier.width(10.dp))
             Text(
                 when (val stock = item.stock) {

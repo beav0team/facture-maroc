@@ -22,11 +22,16 @@ Trois onglets, pas de détour :
 - **Articles** — votre **inventaire** : chaque produit porte sa quantité en stock,
   son prix d'achat, son prix de vente et son code-barres (tapé ou **scanné avec
   l'appareil photo**) ; les prestations n'ont
-  pas de quantité. Le tout **rangé en dossiers** (« Pneus », « Prestations », ou
-  tout autre dossier créé par le commerce), et **un dossier peut en contenir un
-  autre** : les pneus d'hiver se rangent sous Pneus, et le fil d'Ariane rappelle
-  où l'on est. Un dossier s'ouvre comme dans une application de fichiers et se
-  referme par la flèche retour, un niveau à la fois.
+  pas de quantité. L'onglet ouvre **la liste entière**, triée par désignation, le
+  chemin du dossier en sous-titre. Les **dossiers sont un filtre** (« Tous »,
+  « Sans dossier », chaque dossier, et un menu pour les chemins complets) plutôt
+  qu'un endroit où l'on entre : **ils s'imbriquent toujours** (les pneus d'hiver
+  se rangent sous Pneus), et se créent, se renomment ou se suppriment depuis
+  l'écran **Dossiers** du bandeau du haut.
+  Chaque commerce choisit ce que la fiche article lui demande — code-barres,
+  prix d'achat, unité, stock, dossier — dans **Paramètres → Articles**. Masquer
+  un champ ne l'efface pas : la valeur reste sur l'article et réapparaît si le
+  champ est réactivé.
 
 Le stock se met à jour tout seul : émettre une facture, un ticket, une facture
 simplifiée ou un export retire les quantités vendues ; un avoir les remet ; un
@@ -144,6 +149,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 | `PriceBasisTest` | HT ↔ TTC : conversion, aller-retour d'un prix, total au centime |
 | `SavedItemSearchTest` | La recherche répond au code-barres, aux mots, à la casse et au dossier |
 | `FolderPathTest` | Dossiers imbriqués : parent, enfants, sous-arbre, renommage, suppression, recherche profonde |
+| `ItemFieldsTest` | Champs d'article activables : défauts, chaque interrupteur, filtre de dossier et sous-dossiers |
 | `BarcodeTest` | Ce qui est gardé d'un code lu : ni saut de ligne, ni zéros perdus |
 | `InvoiceSummaryTest` | Le total du mois exclut devis, bons de commande et brouillons |
 

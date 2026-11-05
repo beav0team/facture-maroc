@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceLine
+import com.yassine.facturemaroc.data.ItemField
 import com.yassine.facturemaroc.data.PartyRole
 import com.yassine.facturemaroc.data.PriceBasis
 import com.yassine.facturemaroc.data.SavedItem
@@ -280,6 +281,13 @@ fun ItemEditorDialog(
     defaultFolder: String = "",
     pricesIncludeVat: Boolean = false,
     vatPercent: Double = 0.0,
+    /**
+     * The optional fields the shop asked to see (see [visibleItemFields]).
+     *
+     * Defaults to all of them so a caller that predates the switches keeps the
+     * old form rather than silently losing fields.
+     */
+    fields: Set<ItemField> = ItemField.entries.toSet(),
 ) {
     var label by remember(initial) { mutableStateOf(initial?.label ?: "") }
     var barcode by remember(initial) { mutableStateOf(initial?.barcode ?: "") }
@@ -305,6 +313,12 @@ fun ItemEditorDialog(
     // Hidden on a device with no camera, where a button could only fail.
     val canScan = remember(context) { hasCamera(context) }
 
+    val showBarcode = ItemField.BARCODE in fields
+    val showPurchasePrice = ItemField.PURCHASE_PRICE in fields
+    val showUnit = ItemField.UNIT in fields
+    val showStock = ItemField.STOCK in fields
+    val showFolder = ItemField.FOLDER in fields
+
     val price = priceText.replace(',', '.').toDoubleOrNull() ?: 0.0
     val purchase = purchaseText.replace(',', '.').toDoubleOrNull() ?: 0.0
     val stock = stockText.toIntOrNull()?.coerceAtLeast(0) ?: 0
@@ -317,6 +331,11 @@ fun ItemEditorDialog(
             Text(
                 when {
                     initial != null -> "Modifier l'article"
+                    // With the stock field switched off the shop has no
+                    // "prestation" notion at all, so the form is just an
+                    // article — saying otherwise would explain a distinction
+                    // the screen does not make.
+                    !showStock -> "Nouvel article"
                     tracksStock -> "Nouvel article en stock"
                     else -> "Nouvelle prestation"
                 },
@@ -335,30 +354,32 @@ fun ItemEditorDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
-                    value = barcode,
-                    // A scanned Code 128 label can carry letters, so the field
-                    // takes whatever the scanner read rather than forcing digits.
-                    onValueChange = { barcode = it },
-                    label = { Text("Code-barres (facultatif)") },
-                    placeholder = { Text("Les chiffres sous les barres") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Ascii,
-                        imeAction = ImeAction.Next,
-                    ),
-                    trailingIcon = {
-                        if (canScan) {
-                            IconButton(onClick = { scanning = true }) {
-                                Icon(
-                                    Icons.Filled.QrCodeScanner,
-                                    contentDescription = "Scanner le code-barres",
-                                )
+                if (showBarcode) {
+                    OutlinedTextField(
+                        value = barcode,
+                        // A scanned Code 128 label can carry letters, so the field
+                        // takes whatever the scanner read rather than forcing digits.
+                        onValueChange = { barcode = it },
+                        label = { Text("Code-barres (facultatif)") },
+                        placeholder = { Text("Les chiffres sous les barres") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Ascii,
+                            imeAction = ImeAction.Next,
+                        ),
+                        trailingIcon = {
+                            if (canScan) {
+                                IconButton(onClick = { scanning = true }) {
+                                    Icon(
+                                        Icons.Filled.QrCodeScanner,
+                                        contentDescription = "Scanner le code-barres",
+                                    )
+                                }
                             }
-                        }
-                    },
-                )
+                        },
+                    )
+                }
                 OutlinedTextField(
                     value = priceText,
                     onValueChange = { input ->
@@ -380,116 +401,126 @@ fun ItemEditorDialog(
                         imeAction = ImeAction.Next,
                     ),
                 )
-                OutlinedTextField(
-                    value = purchaseText,
-                    onValueChange = { input ->
-                        purchaseText = input.filter { it.isDigit() || it == '.' || it == ',' }
-                    },
-                    label = { Text("Prix d'achat (DH HT, facultatif)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Next,
-                    ),
-                )
-                if (margin != null) {
-                    Text(
-                        "Marge : ${margin.asDirhams()} par unité" +
-                            if (purchase > 0.0) {
-                                " (${((margin / purchase) * 100.0).let { Math.round(it).toInt() }} %)"
-                            } else {
-                                ""
-                            },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (margin < 0) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-                }
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (tracksStock) {
-                        OutlinedTextField(
-                            value = stockText,
-                            onValueChange = { input -> stockText = input.filter { it.isDigit() }.take(6) },
-                            label = { Text("En stock") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Next,
-                            ),
-                        )
-                    }
+                if (showPurchasePrice) {
                     OutlinedTextField(
-                        value = unit,
-                        onValueChange = { unit = it },
-                        label = { Text("Unité") },
-                        placeholder = { Text("unité, heure, kg") },
+                        value = purchaseText,
+                        onValueChange = { input ->
+                            purchaseText = input.filter { it.isDigit() || it == '.' || it == ',' }
+                        },
+                        label = { Text("Prix d'achat (DH HT, facultatif)") },
                         singleLine = true,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Next,
+                        ),
                     )
-                }
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text("C'est une prestation", style = MaterialTheme.typography.bodyMedium)
+                    if (margin != null) {
                         Text(
-                            "Aucune quantité à décompter.",
+                            "Marge : ${margin.asDirhams()} par unité" +
+                                if (purchase > 0.0) {
+                                    " (${((margin / purchase) * 100.0).let { Math.round(it).toInt() }} %)"
+                                } else {
+                                    ""
+                                },
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = !tracksStock,
-                        onCheckedChange = { service -> tracksStock = !service },
-                    )
-                }
-                ExposedDropdownMenuBox(
-                    expanded = folderMenuOpen,
-                    onExpandedChange = { folderMenuOpen = it },
-                ) {
-                    OutlinedTextField(
-                        value = if (folder.isBlank()) "Sans dossier" else SavedItemStore.display(folder),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Dossier") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = folderMenuOpen)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = folderMenuOpen,
-                        onDismissRequest = { folderMenuOpen = false },
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Sans dossier") },
-                            onClick = {
-                                folder = ""
-                                folderMenuOpen = false
+                            color = if (margin < 0) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
                             },
                         )
-                        folders.forEach { path ->
+                    }
+                }
+                if ((showStock && tracksStock) || showUnit) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (showStock && tracksStock) {
+                            OutlinedTextField(
+                                value = stockText,
+                                onValueChange = { input -> stockText = input.filter { it.isDigit() }.take(6) },
+                                label = { Text("En stock") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Next,
+                                ),
+                            )
+                        }
+                        if (showUnit) {
+                            OutlinedTextField(
+                                value = unit,
+                                onValueChange = { unit = it },
+                                label = { Text("Unité") },
+                                placeholder = { Text("unité, heure, kg") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+                if (showStock) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("C'est une prestation", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "Aucune quantité à décompter.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = !tracksStock,
+                            onCheckedChange = { service -> tracksStock = !service },
+                        )
+                    }
+                }
+                if (showFolder) {
+                    ExposedDropdownMenuBox(
+                        expanded = folderMenuOpen,
+                        onExpandedChange = { folderMenuOpen = it },
+                    ) {
+                        OutlinedTextField(
+                            value = if (folder.isBlank()) "Sans dossier" else SavedItemStore.display(folder),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Dossier") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = folderMenuOpen)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                        )
+                        ExposedDropdownMenu(
+                            expanded = folderMenuOpen,
+                            onDismissRequest = { folderMenuOpen = false },
+                        ) {
                             DropdownMenuItem(
-                                // The path, not just the name: "Hiver" can
-                                // exist under two different folders.
-                                text = { Text(SavedItemStore.display(path)) },
+                                text = { Text("Sans dossier") },
                                 onClick = {
-                                    folder = path
+                                    folder = ""
                                     folderMenuOpen = false
                                 },
                             )
+                            folders.forEach { path ->
+                                DropdownMenuItem(
+                                    // The path, not just the name: "Hiver" can
+                                    // exist under two different folders.
+                                    text = { Text(SavedItemStore.display(path)) },
+                                    onClick = {
+                                        folder = path
+                                        folderMenuOpen = false
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -502,11 +533,25 @@ fun ItemEditorDialog(
                         SavedItem(
                             label = label.trim(),
                             price = price,
-                            unit = unit.trim(),
-                            folder = folder.trim(),
-                            barcode = barcode.trim(),
-                            purchasePrice = purchase,
-                            stock = if (tracksStock) stock else null,
+                            // A field the shop switched off keeps whatever the
+                            // article already had: hiding it must never erase
+                            // it, or turning the switch back on would show a
+                            // blank where a real value used to be.
+                            unit = if (showUnit) unit.trim() else initial?.unit.orEmpty(),
+                            folder = if (showFolder) folder.trim() else initial?.folder.orEmpty(),
+                            barcode = if (showBarcode) barcode.trim() else initial?.barcode.orEmpty(),
+                            purchasePrice = if (showPurchasePrice) {
+                                purchase
+                            } else {
+                                initial?.purchasePrice ?: 0.0
+                            },
+                            // The one that matters most: null here would turn a
+                            // product into a service at the first edit.
+                            stock = when {
+                                !showStock -> initial?.stock
+                                tracksStock -> stock
+                                else -> null
+                            },
                         ),
                     )
                 },

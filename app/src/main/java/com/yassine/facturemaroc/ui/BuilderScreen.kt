@@ -88,6 +88,7 @@ import com.yassine.facturemaroc.data.InvoiceLine
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.PaymentMethod
 import com.yassine.facturemaroc.data.PartyRole
+import com.yassine.facturemaroc.data.visibleItemFields
 import com.yassine.facturemaroc.data.XmlExportOutcome
 import com.yassine.facturemaroc.invoice.InvoicePdf
 import com.yassine.facturemaroc.invoice.InvoiceValidation
@@ -459,6 +460,7 @@ fun BuilderScreen(
             onDismiss = { showItemPicker = false },
             pricesIncludeVat = shop.pricesIncludeVat,
             vatPercent = invoice.effectiveVatPercent,
+            fields = visibleItemFields(shop),
         )
     }
 

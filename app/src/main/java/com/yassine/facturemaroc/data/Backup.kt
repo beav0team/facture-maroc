@@ -334,6 +334,13 @@ object Backup {
         // neither, and restores to the defaults below.
         put("vatNotApplicable", shop.vatNotApplicable)
         put("pricesIncludeVat", shop.pricesIncludeVat)
+        // Same rule for the article field switches: absent from an older file
+        // means "visible", which is what that file's owner was looking at.
+        put("showItemBarcode", shop.showItemBarcode)
+        put("showItemPurchasePrice", shop.showItemPurchasePrice)
+        put("showItemUnit", shop.showItemUnit)
+        put("showItemStock", shop.showItemStock)
+        put("showItemFolder", shop.showItemFolder)
     }
 
     private fun shopFromJson(obj: JSONObject): ShopSettings = ShopSettings(
@@ -349,6 +356,11 @@ object Backup {
         vatPercent = obj.optDouble("vatPercent", 20.0).let { if (it.isNaN()) 20.0 else it },
         vatNotApplicable = obj.optBoolean("vatNotApplicable", false),
         pricesIncludeVat = obj.optBoolean("pricesIncludeVat", false),
+        showItemBarcode = obj.optBoolean("showItemBarcode", true),
+        showItemPurchasePrice = obj.optBoolean("showItemPurchasePrice", true),
+        showItemUnit = obj.optBoolean("showItemUnit", true),
+        showItemStock = obj.optBoolean("showItemStock", true),
+        showItemFolder = obj.optBoolean("showItemFolder", true),
     )
 }
 

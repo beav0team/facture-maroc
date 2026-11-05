@@ -115,6 +115,21 @@ fun ShopDetailsScreen(
     var pricesIncludeVat by remember(settings.pricesIncludeVat) {
         mutableStateOf(settings.pricesIncludeVat)
     }
+    var showItemBarcode by remember(settings.showItemBarcode) {
+        mutableStateOf(settings.showItemBarcode)
+    }
+    var showItemPurchasePrice by remember(settings.showItemPurchasePrice) {
+        mutableStateOf(settings.showItemPurchasePrice)
+    }
+    var showItemUnit by remember(settings.showItemUnit) {
+        mutableStateOf(settings.showItemUnit)
+    }
+    var showItemStock by remember(settings.showItemStock) {
+        mutableStateOf(settings.showItemStock)
+    }
+    var showItemFolder by remember(settings.showItemFolder) {
+        mutableStateOf(settings.showItemFolder)
+    }
     var logoVersion by remember { mutableIntStateOf(0) }
 
     val snackbar = remember { SnackbarHostState() }
@@ -215,6 +230,11 @@ fun ShopDetailsScreen(
                 vatPercent = vat,
                 vatNotApplicable = vatNotApplicable,
                 pricesIncludeVat = pricesIncludeVat,
+                showItemBarcode = showItemBarcode,
+                showItemPurchasePrice = showItemPurchasePrice,
+                showItemUnit = showItemUnit,
+                showItemStock = showItemStock,
+                showItemFolder = showItemFolder,
             ),
         )
         // Only when the shop really asked for a different number. Rewinding on
@@ -531,6 +551,56 @@ fun ShopDetailsScreen(
                 }
             }
 
+            item(key = "articles") {
+                SettingsSection(
+                    title = "Articles",
+                    subtitle = "Choisissez ce que la fiche article vous demande.",
+                ) {
+                    Text(
+                        "Décocher un champ ne l'efface pas : la valeur reste sur " +
+                            "l'article et revient si vous le réactivez.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    FieldSwitch(
+                        title = "Code-barres",
+                        description = "Le champ et le bouton scanner dans la fiche article.",
+                        checked = showItemBarcode,
+                        onCheckedChange = { showItemBarcode = it },
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    FieldSwitch(
+                        title = "Prix d'achat",
+                        description = "Le champ, et la ligne « Marge » qui en dépend.",
+                        checked = showItemPurchasePrice,
+                        onCheckedChange = { showItemPurchasePrice = it },
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    FieldSwitch(
+                        title = "Unité",
+                        description = "Heure, kg, m²… sous la désignation de l'article.",
+                        checked = showItemUnit,
+                        onCheckedChange = { showItemUnit = it },
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    FieldSwitch(
+                        title = "Stock",
+                        description = "La quantité dans la fiche, la ligne « en stock » sur " +
+                            "la carte, et la distinction prestation / produit.",
+                        checked = showItemStock,
+                        onCheckedChange = { showItemStock = it },
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    FieldSwitch(
+                        title = "Dossier",
+                        description = "Le sélecteur de dossier, les filtres de l'onglet " +
+                            "Articles et le chemin sous la désignation.",
+                        checked = showItemFolder,
+                        onCheckedChange = { showItemFolder = it },
+                    )
+                }
+            }
+
             item(key = "backup") {
                 SettingsSection(
                     title = "Sauvegarde",
@@ -679,6 +749,40 @@ fun ShopDetailsScreen(
 /** "1 document", "2 documents" — and "0 document", which is correct French. */
 private fun plural(count: Int, singular: String, plural: String): String =
     if (count > 1) "$count $plural" else "$count $singular"
+
+/**
+ * One article field the shop can switch off.
+ *
+ * The switch sits left of its label, the way the TVA one does, so the row reads
+ * as "this is on/off" before it reads as a sentence about fields.
+ */
+@Composable
+private fun FieldSwitch(
+    title: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
 
 @Composable
 private fun SettingsSection(
