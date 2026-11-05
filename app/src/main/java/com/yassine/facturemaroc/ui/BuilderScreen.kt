@@ -68,7 +68,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -82,6 +81,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceLine
@@ -113,10 +113,10 @@ fun BuilderScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    val invoice by viewModel.invoice.collectAsState()
-    val shop by viewModel.shop.collectAsState()
-    val design by viewModel.design.collectAsState()
-    val clients by viewModel.clients.clients.collectAsState()
+    val invoice by viewModel.invoice.collectAsStateWithLifecycle()
+    val shop by viewModel.shop.collectAsStateWithLifecycle()
+    val design by viewModel.design.collectAsStateWithLifecycle()
+    val clients by viewModel.clients.clients.collectAsStateWithLifecycle()
 
     val lines = invoice.lines
     val scope = rememberCoroutineScope()
@@ -144,7 +144,7 @@ fun BuilderScreen(
     var sharing by remember { mutableStateOf(false) }
     // Asked of the ViewModel, not a local flag: a rotation must not swallow the
     // question and leave its number spent.
-    val awaitingShare by viewModel.awaitingShare.collectAsState()
+    val awaitingShare by viewModel.awaitingShare.collectAsStateWithLifecycle()
 
     val validationIssues = remember(invoice) { InvoiceValidation.validate(invoice) }
     val blockingIssues = remember(validationIssues) {

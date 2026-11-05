@@ -1,6 +1,7 @@
 package com.yassine.facturemaroc.data
 
 import android.app.Application
+import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
@@ -17,6 +18,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
+
+private const val AUTO_BACKUP_PREFS = "auto_backup"
+private const val KEY_LAST_RUN = "lastRun"
 
 /**
  * The invoice being written, the shop it is written for, and the history of
@@ -682,20 +686,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * message the shop can act on.
      */
     suspend fun exportBackup(uri: Uri): BackupExportOutcome = withContext(Dispatchers.IO) {
-        val app = getApplication<Application>()
-        val logoFile = InvoiceDesignStore(app).logoFile(app)
-        val logo = runCatching { if (logoFile.isFile) logoFile.readBytes() else null }.getOrNull()
         val built = runCatching {
-            Backup.buildForExport(
-                shop = _shop.value,
-                design = _design.value,
-                logo = logo,
-                clients = clients.clients.value,
-                items = savedItems.items.value,
-                invoices = invoices.invoices.value,
-                counters = InvoiceNumber.counters(app),
-                folders = savedItems.folders.value,
-            )
+            buildBackup()
         }.getOrElse { error ->
             return@withContext if (error is Backup.TooLargeException) {
                 BackupExportOutcome.TooLarge(error.message.orEmpty())
@@ -704,11 +696,112 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             }
         }
         if (!writeText(uri, built.json)) return@withContext BackupExportOutcome.Failed
-        if (built.logoIncluded || logo == null) {
+        val app = getApplication<Application>()
+        val hasLogo = InvoiceDesignStore(app).logoFile(app).isFile
+        if (built.logoIncluded || !hasLogo) {
             BackupExportOutcome.Saved
         } else {
             BackupExportOutcome.SavedWithoutLogo
         }
+    }
+
+    /**
+     * The same JSON a manual export writes.
+     *
+     * Shared by the export and the automatic copies so a snapshot can never
+     * drift from the backup the shop would have made by hand.
+     */
+    private fun buildBackup(): Backup.Built {
+        val app = getApplication<Application>()
+        val logoFile = InvoiceDesignStore(app).logoFile(app)
+        val logo = runCatching { if (logoFile.isFile) logoFile.readBytes() else null }.getOrNull()
+        return Backup.buildForExport(
+            shop = _shop.value,
+            design = _design.value,
+            logo = logo,
+            clients = clients.clients.value,
+            items = savedItems.items.value,
+            invoices = invoices.invoices.value,
+            counters = InvoiceNumber.counters(app),
+            folders = savedItems.folders.value,
+        )
+    }
+
+    private fun snapshotsDir() = File(getApplication<Application>().filesDir, "backups")
+
+    private fun snapshotStore() = SnapshotStore(snapshotsDir())
+
+    private fun autoBackupPrefs() =
+        getApplication<Application>().getSharedPreferences(AUTO_BACKUP_PREFS, Context.MODE_PRIVATE)
+
+    /** True when a day has passed since the last automatic copy. */
+    fun autoBackupDue(now: Long = System.currentTimeMillis()): Boolean =
+        AutoBackup.due(autoBackupPrefs().getLong(KEY_LAST_RUN, 0L), now)
+
+    /**
+     * Takes the daily copy, if one is due.
+     *
+     * Called when the app opens. Failure is silent on purpose: the shop did not
+     * ask for this at that moment, and a dialog about a backup it did not see is
+     * worse than the next attempt tomorrow. The screen reports the last snapshot
+     * it actually has.
+     */
+    suspend fun runAutoBackupIfDue(): Boolean = withContext(Dispatchers.IO) {
+        if (!autoBackupDue()) return@withContext false
+        runAutoBackup()
+    }
+
+    /**
+     * Writes one snapshot now, locally and then to the folder if one is chosen.
+     *
+     * The local file is what makes the feature worth having; the folder is a
+     * copy that survives a lost phone. A provider that refuses the copy must not
+     * turn a good local snapshot into a failure, so the mirror is best-effort
+     * and the timestamp is written either way.
+     */
+    suspend fun runAutoBackup(now: Long = System.currentTimeMillis()): Boolean =
+        withContext(Dispatchers.IO) {
+            val built = runCatching { buildBackup() }.getOrElse { return@withContext false }
+            val written = runCatching {
+                val store = snapshotStore()
+                store.write(built.json, now)
+                store.prune()
+            }.isSuccess
+            if (!written) return@withContext false
+            runCatching {
+                AutoBackupFolder(getApplication()).write(AutoBackup.mirrorName(now), built.json)
+            }
+            autoBackupPrefs().edit().putLong(KEY_LAST_RUN, now).apply()
+            true
+        }
+
+    suspend fun autoBackupSnapshots(): List<SnapshotStore.Snapshot> = withContext(Dispatchers.IO) {
+        snapshotStore().list()
+    }
+
+    suspend fun readSnapshot(snapshot: SnapshotStore.Snapshot): BackupReadOutcome =
+        withContext(Dispatchers.IO) { snapshotStore().read(snapshot) }
+
+    fun autoBackupFolderLabel(): String? =
+        AutoBackupFolder(getApplication()).label()
+
+    /**
+     * Remembers [uri] as the off-device folder and proves it straight away.
+     *
+     * The immediate copy is not decoration: a grant that is accepted but cannot
+     * be written to (a revoked cloud folder, a card removed a second later) is
+     * announced now rather than on the morning the shop needs the copy.
+     */
+    suspend fun setAutoBackupFolder(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        val app = getApplication<Application>()
+        val folder = AutoBackupFolder(app)
+        if (!folder.remember(uri)) return@withContext false
+        runCatching { buildBackup() }.getOrNull()?.let { folder.writeNow(it.json) }
+        true
+    }
+
+    fun forgetAutoBackupFolder() {
+        AutoBackupFolder(getApplication()).forget()
     }
 
     /**

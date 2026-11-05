@@ -15,18 +15,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.ui.BuilderScreen
 import com.yassine.facturemaroc.ui.FactureMarocTheme
 import com.yassine.facturemaroc.ui.HomeScreen
 import com.yassine.facturemaroc.ui.ShopDetailsScreen
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val viewModel: InvoiceViewModel = ViewModelProvider(this)[InvoiceViewModel::class.java]
+        // Once a day, before the shop does anything: the copy it would not have
+        // remembered to take. Failures stay silent; the settings screen shows
+        // the last snapshot that actually exists.
+        lifecycleScope.launch { viewModel.runAutoBackupIfDue() }
         setContent {
             FactureMarocTheme {
                 FactureMarocApp(viewModel = viewModel)

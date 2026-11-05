@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -90,7 +91,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -102,13 +102,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceRecord
@@ -158,11 +162,11 @@ fun HomeScreen(
     onOpenRecord: (InvoiceRecord) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    val records by viewModel.invoices.invoices.collectAsState()
-    val clients by viewModel.clients.clients.collectAsState()
-    val items by viewModel.savedItems.items.collectAsState()
-    val folders by viewModel.savedItems.folders.collectAsState()
-    val shop by viewModel.shop.collectAsState()
+    val records by viewModel.invoices.invoices.collectAsStateWithLifecycle()
+    val clients by viewModel.clients.clients.collectAsStateWithLifecycle()
+    val items by viewModel.savedItems.items.collectAsStateWithLifecycle()
+    val folders by viewModel.savedItems.folders.collectAsStateWithLifecycle()
+    val shop by viewModel.shop.collectAsStateWithLifecycle()
 
     var tabIndex by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -353,7 +357,9 @@ fun HomeScreen(
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f, fill = false),
+                                    modifier = Modifier
+                                        .weight(1f, fill = false)
+                                        .semantics { heading() },
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
@@ -389,6 +395,7 @@ fun HomeScreen(
                                     "Articles",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.semantics { heading() },
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
@@ -2379,7 +2386,7 @@ private fun ItemCard(
             if (canMove) {
                 QuickAction(
                     icon = Icons.Filled.FolderOpen,
-                    label = "Déplacer dans un dossier",
+                    label = "Déplacer « ${item.label} »",
                     modifier = Modifier.width(actionWidth),
                 ) {
                     close()
@@ -2388,7 +2395,7 @@ private fun ItemCard(
             }
             QuickAction(
                 icon = Icons.Filled.Delete,
-                label = "Supprimer",
+                label = "Supprimer « ${item.label} »",
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.width(actionWidth),
             ) {
@@ -2447,7 +2454,10 @@ private fun ItemCard(
                 Text(
                     item.label,
                     style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
+                    // Two lines, not one: at 150 % the label used to collapse to
+                    // "Pneu 205/55 R…" while a column of empty space sat beside
+                    // it. The price keeps a floor and the name gets the rest.
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (subtitle.isNotBlank()) {
@@ -2456,10 +2466,15 @@ private fun ItemCard(
                         subtitle,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
-            Column(horizontalAlignment = Alignment.End) {
+            Column(
+                modifier = Modifier.widthIn(min = 88.dp),
+                horizontalAlignment = Alignment.End,
+            ) {
                 Text(
                     item.price.asDirhams(),
                     style = MaterialTheme.typography.titleMedium,
@@ -2533,6 +2548,64 @@ private fun ItemCard(
             }
         }
     }
+    }
+}
+
+
+/*
+ * Previews of the article row and its summary, before they are wired into a
+ * screen. Both are private composables inside a 2 000-line file, so a preview
+ * is the only way to see them without launching the app and creating data.
+ */
+private val previewArticle = SavedItem(
+    label = "Pneu hiver 205/55 R16 91H",
+    price = 1050.0,
+    unit = "unité",
+    folder = "Pneus/Hiver",
+    barcode = "6111234500024",
+    purchasePrice = 800.0,
+    stock = 4,
+)
+
+@Preview(name = "Article", showBackground = true, widthDp = 380)
+@Composable
+private fun ItemCardPreview() {
+    FactureMarocTheme {
+        Box(Modifier.padding(16.dp)) {
+            ItemCard(
+                item = previewArticle,
+                onClick = {},
+                onDelete = {},
+                onMove = {},
+            )
+        }
+    }
+}
+
+@Preview(name = "Article — champs masqués", showBackground = true, widthDp = 380)
+@Composable
+private fun ItemCardWithoutOptionalFieldsPreview() {
+    FactureMarocTheme {
+        Box(Modifier.padding(16.dp)) {
+            ItemCard(
+                item = previewArticle,
+                onClick = {},
+                onDelete = {},
+                onMove = {},
+                fields = setOf(ItemField.UNIT),
+            )
+        }
+    }
+}
+
+@Preview(name = "Résumé du stock", showBackground = true, widthDp = 380)
+@Composable
+private fun ArticlesSummaryPreview() {
+    FactureMarocTheme {
+        ArticlesSummary(
+            items = listOf(previewArticle, previewArticle.copy(label = "Valve", stock = 30)),
+            fields = ItemField.entries.toSet(),
+        )
     }
 }
 

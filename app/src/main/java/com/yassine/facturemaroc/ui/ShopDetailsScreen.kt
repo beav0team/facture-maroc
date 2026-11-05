@@ -9,6 +9,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +32,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -51,7 +55,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -63,10 +67,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yassine.facturemaroc.data.InvoiceDesignStore
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.DocumentType
@@ -75,8 +82,13 @@ import com.yassine.facturemaroc.data.Backup
 import com.yassine.facturemaroc.data.BackupData
 import com.yassine.facturemaroc.data.BackupExportOutcome
 import com.yassine.facturemaroc.data.BackupReadOutcome
+import com.yassine.facturemaroc.data.SnapshotStore
+import com.yassine.facturemaroc.data.AutoBackup
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private const val MAX_LOGO_BYTES = 4 * 1024 * 1024
 
@@ -95,7 +107,7 @@ fun ShopDetailsScreen(
     viewModel: InvoiceViewModel,
     onBack: () -> Unit,
 ) {
-    val settings by viewModel.shop.collectAsState()
+    val settings by viewModel.shop.collectAsStateWithLifecycle()
 
     var name by remember(settings.name) { mutableStateOf(settings.name) }
     var address by remember(settings.address) { mutableStateOf(settings.address) }
@@ -164,6 +176,11 @@ fun ShopDetailsScreen(
     }
 
     var pendingRestore by remember { mutableStateOf<BackupData?>(null) }
+    var autoSnapshots by remember { mutableStateOf<List<SnapshotStore.Snapshot>>(emptyList()) }
+    var autoFolder by remember { mutableStateOf(viewModel.autoBackupFolderLabel()) }
+    var snapshotPickerOpen by remember { mutableStateOf(false) }
+    val snapshotDate = remember { SimpleDateFormat("dd/MM/yyyy à HH:mm", Locale.FRANCE) }
+    LaunchedEffect(Unit) { autoSnapshots = viewModel.autoBackupSnapshots() }
     var restoring by remember { mutableStateOf(false) }
     // The number the sequence really holds, read from the counter that consumes
     // it. Settings used to keep its own copy of this, which nothing ever wrote
@@ -209,6 +226,25 @@ fun ShopDetailsScreen(
                     is BackupReadOutcome.Ready -> pendingRestore = outcome.backup
                     is BackupReadOutcome.Failed -> snackbar.showSnackbar(outcome.message)
                 }
+            }
+        }
+    }
+
+    val pickBackupFolder = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree(),
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                val kept = viewModel.setAutoBackupFolder(uri)
+                autoFolder = viewModel.autoBackupFolderLabel()
+                autoSnapshots = viewModel.autoBackupSnapshots()
+                snackbar.showSnackbar(
+                    if (kept) {
+                        "Dossier de sauvegarde enregistré."
+                    } else {
+                        "Ce dossier ne peut pas être conservé : choisissez un autre emplacement."
+                    },
+                )
             }
         }
     }
@@ -262,6 +298,7 @@ fun ShopDetailsScreen(
                         "Paramètres du magasin",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
+                        modifier = Modifier.semantics { heading() },
                     )
                 },
                 actions = {
@@ -654,6 +691,84 @@ fun ShopDetailsScreen(
                 }
             }
 
+            item(key = "auto-backup") {
+                SettingsSection(
+                    title = "Sauvegarde automatique",
+                    subtitle = "Une copie par jour, sans y penser.",
+                ) {
+                    Text(
+                        "L'application écrit une copie d'elle-même au premier lancement " +
+                            "de la journée, et en garde " + AutoBackup.KEEP + " sur le " +
+                            "téléphone. Elle survit à une facture effacée ou à un fichier " +
+                            "devenu illisible ; choisir un dossier y ajoute une copie hors " +
+                            "du téléphone.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        autoSnapshots.firstOrNull()?.let { last ->
+                            "Dernière copie : ${snapshotDate.format(Date(last.takenAt))} · " +
+                                "${autoSnapshots.size} copie${if (autoSnapshots.size > 1) "s" else ""} gardée${if (autoSnapshots.size > 1) "s" else ""}."
+                        } ?: "Aucune copie automatique pour l'instant.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                val ok = viewModel.runAutoBackup()
+                                autoSnapshots = viewModel.autoBackupSnapshots()
+                                snackbar.showSnackbar(
+                                    if (ok) "Copie automatique créée." else "La copie n'a pas pu être écrite.",
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        Icon(Icons.Filled.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Créer une copie maintenant")
+                    }
+                    OutlinedButton(
+                        onClick = { pickBackupFolder.launch(null) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        Icon(Icons.Filled.Folder, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(autoFolder?.let { "Dossier : $it" } ?: "Choisir un dossier hors du téléphone")
+                    }
+                    if (autoFolder != null) {
+                        TextButton(
+                            onClick = {
+                                viewModel.forgetAutoBackupFolder()
+                                autoFolder = null
+                                scope.launch { snackbar.showSnackbar("Dossier de sauvegarde retiré.") }
+                            },
+                        ) {
+                            Text("Retirer le dossier")
+                        }
+                    }
+                    OutlinedButton(
+                        onClick = { snapshotPickerOpen = true },
+                        enabled = autoSnapshots.isNotEmpty(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        Icon(Icons.Filled.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Restaurer une copie automatique")
+                    }
+                }
+            }
+
             item(key = "about") {
                 Surface(
                     shape = MaterialTheme.shapes.medium,
@@ -699,6 +814,54 @@ fun ShopDetailsScreen(
 
             item(key = "bottom-space") { Spacer(Modifier.height(8.dp)) }
         }
+    }
+
+    if (snapshotPickerOpen) {
+        AlertDialog(
+            onDismissRequest = { snapshotPickerOpen = false },
+            title = { Text("Copies automatiques") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    autoSnapshots.forEach { snapshot ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    snapshotPickerOpen = false
+                                    scope.launch {
+                                        when (val outcome = viewModel.readSnapshot(snapshot)) {
+                                            is BackupReadOutcome.Ready -> pendingRestore = outcome.backup
+                                            is BackupReadOutcome.Failed ->
+                                                snackbar.showSnackbar(outcome.message)
+                                        }
+                                    }
+                                }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    snapshotDate.format(Date(snapshot.takenAt)),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                                Text(
+                                    if (snapshot.bytes < 1024) {
+                                        "${snapshot.bytes} o"
+                                    } else {
+                                        "${snapshot.bytes / 1024} Ko"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { snapshotPickerOpen = false }) { Text("Annuler") }
+            },
+        )
     }
 
     pendingRestore?.let { backup ->

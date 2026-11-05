@@ -5,7 +5,7 @@ Factures, devis, bons de commande, tickets, avoirs, proformas, acomptes,
 régularisations, factures simplifiées et factures à l'export — avec ICE, IF, RC,
 patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
-Version **0.8.0** (versionCode 12) · Android 8.0+ (minSdk 26) · Français.
+Version **0.8.1** (versionCode 13) · Android 8.0+ (minSdk 26) · Français.
 
 <img src="play_store/screenshots/01-factures.png" width="260" alt="Écran Factures">
 
@@ -115,7 +115,7 @@ wrapper Gradle fourni.
 
 ```bash
 export JAVA_HOME="$HOME/.local/jdk"      # ou votre JDK 21
-./gradlew testDebugUnitTest             # 237 tests JVM
+./gradlew testDebugUnitTest             # 244 tests JVM
 ./gradlew assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew bundleRelease                 # app/build/outputs/bundle/release/app-release.aab
 ./gradlew assembleRelease               # app/build/outputs/apk/release/app-release.apk
@@ -133,7 +133,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 
 ## Tests
 
-**237 tests JVM**, plus sept tests instrumentés :
+**244 tests JVM**, plus onze tests instrumentés :
 
 | Suite | Ce qu’elle protège |
 |---|---|
@@ -194,11 +194,21 @@ Tout est local, en JSON ou dans les préférences Android :
 - `filesDir/shop_logo.png` — logo copié depuis le sélecteur de photos.
 - `filesDir/archive/ledger.jsonl` — chaîne de hachage des XML exportés.
 - `filesDir/archive/documents/<sha256>.xml` — copie exacte de chaque XML exporté.
+- `filesDir/backups/auto-AAAAMMJJ-HHMMSS.json` — sept copies automatiques
+  quotidiennes, même format que la sauvegarde manuelle, lues par le même code.
 - Préférences — commerce, clients, compteurs de numérotation, design.
 
 **Sauvegarde** : un seul fichier JSON versionné (format 1) contenant commerce,
 logo, clients, articles, dossiers, factures, compteurs et préférences. La
 restauration valide le fichier puis remplace les données après confirmation.
+
+**Sauvegarde automatique** : au premier lancement de la journée, l'application
+écrit la même sauvegarde dans `files/backups`, en garde sept et se limite à
+24 Mo. L'écran Paramètres liste ces copies et les restaure. Un dossier choisi
+une fois (via le sélecteur système, autorisation persistante) reçoit en plus
+une copie hors du téléphone, sans permission supplémentaire : c'est le
+fournisseur de documents qui écrit. Les deux chemins passent par le même
+constructeur que l'export manuel, donc une copie ne peut pas diverger.
 
 **XML** : chaque export est écrit en **UBL 2.1**, le format que la DGI a retenu
 pour la facturation électronique. Le type suit les codes UN/CEFACT 1001 (380
@@ -268,6 +278,21 @@ vérifiée par Google) dans Play Console.
 
 ## Historique
 
+- **0.8.1** — lisibilité et sauvegarde automatique.
+  **Grands textes** : à 150 % la fiche article tronquait le nom dès le premier
+  mot (« Pneu 205/55 R… ») ; la désignation tient maintenant sur deux lignes et
+  le prix garde une largeur plancher. **Accessibilité** : les titres d'écran
+  sont des en-têtes pour TalkBack, les actions du glissement nomment l'article
+  (« Déplacer "Pneu 205/55 R16" »), et la puce du dossier filtré se décoche au
+  lieu de ne rien faire. L'état des écrans suit le cycle de vie
+  (`collectAsStateWithLifecycle`) au lieu de collecter en arrière-plan.
+  **Sauvegarde automatique** : une copie par jour au premier lancement, sept
+  gardées sur le téléphone, restaurables depuis Paramètres ; un dossier choisi
+  une fois reçoit en plus une copie hors du téléphone, sans nouvelle
+  permission. Le tout passe par le même constructeur que l'export manuel.
+  Trois tests d'interface Compose couvrent la règle « masquer n'efface pas »,
+  et quelques aperçus (`@Preview`) rendent la carte article visible sans
+  lancer l'application.
 - **0.8.0** — l'onglet Articles s'ouvre sur **une liste plate** de tout le
   catalogue, triée par désignation, le chemin du dossier en sous-titre ; les
   **dossiers deviennent un filtre** (`Tous`, `Sans dossier`, chaque dossier, et

@@ -34,7 +34,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +46,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yassine.facturemaroc.data.InvoiceLine
 import com.yassine.facturemaroc.data.ItemField
 import com.yassine.facturemaroc.data.SavedItem
@@ -72,7 +72,7 @@ fun ItemPickerSheet(
     fields: Set<ItemField> = ItemField.entries.toSet(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val folders by store.folders.collectAsState()
+    val folders by store.folders.collectAsStateWithLifecycle()
     var source by remember { mutableStateOf(PickerSource.ARTICLES) }
     var query by remember { mutableStateOf("") }
     var addedCount by remember { mutableStateOf(0) }
@@ -203,7 +203,7 @@ private fun ArticlesSource(
     onCreate: () -> Unit,
     fields: Set<ItemField>,
 ) {
-    val items by store.items.collectAsState()
+    val items by store.items.collectAsStateWithLifecycle()
     val shown = remember(items, query) { store.search(query) }
     var scanning by remember { mutableStateOf(false) }
     val context = LocalContext.current
