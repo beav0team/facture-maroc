@@ -191,6 +191,16 @@ fun HomeScreen(
     var showAllArticles by rememberSaveable { mutableStateOf(false) }
     var folderEditorOpen by remember { mutableStateOf(false) }
     var renamingFolder by remember { mutableStateOf<String?>(null) }
+    /*
+     * The folder a *new* folder is created inside, chosen when the dialog
+     * opens. It cannot be read off the screen at save time: from the flat list
+     * the parent is the active filter, and from the folder screen it is the
+     * open folder, but "Tous les articles" means the root even though a folder
+     * was open before it.
+     */
+    var newFolderParent by remember { mutableStateOf("") }
+    /* The "+" offers article or folder on the Articles tab, so it needs a menu. */
+    var addMenuOpen by remember { mutableStateOf(false) }
     var deleteFolder by remember { mutableStateOf<String?>(null) }
     var detailRecord by remember { mutableStateOf<InvoiceRecord?>(null) }
     var xmlRecord by remember { mutableStateOf<InvoiceRecord?>(null) }
@@ -229,7 +239,7 @@ fun HomeScreen(
     val fabLabel = when (tab) {
         HomeTab.INVOICES -> "Nouvelle facture"
         HomeTab.CLIENTS -> "Nouveau ${partyRole.label.lowercase()}"
-        HomeTab.ARTICLES -> "Nouvel article"
+        HomeTab.ARTICLES -> "Ajouter"
     }
 
     /*
@@ -268,6 +278,22 @@ fun HomeScreen(
         }
     }
     BackHandler(enabled = managingFolders, onBack = goUp)
+
+    /*
+     * Where a folder made from here belongs. From the folder screen it is the
+     * folder on screen (the root behind "Tous les articles"), and from the flat
+     * list it is the folder the filter is on, so a shop filtering on Pneus and
+     * asking for a folder gets Pneus/<name>, not a second Pneus beside itself.
+     */
+    val newFolderHome = when {
+        managingFolders -> if (showAllArticles) "" else inFolder.orEmpty()
+        else -> articleFilter.orEmpty()
+    }
+    val startNewFolder: (String) -> Unit = { parent ->
+        newFolderParent = parent
+        renamingFolder = null
+        folderEditorOpen = true
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -440,7 +466,7 @@ fun HomeScreen(
             }
         },
         floatingActionButton = {
-            Column(horizontalAlignment = Alignment.End) {
+            Box {
                 FloatingActionButton(
                     onClick = {
                         when (tab) {
@@ -450,8 +476,17 @@ fun HomeScreen(
                                 clientEditorOpen = true
                             }
                             HomeTab.ARTICLES -> {
-                                editingItem = null
-                                itemEditorOpen = true
+                                // Two things can be created here, and a shop that
+                                // has just made a folder is one tap away from
+                                // wanting an article in it. One button, a short
+                                // menu, instead of a second floating button
+                                // covering the list.
+                                if (ItemField.FOLDER in itemFields) {
+                                    addMenuOpen = true
+                                } else {
+                                    editingItem = null
+                                    itemEditorOpen = true
+                                }
                             }
                         }
                     },
@@ -460,6 +495,32 @@ fun HomeScreen(
                     shape = MaterialTheme.shapes.large,
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = fabLabel)
+                }
+                DropdownMenu(
+                    expanded = addMenuOpen,
+                    onDismissRequest = { addMenuOpen = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Nouvel article") },
+                        leadingIcon = { Icon(Icons.Filled.Storefront, contentDescription = null) },
+                        onClick = {
+                            addMenuOpen = false
+                            editingItem = null
+                            itemEditorOpen = true
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                if (newFolderHome.isBlank()) "Nouveau dossier" else "Nouveau sous-dossier",
+                            )
+                        },
+                        leadingIcon = { Icon(Icons.Filled.CreateNewFolder, contentDescription = null) },
+                        onClick = {
+                            addMenuOpen = false
+                            startNewFolder(newFolderHome)
+                        },
+                    )
                 }
             }
         },
@@ -589,8 +650,7 @@ fun HomeScreen(
                                     query = ""
                                 },
                                 onCreateFolder = {
-                                    renamingFolder = null
-                                    folderEditorOpen = true
+                                    startNewFolder(if (articleFolder == null) "" else articleFolder)
                                 },
                                 onRenameFolder = {
                                     renamingFolder = it
@@ -610,8 +670,7 @@ fun HomeScreen(
                                     query = ""
                                 },
                                 onCreateFolder = {
-                                    renamingFolder = null
-                                    folderEditorOpen = true
+                                    startNewFolder(if (articleFolder == null) "" else articleFolder)
                                 },
                                 onRenameFolder = {
                                     renamingFolder = it
@@ -837,18 +896,19 @@ fun HomeScreen(
         val previous = renamingFolder
         FolderEditorDialog(
             initial = previous?.let { SavedItemStore.nameOf(it) },
-            parent = if (previous == null) inFolder.orEmpty() else SavedItemStore.parentOf(previous),
+            parent = if (previous == null) newFolderParent else SavedItemStore.parentOf(previous),
             onSave = { name ->
                 if (previous == null) {
-                    val created = viewModel.savedItems.createFolder(name, inFolder.orEmpty())
+                    val created = viewModel.savedItems.createFolder(name, newFolderParent)
                     if (created != null) {
                         // A folder made while standing in another one opens, so
-                        // the shop can put something in it straight away. It
-                        // also leaves "Tous les articles": otherwise the bar
-                        // would name the whole catalogue while the list shows
-                        // the folder that was just made.
+                        // the shop can put something in it straight away. Made
+                        // from the flat list, it opens the folder screen too:
+                        // a folder nobody can see is a folder the shop will
+                        // create twice.
                         inFolder = created
                         showAllArticles = false
+                        if (!managingFolders) foldersOpen = true
                         folderEditorOpen = false
                     } else {
                         scope.launch { snackbar.showSnackbar("Ce dossier existe déjà ici.") }
