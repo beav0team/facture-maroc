@@ -4,8 +4,8 @@ package com.yassine.facturemaroc.data
  * Something the shop sells: a product it keeps on a shelf, or a service it
  * performs.
  *
- * The two live in the same list on purpose. A tyre shop bills "Montage" beside
- * the tyre it fitted, and putting them in separate screens would mean deciding
+ * The two live in the same list on purpose. A shop bills "Montage" beside the
+ * article it assembled, and putting them in separate screens would mean deciding
  * which screen to open before knowing whether the thing is countable. The
  * difference is carried by [stock]: a product has a quantity, a service has
  * `null` and is never counted or deducted.
@@ -55,7 +55,7 @@ data class SavedItem(
      *
      * Stored as text rather than a number: leading zeroes are part of an EAN,
      * and a 13-digit code does not fit a phone's integer habits comfortably.
-     * Searchable, so the normal way to find a tyre is to type the digits from
+     * Searchable, so the normal way to find an article is to type the digits from
      * the label.
      */
     val barcode: String = "",

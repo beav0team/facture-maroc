@@ -17,20 +17,20 @@ class ItemFieldsTest {
 
     private val everything = ShopSettings()
 
-    private val tyre = SavedItem(
-        label = "Pneu 205/55 R16",
+    private val chair = SavedItem(
+        label = "Chaise en rotin",
         price = 950.0,
         unit = "unité",
-        folder = "Pneus",
+        folder = "Mobilier",
         barcode = "6111234500017",
         purchasePrice = 700.0,
         stock = 12,
     )
-    private val winter = tyre.copy(label = "Pneu hiver 205/55", folder = "Pneus/Hiver", stock = 4)
-    private val valve = SavedItem("Valve", 10.0, stock = 30)
+    private val cushion = chair.copy(label = "Coussin", folder = "Mobilier/Textile", stock = 4)
+    private val table = SavedItem("Table basse", 10.0, stock = 30)
     private val fitting = SavedItem("Montage", 50.0)
 
-    private val catalogue = listOf(tyre, winter, valve, fitting)
+    private val catalogue = listOf(chair, cushion, table, fitting)
 
     @Test
     fun `an installation that never touched the settings shows every field`() {
@@ -65,25 +65,25 @@ class ItemFieldsTest {
 
         assertEquals(4, shown.size)
         assertEquals(
-            listOf("Montage", "Pneu 205/55 R16", "Pneu hiver 205/55", "Valve"),
+            listOf("Chaise en rotin", "Coussin", "Montage", "Table basse"),
             shown.map { it.label },
         )
     }
 
     @Test
     fun `filtering on a folder includes its sub-folders`() {
-        val shown = filterArticles(catalogue, "Pneus")
+        val shown = filterArticles(catalogue, "Mobilier")
 
-        // A tyre filed under Pneus/Hiver is still in Pneus: hiding it would
-        // read as stock that went missing.
-        assertEquals(listOf("Pneu 205/55 R16", "Pneu hiver 205/55"), shown.map { it.label })
+        // An article filed under Mobilier/Textile is still in Mobilier: hiding
+        // it would read as stock that went missing.
+        assertEquals(listOf("Chaise en rotin", "Coussin"), shown.map { it.label })
     }
 
     @Test
     fun `filtering on no folder is its own filter`() {
         val shown = filterArticles(catalogue, "")
 
-        assertEquals(listOf("Montage", "Valve"), shown.map { it.label })
+        assertEquals(listOf("Montage", "Table basse"), shown.map { it.label })
     }
 
     @Test
@@ -95,11 +95,11 @@ class ItemFieldsTest {
     fun `the summary counts units and the money on the shelves`() {
         val summary = summarizeArticles(catalogue, ItemField.entries.toSet())
 
-        // tyre 12, winter 4, valve 30; the fitting has no quantity.
+        // chair 12, cushion 4, table 30; the fitting has no quantity.
         assertEquals(4, summary.count)
         assertEquals(46, summary.units)
-        // 12 x 700 + 4 x 700 + 30 x 0: the winter tyre inherits the purchase
-        // price from `tyre` through copy(), and the valve has none.
+        // 12 x 700 + 4 x 700 + 30 x 0: the cushion inherits the purchase
+        // price from `chair` through copy(), and the table has none.
         assertEquals(11_200.0, summary.stockValue, 0.001)
     }
 

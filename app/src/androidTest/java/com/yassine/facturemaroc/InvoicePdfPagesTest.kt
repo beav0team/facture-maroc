@@ -37,7 +37,7 @@ class InvoicePdfPagesTest {
 
     private val shop = ShopSettings(
         name = "Garage Atlas",
-        address = "12 rue des Pneus, Casablanca",
+        address = "12 rue des Orfèvres, Casablanca",
         ice = "001234567000089",
         ifNumber = "40218765",
     )
@@ -54,7 +54,7 @@ class InvoicePdfPagesTest {
         client = client,
         lines = List(lineCount) { index ->
             InvoiceLine(
-                description = "Pneu 205/55 R16 ${index + 1}",
+                description = "Chaise en rotin ${index + 1}",
                 quantity = 1,
                 unitPrice = 950.0 + index,
             )

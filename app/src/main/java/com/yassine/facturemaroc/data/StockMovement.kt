@@ -11,7 +11,7 @@ package com.yassine.facturemaroc.data
  * The rule is deliberately narrow. A document that records goods leaving the
  * shop takes them out of stock; a credit note puts them back; everything else
  * leaves the shelf alone. A devis is a question, a proforma is an estimate and
- * an acompte is money — none of them is a tyre leaving the building, and a stock
+ * an acompte is money — none of them is an article leaving the shelf, and a stock
  * that drops when a quote is written is a stock the shop stops trusting.
  */
 object StockMovement {
@@ -52,7 +52,7 @@ object StockMovement {
      * the invoice is still correct, it just cannot update a row that is gone.
      *
      * Two lines of the same product on one invoice are summed before they are
-     * applied, so a tyre and a spare added as separate lines cost two units and
+     * applied, so the same article added as two separate lines costs two units,
      * not one.
      *
      * [reversing] inverts the movement: used when an issued document is deleted

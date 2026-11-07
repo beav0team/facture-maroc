@@ -181,7 +181,7 @@ class InvoiceDataTest {
             date = "01/01/2026",
             client = InvoiceClient(name = "Le magasin"),
             supplier = InvoiceClient(name = "Grossiste Atlas", ice = "007711223000045"),
-            lines = listOf(InvoiceLine("Pneu", quantity = 1, unitPrice = 100.0)),
+            lines = listOf(InvoiceLine("Chaise", quantity = 1, unitPrice = 100.0)),
             documentType = DocumentType.BON_DE_COMMANDE,
         )
 
@@ -196,7 +196,7 @@ class InvoiceDataTest {
             number = "BC-20260101-0001",
             date = "01/01/2026",
             client = InvoiceClient(name = "Le magasin"),
-            lines = listOf(InvoiceLine("Pneu", quantity = 1, unitPrice = 100.0)),
+            lines = listOf(InvoiceLine("Chaise", quantity = 1, unitPrice = 100.0)),
             documentType = DocumentType.BON_DE_COMMANDE,
         )
 
@@ -207,7 +207,7 @@ class InvoiceDataTest {
     @Test
     fun `a sale with no identified buyer is a walk-in, not a blank`() {
         val data = invoice(
-            InvoiceLine("Pneu", quantity = 1, unitPrice = 100.0),
+            InvoiceLine("Chaise", quantity = 1, unitPrice = 100.0),
             client = InvoiceClient(name = ""),
         )
 
@@ -242,7 +242,7 @@ class InvoiceDataTest {
         val record = InvoiceRecord(
             id = "r2",
             data = invoice(
-                InvoiceLine("Pneu", quantity = 1, unitPrice = 100.0),
+                InvoiceLine("Chaise", quantity = 1, unitPrice = 100.0),
                 client = InvoiceClient(name = ""),
             ),
             status = InvoiceStatus.ISSUED,

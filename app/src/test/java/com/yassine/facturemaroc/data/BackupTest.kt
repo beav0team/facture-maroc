@@ -38,7 +38,7 @@ class BackupTest {
         ),
         InvoiceClient(name = "Client de passage"),
         InvoiceClient(
-            name = "Grossiste Pneus Atlas",
+            name = "Grossiste Atlas Fournitures",
             address = "Avenue des Fès, Casablanca",
             ice = "007711223000045",
             role = PartyRole.SUPPLIER,
@@ -246,7 +246,7 @@ class BackupTest {
     @Test
     fun `a file from another app is refused`() {
         val error = assertThrows(BackupException::class.java) {
-            Backup.parse(mutated { put("app", "tyre-finder") })
+            Backup.parse(mutated { put("app", "autre-application") })
         }
 
         assertTrue(error.message!!.contains("Facture Maroc"))

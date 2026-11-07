@@ -36,8 +36,8 @@ fun visibleItemFields(shop: ShopSettings): Set<ItemField> = buildSet {
  * The articles the Articles tab shows for a chosen filter.
  *
  * `null` is "Tous", `""` is "Sans dossier", and any other value is a folder
- * path whose sub-folders are included — filtering on "Pneus" while three tyres
- * sit in "Pneus/Hiver" would read as stock that went missing.
+ * path whose sub-folders are included — filtering on "Mobilier" while three
+ * articles sit in "Mobilier/Chaises" would read as stock that went missing.
  */
 fun filterArticles(items: List<SavedItem>, folder: String?): List<SavedItem> = when (folder) {
     null -> items

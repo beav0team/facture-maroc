@@ -3,7 +3,8 @@ package com.yassine.facturemaroc.data
 /**
  * French number-to-words for invoice amounts.
  *
- * Ported from Tyre Inventory. The reverse-parser trick: tests parse French back
+ * Adapted from an earlier number-to-words module. The reverse-parser trick:
+ * tests parse French back
  * into a number and compare with the source amount, plus an exhaustive sweep of
  * all 100 centime values.
  */

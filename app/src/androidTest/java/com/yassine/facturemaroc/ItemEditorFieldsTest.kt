@@ -30,10 +30,10 @@ class ItemEditorFieldsTest {
     val compose = createComposeRule()
 
     private val article = SavedItem(
-        label = "Pneu 205/55 R16",
+        label = "Chaise en rotin",
         price = 950.0,
         unit = "unité",
-        folder = "Pneus",
+        folder = "Mobilier",
         barcode = "6111234500017",
         purchasePrice = 700.0,
         stock = 12,
@@ -46,7 +46,7 @@ class ItemEditorFieldsTest {
                     initial = article,
                     onSave = onSave,
                     onDismiss = {},
-                    folders = listOf("Pneus", "Pneus/Hiver"),
+                    folders = listOf("Mobilier", "Mobilier/Chaises"),
                     fields = fields,
                 )
             }
@@ -64,7 +64,7 @@ class ItemEditorFieldsTest {
 
         compose.runOnIdle {
             assertEquals(12, saved?.stock)
-            assertEquals("Pneus", saved?.folder)
+            assertEquals("Mobilier", saved?.folder)
         }
     }
 

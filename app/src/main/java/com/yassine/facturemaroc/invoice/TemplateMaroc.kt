@@ -24,8 +24,8 @@ import com.yassine.facturemaroc.data.ShopSettings
  * shop's stamp and signature are part of the document, and this app cannot
  * reproduce them, so it leaves the space rather than pretending to.
  *
- * Ported from Tyre Finder, adapted to paginate and to print suppliers on a bon
- * de commande.
+ * Adapted from an earlier invoice renderer, to paginate and to print suppliers
+ * on a bon de commande.
  */
 class MarocRenderer : PdfRenderer {
 

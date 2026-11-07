@@ -351,7 +351,7 @@ fun ItemEditorDialog(
                     value = label,
                     onValueChange = { label = it },
                     label = { Text("Désignation *") },
-                    placeholder = { Text("Pneu 205/55 R16, montage, valve…") },
+                    placeholder = { Text("Chaise en rotin, livraison, montage…") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -636,8 +636,8 @@ fun FolderEditorDialog(
                             "articles restent utilisables sur toutes les factures."
                     } else {
                         "Il sera créé dans « ${SavedItemStore.display(parent)} ». Un sous-dossier " +
-                            "sert à ranger ce qui va ensemble à l'intérieur d'un rayon — les pneus " +
-                            "d'hiver sous Pneus."
+                            "sert à ranger ce qui va ensemble à l'intérieur d'un rayon — les coussins " +
+                            "se rangent sous Textile."
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

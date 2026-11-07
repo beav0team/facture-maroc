@@ -263,7 +263,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * what an existing line means. A line already carrying a [InvoiceLine.ttcPrice]
      * was quoted TTC whatever the switch says now, and it keeps that meaning if
      * the shop moves to HT — otherwise correcting the rate from 10 % to 20 % and
-     * the basis in the same visit left a 1680 DH tyre priced 1527,27 HT and
+     * the basis in the same visit left a 1680 DH article priced 1527,27 HT and
      * then taxed to 1832,73 instead of staying 1680.
      */
     private fun repriceForClient(client: InvoiceClient) {
@@ -367,7 +367,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * The lines are re-read at today's TVA settings on the way in. The stored
      * HT figure was correct under the rate that was in force when the line was
      * typed; reopening a draft after the shop corrected its rate used to bring
-     * that old figure back with the new rate applied on top, so a 1680 DH tyre
+     * that old figure back with the new rate applied on top, so a 1680 DH article
      * entered at 10 % and reopened at 20 % totalled 1832,73 instead of 1680.
      */
     fun loadRecord(record: InvoiceRecord) {

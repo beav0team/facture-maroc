@@ -24,24 +24,24 @@ class NameClashTest {
 
     @Test
     fun `a new article may not take a label that already exists`() {
-        val items = listOf(item("Montage"), item("Équilibrage"))
+        val items = listOf(item("Montage"), item("Étagère"))
 
-        assertTrue(items.labelTaken("Équilibrage"))
+        assertTrue(items.labelTaken("Étagère"))
         // Case and surrounding space are not a different article.
-        assertTrue(items.labelTaken("  équilibrage  "))
+        assertTrue(items.labelTaken("  étagère  "))
         assertFalse(items.labelTaken("Vidange"))
     }
 
     @Test
     fun `renaming an article onto an existing label is a clash`() {
-        val items = listOf(item("Montage"), item("Équilibrage"))
+        val items = listOf(item("Montage"), item("Étagère"))
 
-        assertTrue(items.labelTaken("Équilibrage", excluding = items[0]))
+        assertTrue(items.labelTaken("Étagère", excluding = items[0]))
     }
 
     @Test
     fun `an article keeping its own name is not a clash with itself`() {
-        val items = listOf(item("Montage"), item("Équilibrage"))
+        val items = listOf(item("Montage"), item("Étagère"))
 
         assertFalse(items.labelTaken("Montage", excluding = items[0]))
         // Neither is a change of case on itself.

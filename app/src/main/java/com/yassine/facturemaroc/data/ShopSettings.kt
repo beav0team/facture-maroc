@@ -35,7 +35,7 @@ data class ShopSettings(
     /*
      * Which optional fields the shop's articles show.
      *
-     * A tyre shop fills a barcode and a purchase price on every article; a
+     * A shop that sells goods fills a barcode and a purchase price on every article; a
      * plumber selling three services fills neither, and asking both of them for
      * the same seven fields is what made the article form feel like data entry.
      * These switch the *form* and the *card*, never the data: hiding a field

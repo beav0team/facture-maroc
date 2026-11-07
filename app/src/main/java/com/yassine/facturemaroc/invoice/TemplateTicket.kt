@@ -116,7 +116,7 @@ class TicketRenderer : PdfRenderer {
         // 34 points it clipped to "14 304,0…" on every line of a real sale.
         val amountW = 58f
         // The quantity column is measured rather than fixed: 11 points holds one
-        // digit, so a sale of 120 valves printed "1…" beside the line. The
+        // digit, so a sale of 120 units printed "1…" beside the line. The
         // column is as wide as the longest count on this receipt.
         val countW = data.lines
             .maxOfOrNull { smallBold.measureText(it.quantity.toString()) }

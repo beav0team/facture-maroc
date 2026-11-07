@@ -19,7 +19,7 @@ import com.yassine.facturemaroc.data.ShopSettings
  * filled header turns into a grey slab and the table becomes unreadable. It is
  * the only template that survives a mono printer without being altered by it.
  *
- * Ported from Tyre Finder, with two changes the original needed: the totals
+ * Adapted from an earlier renderer, with two changes the original needed: the totals
  * block now uses shared geometry so a label and its amount cannot overlap, and
  * the table breaks across pages instead of running off the first one.
  */

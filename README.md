@@ -25,8 +25,8 @@ Trois onglets, pas de détour :
   pas de quantité. L'onglet ouvre **la liste entière**, triée par désignation, le
   chemin du dossier en sous-titre. Les **dossiers sont un filtre** (« Tous »,
   « Sans dossier », chaque dossier, et un menu pour les chemins complets) plutôt
-  qu'un endroit où l'on entre : **ils s'imbriquent toujours** (les pneus d'hiver
-  se rangent sous Pneus), et se créent, se renomment ou se suppriment depuis
+  qu'un endroit où l'on entre : **ils s'imbriquent toujours** (les coussins
+  se rangent sous Textile), et se créent, se renomment ou se suppriment depuis
   l'écran **Dossiers** du bandeau du haut.
   Un **glissement vers la gauche** sur une ligne découvre « déplacer » et
   « supprimer » sans ouvrir la fiche ; la barre du bas récapitule ce que le
@@ -196,7 +196,7 @@ Tout est local, en JSON ou dans les préférences Android :
 
 - `filesDir/invoices.json` — brouillons et documents émis.
 - `filesDir/saved_items.json` — inventaire et dossiers (format v3). Un dossier
-  imbriqué s'écrit avec le chemin complet (`"Pneus/Hiver"`), donc un catalogue
+  imbriqué s'écrit avec le chemin complet (`"Mobilier/Chaises"`), donc un catalogue
   écrit avant l'imbrication se relit tel quel.
 - `filesDir/shop_logo.png` — logo copié depuis le sélecteur de photos.
 - `filesDir/archive/ledger.jsonl` — chaîne de hachage des XML exportés.
@@ -287,10 +287,10 @@ vérifiée par Google) dans Play Console.
 
 - **0.8.1** — lisibilité et sauvegarde automatique.
   **Grands textes** : à 150 % la fiche article tronquait le nom dès le premier
-  mot (« Pneu 205/55 R… ») ; la désignation tient maintenant sur deux lignes et
+  mot (« Chaise en rotin… ») ; la désignation tient maintenant sur deux lignes et
   le prix garde une largeur plancher. **Accessibilité** : les titres d'écran
   sont des en-têtes pour TalkBack, les actions du glissement nomment l'article
-  (« Déplacer "Pneu 205/55 R16" »), et la puce du dossier filtré se décoche au
+  (« Déplacer "Chaise en rotin" »), et la puce du dossier filtré se décoche au
   lieu de ne rien faire. L'état des écrans suit le cycle de vie
   (`collectAsStateWithLifecycle`) au lieu de collecter en arrière-plan.
   **Sauvegarde automatique** : une copie par jour au premier lancement, sept
@@ -334,7 +334,7 @@ vérifiée par Google) dans Play Console.
   plus au prix annoncé, et le total bougeait d'autant. Le prix d'origine est sur
   la ligne, il est donc relu au taux courant — et **le brouillon est relu aussi
   quand on le rouvre**, sinon le vieux HT revenait avec le nouveau taux appliqué
-  par-dessus (un pneu à 1680 DH affichait 1832,73 DH).
+  par-dessus (un article à 1680 DH affichait 1832,73 DH).
   **Une liste de factures illisible se faisait écraser** : le chargement
   renvoyait une liste vide et l'enregistrement suivant réécrivait le fichier.
   L'original est désormais mis de côté (`invoices.json-corrompu.json`) et les
@@ -378,8 +378,8 @@ vérifiée par Google) dans Play Console.
   produire un fichier que l'application refusait ensuite de restaurer ; et le
   contrôle de total comparait une valeur avec elle-même.
 - **0.7.0** — **refonte des modèles** : six rendus au lieu de quatre — Classique
-  (sobre, sans couleur), Moderne et Facture Maroc (les deux repris de Tyre
-  Finder), Épuré, Bandeau et le Ticket 80 mm —, tous **paginés** quand la vente
+  (sobre, sans couleur), Moderne et Facture Maroc (les deux repris des gabarits
+  de l'application précédente), Épuré, Bandeau et le Ticket 80 mm —, tous **paginés** quand la vente
   dépasse une feuille, avec l'en-tête du document répété et `Page 1 / 2` au pied ;
   l'écran **Modèle de document** montre les six rendus réels (pas des vignettes
   dessinées), laisse choisir la **couleur d'accent** parmi huit teintes et règle
@@ -394,8 +394,8 @@ vérifiée par Google) dans Play Console.
 - **0.6.0** — **inventaire** : quantité en stock, prix d'achat (marge affichée) et
   code-barres par article, prestations sans quantité ; les articles vivent dans
   une **grille de dossiers** qu'on ouvre et qu'on quitte comme dans un gestionnaire
-  de fichiers, et **les dossiers s'imbriquent** (un sous-dossier sous Pneus pour
-  l'hiver, sans limite de profondeur) — un dossier affiche le total de tout son
+  de fichiers, et **les dossiers s'imbriquent** (un sous-dossier sous Mobilier pour
+  les chaises, sans limite de profondeur) — un dossier affiche le total de tout son
   contenu, la recherche descend dans les sous-dossiers, renommer déplace tout le
   sous-arbre et supprimer remonte les articles d'un cran au lieu de les perdre ;
   **le stock suit les documents émis** (facture, ticket, simplifiée,

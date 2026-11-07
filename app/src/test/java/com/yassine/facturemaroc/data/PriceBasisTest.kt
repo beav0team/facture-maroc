@@ -82,7 +82,7 @@ class PriceBasisTest {
 
     @Test
     fun `an HT line never moves when the buyer changes`() {
-        val line = InvoiceLine("Pneu", quantity = 1, unitPrice = 125.0)
+        val line = InvoiceLine("Chaise", quantity = 1, unitPrice = 125.0)
 
         assertEquals(125.0, PriceBasis.repriceTtcLines(listOf(line), 0.0).single().unitPrice, 0.0)
         assertEquals(125.0, PriceBasis.repriceTtcLines(listOf(line), 20.0).single().unitPrice, 0.0)
@@ -221,7 +221,7 @@ class PriceBasisTest {
     @Test
     fun `switching exemption on an HT line only flips the flag`() {
         // An HT price never had tax inside it, so there is nothing to re-read.
-        val line = InvoiceLine("Pneu", quantity = 1, unitPrice = 125.0)
+        val line = InvoiceLine("Chaise", quantity = 1, unitPrice = 125.0)
 
         val exempt = PriceBasis.withExemption(line, exempt = true, vatPercent = 20.0)
         assertEquals(125.0, exempt.unitPrice, 0.0)

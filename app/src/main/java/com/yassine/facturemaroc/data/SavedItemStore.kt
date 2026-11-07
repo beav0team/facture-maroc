@@ -19,8 +19,8 @@ import java.io.File
  *
  * Folders are stored beside the items rather than derived from them, so an
  * empty folder survives until the shop deletes it. They nest: a folder is a
- * path ("Pneus/Hiver"), which is what lets a tyre shop put its winter stock
- * under Pneus without a table of nodes or an id on every item. The file has
+ * path ("Mobilier/Chaises"), which is what lets a shop put its chairs
+ * under Mobilier without a table of nodes or an id on every item. The file has
  * been version 3 since the inventory arrived: version 2 added folders, version
  * 3 added the barcode, the purchase price and the quantity on the shelf. Both
  * older shapes still load — a version 1 file is a bare array of items and is
@@ -87,7 +87,7 @@ class SavedItemStore(context: Context) {
      *
      * Returns null when the name is blank, contains the separator, or is
      * already taken by a sibling. Folders nest, so a name is only unique among
-     * its siblings: "Hiver" may exist under Pneus and under Vêtements.
+     * its siblings: "Chaises" may exist under Mobilier and under Vêtements.
      */
     fun createFolder(name: String, parent: String = ""): String? {
         val clean = name.trim()
@@ -150,7 +150,7 @@ class SavedItemStore(context: Context) {
      * Called on every keystroke against tens of items, so it filters the
      * in-memory list rather than re-reading the file. [folder] limits the
      * result to that folder **and everything below it** — a search inside
-     * Pneus that ignored Pneus/Hiver would tell a shop its winter stock does
+     * Mobilier that ignored Mobilier/Chaises would tell a shop its chairs do
      * not exist. `""` means "Sans dossier" and `null` means all.
      */
     fun search(query: String, folder: String? = null): List<SavedItem> {
@@ -278,9 +278,9 @@ class SavedItemStore(context: Context) {
         /**
          * What separates a folder from its parent inside a stored path.
          *
-         * A path rather than a list of ids: folders nest, and "Pneus/Hiver" is
+         * A path rather than a list of ids: folders nest, and "Mobilier/Chaises" is
          * a name a person can read in the JSON file, sorts next to
-         * "Pneus/Hiver clouté", and needs no table of nodes to resolve. It also
+         * "Mobilier/Chaises/Rotin", and needs no table of nodes to resolve. It also
          * leaves the file shape alone, so every catalogue written by the flat
          * version still loads.
          */
@@ -297,7 +297,7 @@ class SavedItemStore(context: Context) {
         fun join(parent: String, name: String): String =
             if (parent.isBlank()) name else "$parent$SEPARATOR$name"
 
-        /** How a path is drawn in the interface: `Pneus › Hiver`. */
+        /** How a path is drawn in the interface: `Mobilier › Chaises`. */
         fun display(path: String): String =
             path.split(SEPARATOR).filter { it.isNotEmpty() }.joinToString(SEPARATOR_DISPLAY)
 
@@ -329,8 +329,8 @@ class SavedItemStore(context: Context) {
          * Every folder plus the folders that contain it.
          *
          * Needed because a stored path is the only place a sub-folder is
-         * recorded: a file that mentions "Pneus/Hiver" without mentioning
-         * "Pneus" would hold a shelf nobody can reach, since the grid only
+         * recorded: a file that mentions "Mobilier/Chaises" without mentioning
+         * "Mobilier" would hold a shelf nobody can reach, since the grid only
          * draws children of the folder it is standing in.
          */
         fun withAncestors(folders: List<String>): List<String> {
@@ -339,7 +339,7 @@ class SavedItemStore(context: Context) {
                 var current = ""
                 path.split(SEPARATOR).map { it.trim() }.filter { it.isNotEmpty() }.forEach { segment ->
                     // Built on the spelling already chosen for the parent, so
-                    // "Pneus" followed by "pneus/Hiver" yields "Pneus/Hiver"
+                    // "Mobilier" followed by "mobilier/Chaises" yields "Mobilier/Chaises"
                     // rather than a path whose first half disagrees with the
                     // tile the shop taps. First spelling wins, so one shelf
                     // cannot become two tiles.
@@ -376,11 +376,11 @@ class SavedItemStore(context: Context) {
          * a shop that typed the digits from a box was told the article did not
          * exist.
          *
-         * Every word has to appear somewhere, so "ali pose" finds "Aligner une
-         * roue" as well as "Pose de film", and a mistyped word narrows the list
+         * Every word has to appear somewhere, so "ali pose" finds "Poser une
+         * étagère" as well as "Pose de film", and a mistyped word narrows the list
          * instead of emptying it. Digits are matched as text, which is what a
          * barcode is. The folder is matched as its full path, so searching
-         * "Pneus" finds what is filed under Pneus/Hiver too.
+         * "Mobilier" finds what is filed under Mobilier/Chaises too.
          *
          * A pure rule over two values, and reachable from a test without a
          * Context, because that is where it should have been checked the first

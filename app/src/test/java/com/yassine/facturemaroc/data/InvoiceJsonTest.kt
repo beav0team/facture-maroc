@@ -51,7 +51,7 @@ class InvoiceJsonTest {
         val data = full.copy(
             lines = listOf(
                 InvoiceLine("Montage", 1, 125.0, ttcPrice = 150.0),
-                InvoiceLine("Pneu", 1, 83.325),
+                InvoiceLine("Chaise", 1, 83.325),
             ),
         )
 
@@ -124,8 +124,8 @@ class InvoiceJsonTest {
     @Test
     fun `a record saved before the inventory reads as having moved nothing`() {
         // The file written by the previous build has no "stockApplied" key. If
-        // that read back as true, deleting an old invoice would add tyres to a
-        // shelf that never had them taken off.
+        // that read back as true, deleting an old invoice would add stock to a
+        // shelf that never had it taken off.
         val old = org.json.JSONObject()
             .put("id", "r1")
             .put("status", "issued")

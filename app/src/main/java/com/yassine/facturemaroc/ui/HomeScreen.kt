@@ -189,10 +189,10 @@ fun HomeScreen(
      * Where the Articles tab is filtering.
      *
      * `null` is "Tous": the tab opens on the whole catalogue, because a shop
-     * looks for "the valve" far more often than it wants to browse shelves.
+     * looks for "the chair" far more often than it wants to browse shelves.
      * `""` is the articles in no folder, and any other value is a folder path
-     * whose sub-folders are included — a tyre filed under Pneus/Hiver is still
-     * in Pneus.
+     * whose sub-folders are included — an article filed under Mobilier/Chaises is
+     * still in Mobilier.
      */
     var articleFilter by rememberSaveable { mutableStateOf<String?>(null) }
     /*
@@ -266,7 +266,7 @@ fun HomeScreen(
      * can never disagree with the list about which folder is open.
      *
      * `null` is the grid, `""` is "Sans dossier", and anything else is a folder
-     * path such as "Pneus/Hiver".
+     * path such as "Mobilier/Chaises".
      */
     val articleFolder = inFolder
     val managingFolders = tab == HomeTab.ARTICLES && foldersOpen
@@ -319,8 +319,8 @@ fun HomeScreen(
     /*
      * Where a folder made from here belongs. From the folder screen it is the
      * folder on screen (the root behind "Tous les articles"), and from the flat
-     * list it is the folder the filter is on, so a shop filtering on Pneus and
-     * asking for a folder gets Pneus/<name>, not a second Pneus beside itself.
+     * list it is the folder the filter is on, so a shop filtering on Mobilier and
+     * asking for a folder gets Mobilier/<name>, not a second Mobilier beside itself.
      */
     val newFolderHome = when {
         managingFolders -> if (showAllArticles) "" else inFolder.orEmpty()
@@ -643,8 +643,8 @@ fun HomeScreen(
                          * whole catalogue, because from there the shop is asking
                          * "where did I put this?". Typed inside a folder it
                          * looks through that folder and everything below it,
-                         * because there the question is "is it here?" and a tyre
-                         * filed under Pneus/Hiver is still in Pneus.
+                         * because there the question is "is it here?" and an article
+                         * filed under Mobilier/Chaises is still in Mobilier.
                          */
                         val searching = query.isNotBlank()
                         val searchingEverything =
@@ -886,7 +886,7 @@ fun HomeScreen(
     deleteInvoice?.let { record ->
         // What deletion does now depends on what the document was, so the
         // sentence has to match. Telling a shop "the line only disappears" and
-        // then quietly adding a tyre back to its shelf is how an app loses
+        // then quietly adding an article back to its shelf is how an app loses
         // trust over a dialog nobody rereads.
         val effect = when {
             record.isDraft -> "Le brouillon disparaît de l'historique."
@@ -1792,8 +1792,8 @@ private fun ArticlesFoldersGrid(
         gridItems(folders.filter { SavedItemStore.parentOf(it).isEmpty() }, key = { "folder-$it" }) { folder ->
             FolderTile(
                 title = folder,
-                // Everything the shelf holds, sub-shelves included: "Pneus"
-                // that says 2 while 3 more tyres are filed under Pneus/Hiver
+                // Everything the shelf holds, sub-shelves included: "Mobilier"
+                // that says 2 while 3 more articles are filed under Mobilier/Chaises
                 // would read as an inventory that lost stock.
                 count = SavedItemStore.itemsIn(folder, items, deep = true).size,
                 icon = Icons.Filled.Folder,
@@ -1812,13 +1812,13 @@ private fun ArticlesFoldersGrid(
  * One open folder: the shelves inside it first, then what sits on it directly.
  *
  * Both are drawn on one scrolling surface by one grid, because they are one
- * place: walking into "Pneus" and seeing "Hiver" above the tyres filed
+ * place: walking into "Mobilier" and seeing "Chaises" above the articles filed
  * straight there is how a cupboard looks. A second list would need a second
  * scroll position and a sentence explaining that it is not the whole folder.
  *
  * Sub-folder tiles carry everything inside them, sub-shelves included, while
  * the title above counts what is on this level — a tile that said "2" while
- * three more tyres sat in Pneus/Hiver would read as inventory that vanished.
+ * three more articles sat in Mobilier/Chaises would read as inventory that vanished.
  */
 @Composable
 private fun FolderContents(
@@ -2066,7 +2066,7 @@ private fun NewFolderTile(onClick: () -> Unit, label: String = "Nouveau dossier"
  * The one line under the list: how much there is.
  *
  * A shop counting its shelves does not want a report — it wants to know that
- * the filter it just tapped holds 46 tyres and what they cost. Only the parts
+ * the filter it just tapped holds 46 articles and what they cost. Only the parts
  * whose fields are visible are said, so a shop that hides Stock is not told a
  * quantity it never records.
  */
@@ -2169,7 +2169,7 @@ private fun FolderChoice(label: String, selected: Boolean, onClick: () -> Unit) 
  * The folder filter above the Articles list.
  *
  * The tab lands on the whole catalogue, so a folder is a question the shop asks
- * of it — "what do I have in Pneus?" — not a place it walks into. Only the
+ * of it — "what do I have in Mobilier?" — not a place it walks into. Only the
  * top-level folders earn a chip: a shop with thirty shelves would otherwise be
  * scrolling a row of chips instead of its articles, and the nested paths are
  * still one tap away in the menu.
@@ -2455,7 +2455,7 @@ private fun ItemCard(
                     item.label,
                     style = MaterialTheme.typography.titleMedium,
                     // Two lines, not one: at 150 % the label used to collapse to
-                    // "Pneu 205/55 R…" while a column of empty space sat beside
+                    // "Chaise en rotin…" while a column of empty space sat beside
                     // it. The price keeps a floor and the name gets the rest.
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -2558,10 +2558,10 @@ private fun ItemCard(
  * is the only way to see them without launching the app and creating data.
  */
 private val previewArticle = SavedItem(
-    label = "Pneu hiver 205/55 R16 91H",
+    label = "Chaise en rotin",
     price = 1050.0,
     unit = "unité",
-    folder = "Pneus/Hiver",
+    folder = "Mobilier/Chaises",
     barcode = "6111234500024",
     purchasePrice = 800.0,
     stock = 4,
@@ -2603,7 +2603,7 @@ private fun ItemCardWithoutOptionalFieldsPreview() {
 private fun ArticlesSummaryPreview() {
     FactureMarocTheme {
         ArticlesSummary(
-            items = listOf(previewArticle, previewArticle.copy(label = "Valve", stock = 30)),
+            items = listOf(previewArticle, previewArticle.copy(label = "Coussin", stock = 30)),
             fields = ItemField.entries.toSet(),
         )
     }
