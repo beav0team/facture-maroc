@@ -103,6 +103,13 @@ Politique complète : [`docs/privacy.html`](docs/privacy.html) — publiée sur
 GitHub Pages à l’adresse
 `https://beav0team.github.io/facture-maroc/privacy.html`.
 
+Le site public — présentation, captures, questions fréquentes et inscription des
+testeurs — est publié depuis `docs/` :
+`https://beav0team.github.io/facture-maroc/`. Il est en HTML et CSS seuls, sans
+construction ni JavaScript, et n’appelle **aucune ressource externe**, polices
+comprises : une page qui promet l’absence de réseau ne peut pas charger Google
+Fonts.
+
 > **Sauvegarde et restauration** : Android peut sauvegarder l’application, mais
 > l’application fournit aussi son propre fichier de sauvegarde (Paramètres →
 > Sauvegarde). Ce fichier contient toutes les données, **y compris les clients**,
