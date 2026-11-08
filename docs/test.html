@@ -81,6 +81,16 @@
     font-size: 14px;
   }
 
+  .badge-play {
+    display: inline-block;
+    line-height: 0;
+  }
+
+  .badge-play img {
+    height: 56px;
+    width: auto;
+  }
+
   .precision {
     display: block;
     margin: 12px 0 0;
@@ -196,9 +206,13 @@
           <p>L’application apparaît alors dans le Play Store, comme n’importe
             quelle autre. Il peut s’écouler quelques minutes entre l’inscription
             et l’ouverture du lien : c’est normal.</p>
-          <a class="bouton bouton--plein"
+          <a class="badge-play"
              href="https://play.google.com/store/apps/details?id=com.yassine.facturemaroc"
-             target="_blank" rel="noopener">Ouvrir Google Play</a>
+             target="_blank" rel="noopener">
+            <img src="assets/img/google-play-fr.png"
+                 alt="Disponible sur Google Play"
+                 width="646" height="250">
+          </a>
           <span class="precision">Le lien s’active dès que Google a validé la
             version de test.</span>
         </div>
