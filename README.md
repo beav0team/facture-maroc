@@ -5,7 +5,7 @@ Factures, devis, bons de commande, tickets, avoirs, proformas, acomptes,
 régularisations, factures simplifiées et factures à l'export — avec ICE, IF, RC,
 patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
-Version **0.8.1** (versionCode 13) · Android 8.0+ (minSdk 26) · Français.
+Version **0.8.2** (versionCode 14) · Android 8.0+ (minSdk 26) · Français.
 
 <img src="play_store/screenshots/01-factures.png" width="260" alt="Écran Factures">
 
@@ -291,6 +291,10 @@ vérifiée par Google) dans Play Console.
 
 ## Historique
 
+- **0.8.2** — exemples génériques. Les écrans vides, les brouillons, les
+  dossiers de stock et la recherche d’articles ne parlent plus de pneus : ils
+  montrent une chaise en rotin, une livraison et un montage, comme n’importe
+  quel commerce. Aucun changement de comportement.
 - **0.8.1** — lisibilité et sauvegarde automatique.
   **Grands textes** : à 150 % la fiche article tronquait le nom dès le premier
   mot (« Chaise en rotin… ») ; la désignation tient maintenant sur deux lignes et
