@@ -110,6 +110,12 @@ construction ni JavaScript, et n’appelle **aucune ressource externe**, polices
 comprises : une page qui promet l’absence de réseau ne peut pas charger Google
 Fonts.
 
+L’installation de la version de test est expliquée pas à pas sur
+[`docs/test.html`](docs/test.html) : rejoindre le groupe
+`facturemaroc-testeurs`, s’inscrire au test fermé, puis installer depuis Google
+Play. La page ne publie aucune adresse personnelle — les retours passent par les
+tickets GitHub.
+
 > **Sauvegarde et restauration** : Android peut sauvegarder l’application, mais
 > l’application fournit aussi son propre fichier de sauvegarde (Paramètres →
 > Sauvegarde). Ce fichier contient toutes les données, **y compris les clients**,
