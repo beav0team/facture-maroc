@@ -77,6 +77,17 @@ Dans le constructeur de document :
   Chaque interrupteur change l’aperçu et le document.
 - Logo du commerce, **téléphone et e-mail**, coordonnées et mentions légales sur
   chaque document.
+- **Note au client, conditions de règlement et remerciement** : chaque bloc ne
+  s'imprime que s'il est rempli. Le remerciement remplace la ligne de pied de
+  page ; vide, la phrase habituelle revient.
+- **Signature ou cachet** : dessinée au doigt dans un cadre, ou reprise d'une
+  photo (recadrée à l'encre, 2 Mo maximum). Elle s'imprime sur les cinq modèles
+  A4 ; le ticket 80 mm garde les notes mais pas la signature, illisible sur
+  papier thermique.
+- **Les coordonnées du commerce sont figées sur le document émis** : changer
+  l'ICE, l'adresse, le logo ou le taux de TVA plus tard ne réécrit pas une
+  facture déjà remise. Un brouillon, lui, suit les réglages du jour jusqu'à son
+  émission.
 
 Les documents sont générés en PDF dans le cache de l’application, puis remis au
 sélecteur Android. Android ne dit pas si ce sélecteur a été utilisé ou refermé :
@@ -128,7 +139,7 @@ wrapper Gradle fourni.
 
 ```bash
 export JAVA_HOME="$HOME/.local/jdk"      # ou votre JDK 21
-./gradlew testDebugUnitTest             # 244 tests JVM
+./gradlew testDebugUnitTest             # 250 tests JVM
 ./gradlew assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew bundleRelease                 # app/build/outputs/bundle/release/app-release.aab
 ./gradlew assembleRelease               # app/build/outputs/apk/release/app-release.apk
@@ -146,7 +157,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 
 ## Tests
 
-**244 tests JVM**, plus onze tests instrumentés :
+**250 tests JVM**, plus treize tests instrumentés :
 
 | Suite | Ce qu’elle protège |
 |---|---|
@@ -157,6 +168,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 | `PdfTextTest` | Montants et pourcentages à la française, adresse sur une ligne |
 | `PageFlowTest` | Où couper une page, ce qui se répète en haut de la suivante |
 | `InvoiceJsonTest` | Aller-retour JSON sans perdre un champ imprimé |
+| `ShopSnapshotTest` | Les coordonnées figées à l’émission ne suivent pas les changements du magasin ; ancien JSON relu sans snapshot |
 | `InvoiceValidationTest` | Champs obligatoires et blocage des documents incomplets |
 | `InvoiceXmlTest` | UBL 2.1 : espaces de noms, codes de type, totaux, échappement, document relu par un parseur |
 | `InvoiceArchiveTest` | Chaîne de hachage : modification, suppression, réordonnancement, document remplacé, journal illisible |

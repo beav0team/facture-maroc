@@ -69,7 +69,7 @@ class MarocRenderer : PdfRenderer {
         canvas.drawRect(margin, headerTop, right, headerTop + headerH, tint)
 
         var nameX = margin + 10f
-        PdfText.loadShopLogo(context, design)?.let { logo ->
+        PdfText.loadShopLogo(context, design, shop)?.let { logo ->
             nameX = PdfText.drawLogo(canvas, logo, margin + 10f, headerTop + 26f, 34f) + 10f
         }
         PdfText.draw(canvas, shop.name, nameX, headerTop + 12f, title, (right - nameX - 140f).toInt(), maxLines = 2)
@@ -233,20 +233,34 @@ class MarocRenderer : PdfRenderer {
         canvas.drawRect(box.left, boxTop, right, ty + 24f, grid)
         ty += 26f
 
-        // ---- the amount in words, then the signature space
+        // ---- the amount in words, then the notes and the signature space
         var sigY = ty
         if (design.showAmountWords) {
             PdfText.draw(canvas, data.amountInWords, margin, ty + 12f, words, contentW, maxLines = 3)
             ty += 12f + PdfText.height(data.amountInWords, words, contentW, 3)
         }
 
-        // ---- signature space, left empty for the shop's stamp
+        // Notes sit in the left column, so they never run under the stamp box.
+        ty = PdfExtras.drawNotes(
+            canvas, data, margin, ty + 10f, (contentW - 210).coerceAtLeast(140), label, body,
+        )
+
+        // ---- signature space: the shop's stamp, or its captured signature
         val sigW = 190f
         val sigH = 54f
-        sigY = if (ty + 18f <= 640f) 640f else ty + 18f
+        sigY = if (ty + 18f <= 640f) 640f else ty + 10f
         val sigX = right - sigW
         canvas.drawRect(sigX, sigY, sigX + sigW, sigY + sigH, grid)
-        PdfText.draw(canvas, "Signature et cachet", sigX + 8f, sigY + sigH - 14f, label, (sigW - 16f).toInt())
+        if (data.hasSignature) {
+            // The label stays: an image alone does not say what it is a
+            // signature *of*, and the box is the part a customer compares with
+            // the stamp on their copy.
+            PdfExtras.drawSignature(
+                canvas, data, sigX + 3f, sigY + 2f, sigW - 6f, sigH - 16f,
+                caption = null, drawCaption = false,
+            )
+        }
+        PdfText.draw(canvas, "Signature et cachet", sigX + 8f, sigY + sigH - 12f, label, (sigW - 16f).toInt())
 
         if (design.showPaymentMethod && data.showPaymentMethod) {
             PdfText.draw(
@@ -265,7 +279,7 @@ class MarocRenderer : PdfRenderer {
 
         if (design.showFooter) {
             PdfText.draw(
-                canvas, "Merci de votre confiance", margin, 812f, body, contentW,
+                canvas, data.footer("Merci de votre confiance"), margin, 812f, body, contentW,
                 Layout.Alignment.ALIGN_CENTER,
             )
         }
@@ -282,6 +296,8 @@ class MarocRenderer : PdfRenderer {
         if (design.showAmountWords) {
             h += 12f + PdfText.height(data.amountInWords, words, contentW, 3)
         }
+        val notePaint = PdfText.paint(9f, 0)
+        h += 10f + PdfExtras.notesHeight(data, notePaint, notePaint, (contentW - 210).coerceAtLeast(140))
         // The signature box is part of the tail: a page that ends just above it
         // would push the stamp onto the next sheet with the totals behind.
         h += 18f + 54f

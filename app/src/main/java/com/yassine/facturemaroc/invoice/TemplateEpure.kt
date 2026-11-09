@@ -222,19 +222,28 @@ class EpureRenderer : PdfRenderer {
         PdfTotals.value(canvas, box, PdfText.money(data.total), ty - 4f, totalPaint)
         ty += 32f
 
+        var tailY = ty
         if (data.showIncoterm && data.incoterm.isNotBlank()) {
-            PdfText.draw(canvas, "Incoterms : ${data.incoterm}", margin, ty, small, contentW, maxLines = 1)
-            ty += 16f
+            PdfText.draw(canvas, "Incoterms : ${data.incoterm}", margin, tailY, small, contentW, maxLines = 1)
+            tailY += 16f
         }
 
         if (design.showAmountWords) {
-            PdfText.draw(canvas, data.amountInWords, margin, ty + 8f, words, contentW, maxLines = 4)
+            PdfText.draw(canvas, data.amountInWords, margin, tailY + 8f, words, contentW, maxLines = 4)
+            tailY += 8f + PdfText.height(data.amountInWords, words, contentW, 4)
         }
+
+        tailY = PdfExtras.drawNotes(
+            canvas, data, margin, tailY + 8f, (contentW - 160).coerceAtLeast(120), label, body,
+        )
+        PdfExtras.drawSignature(
+            canvas, data, right - PdfExtras.SIGNATURE_W, tailY + 4f, caption = label,
+        )
 
         if (design.showFooter) {
             canvas.drawLine(margin, 820f, right, 820f, Paint().apply { color = accent; strokeWidth = 0.6f })
             PdfText.draw(
-                canvas, "Merci de votre confiance", margin, 802f, small, contentW,
+                canvas, data.footer("Merci de votre confiance"), margin, 802f, small, contentW,
                 Layout.Alignment.ALIGN_CENTER,
             )
         }
@@ -250,6 +259,9 @@ class EpureRenderer : PdfRenderer {
         var h = 26f + 16f * rows + 18f + 12f + 32f
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += 8f + PdfText.height(data.amountInWords, words, contentW, 4)
+        val notePaint = PdfText.paint(9.5f, 0)
+        h += 8f + PdfExtras.notesHeight(data, notePaint, notePaint, (contentW - 160).coerceAtLeast(120))
+        h += PdfExtras.signatureHeight(data)
         return h
     }
 

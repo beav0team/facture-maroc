@@ -65,7 +65,7 @@ class BandeauRenderer : PdfRenderer {
         canvas.drawRect(0f, 0f, A4.WIDTH, BAND_H, band)
 
         var nameX = margin
-        PdfText.loadShopLogo(context, design)?.let { logo ->
+        PdfText.loadShopLogo(context, design, shop)?.let { logo ->
             // A white plate behind the logo: shop logos are drawn for white
             // paper, and a dark one on the accent would vanish into it.
             canvas.drawRect(margin, 27f, margin + 58f, 85f, Paint().apply { color = Color.WHITE })
@@ -237,18 +237,27 @@ class BandeauRenderer : PdfRenderer {
         }
         ty = bandTop + 30f + 14f
 
+        var tailY = ty
         if (data.showIncoterm && data.incoterm.isNotBlank()) {
-            PdfText.draw(canvas, "Incoterms : ${data.incoterm}", margin, ty, small, contentW, maxLines = 1)
-            ty += 16f
+            PdfText.draw(canvas, "Incoterms : ${data.incoterm}", margin, tailY, small, contentW, maxLines = 1)
+            tailY += 16f
         }
 
         if (design.showAmountWords) {
-            PdfText.draw(canvas, data.amountInWords, margin, ty + 8f, words, contentW, maxLines = 4)
+            PdfText.draw(canvas, data.amountInWords, margin, tailY + 8f, words, contentW, maxLines = 4)
+            tailY += 8f + PdfText.height(data.amountInWords, words, contentW, 4)
         }
+
+        tailY = PdfExtras.drawNotes(
+            canvas, data, margin, tailY + 8f, (contentW - 160).coerceAtLeast(120), label, body,
+        )
+        PdfExtras.drawSignature(
+            canvas, data, right - PdfExtras.SIGNATURE_W, tailY + 4f, caption = label,
+        )
 
         if (design.showFooter) {
             PdfText.draw(
-                canvas, "Merci de votre confiance", margin, 812f, small, contentW,
+                canvas, data.footer("Merci de votre confiance"), margin, 812f, small, contentW,
                 Layout.Alignment.ALIGN_CENTER,
             )
         }
@@ -264,6 +273,9 @@ class BandeauRenderer : PdfRenderer {
         var h = 22f + 16f * rows + 2f + 30f + 14f
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += 8f + PdfText.height(data.amountInWords, words, contentW, 4)
+        val notePaint = PdfText.paint(9f, 0)
+        h += 8f + PdfExtras.notesHeight(data, notePaint, notePaint, (contentW - 160).coerceAtLeast(120))
+        h += PdfExtras.signatureHeight(data)
         return h
     }
 

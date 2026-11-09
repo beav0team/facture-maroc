@@ -11,7 +11,9 @@ import com.yassine.facturemaroc.data.InvoiceData
 import com.yassine.facturemaroc.data.InvoiceDesign
 import com.yassine.facturemaroc.data.InvoiceLine
 import com.yassine.facturemaroc.data.InvoiceTemplate
+import com.yassine.facturemaroc.data.ImageBytes
 import com.yassine.facturemaroc.data.ShopSettings
+import com.yassine.facturemaroc.data.ShopSnapshot
 import com.yassine.facturemaroc.invoice.InvoicePdf
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -66,6 +68,17 @@ class InvoicePdfPagesTest {
         assertNotNull("no PDF was written for ${template.id}", file)
         return file!!
     }
+
+    /**
+     * A durable copy of a just-written PDF.
+     *
+     * [InvoicePdf] names the file after the document number, so two renders of
+     * the same invoice (one with notes, one without) land on the same path and
+     * the second silently replaces the first. Comparing the two needs the
+     * first one kept before the second is written.
+     */
+    private fun preserve(file: File, name: String): File =
+        File(file.parentFile, name).also { file.copyTo(it, overwrite = true) }
 
     private fun pageCount(file: File): Int =
         ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
@@ -161,5 +174,118 @@ class InvoicePdfPagesTest {
         val file = write(data, InvoiceTemplate.TICKET)
         assertEquals(1, pageCount(file))
         file.delete()
+    }
+
+    @Test
+    fun notesAndSignaturePrintWithoutOverflowingTheSheet() {
+        // The extras are the only content whose height is not known before the
+        // sale is measured, so a long note is exactly what pushes a one-sheet
+        // invoice onto a second sheet with the totals stranded.
+        val plain = invoice("F-20261029-9007", 3)
+        val annotated = plain.copy(
+            customerNote = "Merci de vérifier la marchandise avant de quitter l'atelier. " +
+                "Aucune réclamation ne sera acceptée après le départ du véhicule.",
+            termsNote = "Paiement comptant. Marchandise vendue en l'état.",
+            thankYouNote = "Merci de votre confiance.",
+            signature = signatureBytes(),
+        )
+
+        InvoiceTemplate.entries.forEach { template ->
+            val plainFile = write(plain, template)
+            val before = preserve(plainFile, "before-${template.id}.pdf")
+            val after = write(annotated, template)
+
+            assertEquals(
+                "${template.id} added a sheet for the notes",
+                pageCount(before),
+                pageCount(after),
+            )
+            assertTrue(
+                "${template.id} printed nothing for the notes",
+                differingPixels(after, before) > 200,
+            )
+            before.delete()
+            after.delete()
+        }
+    }
+
+    @Test
+    fun anIssuedDocumentPrintsItsOwnShopDetails() {
+        // Two shop identities, one document holding the first as a snapshot.
+        // The printed page must not follow the live settings: comparing the
+        // ink of the two renders is enough to prove the page changed, and the
+        // value-level assertion that it kept the old name lives in the JVM
+        // `ShopSnapshotTest`.
+        val snapshot = ShopSnapshot.of(
+            ShopSettings(
+                name = "Ancien Garage",
+                address = "1 rue du Souk, Fès",
+                ice = "111222333000044",
+            ),
+        )
+        val base = invoice("F-20261029-9008", 2)
+
+        val snapshotFile = write(base.copy(shop = snapshot), InvoiceTemplate.CLASSIQUE)
+        val withSnapshot = preserve(snapshotFile, "with-snapshot.pdf")
+        val withoutSnapshot = write(base, InvoiceTemplate.CLASSIQUE)
+
+        assertTrue(
+            "the snapshot did not change what was printed",
+            differingPixels(withSnapshot, withoutSnapshot) > 100,
+        )
+        assertEquals(1, pageCount(withSnapshot))
+        withSnapshot.delete()
+        withoutSnapshot.delete()
+    }
+
+    /** A small render of one page, for comparing two documents pixel by pixel. */
+    private fun renderPage(file: File): Bitmap =
+        ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+            PdfRenderer(fd).use { renderer ->
+                renderer.openPage(0).use { page ->
+                    val width = 200
+                    val height = (page.height.toFloat() / page.width * width).toInt().coerceAtLeast(1)
+                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    bitmap.eraseColor(Color.WHITE)
+                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                    bitmap
+                }
+            }
+        }
+
+    /** How many pixels two renders disagree on; 0 means the pages are identical. */
+    private fun differingPixels(a: File, b: File): Int {
+        val first = renderPage(a)
+        val second = renderPage(b)
+        val width = minOf(first.width, second.width)
+        val height = minOf(first.height, second.height)
+        var differences = 0
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                if (first.getPixel(x, y) != second.getPixel(x, y)) differences += 1
+            }
+        }
+        first.recycle()
+        second.recycle()
+        return differences
+    }
+
+    /** A small black signature image, encoded the way the app stores one. */
+    private fun signatureBytes(): ImageBytes {
+        val bitmap = Bitmap.createBitmap(160, 60, Bitmap.Config.ARGB_8888)
+        bitmap.eraseColor(Color.WHITE)
+        val canvas = android.graphics.Canvas(bitmap)
+        val paint = android.graphics.Paint().apply {
+            color = Color.BLACK
+            strokeWidth = 6f
+            isAntiAlias = true
+        }
+        canvas.drawLine(12f, 45f, 60f, 10f, paint)
+        canvas.drawLine(60f, 10f, 100f, 45f, paint)
+        canvas.drawLine(100f, 45f, 148f, 12f, paint)
+        val out = java.io.ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        bitmap.recycle()
+        return ImageBytes(out.toByteArray())
     }
 }

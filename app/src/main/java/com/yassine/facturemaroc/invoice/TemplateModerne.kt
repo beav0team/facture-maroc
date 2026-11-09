@@ -60,7 +60,7 @@ class ModerneRenderer : PdfRenderer {
 
         // ---- masthead: shop identity on the left, the document's name on the right
         var nameX = margin
-        PdfText.loadShopLogo(context, design)?.let { logo ->
+        PdfText.loadShopLogo(context, design, shop)?.let { logo ->
             nameX = PdfText.drawLogo(canvas, logo, margin, 40f, 44f) + 14f
         }
         PdfText.draw(canvas, shop.name, nameX, 22f, shopName, (right - nameX - 160f).toInt(), maxLines = 2)
@@ -210,6 +210,14 @@ class ModerneRenderer : PdfRenderer {
             ty += PdfText.height(data.amountInWords, words, contentW, 4) + 10f
         }
 
+        ty = PdfExtras.drawNotes(
+            canvas, data, margin, ty, (contentW - 160).coerceAtLeast(120), label, body,
+        )
+        PdfExtras.drawSignature(
+            canvas, data, right - PdfExtras.SIGNATURE_W, ty, caption = label,
+        )
+        if (data.hasSignature) ty += PdfExtras.signatureHeight(data)
+
         if (design.showPaymentMethod && data.showPaymentMethod) {
             PdfText.draw(
                 canvas, "Mode de paiement : ${data.paymentMethod.french}",
@@ -230,7 +238,7 @@ class ModerneRenderer : PdfRenderer {
 
         if (design.showFooter) {
             PdfText.draw(
-                canvas, "Merci de votre confiance", margin, 812f, label, contentW,
+                canvas, data.footer("Merci de votre confiance"), margin, 812f, label, contentW,
                 Layout.Alignment.ALIGN_CENTER,
             )
         }
@@ -246,6 +254,9 @@ class ModerneRenderer : PdfRenderer {
         var h = 56f + 16f * rows
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += PdfText.height(data.amountInWords, words, contentW, 4) + 10f
+        val notePaint = PdfText.paint(10f, 0)
+        h += PdfExtras.notesHeight(data, notePaint, notePaint, (contentW - 160).coerceAtLeast(120))
+        h += PdfExtras.signatureHeight(data)
         if (design.showPaymentMethod && data.showPaymentMethod) h += 14f
         if (data.isDevis) h += 28f
         return h

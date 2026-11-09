@@ -34,6 +34,8 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Draw
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PersonAdd
@@ -41,7 +43,9 @@ import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.StickyNote2
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -139,6 +143,8 @@ fun BuilderScreen(
     var showDesignPicker by remember { mutableStateOf(false) }
     var showDiscountDialog by remember { mutableStateOf(false) }
     var showValidityDialog by remember { mutableStateOf(false) }
+    var showSignatureDialog by remember { mutableStateOf(false) }
+    var editingNote by remember { mutableStateOf<NoteKind?>(null) }
     var editingLine by remember { mutableStateOf<Int?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
     var sharing by remember { mutableStateOf(false) }
@@ -427,6 +433,19 @@ fun BuilderScreen(
                 }
             }
 
+            item(key = "notes") {
+                NotesCard(
+                    customerNote = invoice.customerNote,
+                    termsNote = invoice.termsNote,
+                    thankYouNote = invoice.thankYouNote,
+                    hasSignature = invoice.hasSignature,
+                    onCustomerNote = { editingNote = NoteKind.CUSTOMER },
+                    onTermsNote = { editingNote = NoteKind.TERMS },
+                    onThankYouNote = { editingNote = NoteKind.THANK_YOU },
+                    onSignature = { showSignatureDialog = true },
+                )
+            }
+
             if (lines.isNotEmpty()) {
                 item(key = "words") {
                     AmountWordsCard(invoice.amountInWords)
@@ -542,6 +561,46 @@ fun BuilderScreen(
         )
     }
 
+    editingNote?.let { kind ->
+        NoteDialog(
+            title = when (kind) {
+                NoteKind.CUSTOMER -> "Note au client"
+                NoteKind.TERMS -> "Conditions de règlement"
+                NoteKind.THANK_YOU -> "Remerciement"
+            },
+            initial = when (kind) {
+                NoteKind.CUSTOMER -> invoice.customerNote
+                NoteKind.TERMS -> invoice.termsNote
+                NoteKind.THANK_YOU -> invoice.thankYouNote
+            },
+            placeholder = when (kind) {
+                NoteKind.CUSTOMER -> "Ex: Merci de vérifier la marchandise avant de quitter l'atelier."
+                NoteKind.TERMS -> "Ex: Paiement à 30 jours. Marchandise vendue au comptant."
+                NoteKind.THANK_YOU -> "Ex: Merci de votre confiance."
+            },
+            onConfirm = { text ->
+                when (kind) {
+                    NoteKind.CUSTOMER -> viewModel.setCustomerNote(text)
+                    NoteKind.TERMS -> viewModel.setTermsNote(text)
+                    NoteKind.THANK_YOU -> viewModel.setThankYouNote(text)
+                }
+                editingNote = null
+            },
+            onDismiss = { editingNote = null },
+        )
+    }
+
+    if (showSignatureDialog) {
+        SignatureDialog(
+            initial = invoice.signature?.bytes,
+            onSave = {
+                viewModel.setSignature(it)
+                showSignatureDialog = false
+            },
+            onDismiss = { showSignatureDialog = false },
+        )
+    }
+
     editingLine?.let { index ->
         val line = lines.getOrNull(index)
         if (line == null) {
@@ -602,6 +661,68 @@ fun BuilderScreen(
         )
     }
 }
+
+@Composable
+private fun NotesCard(
+    customerNote: String,
+    termsNote: String,
+    thankYouNote: String,
+    hasSignature: Boolean,
+    onCustomerNote: () -> Unit,
+    onTermsNote: () -> Unit,
+    onThankYouNote: () -> Unit,
+    onSignature: () -> Unit,
+) {
+    Card(
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column {
+            OptionRow(
+                icon = Icons.Filled.StickyNote2,
+                label = "Note au client",
+                value = noteSummary(customerNote),
+                onClick = onCustomerNote,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            OptionRow(
+                icon = Icons.Filled.Gavel,
+                label = "Conditions de règlement",
+                value = noteSummary(termsNote),
+                onClick = onTermsNote,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            OptionRow(
+                icon = Icons.Filled.VolunteerActivism,
+                label = "Remerciement",
+                value = noteSummary(thankYouNote),
+                onClick = onThankYouNote,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            OptionRow(
+                icon = Icons.Filled.Draw,
+                label = "Signature ou cachet",
+                value = if (hasSignature) "Ajoutée" else "Aucune",
+                onClick = onSignature,
+            )
+        }
+    }
+}
+
+/** A note as one short line in the card, without the line breaks. */
+private fun noteSummary(text: String): String {
+    val oneLine = text.trim().replace(Regex("\\s*\\r?\\n\\s*"), " ")
+    return when {
+        oneLine.isEmpty() -> "Aucune"
+        oneLine.length <= 30 -> oneLine
+        else -> oneLine.take(30).trimEnd() + "…"
+    }
+}
+
+private enum class NoteKind { CUSTOMER, TERMS, THANK_YOU }
 
 @Composable
 private fun DocumentTypeRow(

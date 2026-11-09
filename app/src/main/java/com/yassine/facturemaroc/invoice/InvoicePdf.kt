@@ -66,8 +66,11 @@ object InvoicePdf {
         design: InvoiceDesign,
     ): File? = try {
         val template = design.template
+        // An issued document draws the shop it was issued for; only a draft
+        // falls back to the live settings.
+        val printShop = data.printingShop(shop)
         val height = if (template.isRoll) {
-            TicketRenderer.height(data, shop, design)
+            TicketRenderer.height(data, printShop, design)
         } else {
             PAGE_H
         }
@@ -79,7 +82,7 @@ object InvoicePdf {
         file.outputStream().use { out ->
             val doc = PdfDocument()
             val pager = DocumentPager(doc, width, height)
-            rendererFor(template).draw(context, pager, data, shop, design)
+            rendererFor(template).draw(context, pager, data, printShop, design)
             pager.finish()
             pages = pager.pageCount
             doc.writeTo(out)
@@ -160,10 +163,11 @@ object InvoicePdf {
         widthPx: Int,
     ): Bitmap? {
         val template = design.template
+        val printShop = data.printingShop(shop)
         val scale = widthPx.toDouble() /
             (if (template.isRoll) TicketRenderer.WIDTH.toDouble() else PAGE_W.toDouble())
         val height = if (template.isRoll) {
-            (TicketRenderer.height(data, shop, design) * scale).toInt()
+            (TicketRenderer.height(data, printShop, design) * scale).toInt()
         } else {
             (PAGE_H * scale).toInt()
         }
@@ -181,7 +185,7 @@ object InvoicePdf {
             // One page only: a renderer that asks for a second sheet is told no
             // and stops, so the preview shows the first page of the real
             // document instead of stacking page two on top of page one.
-            rendererFor(template).draw(context, PreviewSurface(canvas), data, shop, design)
+            rendererFor(template).draw(context, PreviewSurface(canvas), data, printShop, design)
             bitmap
         } catch (e: Exception) {
             android.util.Log.w("InvoicePdf", "preview failed for ${template.id}", e)

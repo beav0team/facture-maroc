@@ -29,6 +29,23 @@ data class InvoiceData(
     val incoterm: String = "",
     /** Auto-entrepreneur: TVA non applicable, whatever the configured rate. */
     val vatNotApplicable: Boolean = false,
+    /**
+     * The shop's details as they were when this document was issued.
+     *
+     * Null on a draft: a draft is written for today's shop, so it follows the
+     * live settings until it is issued. From then on the copy wins, because an
+     * old invoice reprinted after an address change must still say what it
+     * said when the customer received it.
+     */
+    val shop: ShopSnapshot? = null,
+    /** Free text printed under the totals — a note for this client. */
+    val customerNote: String = "",
+    /** Payment or delivery conditions, printed under the note. */
+    val termsNote: String = "",
+    /** Replaces the stock thank-you line at the foot of the document. */
+    val thankYouNote: String = "",
+    /** The shop's signature or stamp, drawn at the end of the document. */
+    val signature: ImageBytes? = null,
 ) {
     /**
      * Total HT as the page adds it up: every line rounded to the centime, then
@@ -180,6 +197,29 @@ data class InvoiceData(
 
     /** Whether this document is a quote with validity date. */
     val isDevis: Boolean get() = documentType == DocumentType.DEVIS
+
+    /**
+     * The shop details to draw: the issue-time copy, or [live] for a draft.
+     *
+     * Every renderer and the XML writer read the shop through this, so a
+     * reprint cannot mix an old document with today's identifiers.
+     */
+    fun printingShop(live: ShopSettings): ShopSettings = shop?.toSettings() ?: live
+
+    /** Whether the free-text block has anything to print. */
+    val hasNotes: Boolean
+        get() = customerNote.isNotBlank() || termsNote.isNotBlank()
+
+    /** Whether a signature or stamp image was captured for this document. */
+    val hasSignature: Boolean get() = signature != null
+
+    /**
+     * The line at the foot of the page.
+     *
+     * A shop that wrote its own thank-you note gets it; otherwise the template's
+     * stock line, which is why the default is passed in rather than fixed here.
+     */
+    fun footer(default: String): String = thankYouNote.trim().ifBlank { default }
 }
 
 /** Half-up rounding to two decimals. */

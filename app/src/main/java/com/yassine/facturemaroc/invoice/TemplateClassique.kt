@@ -59,7 +59,7 @@ class ClassiqueRenderer : PdfRenderer {
         // ---- masthead: who is writing, then what is being written
         var leftY = 40f
         var nameX = margin
-        PdfText.loadShopLogo(context, design)?.let { logo ->
+        PdfText.loadShopLogo(context, design, shop)?.let { logo ->
             nameX = PdfText.drawLogo(canvas, logo, margin, 58f, 38f) + 12f
         }
         val shopW = (right - 200f - nameX).toInt().coerceAtLeast(160)
@@ -232,12 +232,22 @@ class ClassiqueRenderer : PdfRenderer {
             ty += 16f
         }
 
+        var tailY = ty
         if (design.showAmountWords) {
-            PdfText.draw(canvas, data.amountInWords, margin, ty + 8f, words, contentW, maxLines = 4)
+            PdfText.draw(canvas, data.amountInWords, margin, tailY + 8f, words, contentW, maxLines = 4)
+            tailY += 8f + PdfText.height(data.amountInWords, words, contentW, 4)
         }
 
+        tailY = PdfExtras.drawNotes(
+            canvas, data, margin, tailY + 8f, (contentW - 160).coerceAtLeast(120),
+            label, body,
+        )
+        PdfExtras.drawSignature(
+            canvas, data, right - PdfExtras.SIGNATURE_W, tailY + 4f, caption = label,
+        )
+
         if (design.showFooter) {
-            footer(canvas, margin, right, label)
+            footer(canvas, margin, right, data.footer("Merci de votre confiance"), label)
         }
     }
 
@@ -252,6 +262,9 @@ class ClassiqueRenderer : PdfRenderer {
         var h = 54f + 15f * rows
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += 8f + PdfText.height(data.amountInWords, words, contentW, 4)
+        val notePaint = PdfText.paint(9f, 0)
+        h += 8f + PdfExtras.notesHeight(data, notePaint, notePaint, (contentW - 160).coerceAtLeast(120))
+        h += PdfExtras.signatureHeight(data)
         return h
     }
 
@@ -298,9 +311,9 @@ class ClassiqueRenderer : PdfRenderer {
         canvas.drawLine(margin, 56f, right, 56f, hairline)
     }
 
-    private fun footer(canvas: Canvas, margin: Float, right: Float, label: TextPaint) {
+    private fun footer(canvas: Canvas, margin: Float, right: Float, text: String, label: TextPaint) {
         PdfText.draw(
-            canvas, "Merci de votre confiance", margin, 812f, label, (right - margin).toInt(),
+            canvas, text, margin, 812f, label, (right - margin).toInt(),
             Layout.Alignment.ALIGN_CENTER,
         )
     }

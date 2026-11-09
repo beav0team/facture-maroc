@@ -186,9 +186,13 @@ class TicketRenderer : PdfRenderer {
             y += PdfText.height(data.amountInWords, words, contentW, 6) + 4f
         }
 
+        // Notes only on the roll: an 80mm receipt has no room for a stamp, and
+        // a signature image on thermal paper is a grey smudge.
+        y = PdfExtras.drawNotes(canvas, data, margin, y + 4f, contentW, smallBold, small, maxLines = 4)
+
         if (design.showFooter) {
             PdfText.draw(
-                canvas, "Merci de votre visite", margin, y, small, contentW,
+                canvas, data.footer("Merci de votre visite"), margin, y, small, contentW,
                 Layout.Alignment.ALIGN_CENTER, maxLines = 1,
             )
             y += 9f

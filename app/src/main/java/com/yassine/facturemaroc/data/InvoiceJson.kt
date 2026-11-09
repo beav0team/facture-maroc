@@ -2,6 +2,7 @@ package com.yassine.facturemaroc.data
 
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.Base64
 
 /**
  * An invoice written to JSON, and read back without losing a field.
@@ -92,6 +93,60 @@ object InvoiceJson {
         put("referenceNumber", data.referenceNumber)
         put("incoterm", data.incoterm)
         put("vatNotApplicable", data.vatNotApplicable)
+        put("customerNote", data.customerNote)
+        put("termsNote", data.termsNote)
+        put("thankYouNote", data.thankYouNote)
+        // Omitted on a draft, so the file says "no snapshot" by saying nothing.
+        data.shop?.let { put("shop", shopSnapshotToJson(it)) }
+        data.signature?.let {
+            put("signature", Base64.getEncoder().encodeToString(it.bytes))
+        }
+    }
+
+    /** The issue-time shop copy, as stored with a document. */
+    fun shopSnapshotToJson(snapshot: ShopSnapshot): JSONObject = JSONObject().apply {
+        put("name", snapshot.name)
+        put("address", snapshot.address)
+        put("phone", snapshot.phone)
+        put("email", snapshot.email)
+        put("ice", snapshot.ice)
+        put("ifNumber", snapshot.ifNumber)
+        put("rc", snapshot.rc)
+        put("patente", snapshot.patente)
+        put("cnss", snapshot.cnss)
+        put("vatPercent", snapshot.vatPercent)
+        put("vatNotApplicable", snapshot.vatNotApplicable)
+        put("pricesIncludeVat", snapshot.pricesIncludeVat)
+        snapshot.logo?.let { put("logo", Base64.getEncoder().encodeToString(it.bytes)) }
+    }
+
+    /**
+     * Reads the shop copy, or null when the record predates it.
+     *
+     * Null is the honest answer for an old document: inventing a snapshot from
+     * today's settings would claim the invoice always carried them.
+     */
+    fun shopSnapshotFromJson(obj: JSONObject?): ShopSnapshot? {
+        if (obj == null) return null
+        val logo = runCatching {
+            obj.optString("logo", "").takeIf { it.isNotBlank() }
+                ?.let { Base64.getDecoder().decode(it) }
+        }.getOrNull()
+        return ShopSnapshot(
+            name = obj.optString("name", ""),
+            address = obj.optString("address", ""),
+            phone = obj.optString("phone", ""),
+            email = obj.optString("email", ""),
+            ice = obj.optString("ice", ""),
+            ifNumber = obj.optString("ifNumber", ""),
+            rc = obj.optString("rc", ""),
+            patente = obj.optString("patente", ""),
+            cnss = obj.optString("cnss", ""),
+            vatPercent = obj.optDouble("vatPercent", 20.0).let { if (it.isNaN()) 20.0 else it },
+            vatNotApplicable = obj.optBoolean("vatNotApplicable", false),
+            pricesIncludeVat = obj.optBoolean("pricesIncludeVat", false),
+            logo = logo?.takeIf { it.isNotEmpty() }?.let(::ImageBytes),
+        )
     }
 
     /**
@@ -148,6 +203,14 @@ object InvoiceJson {
             referenceNumber = obj.optString("referenceNumber", ""),
             incoterm = obj.optString("incoterm", ""),
             vatNotApplicable = obj.optBoolean("vatNotApplicable", false),
+            shop = shopSnapshotFromJson(obj.optJSONObject("shop")),
+            customerNote = obj.optString("customerNote", ""),
+            termsNote = obj.optString("termsNote", ""),
+            thankYouNote = obj.optString("thankYouNote", ""),
+            signature = runCatching {
+                obj.optString("signature", "").takeIf { it.isNotBlank() }
+                    ?.let { Base64.getDecoder().decode(it) }
+            }.getOrNull()?.takeIf { it.isNotEmpty() }?.let(::ImageBytes),
         )
     }
 }

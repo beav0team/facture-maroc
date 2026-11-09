@@ -15,6 +15,7 @@ import android.text.TextPaint
 import android.text.TextUtils
 import com.yassine.facturemaroc.data.InvoiceDesign
 import com.yassine.facturemaroc.data.InvoiceDesignStore
+import com.yassine.facturemaroc.data.ShopSettings
 
 object PdfText {
 
@@ -158,8 +159,15 @@ object PdfText {
      * than fail to be produced. A file that is not a decodable image is treated
      * the same way as no file at all.
      */
-    fun loadShopLogo(context: Context, design: InvoiceDesign): Bitmap? {
+    fun loadShopLogo(context: Context, design: InvoiceDesign, shop: ShopSettings): Bitmap? {
         if (!design.logoEnabled) return null
+        // A document issued before the logo was changed carries its own copy;
+        // the live settings carry none (the logo lives in a file), so the file
+        // is only the fallback for drafts and for records made before snapshots.
+        shop.logoBytes?.takeIf { it.isNotEmpty() }?.let { bytes ->
+            runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
+                .getOrNull()?.let { return it }
+        }
         val file = InvoiceDesignStore(context).logoFile(context)
         if (!file.isFile) return null
         return runCatching { BitmapFactory.decodeFile(file.path) }.getOrNull()

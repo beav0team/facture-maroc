@@ -975,3 +975,53 @@ fun ValidityDateDialog(
         )
     }
 }
+
+/**
+ * A free-text note for the document.
+ *
+ * Multi-line on purpose: "conditions de règlement" is a sentence, not a label,
+ * and a single-line field hid everything after the first phrase. [initial] is
+ * the value already on the invoice, so reopening the dialog shows what will
+ * print rather than an empty box.
+ */
+@Composable
+fun NoteDialog(
+    title: String,
+    initial: String,
+    placeholder: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var text by remember(initial) { mutableStateOf(initial) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                placeholder = { Text(placeholder) },
+                minLines = 3,
+                maxLines = 6,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(text.trim()) },
+                shape = MaterialTheme.shapes.small,
+            ) {
+                Text("Enregistrer")
+            }
+        },
+        dismissButton = {
+            Row {
+                if (initial.isNotBlank()) {
+                    TextButton(onClick = { onConfirm("") }) { Text("Effacer") }
+                }
+                TextButton(onClick = onDismiss) { Text("Annuler") }
+            }
+        },
+    )
+}

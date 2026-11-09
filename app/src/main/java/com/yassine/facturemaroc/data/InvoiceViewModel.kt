@@ -70,6 +70,18 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     private val _incoterm = MutableStateFlow("")
     val incoterm: StateFlow<String> = _incoterm.asStateFlow()
 
+    private val _customerNote = MutableStateFlow("")
+    val customerNote: StateFlow<String> = _customerNote.asStateFlow()
+
+    private val _termsNote = MutableStateFlow("")
+    val termsNote: StateFlow<String> = _termsNote.asStateFlow()
+
+    private val _thankYouNote = MutableStateFlow("")
+    val thankYouNote: StateFlow<String> = _thankYouNote.asStateFlow()
+
+    private val _signature = MutableStateFlow<ImageBytes?>(null)
+    val signature: StateFlow<ImageBytes?> = _signature.asStateFlow()
+
     private val _supplier = MutableStateFlow<InvoiceClient?>(null)
     val supplier: StateFlow<InvoiceClient?> = _supplier.asStateFlow()
 
@@ -129,6 +141,10 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         supplier = _supplier.value,
         referenceNumber = _referenceNumber.value,
         incoterm = _incoterm.value,
+        customerNote = _customerNote.value,
+        termsNote = _termsNote.value,
+        thankYouNote = _thankYouNote.value,
+        signature = _signature.value,
     )
 
     private fun refreshInvoice() {
@@ -321,6 +337,27 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         refreshInvoice()
     }
 
+    fun setCustomerNote(note: String) {
+        _customerNote.value = note
+        refreshInvoice()
+    }
+
+    fun setTermsNote(note: String) {
+        _termsNote.value = note
+        refreshInvoice()
+    }
+
+    fun setThankYouNote(note: String) {
+        _thankYouNote.value = note
+        refreshInvoice()
+    }
+
+    /** Sets or clears the signature image. Null removes it. */
+    fun setSignature(bytes: ByteArray?) {
+        _signature.value = bytes?.takeIf { it.isNotEmpty() }?.let(::ImageBytes)
+        refreshInvoice()
+    }
+
     /**
      * Saves the shop's settings and re-reads the draft at the new rate.
      *
@@ -385,6 +422,10 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _referenceNumber.value = data.referenceNumber
         _incoterm.value = data.incoterm
         _supplier.value = data.supplier
+        _customerNote.value = data.customerNote
+        _termsNote.value = data.termsNote
+        _thankYouNote.value = data.thankYouNote
+        _signature.value = data.signature
         repriceForClient(_client.value)
         refreshInvoice()
     }
@@ -400,6 +441,10 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _referenceNumber.value = ""
         _incoterm.value = ""
         _supplier.value = null
+        _customerNote.value = ""
+        _termsNote.value = ""
+        _thankYouNote.value = ""
+        _signature.value = null
         refreshInvoice()
     }
 
@@ -468,7 +513,26 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         supplier = _supplier.value,
         referenceNumber = _referenceNumber.value,
         incoterm = _incoterm.value,
+        shop = snapshotOfShop(),
+        customerNote = _customerNote.value,
+        termsNote = _termsNote.value,
+        thankYouNote = _thankYouNote.value,
+        signature = _signature.value,
     )
+
+    /**
+     * The shop as it is at this moment, logo included.
+     *
+     * The logo lives in a file, not in [ShopSettings], so it is read here
+     * rather than trusted from the settings object. Called only when a document
+     * is really issued, and both callers already run on the IO dispatcher.
+     */
+    private fun snapshotOfShop(): ShopSnapshot {
+        val app = getApplication<Application>()
+        val logoFile = InvoiceDesignStore(app).logoFile(app)
+        val logo = runCatching { if (logoFile.isFile) logoFile.readBytes() else null }.getOrNull()
+        return ShopSnapshot.of(_shop.value, logo)
+    }
 
     /** The draft as it currently stands, for a preview. */
     fun previewData(): InvoiceData = buildInvoiceData()
@@ -637,7 +701,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         val type = _documentType.value
         val before = InvoiceNumber.counters(app)[type.id] ?: 1
         val issued = buildData()
-        val xml = InvoiceXml.build(issued, _shop.value)
+        val xml = InvoiceXml.build(issued, issued.printingShop(_shop.value))
         if (!writeText(uri, xml)) {
             InvoiceNumber.rewind(app, type, before)
             return@withContext XmlExportOutcome.Failed
@@ -667,7 +731,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     suspend fun exportRecordXml(record: InvoiceRecord, uri: Uri): XmlExportOutcome =
         withContext(Dispatchers.IO) {
             if (record.data.lines.isEmpty()) return@withContext XmlExportOutcome.NothingToExport
-            val xml = InvoiceXml.build(record.data, _shop.value)
+            val xml = InvoiceXml.build(record.data, record.data.printingShop(_shop.value))
             if (!writeText(uri, xml)) return@withContext XmlExportOutcome.Failed
             archive.record(record.data, xml)
             XmlExportOutcome.Saved
