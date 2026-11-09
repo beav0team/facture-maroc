@@ -84,3 +84,8 @@ fastlane/test_output/**/*.png
 
 # Signing secrets: only keystore.properties.example is committed
 keystore.properties
+
+# Dossier ANRT personnel
+ANRT_*.md
+ANRT_*.pdf
+Enreg_nom_domaine_terme_reserve_*.pdf

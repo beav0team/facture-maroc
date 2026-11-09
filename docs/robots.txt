@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://beav0team.github.io/facture-maroc/sitemap.xml
+Sitemap: https://factureapp.ma/sitemap.xml
