@@ -39,8 +39,14 @@ un APK** : Play n'accepte que les App Bundles pour une nouvelle application.
   moins deux captures 16:9 ou 9:16 ; les nôtres sont en 1080 × 2160.
 - **Catégorie** : Business. **Coordonnées** : e-mail de contact obligatoire
   (public et vérifié par Google) — à saisir, il ne peut pas être deviné.
-- **Politique de confidentialité** :
-  `https://beav0team.github.io/facture-maroc/privacy.html` (en ligne, vérifiée).
+- **Politique de confidentialité** : `https://factureapp.ma/privacy.html`
+  (en ligne, vérifiée).
+
+> **Note domaine** : `factureapp.ma` est servi en HTTP tant que GitHub n'a pas
+> émis le certificat ; l'ancienne URL
+> `beav0team.github.io/facture-maroc/privacy.html` redirige en 301 vers
+> `https://factureapp.ma/privacy.html`. Mettre à jour l'URL dans la fiche Play
+> dès que HTTPS est actif.
 
 ## 4. Contenu de l'application (obligatoire avant toute publication)
 

@@ -101,11 +101,11 @@ envoyée.
 
 Politique complète : [`docs/privacy.html`](docs/privacy.html) — publiée sur
 GitHub Pages à l’adresse
-`https://beav0team.github.io/facture-maroc/privacy.html`.
+`https://factureapp.ma/privacy.html`.
 
 Le site public — présentation, captures, questions fréquentes et inscription des
 testeurs — est publié depuis `docs/` :
-`https://beav0team.github.io/facture-maroc/`. Il est en HTML et CSS seuls, sans
+`https://factureapp.ma/`. Il est en HTML et CSS seuls, sans
 construction ni JavaScript, et n’appelle **aucune ressource externe**, polices
 comprises : une page qui promet l’absence de réseau ne peut pas charger Google
 Fonts.

@@ -10,9 +10,9 @@ depuis le 30 octobre 2026 ; seule l’adresse e-mail de contact reste à saisir.
 - **Catégorie** : Business
 - **Public** : 18 ans et plus (outil professionnel)
 - **Langue principale** : Français
-- **Site web** : `https://beav0team.github.io/facture-maroc/privacy.html`
+- **Site web** : `https://factureapp.ma/privacy.html`
 - **E-mail de contact** : à renseigner dans Play Console (obligatoire, vérifié par Google)
-- **Politique de confidentialité** : `https://beav0team.github.io/facture-maroc/privacy.html`
+- **Politique de confidentialité** : `https://factureapp.ma/privacy.html`
 
 ## Description complète
 
