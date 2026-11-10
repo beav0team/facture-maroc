@@ -36,9 +36,31 @@ private const val KEY_LAST_RUN = "lastRun"
  */
 class InvoiceViewModel(application: Application) : AndroidViewModel(application) {
 
+    /**
+     * The last storage failure, for the screens to show and then clear.
+     *
+     * A write that fails is not a detail: the list on screen and the file on
+     * disk disagree, and the shop would only find out on the next launch, when
+     * the article or the invoice is gone.
+     */
+    private val _writeError = MutableStateFlow<String?>(null)
+    val writeError: StateFlow<String?> = _writeError.asStateFlow()
+
+    /** Marks the message as shown, so it does not reappear on the next edit. */
+    fun clearWriteError() {
+        _writeError.value = null
+    }
+
+    private fun reportWriteError(message: String) {
+        _writeError.value = message
+    }
+
     val clients = ClientStore(application)
-    val savedItems = SavedItemStore(application)
-    val invoices = InvoiceStore(application)
+    val savedItems = SavedItemStore(
+        File(application.filesDir, SavedItemStore.FILE),
+        StockLedger(File(application.filesDir, StockLedger.FILE)),
+    ) { reportWriteError(it) }
+    val invoices = InvoiceStore(application) { reportWriteError(it) }
 
     /**
      * The goods receipts, and the stock movements they cause.
@@ -46,7 +68,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * Built on the same catalogue instance the rest of the app edits: a receipt
      * written through a second store would move a shelf nobody is looking at.
      */
-    val purchases = PurchaseStore(application, savedItems)
+    val purchases = PurchaseStore(application, savedItems) { reportWriteError(it) }
 
     /**
      * The tamper-evident copy of every exported document.

@@ -82,7 +82,14 @@ data class InvoiceRecord(
  * that was already shared — the PDF the customer received is — so a corrupted
  * file costs the history, never the ability to invoice.
  */
-class InvoiceStore(private val context: Context) {
+class InvoiceStore(
+    private val context: Context,
+    /**
+     * Told when a write fails, so the screens can say so instead of showing a
+     * document the file never kept.
+     */
+    private val onWriteError: (String) -> Unit = {},
+) {
 
     private val file = File(context.filesDir, FILE)
     private val _invoices = MutableStateFlow(load())
@@ -134,8 +141,7 @@ class InvoiceStore(private val context: Context) {
         persist(records.sortedByDescending { it.updatedAt })
     }
 
-    private fun persist(list: List<InvoiceRecord>) {
-        _invoices.value = list
+    private fun persist(list: List<InvoiceRecord>): Boolean {
         val payload = JSONObject().apply {
             put("version", 1)
             put(
@@ -143,7 +149,7 @@ class InvoiceStore(private val context: Context) {
                 JSONArray().apply { list.forEach { put(InvoiceJson.recordToJson(it)) } },
             )
         }
-        runCatching {
+        val written = runCatching {
             val tmp = File(file.parentFile, "${file.name}.tmp")
             tmp.writeText(payload.toString())
             if (!tmp.renameTo(file)) {
@@ -151,8 +157,14 @@ class InvoiceStore(private val context: Context) {
                 tmp.delete()
             }
         }.onFailure {
-            android.util.Log.w("InvoiceStore", "could not save the invoice history", it)
+            android.util.Log.e("InvoiceStore", "could not save the invoice history", it)
+        }.isSuccess
+        if (!written) {
+            onWriteError("L'historique n'a pas pu être enregistré. Vérifiez l'espace libre.")
+            return false
         }
+        _invoices.value = list
+        return true
     }
 
     private fun load(): List<InvoiceRecord> {

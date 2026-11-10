@@ -24,6 +24,14 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    testOptions {
+        // The stores log what they refuse to load. On the JVM the Android Log
+        // stub throws instead of writing, which would turn "the catalogue is
+        // corrupted" into "the test crashed"; the default values let the code
+        // under test run unchanged.
+        unitTests.isReturnDefaultValues = true
+    }
+
     signingConfigs {
         create("release") {
             if (keystoreProperties.containsKey("storeFile")) {

@@ -267,6 +267,16 @@ fun HomeScreen(
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // A write that failed leaves the screen and the file disagreeing, so it is
+    // said out loud rather than left to be discovered after a relaunch.
+    val writeError by viewModel.writeError.collectAsStateWithLifecycle()
+    LaunchedEffect(writeError) {
+        writeError?.let { message ->
+            snackbar.showSnackbar(message)
+            viewModel.clearWriteError()
+        }
+    }
+
     val xmlLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/xml"),
     ) { uri: Uri? ->
