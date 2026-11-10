@@ -49,10 +49,17 @@ Travail sur `master`, non publié : la 0.11.1 reste la version livrée.
 - Formulaire d'article en pleine page (`ItemEditorScreen`) : en-tête, contenu
   défilant, et « Annuler / Enregistrer » dans une barre fixe — une boîte de
   dialogue coupait le formulaire au milieu à 360 dp.
-- Paramètres : index de cinq groupes avec recherche (Boutique, Facturation,
-  Catalogue et stock, Données, Diagnostic), retour = un cran en arrière.
-  « Diagnostic » est séparé parce que recalculer le stock est une réparation,
-  pas une préférence.
+- Paramètres : index de cinq groupes avec recherche insensible aux accents
+  (Boutique, Facturation, Catalogue et stock, Données, Diagnostic), valeur
+  courante affichée sous chaque groupe (« TVA 20 % », « Version … »), retour =
+  un cran en arrière. « Diagnostic » est séparé parce que recalculer le stock
+  est une réparation, pas une préférence.
+- Paramètres, contenu réorganisé : « Paiement et banque » éclaté en
+  « Coordonnées bancaires » (Boutique) et « Retard de paiement » +
+  « Nom des fichiers partagés » (Facturation) ; « Export comptable » séparé de
+  la sauvegarde complète ; logo ramené à une section comme les autres ;
+  « À propos » ajouté (version installée, aucune donnée ne sort) ; une seule
+  action « Enregistrer », et seulement dans un groupe.
 
 **Reste**
 

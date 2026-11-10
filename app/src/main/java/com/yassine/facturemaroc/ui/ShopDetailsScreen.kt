@@ -122,14 +122,15 @@ private enum class SettingsGroup(
 ) {
     SHOP(
         "Boutique",
-        "Identité, mentions légales, banque",
+        "Identité, logo, mentions légales, banque",
         "nom adresse téléphone email logo ice if rc patente cnss banque rib compte",
     ),
     INVOICING(
         "Facturation",
-        "TVA, numérotation, conditions de règlement",
-        "tva taux remise prix ht ttc conditions règlement retard pénalité " +
-            "numérotation préfixe compteur annuel prochain numéro facture devis",
+        "TVA, numérotation, nom des fichiers, retard",
+        "tva taux remise prix ht ttc conditions règlement retard pénalité clause " +
+            "numérotation préfixe compteur annuel prochain numéro facture devis " +
+            "pdf nom fichier partagé",
     ),
     CATALOGUE(
         "Catalogue et stock",
@@ -139,13 +140,13 @@ private enum class SettingsGroup(
     ),
     DATA(
         "Données",
-        "Sauvegardes, archive, export comptable",
+        "Sauvegardes, export comptable, archive",
         "sauvegarde restauration archive export comptable csv json copies automatiques",
     ),
     DIAGNOSTIC(
         "Diagnostic",
-        "Journal du stock, réparations",
-        "journal vérifier recalculer réparer écart version licence",
+        "Stock, journal, réparations, version",
+        "journal vérifier recalculer réparer écart version à propos licence données",
     ),
     ;
 
@@ -161,22 +162,6 @@ private enum class SettingsGroup(
 private fun String.normalise(): String =
     java.text.Normalizer.normalize(trim().lowercase(), java.text.Normalizer.Form.NFD)
         .replace(Regex("\\p{Mn}+"), "")
-
-/** Where each section lives, so the index and the scroll cannot disagree. */
-private val SETTINGS_GROUP_OF_KEY: Map<String, SettingsGroup> = mapOf(
-    "logo" to SettingsGroup.SHOP,
-    "identity" to SettingsGroup.SHOP,
-    "legal" to SettingsGroup.SHOP,
-    "payment" to SettingsGroup.SHOP,
-    "vat" to SettingsGroup.INVOICING,
-    "numbering" to SettingsGroup.INVOICING,
-    "articles" to SettingsGroup.CATALOGUE,
-    "valuation" to SettingsGroup.CATALOGUE,
-    "backup" to SettingsGroup.DATA,
-    "auto-backup" to SettingsGroup.DATA,
-    "archive" to SettingsGroup.DATA,
-    "stock" to SettingsGroup.DIAGNOSTIC,
-)
 
 /**
  * The shop's own details: what appears at the top of every document.
@@ -243,6 +228,19 @@ fun ShopDetailsScreen(
         mutableStateOf(settings.showItemFolder)
     }
     var costMethod by remember(settings.costMethod) { mutableStateOf(settings.costMethod) }
+    /*
+     * What the About block prints. Read from the package manager rather than a
+     * constant: the version in the manifest is the one installed, and a build
+     * that forgets one of the two numbers would otherwise lie in the screen
+     * the shop is told to quote in a bug report.
+     */
+    val versionLabel = remember {
+        runCatching {
+            val info = context.packageManager.getPackageInfo(context.packageName, 0)
+            "${info.versionName} (${info.longVersionCode})"
+        }.getOrDefault("inconnue")
+    }
+
     var logoVersion by remember { mutableIntStateOf(0) }
 
     val snackbar = remember { SnackbarHostState() }
@@ -452,25 +450,27 @@ fun ShopDetailsScreen(
                         modifier = Modifier.semantics { heading() },
                     )
                 },
-                actions = {
-                    TextButton(onClick = { save() }) { Text("Enregistrer") }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),
             )
         },
         bottomBar = {
-            Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 12.dp) {
-                Button(
-                    onClick = { save() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .height(50.dp),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    Text("Enregistrer les modifications")
+            // Only inside a group: on the index there is nothing to save, and a
+            // save button over a list of destinations invites a tap that writes
+            // nothing and leaves the screen.
+            if (openGroup != null) {
+                Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 12.dp) {
+                    Button(
+                        onClick = { save() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .height(50.dp),
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        Text("Enregistrer les modifications")
+                    }
                 }
             }
         },
@@ -528,7 +528,7 @@ fun ShopDetailsScreen(
                                     "Copie le ${snapshotDate.format(Date(last.takenAt))}"
                                 } ?: "Aucune copie automatique"
 
-                                SettingsGroup.DIAGNOSTIC -> "Journal du stock, réparations"
+                                SettingsGroup.DIAGNOSTIC -> "Version $versionLabel"
                             }
                         }
                         groups.forEach { group ->
@@ -554,750 +554,651 @@ fun ShopDetailsScreen(
             }
 
             if (openGroup == SettingsGroup.SHOP) {
-    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
-            item(key = "logo") {
-                Card(
-                    shape = MaterialTheme.shapes.medium,
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                item(key = "identity") {
+                    SettingsSection(
+                        title = "Identité",
+                        subtitle = "Ce que le client lit en premier.",
                     ) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.size(64.dp),
-                        ) {
-                            if (logo != null) {
-                                Image(
-                                    bitmap = logo,
-                                    contentDescription = "Logo du magasin",
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier
-                                        .padding(6.dp)
-                                        .clip(RoundedCornerShape(8.dp)),
-                                )
-                            } else {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.Filled.Storefront,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(26.dp),
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(Modifier.width(14.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("Logo du magasin", style = MaterialTheme.typography.titleSmall)
-                            Text(
-                                "Affiché en haut des factures et devis.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text("Nom du magasin *") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        )
+                        OutlinedTextField(
+                            value = address,
+                            onValueChange = { address = it },
+                            label = { Text("Adresse") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 2,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            OutlinedTextField(
+                                value = phone,
+                                onValueChange = { phone = it },
+                                label = { Text("Téléphone") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Phone,
+                                    imeAction = ImeAction.Next,
+                                ),
                             )
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            OutlinedButton(
-                                onClick = {
-                                    picker.launch(
-                                        PickVisualMediaRequest(
-                                            ActivityResultContracts.PickVisualMedia.ImageOnly,
-                                        ),
-                                    )
-                                },
-                                shape = MaterialTheme.shapes.small,
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                            ) {
-                                Text(if (logo == null) "Choisir" else "Changer")
-                            }
-                            if (logo != null) {
-                                TextButton(
-                                    onClick = {
-                                        InvoiceDesignStore(context).removeLogo(context)
-                                        logoVersion++
-                                    },
-                                ) {
-                                    Text(
-                                        "Retirer",
-                                        color = MaterialTheme.colorScheme.error,
-                                        style = MaterialTheme.typography.labelSmall,
-                                    )
-                                }
-                            }
+                            OutlinedTextField(
+                                value = email,
+                                onValueChange = { email = it },
+                                label = { Text("E-mail") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Email,
+                                    imeAction = ImeAction.Next,
+                                ),
+                            )
                         }
                     }
                 }
-            }
             }
 
             if (openGroup == SettingsGroup.SHOP) {
-    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
-            item(key = "identity") {
-                SettingsSection(
-                    title = "Identité",
-                    subtitle = "Ce que le client lit en premier.",
-                ) {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Nom du magasin *") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    )
-                    OutlinedTextField(
-                        value = address,
-                        onValueChange = { address = it },
-                        label = { Text("Adresse") },
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 2,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedTextField(
-                            value = phone,
-                            onValueChange = { phone = it },
-                            label = { Text("Téléphone") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Phone,
-                                imeAction = ImeAction.Next,
-                            ),
-                        )
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = { Text("E-mail") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Email,
-                                imeAction = ImeAction.Next,
-                            ),
-                        )
-                    }
-                }
-            }
-            }
-
-            if (openGroup == SettingsGroup.SHOP) {
-    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
-            item(key = "legal") {
-                SettingsSection(
-                    title = "Informations légales",
-                    subtitle = "Obligatoires sur une facture entre entreprises.",
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedTextField(
-                            value = ice,
-                            onValueChange = { ice = it },
-                            label = { Text("ICE") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                        OutlinedTextField(
-                            value = ifNumber,
-                            onValueChange = { ifNumber = it },
-                            label = { Text("IF") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedTextField(
-                            value = rc,
-                            onValueChange = { rc = it },
-                            label = { Text("RC") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                        OutlinedTextField(
-                            value = patente,
-                            onValueChange = { patente = it },
-                            label = { Text("Patente") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    OutlinedTextField(
-                        value = cnss,
-                        onValueChange = { cnss = it },
-                        label = { Text("CNSS") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-            }
-
-            if (openGroup == SettingsGroup.SHOP) {
-    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
-            item(key = "payment") {
-                SettingsSection(
-                    title = "Paiement et banque",
-                    subtitle = "Ce que le client lit pour vous payer, et ce qui s'imprime en cas de retard.",
-                ) {
-                    Text(
-                        "Coordonnées bancaires",
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                    OutlinedTextField(
-                        value = bankName,
-                        onValueChange = { bankName = it },
-                        label = { Text("Banque") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    OutlinedTextField(
-                        value = bankRib,
-                        onValueChange = { input ->
-                            // Digits and spaces only: a RIB is written in groups of
-                            // four, and a letter in it is always a typing mistake.
-                            bankRib = input.filter { it.isDigit() || it == ' ' }.take(40)
-                        },
-                        label = { Text("RIB (24 chiffres)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = bankRib.filter { it.isDigit() }.let {
-                            it.isNotEmpty() && it.length != 24
-                        },
-                        supportingText = {
-                            val digits = bankRib.filter { it.isDigit() }
-                            Text(
-                                if (digits.isNotEmpty() && digits.length != 24) {
-                                    "Un RIB marocain compte 24 chiffres : il en reste " +
-                                        "${24 - digits.length} à saisir. " +
-                                        "Le document s'imprime quand même."
-                                } else {
-                                    "Imprimé avec les coordonnées de paiement du document."
-                                },
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Next,
-                        ),
-                    )
-                    OutlinedTextField(
-                        value = bankHolder,
-                        onValueChange = { bankHolder = it },
-                        label = { Text("Titulaire du compte") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                    OutlinedTextField(
-                        value = lateClause,
-                        onValueChange = { lateClause = it },
-                        label = { Text("Clause de retard de paiement") },
-                        minLines = 2,
-                        maxLines = 5,
-                        modifier = Modifier.fillMaxWidth(),
-                        supportingText = {
-                            Text(
-                                "Modèle de clause, à faire vérifier par votre comptable " +
-                                    "avant de l'imprimer. Elle ne s'imprime que sur les " +
-                                    "documents dont le règlement n'est pas comptant. " +
-                                    "Videz le champ pour ne rien imprimer.",
-                            )
-                        },
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                    OutlinedTextField(
-                        value = pdfPattern,
-                        onValueChange = { pdfPattern = it },
-                        label = { Text("Nom du fichier PDF") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        supportingText = {
-                            Text(
-                                "Le nom du fichier partagé. {number}, {client}, {date} " +
-                                    "et {type} sont remplacés. L'extension .pdf est ajoutée.",
-                            )
-                        },
-                    )
-                }
-            }
-            }
-
-            if (openGroup == SettingsGroup.INVOICING) {
-    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
-            item(key = "vat") {
-                SettingsSection(
-                    title = "TVA",
-                    subtitle = "Taux par défaut des nouvelles lignes, après la remise générale.",
-                ) {
-                    // Morocco has two rates since 1 January 2026; 7 % and 14 %
-                    // were removed. Chips because a typo in a free field is a
-                    // tax rate on a legal document.
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(20.0, 10.0, 0.0).forEach { rate ->
-                            val selected = vatText.replace(',', '.').toDoubleOrNull() == rate
-                            FilterChip(
-                                selected = selected,
-                                onClick = { vatText = rate.trimZeros() },
-                                label = { Text("${rate.trimZeros()} %") },
-                            )
-                        }
-                    }
-                    OutlinedTextField(
-                        value = vatText,
-                        onValueChange = { input ->
-                            vatText = input.filter { it.isDigit() || it == '.' || it == ',' }
-                        },
-                        label = { Text("Taux de TVA (%)") },
-                        singleLine = true,
-                        suffix = { Text("%") },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Decimal,
-                            imeAction = ImeAction.Done,
-                        ),
-                        supportingText = {
-                            Text(
-                                "20 % est le taux normal, 10 % le taux réduit. " +
-                                    "Les taux de 7 % et 14 % n'existent plus depuis 2026. " +
-                                    "Chaque ligne peut avoir son propre taux.",
-                            )
-                        },
-                    )
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                item(key = "legal") {
+                    SettingsSection(
+                        title = "Informations légales",
+                        subtitle = "Obligatoires sur une facture entre entreprises.",
                     ) {
-                        Switch(
-                            checked = vatNotApplicable,
-                            onCheckedChange = { vatNotApplicable = it },
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                "Auto-entrepreneur",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            OutlinedTextField(
+                                value = ice,
+                                onValueChange = { ice = it },
+                                label = { Text("ICE") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
                             )
-                            Text(
-                                "TVA non applicable sur les documents de ce magasin.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2,
+                            OutlinedTextField(
+                                value = ifNumber,
+                                onValueChange = { ifNumber = it },
+                                label = { Text("IF") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
                             )
                         }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                    Text(
-                        "Vos prix sont affichés",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ChoiceChip(
-                            label = "HT — TVA en sus",
-                            selected = !pricesIncludeVat,
-                            onClick = { pricesIncludeVat = false },
-                        )
-                        ChoiceChip(
-                            label = "TTC — TVA incluse",
-                            selected = pricesIncludeVat,
-                            onClick = { pricesIncludeVat = true },
-                        )
-                    }
-                    Text(
-                        if (pricesIncludeVat) {
-                            "Vous tapez le prix que le client paie : l'application en déduit " +
-                                "le HT et la TVA. La facture montre toujours HT + TVA, comme " +
-                                "l'exige une facture."
-                        } else {
-                            "Vous tapez le prix hors taxe : la TVA s'ajoute au total."
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            }
-
-            if (openGroup == SettingsGroup.CATALOGUE) {
-    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
-            item(key = "articles") {
-                SettingsSection(
-                    title = "Articles",
-                    subtitle = "Choisissez ce que la fiche article vous demande.",
-                ) {
-                    Text(
-                        "Décocher un champ ne l'efface pas : la valeur reste sur " +
-                            "l'article et revient si vous le réactivez.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    FieldSwitch(
-                        title = "Code-barres",
-                        description = "Le champ et le bouton scanner dans la fiche article.",
-                        checked = showItemBarcode,
-                        onCheckedChange = { showItemBarcode = it },
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    FieldSwitch(
-                        title = "Prix d'achat",
-                        description = "Le champ, et la ligne « Marge » qui en dépend.",
-                        checked = showItemPurchasePrice,
-                        onCheckedChange = { showItemPurchasePrice = it },
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    FieldSwitch(
-                        title = "Unité",
-                        description = "Heure, kg, m²… sous la désignation de l'article.",
-                        checked = showItemUnit,
-                        onCheckedChange = { showItemUnit = it },
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    FieldSwitch(
-                        title = "Stock",
-                        description = "La quantité dans la fiche, la ligne « en stock » sur " +
-                            "la carte, et la distinction prestation / produit.",
-                        checked = showItemStock,
-                        onCheckedChange = { showItemStock = it },
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    FieldSwitch(
-                        title = "Dossier",
-                        description = "Le sélecteur de dossier, les filtres de l'onglet " +
-                            "Articles et le chemin sous la désignation.",
-                        checked = showItemFolder,
-                        onCheckedChange = { showItemFolder = it },
-                    )
-                }
-            }
-            }
-
-            if (openGroup == SettingsGroup.CATALOGUE) {
-    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
-            item(key = "valuation") {
-                SettingsSection(
-                    title = "Valorisation du stock",
-                    subtitle = "Comment l'application calcule ce que vaut un article sur l'étagère.",
-                ) {
-                    Text(
-                        "Le choix ne modifie que les mouvements à venir : un document " +
-                            "déjà émis garde le coût figé sur chacune de ses lignes, " +
-                            "et changer de méthode ne réécrit jamais une facture.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    CostMethod.entries.forEach { method ->
-                        ChoiceChip(
-                            label = method.label,
-                            selected = costMethod == method,
-                            onClick = { costMethod = method },
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            OutlinedTextField(
+                                value = rc,
+                                onValueChange = { rc = it },
+                                label = { Text("RC") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                            )
+                            OutlinedTextField(
+                                value = patente,
+                                onValueChange = { patente = it },
+                                label = { Text("Patente") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        OutlinedTextField(
+                            value = cnss,
+                            onValueChange = { cnss = it },
+                            label = { Text("CNSS") },
+                            singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
-                    Text(
-                        costMethod.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             }
-            }
 
-            if (openGroup == SettingsGroup.DATA) {
-    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
-            item(key = "backup") {
-                SettingsSection(
-                    title = "Sauvegarde",
-                    subtitle = "Vos données restent sur le téléphone : gardez-en une copie ailleurs.",
-                ) {
-                    Text(
-                        "Le fichier contient le magasin, les clients, les articles, " +
-                            "toutes les factures et les compteurs de numérotation. " +
-                            "Il peut être restauré sur un autre téléphone.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    OutlinedButton(
-                        onClick = { exportBackup.launch(Backup.fileName()) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = MaterialTheme.shapes.medium,
+            if (openGroup == SettingsGroup.SHOP) {
+                item(key = "logo") {
+                    SettingsSection(
+                        title = "Logo",
+                        subtitle = "Affiché en haut des factures et devis.",
                     ) {
-                        Icon(
-                            Icons.Filled.FileDownload,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("Exporter une sauvegarde")
-                    }
-                    OutlinedButton(
-                        onClick = { exportAccountant.launch(AccountantExport.fileName()) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = MaterialTheme.shapes.medium,
-                    ) {
-                        Icon(
-                            Icons.Filled.FileDownload,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("Exporter pour le comptable (CSV)")
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            importBackup.launch(
-                                arrayOf(
-                                    "application/json",
-                                    "text/plain",
-                                    "application/octet-stream",
-                                ),
-                            )
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = MaterialTheme.shapes.medium,
-                    ) {
-                        Icon(
-                            Icons.Filled.FileUpload,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("Restaurer une sauvegarde")
-                    }
-                }
-            }
-            }
-
-            if (openGroup == SettingsGroup.DATA) {
-    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
-            item(key = "auto-backup") {
-                SettingsSection(
-                    title = "Sauvegarde automatique",
-                    subtitle = "Une copie par jour, sans y penser.",
-                ) {
-                    Text(
-                        "L'application écrit une copie d'elle-même au premier lancement " +
-                            "de la journée, et en garde " + AutoBackup.KEEP + " sur le " +
-                            "téléphone. Elle survit à une facture effacée ou à un fichier " +
-                            "devenu illisible ; choisir un dossier y ajoute une copie hors " +
-                            "du téléphone.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        autoSnapshots.firstOrNull()?.let { last ->
-                            "Dernière copie : ${snapshotDate.format(Date(last.takenAt))} · " +
-                                "${autoSnapshots.size} copie${if (autoSnapshots.size > 1) "s" else ""} gardée${if (autoSnapshots.size > 1) "s" else ""}."
-                        } ?: "Aucune copie automatique pour l'instant.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    OutlinedButton(
-                        onClick = {
-                            scope.launch {
-                                val ok = viewModel.runAutoBackup()
-                                autoSnapshots = viewModel.autoBackupSnapshots()
-                                snackbar.showSnackbar(
-                                    if (ok) "Copie automatique créée." else "La copie n'a pas pu être écrite.",
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.size(64.dp),
+                            ) {
+                                if (logo != null) {
+                                    Image(
+                                        bitmap = logo,
+                                        contentDescription = "Logo du magasin",
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier
+                                            .padding(6.dp)
+                                            .clip(RoundedCornerShape(8.dp)),
+                                    )
+                                } else {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            Icons.Filled.Storefront,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(26.dp),
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.width(14.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    if (logo == null) "Aucun logo" else "Logo enregistré",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                                Text(
+                                    "PNG ou JPG, jusqu'à 4 Mo.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = MaterialTheme.shapes.medium,
-                    ) {
-                        Icon(Icons.Filled.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Créer une copie maintenant")
-                    }
-                    OutlinedButton(
-                        onClick = { pickBackupFolder.launch(null) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = MaterialTheme.shapes.medium,
-                    ) {
-                        Icon(Icons.Filled.Folder, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(autoFolder?.let { "Dossier : $it" } ?: "Choisir un dossier hors du téléphone")
-                    }
-                    if (autoFolder != null) {
-                        TextButton(
-                            onClick = {
-                                viewModel.forgetAutoBackupFolder()
-                                autoFolder = null
-                                scope.launch { snackbar.showSnackbar("Dossier de sauvegarde retiré.") }
-                            },
-                        ) {
-                            Text("Retirer le dossier")
+                            Column(horizontalAlignment = Alignment.End) {
+                                OutlinedButton(
+                                    onClick = {
+                                        picker.launch(
+                                            PickVisualMediaRequest(
+                                                ActivityResultContracts.PickVisualMedia.ImageOnly,
+                                            ),
+                                        )
+                                    },
+                                    shape = MaterialTheme.shapes.small,
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                ) {
+                                    Text(if (logo == null) "Choisir" else "Changer")
+                                }
+                                if (logo != null) {
+                                    TextButton(
+                                        onClick = {
+                                            InvoiceDesignStore(context).removeLogo(context)
+                                            logoVersion++
+                                        },
+                                    ) {
+                                        Text(
+                                            "Retirer",
+                                            color = MaterialTheme.colorScheme.error,
+                                            style = MaterialTheme.typography.labelSmall,
+                                        )
+                                    }
+                                }
+                            }
                         }
-                    }
-                    OutlinedButton(
-                        onClick = { snapshotPickerOpen = true },
-                        enabled = autoSnapshots.isNotEmpty(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = MaterialTheme.shapes.medium,
-                    ) {
-                        Icon(Icons.Filled.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Restaurer une copie automatique")
                     }
                 }
             }
+
+            if (openGroup == SettingsGroup.SHOP) {
+                item(key = "payment") {
+                    SettingsSection(
+                        title = "Coordonnées bancaires",
+                        subtitle = "Ce que le client lit pour vous payer.",
+                    ) {
+                        OutlinedTextField(
+                            value = bankName,
+                            onValueChange = { bankName = it },
+                            label = { Text("Banque") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = bankRib,
+                            onValueChange = { input ->
+                                // Digits and spaces only: a RIB is written in groups of
+                                // four, and a letter in it is always a typing mistake.
+                                bankRib = input.filter { it.isDigit() || it == ' ' }.take(40)
+                            },
+                            label = { Text("RIB (24 chiffres)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = bankRib.filter { it.isDigit() }.let {
+                                it.isNotEmpty() && it.length != 24
+                            },
+                            supportingText = {
+                                val digits = bankRib.filter { it.isDigit() }
+                                Text(
+                                    if (digits.isNotEmpty() && digits.length != 24) {
+                                        "Un RIB marocain compte 24 chiffres : il en reste " +
+                                            "${24 - digits.length} à saisir. " +
+                                            "Le document s'imprime quand même."
+                                    } else {
+                                        "Imprimé avec les coordonnées de paiement du document."
+                                    },
+                                )
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next,
+                            ),
+                        )
+                        OutlinedTextField(
+                            value = bankHolder,
+                            onValueChange = { bankHolder = it },
+                            label = { Text("Titulaire du compte") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+
+                    }
+                }
+            }
+
+            if (openGroup == SettingsGroup.INVOICING) {
+                item(key = "vat") {
+                    SettingsSection(
+                        title = "TVA",
+                        subtitle = "Taux par défaut des nouvelles lignes, après la remise générale.",
+                    ) {
+                        // Morocco has two rates since 1 January 2026; 7 % and 14 %
+                        // were removed. Chips because a typo in a free field is a
+                        // tax rate on a legal document.
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(20.0, 10.0, 0.0).forEach { rate ->
+                                val selected = vatText.replace(',', '.').toDoubleOrNull() == rate
+                                FilterChip(
+                                    selected = selected,
+                                    onClick = { vatText = rate.trimZeros() },
+                                    label = { Text("${rate.trimZeros()} %") },
+                                )
+                            }
+                        }
+                        OutlinedTextField(
+                            value = vatText,
+                            onValueChange = { input ->
+                                vatText = input.filter { it.isDigit() || it == '.' || it == ',' }
+                            },
+                            label = { Text("Taux de TVA (%)") },
+                            singleLine = true,
+                            suffix = { Text("%") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Done,
+                            ),
+                            supportingText = {
+                                Text(
+                                    "20 % est le taux normal, 10 % le taux réduit. " +
+                                        "Les taux de 7 % et 14 % n'existent plus depuis 2026. " +
+                                        "Chaque ligne peut avoir son propre taux.",
+                                )
+                            },
+                        )
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Switch(
+                                checked = vatNotApplicable,
+                                onCheckedChange = { vatNotApplicable = it },
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    "Auto-entrepreneur",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    "TVA non applicable sur les documents de ce magasin.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                        Text(
+                            "Vos prix sont affichés",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ChoiceChip(
+                                label = "HT — TVA en sus",
+                                selected = !pricesIncludeVat,
+                                onClick = { pricesIncludeVat = false },
+                            )
+                            ChoiceChip(
+                                label = "TTC — TVA incluse",
+                                selected = pricesIncludeVat,
+                                onClick = { pricesIncludeVat = true },
+                            )
+                        }
+                        Text(
+                            if (pricesIncludeVat) {
+                                "Vous tapez le prix que le client paie : l'application en déduit " +
+                                    "le HT et la TVA. La facture montre toujours HT + TVA, comme " +
+                                    "l'exige une facture."
+                            } else {
+                                "Vous tapez le prix hors taxe : la TVA s'ajoute au total."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            if (openGroup == SettingsGroup.INVOICING) {
+                item(key = "numbering") {
+                    SettingsSection(
+                        title = "Numérotation",
+                        subtitle = "Les factures sont numérotées automatiquement et sans trou. " +
+                            "Le numéro est pris au moment où vous partagez le PDF, " +
+                            "pas à l'ouverture de l'écran.",
+                    ) {
+                            OutlinedTextField(
+                                value = invoiceCounterText,
+                                onValueChange = { invoiceCounterText = it.filter { it.isDigit() } },
+                                label = { Text("Prochain numéro de facture") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Done,
+                                ),
+                                supportingText = {
+                                    Text(
+                                        "Numéro que portera le prochain document partagé. " +
+                                            "Ne le changez que pour repartir d'un autre numéro : " +
+                                            "les documents déjà envoyés ne sont pas renumérotés.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                },
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        "Repartir de 1 chaque année",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                    Text(
+                                        "Au 1er janvier, la séquence de chaque type recommence à 0001. " +
+                                            "Les documents déjà émis gardent leur numéro.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Switch(
+                                    checked = resetAnnually,
+                                    onCheckedChange = { resetAnnually = it },
+                                )
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            HorizontalDivider()
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                "Préfixe par type de document",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Text(
+                                "Lettres, chiffres, tiret et tiret bas. Laissez vide pour " +
+                                    "revenir au préfixe d'origine.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            // Two per row keeps ten types a short block; a full
+                            // list of text fields would push the backup section
+                            // off the screen.
+                            DocumentType.entries.chunked(2).forEach { row ->
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    row.forEach { type ->
+                                        OutlinedTextField(
+                                            value = prefixTexts[type].orEmpty(),
+                                            onValueChange = { input ->
+                                                val clean = input
+                                                    .filter { it.isLetterOrDigit() || it == '-' || it == '_' }
+                                                    .take(12)
+                                                prefixTexts = prefixTexts + (type to clean)
+                                            },
+                                            label = { Text(type.label) },
+                                            placeholder = { Text(type.prefix) },
+                                            singleLine = true,
+                                            modifier = Modifier.weight(1f),
+                                            keyboardOptions = KeyboardOptions(
+                                                keyboardType = KeyboardType.Text,
+                                                imeAction = ImeAction.Next,
+                                            ),
+                                        )
+                                    }
+                                    // Keep the last row's single field the same
+                                    // width as the ones above it.
+                                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                                }
+                                Spacer(Modifier.height(8.dp))
+                            }
+                    }
+                }
+
+                item(key = "pdf-name") {
+                    SettingsSection(
+                        title = "Nom des fichiers partagés",
+                        subtitle = "Le nom du PDF et de l'export XML envoyés au client.",
+                    ) {
+                        OutlinedTextField(
+                            value = pdfPattern,
+                            onValueChange = { pdfPattern = it },
+                            label = { Text("Nom du fichier PDF") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            supportingText = {
+                                Text(
+                                    "Le nom du fichier partagé. {number}, {client}, {date} " +
+                                        "et {type} sont remplacés. L'extension .pdf est ajoutée.",
+                                )
+                            },
+                        )
+                    }
+                }
+
+                item(key = "late-payment") {
+                    SettingsSection(
+                        title = "Retard de paiement",
+                        subtitle = "Le texte imprimé sur un document dont le règlement n'est pas comptant.",
+                    ) {
+                        OutlinedTextField(
+                            value = lateClause,
+                            onValueChange = { lateClause = it },
+                            label = { Text("Clause de retard de paiement") },
+                            minLines = 2,
+                            maxLines = 5,
+                            modifier = Modifier.fillMaxWidth(),
+                            supportingText = {
+                                Text(
+                                    "Modèle de clause, à faire vérifier par votre comptable " +
+                                        "avant de l'imprimer. Elle ne s'imprime que sur les " +
+                                        "documents dont le règlement n'est pas comptant. " +
+                                        "Videz le champ pour ne rien imprimer.",
+                                )
+                            },
+                        )
+                    }
+                }
+            }
+
+            if (openGroup == SettingsGroup.CATALOGUE) {
+                item(key = "articles") {
+                    SettingsSection(
+                        title = "Articles",
+                        subtitle = "Choisissez ce que la fiche article vous demande.",
+                    ) {
+                        Text(
+                            "Décocher un champ ne l'efface pas : la valeur reste sur " +
+                                "l'article et revient si vous le réactivez.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        FieldSwitch(
+                            title = "Code-barres",
+                            description = "Le champ et le bouton scanner dans la fiche article.",
+                            checked = showItemBarcode,
+                            onCheckedChange = { showItemBarcode = it },
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        FieldSwitch(
+                            title = "Prix d'achat",
+                            description = "Le champ, et la ligne « Marge » qui en dépend.",
+                            checked = showItemPurchasePrice,
+                            onCheckedChange = { showItemPurchasePrice = it },
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        FieldSwitch(
+                            title = "Unité",
+                            description = "Heure, kg, m²… sous la désignation de l'article.",
+                            checked = showItemUnit,
+                            onCheckedChange = { showItemUnit = it },
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        FieldSwitch(
+                            title = "Stock",
+                            description = "La quantité dans la fiche, la ligne « en stock » sur " +
+                                "la carte, et la distinction prestation / produit.",
+                            checked = showItemStock,
+                            onCheckedChange = { showItemStock = it },
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        FieldSwitch(
+                            title = "Dossier",
+                            description = "Le sélecteur de dossier, les filtres de l'onglet " +
+                                "Articles et le chemin sous la désignation.",
+                            checked = showItemFolder,
+                            onCheckedChange = { showItemFolder = it },
+                        )
+                    }
+                }
+            }
+
+            if (openGroup == SettingsGroup.CATALOGUE) {
+                item(key = "valuation") {
+                    SettingsSection(
+                        title = "Valorisation du stock",
+                        subtitle = "Comment l'application calcule ce que vaut un article sur l'étagère.",
+                    ) {
+                        Text(
+                            "Le choix ne modifie que les mouvements à venir : un document " +
+                                "déjà émis garde le coût figé sur chacune de ses lignes, " +
+                                "et changer de méthode ne réécrit jamais une facture.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        CostMethod.entries.forEach { method ->
+                            ChoiceChip(
+                                label = method.label,
+                                selected = costMethod == method,
+                                onClick = { costMethod = method },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                        Text(
+                            costMethod.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
 
             if (openGroup == SettingsGroup.DATA) {
-    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
-            item(key = "archive") {
-                SettingsSection(
-                    title = "Archive des documents",
-                    subtitle = "Ce qui est réellement parti, et sa vérification.",
-                ) {
-                    Text(
-                        "Chaque PDF partagé et chaque XML exporté est recopié ici, " +
-                            "nommé par l'empreinte de son contenu. La vérification " +
-                            "recalcule la chaîne : un fichier remplacé ou une entrée " +
-                            "modifiée est signalé.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    archiveReport?.let {
+                item(key = "backup") {
+                    SettingsSection(
+                        title = "Sauvegarde complète",
+                        subtitle = "Tout ce que contient l'application, dans un seul fichier restaurable.",
+                    ) {
                         Text(
-                            it,
+                            "Le fichier contient le magasin, les clients, les articles, " +
+                                "toutes les factures et les compteurs de numérotation. " +
+                                "Il peut être restauré sur un autre téléphone.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OutlinedButton(
+                            onClick = { exportBackup.launch(Backup.fileName()) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.medium,
+                        ) {
+                            Icon(
+                                Icons.Filled.FileDownload,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Exporter une sauvegarde")
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                importBackup.launch(
+                                    arrayOf(
+                                        "application/json",
+                                        "text/plain",
+                                        "application/octet-stream",
+                                    ),
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.medium,
+                        ) {
+                            Icon(
+                                Icons.Filled.FileUpload,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Restaurer une sauvegarde")
+                        }
+                    }
+                }
+            }
+
+            if (openGroup == SettingsGroup.DATA) {
+                item(key = "auto-backup") {
+                    SettingsSection(
+                        title = "Sauvegarde automatique",
+                        subtitle = "Une copie par jour, sans y penser.",
+                    ) {
+                        Text(
+                            "L'application écrit une copie d'elle-même au premier lancement " +
+                                "de la journée, et en garde " + AutoBackup.KEEP + " sur le " +
+                                "téléphone. Elle survit à une facture effacée ou à un fichier " +
+                                "devenu illisible ; choisir un dossier y ajoute une copie hors " +
+                                "du téléphone.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            autoSnapshots.firstOrNull()?.let { last ->
+                                "Dernière copie : ${snapshotDate.format(Date(last.takenAt))} · " +
+                                    "${autoSnapshots.size} copie${if (autoSnapshots.size > 1) "s" else ""} gardée${if (autoSnapshots.size > 1) "s" else ""}."
+                            } ?: "Aucune copie automatique pour l'instant.",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                         )
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            scope.launch {
-                                archiveReport = kotlinx.coroutines.withContext(
-                                    kotlinx.coroutines.Dispatchers.IO,
-                                ) {
-                                    viewModel.archive.verify().message
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = MaterialTheme.shapes.medium,
-                    ) {
-                        Icon(Icons.Filled.Verified, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Vérifier l'archive")
-                    }
-                }
-            }
-            }
-
-            if (openGroup == SettingsGroup.DIAGNOSTIC) {
-    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
-            item(key = "stock") {
-                SettingsSection(
-                    title = "Stock et journal",
-                    subtitle = "Chaque mouvement est conservé ; la quantité affichée se recalcule.",
-                ) {
-                    Text(
-                        "Les ventes, avoirs, achats et inventaires sont écrits dans un " +
-                            "journal, et la quantité affichée n'en est qu'un raccourci. " +
-                            "La vérification compare le raccourci au journal : elle ne " +
-                            "corrige rien toute seule, elle montre les articles qui " +
-                            "divergent.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    stockDrift?.let { drift ->
-                        if (drift.isEmpty()) {
-                            Text(
-                                "Aucun écart : les quantités affichées correspondent au journal.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                        } else {
-                            Text(
-                                if (drift.size == 1) {
-                                    "1 article diverge du journal :"
-                                } else {
-                                    "${drift.size} articles divergent du journal :"
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                            // Five is enough to recognise the problem; the count
-                            // above says how many there really are.
-                            drift.take(5).forEach { row ->
-                                Text(
-                                    "${row.item.label} : affiché ${row.cached}, " +
-                                        "journal ${row.ledger}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            if (drift.size > 5) {
-                                Text(
-                                    "et ${drift.size - 5} autre(s)…",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            scope.launch {
-                                stockDrift = viewModel.stockDrift()
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = MaterialTheme.shapes.medium,
-                    ) {
-                        Icon(
-                            Icons.Filled.Inventory2,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("Vérifier le stock")
-                    }
-                    if ((stockDrift?.size ?: 0) > 0) {
                         OutlinedButton(
                             onClick = {
                                 scope.launch {
-                                    val repaired = viewModel.repairStockCache()
-                                    stockDrift = emptyList()
+                                    val ok = viewModel.runAutoBackup()
+                                    autoSnapshots = viewModel.autoBackupSnapshots()
                                     snackbar.showSnackbar(
-                                        if (repaired == 1) {
-                                            "1 quantité recalculée depuis le journal."
-                                        } else {
-                                            "$repaired quantités recalculées depuis le journal."
-                                        },
+                                        if (ok) "Copie automatique créée." else "La copie n'a pas pu être écrite.",
                                     )
                                 }
                             },
@@ -1306,126 +1207,240 @@ fun ShopDetailsScreen(
                                 .height(48.dp),
                             shape = MaterialTheme.shapes.medium,
                         ) {
-                            Text("Recalculer depuis le journal")
+                            Icon(Icons.Filled.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Créer une copie maintenant")
+                        }
+                        OutlinedButton(
+                            onClick = { pickBackupFolder.launch(null) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.medium,
+                        ) {
+                            Icon(Icons.Filled.Folder, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(autoFolder?.let { "Dossier : $it" } ?: "Choisir un dossier hors du téléphone")
+                        }
+                        if (autoFolder != null) {
+                            TextButton(
+                                onClick = {
+                                    viewModel.forgetAutoBackupFolder()
+                                    autoFolder = null
+                                    scope.launch { snackbar.showSnackbar("Dossier de sauvegarde retiré.") }
+                                },
+                            ) {
+                                Text("Retirer le dossier")
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = { snapshotPickerOpen = true },
+                            enabled = autoSnapshots.isNotEmpty(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.medium,
+                        ) {
+                            Icon(Icons.Filled.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Restaurer une copie automatique")
                         }
                     }
                 }
-            }
             }
 
-            if (openGroup == SettingsGroup.INVOICING) {
-    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
-            item(key = "numbering") {
-                Surface(
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Column(Modifier.padding(14.dp)) {
+            if (openGroup == SettingsGroup.DATA) {
+                item(key = "accountant") {
+                    SettingsSection(
+                        title = "Export comptable",
+                        subtitle = "Un tableur pour votre comptable, séparé de la sauvegarde.",
+                    ) {
                         Text(
-                            "Numérotation",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "Les factures sont numérotées automatiquement et sans trou. " +
-                                "Le numéro est pris au moment où vous partagez le PDF, pas à l'ouverture de l'écran.",
+                            "Le CSV liste les documents émis avec leurs montants HT, TVA et " +
+                                "TTC, prêt à ouvrir dans un tableur. Ce n'est pas une " +
+                                "sauvegarde : il ne se restaure pas dans l'application.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Spacer(Modifier.height(12.dp))
-                        OutlinedTextField(
-                            value = invoiceCounterText,
-                            onValueChange = { invoiceCounterText = it.filter { it.isDigit() } },
-                            label = { Text("Prochain numéro de facture") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done,
-                            ),
-                            supportingText = {
-                                Text(
-                                    "Numéro que portera le prochain document partagé. " +
-                                        "Ne le changez que pour repartir d'un autre numéro : " +
-                                        "les documents déjà envoyés ne sont pas renumérotés.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            },
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
+                        OutlinedButton(
+                            onClick = { exportAccountant.launch(AccountantExport.fileName()) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.medium,
                         ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    "Repartir de 1 chaque année",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                                Text(
-                                    "Au 1er janvier, la séquence de chaque type recommence à 0001. " +
-                                        "Les documents déjà émis gardent leur numéro.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            Switch(
-                                checked = resetAnnually,
-                                onCheckedChange = { resetAnnually = it },
+                            Icon(
+                                Icons.Filled.FileDownload,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
                             )
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        HorizontalDivider()
-                        Spacer(Modifier.height(10.dp))
-                        Text(
-                            "Préfixe par type de document",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Text(
-                            "Lettres, chiffres, tiret et tiret bas. Laissez vide pour " +
-                                "revenir au préfixe d'origine.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        // Two per row keeps ten types a short block; a full
-                        // list of text fields would push the backup section
-                        // off the screen.
-                        DocumentType.entries.chunked(2).forEach { row ->
-                            Row(
-                                Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                row.forEach { type ->
-                                    OutlinedTextField(
-                                        value = prefixTexts[type].orEmpty(),
-                                        onValueChange = { input ->
-                                            val clean = input
-                                                .filter { it.isLetterOrDigit() || it == '-' || it == '_' }
-                                                .take(12)
-                                            prefixTexts = prefixTexts + (type to clean)
-                                        },
-                                        label = { Text(type.label) },
-                                        placeholder = { Text(type.prefix) },
-                                        singleLine = true,
-                                        modifier = Modifier.weight(1f),
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Text,
-                                            imeAction = ImeAction.Next,
-                                        ),
-                                    )
-                                }
-                                // Keep the last row's single field the same
-                                // width as the ones above it.
-                                if (row.size == 1) Spacer(Modifier.weight(1f))
-                            }
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Exporter pour le comptable (CSV)")
                         }
                     }
                 }
             }
+
+            if (openGroup == SettingsGroup.DATA) {
+                item(key = "archive") {
+                    SettingsSection(
+                        title = "Archive des documents",
+                        subtitle = "Ce qui est réellement parti, et sa vérification.",
+                    ) {
+                        Text(
+                            "Chaque PDF partagé et chaque XML exporté est recopié ici, " +
+                                "nommé par l'empreinte de son contenu. La vérification " +
+                                "recalcule la chaîne : un fichier remplacé ou une entrée " +
+                                "modifiée est signalé.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        archiveReport?.let {
+                            Text(
+                                it,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                scope.launch {
+                                    archiveReport = kotlinx.coroutines.withContext(
+                                        kotlinx.coroutines.Dispatchers.IO,
+                                    ) {
+                                        viewModel.archive.verify().message
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.medium,
+                        ) {
+                            Icon(Icons.Filled.Verified, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Vérifier l'archive")
+                        }
+                    }
+                }
+            }
+
+            if (openGroup == SettingsGroup.DIAGNOSTIC) {
+                item(key = "stock") {
+                    SettingsSection(
+                        title = "Stock et journal",
+                        subtitle = "Chaque mouvement est conservé ; la quantité affichée se recalcule.",
+                    ) {
+                        Text(
+                            "Les ventes, avoirs, achats et inventaires sont écrits dans un " +
+                                "journal, et la quantité affichée n'en est qu'un raccourci. " +
+                                "La vérification compare le raccourci au journal : elle ne " +
+                                "corrige rien toute seule, elle montre les articles qui " +
+                                "divergent.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        stockDrift?.let { drift ->
+                            if (drift.isEmpty()) {
+                                Text(
+                                    "Aucun écart : les quantités affichées correspondent au journal.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            } else {
+                                Text(
+                                    if (drift.size == 1) {
+                                        "1 article diverge du journal :"
+                                    } else {
+                                        "${drift.size} articles divergent du journal :"
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                                // Five is enough to recognise the problem; the count
+                                // above says how many there really are.
+                                drift.take(5).forEach { row ->
+                                    Text(
+                                        "${row.item.label} : affiché ${row.cached}, " +
+                                            "journal ${row.ledger}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                if (drift.size > 5) {
+                                    Text(
+                                        "et ${drift.size - 5} autre(s)…",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                scope.launch {
+                                    stockDrift = viewModel.stockDrift()
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.medium,
+                        ) {
+                            Icon(
+                                Icons.Filled.Inventory2,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Vérifier le stock")
+                        }
+                        if ((stockDrift?.size ?: 0) > 0) {
+                            OutlinedButton(
+                                onClick = {
+                                    scope.launch {
+                                        val repaired = viewModel.repairStockCache()
+                                        stockDrift = emptyList()
+                                        snackbar.showSnackbar(
+                                            if (repaired == 1) {
+                                                "1 quantité recalculée depuis le journal."
+                                            } else {
+                                                "$repaired quantités recalculées depuis le journal."
+                                            },
+                                        )
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
+                                shape = MaterialTheme.shapes.medium,
+                            ) {
+                                Text("Recalculer depuis le journal")
+                            }
+                        }
+                    }
+                }
+
+                item(key = "about") {
+                    SettingsSection(
+                        title = "À propos",
+                        subtitle = "Version installée et ce que l'application fait de vos données.",
+                    ) {
+                        Text(
+                            "Version $versionLabel",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            "Vos données restent sur ce téléphone : aucun compte, aucune " +
+                                "connexion réseau, aucune statistique. Les documents sont " +
+                                "imprimés depuis l'application, jamais envoyés.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
 
             item(key = "bottom-space") { Spacer(Modifier.height(8.dp)) }
