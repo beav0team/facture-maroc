@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.yassine.facturemaroc.invoice.InvoicePdf
 import com.yassine.facturemaroc.invoice.ReceiptPdf
+import com.yassine.facturemaroc.invoice.StatementPdf
 import com.yassine.facturemaroc.invoice.InvoiceXml
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -814,6 +815,40 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 ?.let { archive.recordPdf(record.data, it) }
         }
         outcome
+    }
+
+    /**
+     * Writes the client statement and hands it to the share sheet.
+     *
+     * Nothing is archived: a statement is a report over documents that are
+     * already in the archive, not a new document the shop issued. Archiving it
+     * would add a hash for something that changes the moment a payment is
+     * recorded, and the ledger would lie about a paper nobody received.
+     *
+     * The client block comes from the history rather than the saved directory,
+     * so a statement can be produced for a client that was only ever typed on
+     * an invoice.
+     */
+    suspend fun shareStatement(
+        clientName: String,
+        records: List<InvoiceRecord>,
+    ): InvoicePdf.Outcome = withContext(Dispatchers.IO) {
+        val statement = ClientStatements.forClient(records, clientName)
+        if (statement.isEmpty) return@withContext InvoicePdf.Outcome.NotWritten
+        val client = records
+            .firstOrNull {
+                !it.isDraft &&
+                    it.data.client.name.trim().equals(clientName.trim(), ignoreCase = true)
+            }
+            ?.data?.client
+            ?: InvoiceClient(name = statement.clientName)
+        StatementPdf.share(
+            getApplication(),
+            statement,
+            client,
+            _shop.value,
+            _design.value,
+        )
     }
 
     /**

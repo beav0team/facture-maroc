@@ -7,9 +7,9 @@ answering from memory.
 | | |
 |---|---|
 | Version | **0.10.0** (versionCode 16) |
-| Last commit | `3a4dc3a` — payments, surcharge, logo store, PDF archive |
+| Last commit | `9207328` — client statement, credit notes subtracted, A4 PDF |
 | Branch | `master` (pushed; no tag/release for 0.10.0 yet) |
-| Tests | **315 JVM**, **17 instrumented** |
+| Tests | **328 JVM**, **18 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -21,13 +21,14 @@ A1 (VAT and compliance engine) has landed on top of 0.10.0 and is **not
 released**: per-line VAT, recap by rate on every template, UBL per rate, ICE
 validation, detail sheet rows, fixed-amount discounts (global and per line) and
 a percentage surcharge. A1 is complete. A2 (payments lifecycle) is in
-progress: the payment deadline, the method per payment and the A5 receipt have
-landed; the client statement, RAS and the reminder text remain.
+progress: the payment deadline, the method per payment, the A5 receipt and the
+client statement have landed; RAS and the reminder text remain.
 
-**Next task — client statement.** Aggregates per client (billed / paid / due,
-credit notes subtracted, drafts excluded) shown on the client card, plus a
-printable A4 statement PDF listing each document with its balance. Design it
-next to `ReceiptPdf` and reuse `PaymentDue` for the late column.
+**Next task — RAS TVA.** Decide and implement withholding at source
+(75 %/100 % by some clients): the open question in `docs/decisions.md` is
+whether a document only *notes* the withheld amount or records it and
+recalculates the balance. Until that is settled, do not invent a field: the
+statement and the payment tracking must keep agreeing on what is really owed.
 
 ## Feature status
 
@@ -44,7 +45,7 @@ next to `ReceiptPdf` and reuse `PaymentDue` for the late column.
 | Payment tracking | **Exists** | amount, date, reference, **method per payment**, partial/paid, badge, PDF block, UBL prepaid |
 | Receipt PDF | **Exists** | A5 receipt for any recorded payment: sum in words, method, reference, invoice/settled/balance |
 | Due date / overdue | **Exists** | deadline (comptant/30/60 or a typed date), printed on the 6 templates, overdue pill and detail row; validity date stays for quotes |
-| Client statement | **Missing** | client card shows document count only |
+| Client statement | **Exists** | per client: billed / credited / paid / balance, credit notes subtracted, drafts, quotes and orders excluded; A4 PDF from the client card |
 | Quote → invoice | **Missing** | duplication keeps the same document type |
 | Invoice → credit note | **Missing** | credit notes are built manually |
 | Deposit deduction | **Missing** | acompte is not subtracted from the final invoice |

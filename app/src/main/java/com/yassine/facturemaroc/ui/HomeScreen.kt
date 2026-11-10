@@ -115,6 +115,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.yassine.facturemaroc.data.ClientStatements
 import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceRecord
@@ -639,6 +640,12 @@ fun HomeScreen(
                     },
                     onInvoice = { onNewInvoice(it) },
                     onOrder = { onNewOrder(it) },
+                    onStatement = { client ->
+                        scope.launch {
+                            val outcome = viewModel.shareStatement(client.name, records)
+                            snackbar.showSnackbar(outcome.shareMessage())
+                        }
+                    },
                     onDelete = { deleteClient = it },
                 )
 
@@ -1528,6 +1535,7 @@ private fun ClientsTab(
     onEdit: (InvoiceClient) -> Unit,
     onInvoice: (InvoiceClient) -> Unit,
     onOrder: (InvoiceClient) -> Unit,
+    onStatement: (InvoiceClient) -> Unit,
     onDelete: (InvoiceClient) -> Unit,
 ) {
     val noun = role.label.lowercase()
@@ -1587,6 +1595,17 @@ private fun ClientsTab(
                 },
                 onClick = { onEdit(client) },
                 onDocument = { if (role == PartyRole.CLIENT) onInvoice(client) else onOrder(client) },
+                // A statement is a client document. It is only offered when
+                // there is something to state: a client with a single devis
+                // would get a button that produces nothing.
+                onStatement = if (
+                    role == PartyRole.CLIENT &&
+                    ClientStatements.hasStatement(records, client.name)
+                ) {
+                    { onStatement(client) }
+                } else {
+                    null
+                },
                 onDelete = { onDelete(client) },
             )
         }
@@ -1599,6 +1618,7 @@ private fun ClientCard(
     documentCount: Int,
     onClick: () -> Unit,
     onDocument: () -> Unit,
+    onStatement: (() -> Unit)?,
     onDelete: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
@@ -1692,6 +1712,16 @@ private fun ClientCard(
                             onDocument()
                         },
                     )
+                    if (onStatement != null) {
+                        DropdownMenuItem(
+                            text = { Text("Relevé client") },
+                            leadingIcon = { Icon(Icons.Filled.Description, contentDescription = null) },
+                            onClick = {
+                                menuOpen = false
+                                onStatement()
+                            },
+                        )
+                    }
                     DropdownMenuItem(
                         text = { Text("Modifier") },
                         leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },

@@ -10,13 +10,18 @@ import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceData
 import com.yassine.facturemaroc.data.InvoiceDesign
 import com.yassine.facturemaroc.data.InvoiceLine
+import com.yassine.facturemaroc.data.InvoiceRecord
+import com.yassine.facturemaroc.data.InvoiceStatus
 import com.yassine.facturemaroc.data.InvoiceTemplate
 import com.yassine.facturemaroc.data.ImageBytes
+import com.yassine.facturemaroc.data.ClientStatements
+import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.PaymentInfo
 import com.yassine.facturemaroc.data.ShopSettings
 import com.yassine.facturemaroc.data.ShopSnapshot
 import com.yassine.facturemaroc.invoice.InvoicePdf
 import com.yassine.facturemaroc.invoice.ReceiptPdf
+import com.yassine.facturemaroc.invoice.StatementPdf
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -372,4 +377,46 @@ class InvoicePdfPagesTest {
             assertEquals(1, renderer.pageCount)
         }
     }
+
+    @Test
+    fun aStatementForThreeDocumentsIsWrittenAsOnePage() {
+        val records = listOf(
+            record("F-20261110-9201", DocumentType.FACTURE),
+            record("F-20261110-9202", DocumentType.FACTURE, date = "05/11/2026"),
+            record("A-20261110-9203", DocumentType.AVOIR, date = "08/11/2026"),
+        )
+        val statement = ClientStatements.forClient(records, client.name)
+        assertEquals(3, statement.lines.size)
+
+        val file = StatementPdf.create(context, statement, client, shop, InvoiceDesign())
+        assertNotNull("no statement PDF was written", file)
+        val written = file!!
+
+        PdfRenderer(
+            ParcelFileDescriptor.open(written, ParcelFileDescriptor.MODE_READ_ONLY),
+        ).use { renderer ->
+            assertEquals(1, renderer.pageCount)
+            assertTrue(inkOn(written, 0) > 100)
+        }
+        written.delete()
+    }
+
+    /** One issued document of a given type, enough to appear on a statement. */
+    private fun record(
+        number: String,
+        type: DocumentType,
+        date: String = "29/10/2026",
+    ): InvoiceRecord = InvoiceRecord(
+        id = number,
+        data = InvoiceData(
+            number = number,
+            date = date,
+            client = client,
+            lines = listOf(InvoiceLine("Chaise en rotin", 1, 950.0)),
+            documentType = type,
+        ),
+        status = InvoiceStatus.ISSUED,
+        createdAt = 0,
+        updatedAt = 0,
+    )
 }
