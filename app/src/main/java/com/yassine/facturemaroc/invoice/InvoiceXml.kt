@@ -5,6 +5,7 @@ import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceData
 import com.yassine.facturemaroc.data.PaymentMethod
 import com.yassine.facturemaroc.data.ShopSettings
+import com.yassine.facturemaroc.data.VatRecap
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -154,18 +155,21 @@ object InvoiceXml {
         //
         // A zero rate is declared exempt rather than "standard rate at 0 %". An
         // auto-entrepreneur is outside the tax, not charging a zero-rated one,
-        // and a receiver that reads `S · 0 %` codes it as the second.
+        // and a receiver that reads `S · 0 %` codes it as the second. A mixed
+        // invoice gets one subtotal per rate, which is the machine-readable
+        // form of the recap the page prints.
         x.open("cac:TaxTotal")
         x.money("cbc:TaxAmount", data.vatAmount)
-        val taxExclusive = round(data.totalExcludingVat + data.surcharge)
-        val exemptBase = round(taxExclusive - data.vatBase)
-        if (data.effectiveVatPercent > 0.0 && data.vatBase > 0.0) {
-            taxSubtotal(x, data.vatBase, data.vatAmount, data.effectiveVatPercent, taxable = true)
-            if (exemptBase > 0.0) {
-                taxSubtotal(x, exemptBase, 0.0, 0.0, taxable = false)
+        val taxExclusive = round(data.vatBreakdown.sumOf { it.base })
+        val groups = data.vatBreakdown.ifEmpty { listOf(VatRecap(0.0, taxExclusive, 0.0)) }
+        groups.forEach { group ->
+            val taxable = group.rate > 0.0
+            if (group.base != 0.0 || taxable) {
+                taxSubtotal(
+                    x, group.base, if (taxable) group.amount else 0.0,
+                    group.rate, taxable = taxable,
+                )
             }
-        } else {
-            taxSubtotal(x, taxExclusive, 0.0, 0.0, taxable = false)
         }
         x.close("cac:TaxTotal")
 
@@ -202,9 +206,10 @@ object InvoiceXml {
             x.open("cac:Item")
             x.element("cbc:Name", line.description)
             x.open("cac:ClassifiedTaxCategory")
-            val exempt = line.taxExempt || data.effectiveVatPercent <= 0.0
+            val lineRate = data.rateOf(line)
+            val exempt = lineRate <= 0.0
             x.element("cbc:ID", if (exempt) "E" else "S")
-            x.decimal("cbc:Percent", if (exempt) 0.0 else data.effectiveVatPercent)
+            x.decimal("cbc:Percent", lineRate)
             x.open("cac:TaxScheme")
             x.element("cbc:ID", "VAT")
             x.close("cac:TaxScheme")

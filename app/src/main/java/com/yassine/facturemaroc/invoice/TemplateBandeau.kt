@@ -199,7 +199,8 @@ class BandeauRenderer : PdfRenderer {
         val box = PdfTotals.Box(right - 258f, right - 8f)
         var ty = lastRowEnd + 22f
         val panelTop = ty - 10f
-        val rowCount = 2 + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
+        val rowCount = 1 + data.vatRowCount +
+            (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         val bandTop = ty + 16f * rowCount + 2f
 
         // The panel goes down before the rows. A fill painted afterwards covers
@@ -234,15 +235,20 @@ class BandeauRenderer : PdfRenderer {
             )
             ty += 16f
         }
-        if (data.vatNotApplicable) {
+        val vatRows = data.vatPrintRows
+        if (vatRows.isEmpty()) {
             PdfTotals.label(canvas, box, "TVA non applicable", ty, rowLabel)
+            ty += 16f
         } else {
-            PdfTotals.row(
-                canvas, box,
-                "TVA ${PdfText.percent(data.effectiveVatPercent)}%",
-                PdfText.money(data.vatAmount),
-                ty, rowLabel, rowValue,
-            )
+            vatRows.forEach { recap ->
+                PdfTotals.row(
+                    canvas, box,
+                    "TVA ${PdfText.percent(recap.rate)}%",
+                    PdfText.money(recap.amount),
+                    ty, rowLabel, rowValue,
+                )
+                ty += 16f
+            }
         }
         ty = bandTop + 30f + 14f
 
@@ -284,7 +290,7 @@ class BandeauRenderer : PdfRenderer {
         words: TextPaint,
         contentW: Int,
     ): Float {
-        val rows = 2 + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
+        val rows = 1 + data.vatRowCount + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         var h = 22f + 16f * rows + 2f + 30f + 14f
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += 8f + PdfText.height(data.amountInWords, words, contentW, 4)

@@ -169,11 +169,19 @@ class TicketRenderer : PdfRenderer {
                 money,
             )
         }
-        if (data.vatNotApplicable) {
+        val vatRows = data.vatPrintRows
+        if (vatRows.isEmpty()) {
             PdfText.draw(canvas, "TVA non applicable", margin, y, small, contentW)
             y += 10f
         } else {
-            totalRow("TVA ${PdfText.percent(data.effectiveVatPercent)}%", PdfText.money(data.vatAmount), small, money)
+            vatRows.forEach { recap ->
+                totalRow(
+                    "TVA ${PdfText.percent(recap.rate)}%",
+                    PdfText.money(recap.amount),
+                    small,
+                    money,
+                )
+            }
         }
         y += 2f
         totalRow("TOTAL TTC", PdfText.money(data.total), smallBold, moneyBold)

@@ -211,6 +211,29 @@ class InvoicePdfPagesTest {
     }
 
     @Test
+    fun aMixedRateInvoiceStaysOnOneSheetInEveryLayout() {
+        // The VAT recap grows by one row per rate. If a template still reserved
+        // room for a single row, the totals would be pushed past the foot of the
+        // sheet and land alone on page two — a total on a different page from
+        // its arithmetic.
+        val data = invoice("F-20261029-9012", 3).copy(
+            lines = listOf(
+                InvoiceLine("Chaise en rotin", 2, 950.0),
+                InvoiceLine("Montage à domicile", 1, 450.0, vatPercent = 10.0),
+                InvoiceLine("Livraison express", 1, 120.0, vatPercent = 10.0),
+            ),
+            surchargeAmount = 80.0,
+        )
+
+        InvoiceTemplate.entries.forEach { template ->
+            val file = write(data, template)
+            assertEquals("${template.id} split a mixed-rate sale", 1, pageCount(file))
+            assertTrue("${template.id} printed a blank sheet", inkOn(file, 0) > 100)
+            file.delete()
+        }
+    }
+
+    @Test
     fun anIssuedDocumentPrintsItsOwnShopDetails() {
         // Two shop identities, one document holding the first as a snapshot.
         // The printed page must not follow the live settings: comparing the

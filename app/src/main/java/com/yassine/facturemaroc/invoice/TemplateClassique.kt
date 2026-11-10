@@ -219,17 +219,23 @@ class ClassiqueRenderer : PdfRenderer {
             )
             ty += 15f
         }
-        if (data.vatNotApplicable) {
+        // One row per rate, so a mixed 20 % / 10 % invoice shows both. A
+        // document with nothing taxed says "TVA non applicable" instead.
+        val vatRows = data.vatPrintRows
+        if (vatRows.isEmpty()) {
             PdfTotals.label(canvas, box, "TVA non applicable", ty, totalLabel)
+            ty += 15f
         } else {
-            PdfTotals.row(
-                canvas, box,
-                "TVA ${PdfText.percent(data.effectiveVatPercent)}%",
-                PdfText.money(data.vatAmount),
-                ty, totalLabel, body,
-            )
+            vatRows.forEach { recap ->
+                PdfTotals.row(
+                    canvas, box,
+                    "TVA ${PdfText.percent(recap.rate)}%",
+                    PdfText.money(recap.amount),
+                    ty, totalLabel, body,
+                )
+                ty += 15f
+            }
         }
-        ty += 15f
         ty += 6f
         canvas.drawLine(box.left, ty, right, ty, hairline)
         ty += 6f
@@ -273,7 +279,7 @@ class ClassiqueRenderer : PdfRenderer {
         words: TextPaint,
         contentW: Int,
     ): Float {
-        val rows = 2 + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
+        val rows = 1 + data.vatRowCount + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         var h = 54f + 15f * rows
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += 8f + PdfText.height(data.amountInWords, words, contentW, 4)

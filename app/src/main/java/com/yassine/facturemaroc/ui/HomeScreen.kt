@@ -2731,10 +2731,30 @@ private fun InvoiceDetailSheet(
                 )
             }
             DetailRow("Total HT", record.data.totalExcludingVat.asDirhams())
-            DetailRow(
-                if (record.data.effectiveVatPercent == 0.0) "TVA (exonérée)" else "TVA ${record.data.effectiveVatPercent.trimZeros()} %",
-                record.data.vatAmount.asDirhams(),
-            )
+            if (record.data.surcharge > 0.0) {
+                DetailRow(
+                    record.data.surchargeLabel.ifBlank { "Livraison" },
+                    record.data.surcharge.asDirhams(),
+                )
+            }
+            // The same recap the document prints: one row per rate, so a mixed
+            // 20 % / 10 % invoice is not summarised as a single figure the paper
+            // never showed.
+            val vatRows = record.data.vatPrintRows
+            if (vatRows.isEmpty()) {
+                DetailRow("TVA non applicable", record.data.vatAmount.asDirhams())
+            } else {
+                vatRows.forEach { recap ->
+                    DetailRow(
+                        "TVA ${recap.rate.trimZeros()} %",
+                        recap.amount.asDirhams(),
+                    )
+                }
+            }
+            if (record.data.paidAmount > 0.0) {
+                DetailRow("Encaissé", record.data.paidAmount.asDirhams())
+                DetailRow("Reste à payer", record.data.balanceDue.asDirhams())
+            }
             Spacer(Modifier.height(18.dp))
             Button(
                 onClick = onShare,

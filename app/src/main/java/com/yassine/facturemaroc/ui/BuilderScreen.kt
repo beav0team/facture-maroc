@@ -99,6 +99,7 @@ import com.yassine.facturemaroc.invoice.InvoicePdf
 import com.yassine.facturemaroc.invoice.InvoiceValidation
 import com.yassine.facturemaroc.invoice.InvoiceXml
 import com.yassine.facturemaroc.invoice.ValidationCode
+import com.yassine.facturemaroc.invoice.Severity
 import com.yassine.facturemaroc.invoice.ValidationIssue
 import kotlinx.coroutines.launch
 
@@ -156,7 +157,14 @@ fun BuilderScreen(
 
     val validationIssues = remember(invoice) { InvoiceValidation.validate(invoice) }
     val blockingIssues = remember(validationIssues) {
-        validationIssues.filter { it.code != ValidationCode.NO_LINES }
+        validationIssues.filter { it.severity == Severity.BLOCKING }
+    }
+    // Needs attention, but must not stop a shop printing a sale: a client's
+    // missing ICE is the tax office's problem later, a wrong total is now.
+    val advisoryIssues = remember(validationIssues) {
+        validationIssues.filter {
+            it.severity == Severity.WARNING && it.code != ValidationCode.NO_LINES
+        }
     }
 
     val xmlLauncher = rememberLauncherForActivityResult(
@@ -435,6 +443,12 @@ fun BuilderScreen(
             if (blockingIssues.isNotEmpty()) {
                 item(key = "validation") {
                     ValidationCard(issues = blockingIssues)
+                }
+            }
+
+            if (advisoryIssues.isNotEmpty()) {
+                item(key = "advisory") {
+                    ValidationCard(issues = advisoryIssues, warning = true)
                 }
             }
 
@@ -1015,7 +1029,7 @@ private fun LineCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                if (line.lineDiscountPercent > 0 || line.taxExempt) {
+                if (line.lineDiscountPercent > 0 || line.taxExempt || line.vatPercent != null) {
                     Spacer(Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         if (line.lineDiscountPercent > 0) {
@@ -1031,6 +1045,14 @@ private fun LineCard(
                                 container = MaterialTheme.colorScheme.secondaryContainer,
                                 content = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
+                        } else {
+                            line.vatPercent?.let { rate ->
+                                StatusPill(
+                                    text = "TVA ${rate.trimZeros()} %",
+                                    container = MaterialTheme.colorScheme.secondaryContainer,
+                                    content = MaterialTheme.colorScheme.onSecondaryContainer,
+                                )
+                            }
                         }
                     }
                 }
@@ -1256,10 +1278,20 @@ private fun OptionRow(
 }
 
 @Composable
-private fun ValidationCard(issues: List<ValidationIssue>) {
+private fun ValidationCard(issues: List<ValidationIssue>, warning: Boolean = false) {
+    val container = if (warning) {
+        MaterialTheme.colorScheme.tertiaryContainer
+    } else {
+        MaterialTheme.colorScheme.errorContainer
+    }
+    val content = if (warning) {
+        MaterialTheme.colorScheme.onTertiaryContainer
+    } else {
+        MaterialTheme.colorScheme.onErrorContainer
+    }
     Surface(
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.errorContainer,
+        color = container,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
@@ -1270,22 +1302,22 @@ private fun ValidationCard(issues: List<ValidationIssue>) {
                 Icon(
                     Icons.Filled.Warning,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    tint = content,
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "À corriger avant l'envoi",
+                    if (warning) "À vérifier" else "À corriger avant l'envoi",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    color = content,
                 )
             }
             issues.forEach { issue ->
                 Text(
                     "• ${issue.message}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    color = content,
                 )
             }
         }

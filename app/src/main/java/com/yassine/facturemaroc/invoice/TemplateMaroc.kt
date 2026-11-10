@@ -224,17 +224,21 @@ class MarocRenderer : PdfRenderer {
             )
             ty += 16f
         }
-        if (data.vatNotApplicable) {
+        val vatRows = data.vatPrintRows
+        if (vatRows.isEmpty()) {
             PdfTotals.label(canvas, box, "TVA non applicable", ty, body)
+            ty += 16f
         } else {
-            PdfTotals.row(
-                canvas, box,
-                "TVA ${PdfText.percent(data.effectiveVatPercent)}%",
-                PdfText.money(data.vatAmount),
-                ty, body, cellRight,
-            )
+            vatRows.forEach { recap ->
+                PdfTotals.row(
+                    canvas, box,
+                    "TVA ${PdfText.percent(recap.rate)}%",
+                    PdfText.money(recap.amount),
+                    ty, body, cellRight,
+                )
+                ty += 16f
+            }
         }
-        ty += 16f
 
         canvas.drawRect(box.left, ty - 2f, right, ty + 24f, tint)
         PdfTotals.label(canvas, box, "Total TTC", ty + 4f, PdfText.paint(10f, ink, bold = true))
@@ -306,7 +310,7 @@ class MarocRenderer : PdfRenderer {
         words: TextPaint,
         contentW: Int,
     ): Float {
-        val rows = 2 + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
+        val rows = 1 + data.vatRowCount + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         var h = 18f + 16f * rows + 26f
         if (design.showAmountWords) {
             h += 12f + PdfText.height(data.amountInWords, words, contentW, 3)

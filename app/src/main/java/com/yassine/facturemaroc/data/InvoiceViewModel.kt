@@ -177,7 +177,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 it.unit == entry.unit &&
                 it.unitPrice == entry.unitPrice &&
                 it.lineDiscountPercent == entry.lineDiscountPercent &&
-                it.taxExempt == entry.taxExempt
+                it.taxExempt == entry.taxExempt &&
+                it.vatPercent == entry.vatPercent
         }
         _lines.value = if (existing == null) {
             _lines.value + entry
@@ -203,7 +204,11 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     private fun inShopPriceBasis(line: InvoiceLine): InvoiceLine {
         val shop = _shop.value
         if (!shop.pricesIncludeVat || line.taxExempt) return line
-        val rate = if (shop.vatNotApplicable || _client.value.vatExempt) 0.0 else shop.vatPercent
+        val rate = if (shop.vatNotApplicable || _client.value.vatExempt) {
+            0.0
+        } else {
+            line.vatPercent ?: shop.vatPercent
+        }
         val typed = line.unitPrice
         return line.copy(
             unitPrice = PriceBasis.excludingVat(typed, rate),
@@ -235,6 +240,20 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         val rate = if (shop.vatNotApplicable || _client.value.vatExempt) 0.0 else shop.vatPercent
         _lines.value = _lines.value.mapIndexed { i, line ->
             if (i == index) PriceBasis.withExemption(line, exempt, rate) else line
+        }
+        refreshInvoice()
+    }
+
+    /**
+     * Sets the rate of one line, or null to follow the shop setting again.
+     *
+     * Morocco taxes per line (CGI art. 145), so a mixed invoice is normal: a
+     * 20 % article and a 10 % service on the same page. The price is re-read
+     * when the shop quotes TTC — see [PriceBasis.withRate].
+     */
+    fun setLineVatPercent(index: Int, percent: Double?) {
+        _lines.value = _lines.value.mapIndexed { i, line ->
+            if (i == index) PriceBasis.withRate(line, percent) else line
         }
         refreshInvoice()
     }

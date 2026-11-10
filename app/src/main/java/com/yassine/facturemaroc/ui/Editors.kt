@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +29,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -701,7 +703,12 @@ fun LineEditorDialog(
     // document — and left a line that stopped being exempt charging HT + TVA
     // instead of the price that was typed.
     var taxExempt by remember(initial) { mutableStateOf(initial.taxExempt) }
-    val ttcBasis = pricesIncludeVat && !taxExempt && vatPercent > 0.0
+    // Null means "the rate in the shop settings". A line only stores a rate of
+    // its own when the shop changes it, so a shop that sells at one rate keeps
+    // following Settings instead of freezing today's figure on every line.
+    var rateChoice by remember(initial) { mutableStateOf(initial.vatPercent) }
+    val effectiveRate = if (taxExempt) 0.0 else rateChoice ?: vatPercent
+    val ttcBasis = pricesIncludeVat && !taxExempt && effectiveRate > 0.0
     var description by remember(initial) { mutableStateOf(initial.description) }
     var unit by remember(initial) { mutableStateOf(initial.unit) }
     var quantityText by remember(initial) { mutableStateOf(initial.quantity.toString()) }
@@ -711,7 +718,7 @@ fun LineEditorDialog(
                 // The number the shop typed, when it is still known: converting
                 // the HT price back gives the same figure to the centime, but
                 // only the stored one is exact.
-                if (ttcBasis) initial.ttcPrice ?: PriceBasis.includingVat(initial.unitPrice, vatPercent)
+                if (ttcBasis) initial.ttcPrice ?: PriceBasis.includingVat(initial.unitPrice, effectiveRate)
                 else initial.unitPrice
                 ).trimZeros(),
         )
@@ -790,6 +797,44 @@ fun LineEditorDialog(
                         imeAction = ImeAction.Done,
                     ),
                 )
+                // Morocco taxes each line (CGI art. 145), so one invoice may
+                // carry an article at 20 % and a service at 10 % on the same
+                // page. "Document" keeps the line on the shop's own rate.
+                Column(Modifier.fillMaxWidth()) {
+                    Text("TVA de la ligne", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        if (rateChoice == null) {
+                            "Taux du document : ${vatPercent.trimZeros()} %"
+                        } else {
+                            "Taux appliqué : ${effectiveRate.trimZeros()} %"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        val choices = buildList<Pair<String, Double?>> {
+                            add("Document" to null)
+                            listOf(20.0, 10.0, 0.0).forEach { rate ->
+                                add("${rate.trimZeros()} %" to rate)
+                            }
+                            // A rate a legacy document already carries stays
+                            // offered, so reopening it cannot silently rewrite
+                            // what the customer received.
+                            initial.vatPercent
+                                ?.takeIf { it != 20.0 && it != 10.0 && it != 0.0 }
+                                ?.let { add("${it.trimZeros()} %" to it) }
+                        }
+                        choices.forEach { (label, value) ->
+                            FilterChip(
+                                selected = rateChoice == value,
+                                onClick = { rateChoice = value },
+                                label = { Text(label) },
+                                enabled = !taxExempt,
+                            )
+                        }
+                    }
+                }
                 Row(
                     Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -849,7 +894,7 @@ fun LineEditorDialog(
                             // Shown TTC means given TTC: converted once, here,
                             // because the invoice stores HT.
                             unitPrice = if (ttcBasis) {
-                                PriceBasis.excludingVat(price, vatPercent)
+                                PriceBasis.excludingVat(price, effectiveRate)
                             } else {
                                 price
                             },
@@ -860,6 +905,7 @@ fun LineEditorDialog(
                             ttcPrice = if (ttcBasis) price else null,
                             lineDiscountPercent = discount,
                             taxExempt = taxExempt,
+                            vatPercent = rateChoice,
                         ),
                     )
                 },

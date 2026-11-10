@@ -9,11 +9,18 @@ answering from memory.
 | Version | **0.10.0** (versionCode 16) |
 | Last commit | `3a4dc3a` — payments, surcharge, logo store, PDF archive |
 | Branch | `master` (pushed; no tag/release for 0.10.0 yet) |
-| Tests | **260 JVM**, **15 instrumented** |
+| Tests | **286 JVM**, **16 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
 ---
+
+## In progress — 0.11.0 / Phase A
+
+A1 (VAT and compliance engine) has landed on top of 0.10.0 and is **not
+released**: per-line VAT, recap by rate on every template, UBL per rate, ICE
+validation, detail sheet rows. Still to do in A1: fixed-amount discounts
+(global and per line) and a percentage surcharge.
 
 ## Feature status
 
@@ -23,10 +30,10 @@ answering from memory.
 |---|---|---|
 | Document types | **Exists** | facture, devis, bon de commande, ticket, avoir, proforma, acompte, régularisation, simplifiée, export |
 | Templates | **Exists** | Classique, Moderne, Facture Maroc, Épuré, Bandeau, Ticket 80 mm |
-| Lines | **Exists** | description, quantity (Int), unit price, unit, line discount %, VAT exemption |
+| Lines | **Exists** | description, quantity (Int), unit price, unit, line discount %, **VAT rate per line (20/10/0/exempt)** |
 | Global discount | **Partial** | percentage only; no fixed amount |
-| Surcharge | **Exists** | fixed amount only; no percentage |
-| VAT | **Partial** | one rate per invoice; **no per-line mixed rates** (compliance gap) |
+| Surcharge | **Partial** | fixed amount only; percentage to come |
+| VAT | **Exists** | per line since A1: 20/10/0/exempt, legacy 7/14 readable; recap by rate on the 6 templates; one UBL `TaxSubtotal` per rate |
 | Payment tracking | **Exists** | amount, date, reference, partial/paid, badge, PDF block, UBL prepaid |
 | Receipt PDF | **Missing** | |
 | Due date / overdue | **Missing** | only quotes have a validity date |
@@ -35,7 +42,7 @@ answering from memory.
 | Invoice → credit note | **Missing** | credit notes are built manually |
 | Deposit deduction | **Missing** | acompte is not subtracted from the final invoice |
 | Numbering | **Partial** | per-type sequences; only invoice counter editable; no annual reset |
-| ICE validation | **Missing** | free text, no 15-digit check |
+| ICE validation | **Exists** | 15-digit check + missing-ICE warning on a business invoice (non-blocking) |
 | Notes / signature | **Exists** | client note, terms, thank-you, drawn/photo signature |
 | Shop snapshot | **Exists** | issued documents keep issue-time details + logo hash |
 | UBL 2.1 export | **Exists** | invoice + credit note, discount, prepaid; no DGI profile |

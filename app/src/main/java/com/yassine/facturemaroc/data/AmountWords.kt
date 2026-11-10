@@ -83,19 +83,14 @@ object AmountWords {
                 "QUATRE-VINGTS"
             } else if (remainder == 1) {
                 "QUATRE-VINGT-UN"
-            } else if (remainder < 20) {
-                "QUATRE-VINGT-${teens[remainder - 10]}"
+            } else if (remainder < 10) {
+                // 82-89 read "quatre-vingt-deux"…"quatre-vingt-neuf". This
+                // branch used to index `teens` with a negative number, which
+                // threw and left the whole PDF unwritten for any invoice whose
+                // total ended in 82 to 89.
+                "QUATRE-VINGT-${units[remainder]}"
             } else {
-                val ten = remainder / 10
-                val unit = remainder % 10
-                val t = tens[8]
-                return if (unit == 0) {
-                    t
-                } else if (unit == 1) {
-                    "$t-UN"
-                } else {
-                    "$t-${units[unit]}"
-                }
+                "QUATRE-VINGT-${teens[remainder - 10]}"
             }
         }
         if (n < 1000) {

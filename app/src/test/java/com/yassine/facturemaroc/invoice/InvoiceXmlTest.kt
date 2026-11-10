@@ -322,6 +322,46 @@ class InvoiceXmlTest {
         assertEquals(0, document.getElementsByTagNameNS(CAC, "InvoiceLine").length)
     }
 
+    @Test
+    fun `a mixed-rate invoice exports one tax subtotal per rate`() {
+        val mixed = data.copy(
+            lines = listOf(
+                InvoiceLine("Chaise", quantity = 1, unitPrice = 100.0),
+                InvoiceLine("Montage", quantity = 1, unitPrice = 100.0, vatPercent = 10.0),
+            ),
+        )
+
+        val document = parse(InvoiceXml.build(mixed, shop))
+        val subtotals = document.getElementsByTagNameNS(CAC, "TaxSubtotal")
+        val percents = document.getElementsByTagNameNS(CBC, "Percent")
+
+        // 20 % then 10 %, the order the recap prints: highest rate first.
+        // The fixture carries a 10 % discount, so the bases are 90 and 90.
+        assertEquals(2, subtotals.length)
+        assertEquals("20.00", (percents.item(0) as Element).textContent)
+        assertEquals("10.00", (percents.item(1) as Element).textContent)
+        assertEquals(
+            "27.00",
+            ((document.getElementsByTagNameNS(CBC, "TaxAmount").item(0) as Element).textContent),
+        )
+    }
+
+    @Test
+    fun `each line carries its own rate`() {
+        val mixed = data.copy(
+            lines = listOf(
+                InvoiceLine("Chaise", quantity = 1, unitPrice = 100.0),
+                InvoiceLine("Montage", quantity = 1, unitPrice = 100.0, vatPercent = 10.0),
+            ),
+        )
+
+        val document = parse(InvoiceXml.build(mixed, shop))
+        val rates = document.getElementsByTagNameNS(CBC, "Percent")
+        // Two subtotals come first in document order, then one per line.
+        assertEquals("20.00", (rates.item(2) as Element).textContent)
+        assertEquals("10.00", (rates.item(3) as Element).textContent)
+    }
+
     private fun parse(text: String): Document {
         val factory = DocumentBuilderFactory.newInstance().apply { isNamespaceAware = true }
         return factory.newDocumentBuilder()

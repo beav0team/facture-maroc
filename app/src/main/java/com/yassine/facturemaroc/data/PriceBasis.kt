@@ -69,7 +69,22 @@ object PriceBasis {
      */
     fun withExemption(line: InvoiceLine, exempt: Boolean, vatPercent: Double): InvoiceLine {
         val typed = line.ttcPrice ?: return line.copy(taxExempt = exempt)
-        val rate = if (exempt) 0.0 else vatPercent
+        val rate = if (exempt) 0.0 else line.vatPercent ?: vatPercent
         return line.copy(taxExempt = exempt, unitPrice = excludingVat(typed, rate))
+    }
+
+    /**
+     * [line] with its own rate set to [rate], price re-read if it was quoted TTC.
+     *
+     * Changing a line from 20 % to 10 % does not change the number the customer
+     * is told when the shop quotes TTC: 120 DH stays 120 DH and the tax inside
+     * it becomes 10,91 instead of 20. When the price was typed HT it does not
+     * move at all, because an HT price never contains a rate.
+     */
+    fun withRate(line: InvoiceLine, rate: Double?): InvoiceLine {
+        val updated = line.copy(vatPercent = rate, taxExempt = if (rate == 0.0) line.taxExempt else false)
+        val typed = updated.ttcPrice ?: return updated
+        val effective = if (updated.taxExempt) 0.0 else rate ?: 0.0
+        return updated.copy(unitPrice = excludingVat(typed, effective))
     }
 }

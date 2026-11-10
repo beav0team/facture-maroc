@@ -28,6 +28,16 @@ data class InvoiceLine(
      */
     val taxExempt: Boolean = false,
     /**
+     * The rate of this line, when it differs from the document's.
+     *
+     * Moroccan invoices must break VAT down line by line (CGI art. 145), so a
+     * document may mix a 20 % article and a 10 % service. Null means "the rate
+     * in the shop settings at the time the line was written" — which is what
+     * every line written before this field existed means, and what a shop that
+     * sells at one rate keeps meaning.
+     */
+    val vatPercent: Double? = null,
+    /**
      * The price as the shop typed it, when the shop quotes TTC.
      *
      * [unitPrice] is always HT, because that is what the document prints. A shop
@@ -52,5 +62,26 @@ data class InvoiceLine(
             if (unitText.isNotEmpty()) add(unitText)
             if (lineDiscountPercent > 0) add("−$lineDiscountPercent%")
             if (taxExempt) add("TVA exonérée")
+            // Only an explicit rate is printed: a document at one rate says it
+            // once in the totals, and repeating it on every line is noise. The
+            // space before the sign is non-breaking, so a narrow ticket wraps
+            // the whole "TVA 10 %" onto its second line instead of leaving a
+            // lone "%" behind.
+            vatPercent?.takeIf { !taxExempt }?.let { add("TVA ${trimRate(it)}\u00A0%") }
         }.joinToString(" · ")
+
+    /**
+     * The rate this line is taxed at on a document whose own rate is [documentRate].
+     *
+     * An exempt line is 0 whatever the document says; so is every line when the
+     * seller is an auto-entrepreneur, which the caller resolves before calling
+     * this (see `InvoiceData.rateOf`).
+     */
+    fun rateFor(documentRate: Double): Double =
+        if (taxExempt) 0.0 else (vatPercent ?: documentRate).coerceAtLeast(0.0)
 }
+
+/** `20`, `10`, `7.5` — a rate printed without trailing zeros. */
+internal fun trimRate(rate: Double): String =
+    if (rate == Math.floor(rate)) rate.toInt().toString()
+    else rate.toString().trimEnd('0').trimEnd('.')

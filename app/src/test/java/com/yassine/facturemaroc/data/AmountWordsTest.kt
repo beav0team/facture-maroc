@@ -152,4 +152,25 @@ class AmountWordsTest {
 
         assertTrue(sentence.startsWith("ARRÊTÉE LA PRÉSENTE FACTURE"))
     }
+
+    @Test
+    fun `eighty-two to eighty-nine are written out`() {
+        // These indices used to go negative, which threw and left the PDF
+        // unwritten for any invoice whose total ended in 82-89 — a sale that
+        // simply produced no document.
+        assertTrue(AmountWords.sentence(82.0).contains("QUATRE-VINGT-DEUX DIRHAMS"))
+        assertTrue(AmountWords.sentence(89.0).contains("QUATRE-VINGT-NEUF DIRHAMS"))
+        assertTrue(
+            AmountWords.sentence(4_083.0).contains("QUATRE MILLE QUATRE-VINGT-TROIS DIRHAMS"),
+        )
+        assertTrue(AmountWords.sentence(91.0).contains("QUATRE-VINGT-ONZE DIRHAMS"))
+    }
+
+    @Test
+    fun `every amount below ten thousand is written without failing`() {
+        for (n in 0..9_999) {
+            val text = AmountWords.sentence(n.toDouble())
+            assertTrue("$n produced nothing", text.contains("DIRHAM"))
+        }
+    }
 }

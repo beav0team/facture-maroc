@@ -20,18 +20,37 @@ enum class ValidationCode {
     INVALID_SURCHARGE,
     MISSING_DOCUMENT_NUMBER,
     TOTAL_MISMATCH,
+    INVALID_LINE_VAT_RATE,
+    INVALID_ICE,
+    MISSING_ICE,
+}
+
+/** Whether an issue stops the document leaving the phone. */
+enum class Severity {
+    /** The document would be wrong, or a shop would be breaking the law. */
+    BLOCKING,
+
+    /** Legally required information that is missing, but not a miscalculation. */
+    WARNING,
 }
 
 data class ValidationIssue(
     val code: ValidationCode,
     val message: String,
+    val severity: Severity = Severity.BLOCKING,
 )
 
 object InvoiceValidation {
 
     fun validate(data: InvoiceData): List<ValidationIssue> = buildList {
         if (data.lines.isEmpty()) {
-            add(ValidationIssue(ValidationCode.NO_LINES, "Ajoutez au moins un article."))
+            add(
+                ValidationIssue(
+                    ValidationCode.NO_LINES,
+                    "Ajoutez au moins un article.",
+                    severity = Severity.WARNING,
+                ),
+            )
         }
 
         data.lines.forEachIndexed { index, line ->
@@ -65,6 +84,15 @@ object InvoiceValidation {
                     ValidationIssue(
                         ValidationCode.DISCOUNT_OUT_OF_RANGE,
                         "Ligne $position : la remise doit être comprise entre 0 et 100 %.",
+                    ),
+                )
+            }
+            val rate = line.vatPercent
+            if (rate != null && (rate < 0.0 || rate > 100.0 || rate.isNaN())) {
+                add(
+                    ValidationIssue(
+                        ValidationCode.INVALID_LINE_VAT_RATE,
+                        "Ligne $position : le taux de TVA doit être compris entre 0 et 100 %.",
                     ),
                 )
             }
@@ -108,6 +136,38 @@ object InvoiceValidation {
             )
         }
 
+        // --- the client's ICE, which a business invoice cannot do without
+        //
+        // Both are warnings rather than blockers: a shop at the counter must not
+        // be stopped from printing a sale because the buyer has not sent its ICE
+        // yet. The number is still worth checking, because a 13-digit ICE is a
+        // typo that the tax office will find later.
+        val party = data.party
+        val ice = party.ice.filter { it.isDigit() }
+        val iceLooksWrong = party.ice.isNotBlank() &&
+            (ice.length != 15 || party.ice.any { !it.isDigit() && !it.isWhitespace() })
+        if (iceLooksWrong) {
+            add(
+                ValidationIssue(
+                    ValidationCode.INVALID_ICE,
+                    "L'ICE doit comporter 15 chiffres.",
+                    severity = Severity.WARNING,
+                ),
+            )
+        }
+        val partyIsBusiness = party.ifNumber.isNotBlank() || party.rc.isNotBlank() ||
+            party.patente.isNotBlank() || party.cnss.isNotBlank()
+        if (party.ice.isBlank() && partyIsBusiness) {
+            add(
+                ValidationIssue(
+                    ValidationCode.MISSING_ICE,
+                    "Le client a un IF, un RC ou une patente mais pas d'ICE : " +
+                        "l'ICE est obligatoire sur une facture entre entreprises.",
+                    severity = Severity.WARNING,
+                ),
+            )
+        }
+
         // Re-add the lines the way the printed page does: each line rounded to
         // the centime, then summed. If this disagrees with the stored total, one
         // of them is lying and the document must not leave the phone.
@@ -117,20 +177,20 @@ object InvoiceValidation {
         // made of: `totalExcludingVat + vatAmount` is true by construction and
         // could never fail. This repeats [InvoiceData]'s arithmetic on purpose —
         // a second reading of the same lines is the only way to catch a total
-        // that was edited, or a formula that drifted.
+        // that was edited, or a formula that drifted. Per line, because a
+        // document can now carry several rates.
         val exactSubtotal = data.lines.sumOf { it.total }
-        val exactTaxable = data.lines.filterNot { it.taxExempt }.sumOf { it.total }
+        val keep = 1.0 - data.discountPercent.coerceIn(0, 100) / 100.0
+        val nets = mutableMapOf<Double, Double>()
+        data.lines.forEach { line ->
+            val rate = data.rateOf(line)
+            nets[rate] = (nets[rate] ?: 0.0) + line.total * keep
+        }
         val exactDiscount = exactSubtotal * data.discountPercent.coerceIn(0, 100) / 100.0
         val exactSurcharge = data.surchargeAmount.coerceAtLeast(0.0)
-        val taxableNet = if (exactSubtotal == 0.0) {
-            exactSurcharge
-        } else {
-            exactTaxable - exactDiscount * (exactTaxable / exactSubtotal) + exactSurcharge
-        }
-        val recomputedTotal = round(
-            exactSubtotal - exactDiscount + exactSurcharge +
-                taxableNet * data.effectiveVatPercent.coerceAtLeast(0.0) / 100.0,
-        )
+        val exactVat = nets.entries.sumOf { (rate, net) -> net * rate / 100.0 } +
+            exactSurcharge * data.surchargeVatPercent / 100.0
+        val recomputedTotal = round(exactSubtotal - exactDiscount + exactSurcharge + exactVat)
 
         if (!nearlyEqual(recomputedSubtotal, data.subtotal) || !nearlyEqual(recomputedTotal, data.total)) {
             add(

@@ -83,9 +83,37 @@ data class InvoiceData(
     /** Delivery or another charge, HT, after the discount and before TVA. */
     val surcharge: Double get() = money(surchargeAmount.coerceAtLeast(0.0))
 
-    /** Effective VAT: 0 for an auto-entrepreneur or an exempt client. */
+    /** The effective VAT: 0 for an auto-entrepreneur or an exempt client. */
     val effectiveVatPercent: Double
         get() = if (vatNotApplicable || client.vatExempt) 0.0 else vatPercent
+
+    /**
+     * The rate a given line pays on this document.
+     *
+     * An exempt line is outside the tax, and so is every line when the seller
+     * is an auto-entrepreneur or the buyer is exempt. Otherwise the line's own
+     * rate wins, falling back on the document's.
+     */
+    fun rateOf(line: InvoiceLine): Double = when {
+        line.taxExempt || vatNotApplicable || client.vatExempt -> 0.0
+        else -> (line.vatPercent ?: vatPercent).coerceAtLeast(0.0)
+    }
+
+    /**
+     * The rate the delivery-type surcharge is taxed at.
+     *
+     * A charge is not a line, so it has no rate of its own. It follows the
+     * document's rate, except when every *taxed* line pays the same other rate —
+     * a 10 % invoice with 20 % delivery would be a document nobody can
+     * reconcile. Exempt lines are ignored here: a delivery charged on an export
+     * is still taxed at the document's rate.
+     */
+    val surchargeVatPercent: Double
+        get() {
+            if (vatNotApplicable || client.vatExempt) return 0.0
+            val taxedRates = lines.map { rateOf(it) }.filter { it > 0.0 }.distinct()
+            return if (taxedRates.size == 1) taxedRates.first() else vatPercent.coerceAtLeast(0.0)
+        }
 
     /** Whether this document carries a reference to another invoice. */
     val showReferenceField: Boolean get() = documentType.isReferenceDocument
@@ -97,40 +125,78 @@ data class InvoiceData(
     val taxableSubtotal: Double
         get() = money(lines.filterNot { it.taxExempt }.sumOf { money(it.total) })
 
-    /** The same part without rounding, for [exactTaxableNet]. */
-    private val exactTaxable: Double
-        get() = lines.filterNot { it.taxExempt }.sumOf { it.total }
+    /**
+     * Every rate's exact net: the lines at that rate, after the document
+     * discount, plus the surcharge on the rate it follows.
+     */
+    private fun exactRateNets(): Map<Double, Double> {
+        val keep = 1.0 - discountPercent.coerceIn(0, 100) / 100.0
+        val nets = LinkedHashMap<Double, Double>()
+        lines.forEach { line ->
+            val rate = rateOf(line)
+            nets[rate] = (nets[rate] ?: 0.0) + line.total * keep
+        }
+        val charge = surchargeAmount.coerceAtLeast(0.0)
+        if (charge > 0.0) {
+            val rate = surchargeVatPercent
+            nets[rate] = (nets[rate] ?: 0.0) + charge
+        }
+        return nets
+    }
+
+    /** TVA actually charged, before rounding, summed over every rate. */
+    private val exactVat: Double
+        get() = exactRateNets().entries.sumOf { (rate, net) -> net * rate / 100.0 }
 
     /**
-     * The TVA base, on the rounded figures the page prints.
+     * The document broken down by rate: base and tax, highest rate first.
      *
-     * The invoice-level discount is spread over every line in proportion to
-     * what it is worth, so an exempt line cannot accidentally reduce the tax
-     * that a taxed line owes.
+     * This is the block a mixed-rate invoice has to show (CGI art. 145), and
+     * the source of the UBL tax subtotals. The bases add up to
+     * [totalExcludingVat] + [surcharge] and the taxes add up to [vatAmount]:
+     * whatever a rounded group loses is put back on the largest one, so the
+     * recap can never contradict the figures above it.
      */
-    private val taxableNet: Double
-        get() = if (subtotal == 0.0) {
-            surcharge
-        } else {
-            taxableSubtotal - discountAmount * (taxableSubtotal / subtotal) + surcharge
+    val vatBreakdown: List<VatRecap>
+        get() {
+            val raw = exactRateNets().entries.sortedByDescending { it.key }
+            if (raw.isEmpty()) return emptyList()
+            val bases = raw.map { (rate, net) -> rate to money(net) }.toMutableList()
+            val baseDelta = money(money(totalExcludingVat + surcharge) - bases.sumOf { it.second })
+            if (baseDelta != 0.0) {
+                val index = bases.indices.maxByOrNull { bases[it].second } ?: 0
+                bases[index] = bases[index].first to money(bases[index].second + baseDelta)
+            }
+            val amounts = bases.map { (rate, base) -> money(base * rate / 100.0) }.toMutableList()
+            val amountDelta = money(vatAmount - amounts.sum())
+            if (amountDelta != 0.0) {
+                val index = amounts.indices.maxByOrNull { amounts[it] } ?: 0
+                amounts[index] = money(amounts[index] + amountDelta)
+            }
+            return bases.mapIndexed { i, (rate, base) -> VatRecap(rate, base, amounts[i]) }
         }
+
+    /** The rates actually charged: what the totals block prints, one row each. */
+    val vatRows: List<VatRecap> get() = vatBreakdown.filter { it.rate > 0.0 && it.base != 0.0 }
 
     /**
-     * The same base before rounding, which is what [total] is built from.
+     * The rows the page prints under "Total HT".
      *
-     * Kept unrounded because rounding it first is what turned `99,99` into
-     * `100,00`: the TTC figure has to come back exactly as it was typed.
+     * A document with no taxed rate still says something: "TVA non applicable"
+     * for an auto-entrepreneur, "TVA 0 %" otherwise. Returning that here keeps
+     * the six templates from each inventing their own wording.
      */
-    private val exactTaxableNet: Double
-        get() = if (exactSubtotal == 0.0) {
-            surchargeAmount.coerceAtLeast(0.0)
-        } else {
-            exactTaxable - exactDiscount * (exactTaxable / exactSubtotal) +
-                surchargeAmount.coerceAtLeast(0.0)
+    val vatPrintRows: List<VatRecap>
+        get() = vatRows.ifEmpty {
+            if (vatNotApplicable) emptyList()
+            else listOf(VatRecap(effectiveVatPercent, vatBase, vatAmount))
         }
 
-    /** The base a tax office reads: the same figure, to the centime. */
-    val vatBase: Double get() = money(taxableNet)
+    /** How many lines the VAT recap occupies, for pagination. */
+    val vatRowCount: Int get() = vatPrintRows.size.coerceAtLeast(1)
+
+    /** The base a tax office reads: every taxed rate's base, to the centime. */
+    val vatBase: Double get() = money(vatBreakdown.filter { it.rate > 0.0 }.sumOf { it.base })
 
     /**
      * TVA actually charged.
@@ -155,8 +221,7 @@ data class InvoiceData(
      */
     val total: Double
         get() = money(
-            exactSubtotal - exactDiscount + surchargeAmount.coerceAtLeast(0.0) +
-                exactTaxableNet * effectiveVatPercent.coerceAtLeast(0.0) / 100.0,
+            exactSubtotal - exactDiscount + surchargeAmount.coerceAtLeast(0.0) + exactVat,
         )
 
     /** The amount in words, the line that makes the document hard to alter. */
@@ -250,6 +315,21 @@ data class InvoiceData(
      */
     fun footer(default: String): String = thankYouNote.trim().ifBlank { default }
 }
+
+/**
+ * One rate's share of a document: the net it was charged on, and the tax.
+ *
+ * Printed as its own row in the totals block and exported as one UBL
+ * `TaxSubtotal`, which is what "break the VAT down line by line" means once the
+ * lines have been added up.
+ */
+data class VatRecap(
+    val rate: Double,
+    /** Net HT taxed at [rate], discount applied, surcharge included. */
+    val base: Double,
+    /** Tax owed at [rate], to the centime. */
+    val amount: Double,
+)
 
 /** Half-up rounding to two decimals. */
 private fun money(value: Double): Double = Math.round(value * 100.0) / 100.0

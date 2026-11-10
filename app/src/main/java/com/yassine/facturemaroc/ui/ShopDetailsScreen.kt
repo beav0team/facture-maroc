@@ -40,6 +40,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.HorizontalDivider
@@ -514,8 +515,21 @@ fun ShopDetailsScreen(
             item(key = "vat") {
                 SettingsSection(
                     title = "TVA",
-                    subtitle = "Appliquée par défaut, après la remise générale.",
+                    subtitle = "Taux par défaut des nouvelles lignes, après la remise générale.",
                 ) {
+                    // Morocco has two rates since 1 January 2026; 7 % and 14 %
+                    // were removed. Chips because a typo in a free field is a
+                    // tax rate on a legal document.
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(20.0, 10.0, 0.0).forEach { rate ->
+                            val selected = vatText.replace(',', '.').toDoubleOrNull() == rate
+                            FilterChip(
+                                selected = selected,
+                                onClick = { vatText = rate.trimZeros() },
+                                label = { Text("${rate.trimZeros()} %") },
+                            )
+                        }
+                    }
                     OutlinedTextField(
                         value = vatText,
                         onValueChange = { input ->
@@ -530,7 +544,11 @@ fun ShopDetailsScreen(
                             imeAction = ImeAction.Done,
                         ),
                         supportingText = {
-                            Text("20 % est le taux normal au Maroc. 0 pour une activité exonérée.")
+                            Text(
+                                "20 % est le taux normal, 10 % le taux réduit. " +
+                                    "Les taux de 7 % et 14 % n'existent plus depuis 2026. " +
+                                    "Chaque ligne peut avoir son propre taux.",
+                            )
                         },
                     )
                     Row(

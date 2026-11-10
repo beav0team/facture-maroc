@@ -25,6 +25,8 @@ class InvoiceValidationTest {
 
     private fun codes(data: InvoiceData) = InvoiceValidation.validate(data).map { it.code }
 
+    private fun validate(data: InvoiceData) = InvoiceValidation.validate(data)
+
     @Test
     fun `a normal invoice has nothing to report`() {
         assertTrue(InvoiceValidation.validate(invoice()).isEmpty())
@@ -114,5 +116,47 @@ class InvoiceValidationTest {
         )
 
         assertTrue(InvoiceValidation.validate(data).none { it.code == ValidationCode.TOTAL_MISMATCH })
+    }
+
+    // ---- the client's ICE ---------------------------------------------------
+
+    @Test
+    fun `a fifteen-digit ICE is accepted`() {
+        val data = invoice().copy(
+            client = InvoiceClient(name = "Société", ice = "001234567000089"),
+        )
+
+        assertTrue(validate(data).none { it.code == ValidationCode.INVALID_ICE })
+    }
+
+    @Test
+    fun `a thirteen-digit ICE is only a warning`() {
+        val data = invoice().copy(
+            client = InvoiceClient(name = "Société", ice = "0012345670000"),
+        )
+        val issues = validate(data)
+
+        assertTrue(issues.any { it.code == ValidationCode.INVALID_ICE })
+        // A shop at the counter must not be blocked from printing a sale.
+        assertTrue(issues.filter { it.code == ValidationCode.INVALID_ICE }.all { it.severity == Severity.WARNING })
+    }
+
+    @Test
+    fun `a business client without an ICE is flagged but not blocked`() {
+        val data = invoice().copy(
+            client = InvoiceClient(name = "Société", ifNumber = "1234567"),
+        )
+        val issues = validate(data)
+
+        assertTrue(issues.any { it.code == ValidationCode.MISSING_ICE })
+        assertTrue(issues.all { it.severity == Severity.WARNING })
+    }
+
+    @Test
+    fun `a walk-in client with no identifiers is not asked for an ICE`() {
+        val issues = validate(invoice())
+
+        assertTrue(issues.none { it.code == ValidationCode.MISSING_ICE })
+        assertTrue(issues.none { it.code == ValidationCode.INVALID_ICE })
     }
 }

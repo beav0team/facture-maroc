@@ -215,17 +215,21 @@ class EpureRenderer : PdfRenderer {
             )
             ty += 16f
         }
-        if (data.vatNotApplicable) {
+        val vatRows = data.vatPrintRows
+        if (vatRows.isEmpty()) {
             PdfTotals.label(canvas, box, "TVA NON APPLICABLE", ty, label)
+            ty += 18f
         } else {
-            PdfTotals.row(
-                canvas, box,
-                "TVA ${PdfText.percent(data.effectiveVatPercent)}%",
-                PdfText.money(data.vatAmount),
-                ty, label, cellRight,
-            )
+            vatRows.forEach { recap ->
+                PdfTotals.row(
+                    canvas, box,
+                    "TVA ${PdfText.percent(recap.rate)}%",
+                    PdfText.money(recap.amount),
+                    ty, label, cellRight,
+                )
+                ty += 18f
+            }
         }
-        ty += 18f
         canvas.drawLine(box.left, ty, right, ty, accentRule)
         ty += 12f
         PdfTotals.label(canvas, box, "TOTAL TTC", ty, totalLabel)
@@ -271,7 +275,7 @@ class EpureRenderer : PdfRenderer {
         words: TextPaint,
         contentW: Int,
     ): Float {
-        val rows = 2 + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
+        val rows = 1 + data.vatRowCount + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         var h = 26f + 16f * rows + 18f + 12f + 32f
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += 8f + PdfText.height(data.amountInWords, words, contentW, 4)

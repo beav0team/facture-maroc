@@ -53,6 +53,10 @@ object InvoiceJson {
         put("unit", line.unit)
         put("lineDiscountPercent", line.lineDiscountPercent)
         put("taxExempt", line.taxExempt)
+        // Written only when the line carries its own rate: a line that follows
+        // the shop setting must keep following it, and an old file stays
+        // byte-for-byte what it was.
+        line.vatPercent?.let { put("vatPercent", it) }
         // Written only when the shop quoted TTC, so an HT line stays exactly
         // what it is: a number that does not depend on who is buying.
         line.ttcPrice?.let { put("ttcPrice", it) }
@@ -65,6 +69,7 @@ object InvoiceJson {
         unit = obj.optString("unit", ""),
         lineDiscountPercent = obj.optInt("lineDiscountPercent", 0).coerceIn(0, 100),
         taxExempt = obj.optBoolean("taxExempt", false),
+        vatPercent = obj.optDouble("vatPercent", Double.NaN).let { if (it.isNaN()) null else it.coerceAtLeast(0.0) },
         ttcPrice = obj.optDouble("ttcPrice", Double.NaN).let { if (it.isNaN()) null else it },
     )
 
