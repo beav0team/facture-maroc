@@ -7,9 +7,9 @@ answering from memory.
 | | |
 |---|---|
 | Version | **0.10.0** (versionCode 16) — 0.11.0 en préparation, non publiée |
-| Last commit | Phase A4 — règlement structuré, clause de retard, banque/QR, modèles et docs (3 commits locaux) |
-| Branch | `master` (Phase A local commits; no tag/release for 0.11.0 yet) |
-| Tests | **442 JVM**, **18 instrumented** |
+| Last commit | Phase B2 — bons de réception, coûts et marge (commits locaux) |
+| Branch | `master` (Phase A/B local commits; no tag/release for 0.11.0 yet) |
+| Tests | **474 JVM**, **18 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -34,8 +34,18 @@ archive state on each record's detail sheet. Listing and README are refreshed.
 migration, an append-only stock ledger with a per-item history screen, the
 stocktake (physical count, motivated difference, summary), a reorder threshold
 with a "à commander" filter, a Settings drift check that shows but never
-silently repairs, and the ledger inside the JSON backup. **B2 (purchases and
-costing) is next.**
+silently repairs, and the ledger inside the JSON backup.
+
+**Phase B2 has landed** (purchases and costing): numbered goods receipts
+(`BR-yyyyMMdd-0001`) that write PURCHASE movements and update the cached
+quantity and the article's purchase price; a receipt is deleted by reversing its
+ledger entries, never by leaving phantom stock. Ledger entries carry a unit cost
+(HT), the opening line takes the article's purchase price, and a manual
+correction keeps the cost already known. The valuation method is a setting
+(weighted average by default, FIFO, or none) and only affects future movements.
+A line freezes the article's cost when the document is issued, the margin is
+reported per document, per article and per month, and a below-cost sale raises a
+non-blocking warning. **B3 (catalogue and pricing) is next.**
 
 **RAS TVA stays out** — settled in `docs/decisions.md`: the user asked to
 continue without it, so no field is invented. Revisit only on request.
@@ -82,9 +92,9 @@ continue without it, so no field is invented. Revisit only on request.
 | Stable item ID | **Exists** | UUID per article, `InvoiceLine.itemId`; one-shot migration binds old lines by label, renames keep the history |
 | Reorder threshold | **Exists** | per item, "à commander" filter and count in the stock view |
 | Stocktake | **Exists** | counted vs expected per item, motivated difference written as a STOCKTAKE entry, summary with the difference value |
-| Purchases / stock-in | **Missing** | |
-| Cost layers / average / FIFO | **Missing** | only a static purchase price |
-| Margin | **Partial** | unit margin shown in the item editor |
+| Purchases / stock-in | **Exists** | numbered goods receipts (`BR-yyyyMMdd-0001`), supplier picker or free text, article lines with quantity and unit cost; a receipt writes PURCHASE movements and updates the cached quantity and purchase price; deleting reverses the movements |
+| Cost layers / average / FIFO | **Exists** | `StockEntry.unitCost`; `StockCost` replays the ledger in order: weighted average (CMP, default), FIFO layers, or none; Settings "Valorisation du stock"; switching affects future movements only |
+| Margin | **Exists** | cost frozen on each issued line (`InvoiceLine.unitCostHt`); margin per document, per article and per month (credit notes subtracted), lines without cost excluded and counted; below-cost warning |
 | Price tiers | **Missing** | |
 | Attributes | **Missing** | |
 | Photos | **Out** | deferred by decision |

@@ -44,6 +44,24 @@ Cost layers are stored from the start. Settings offer weighted average (default)
 FIFO, or no costing. Switching affects future stock only; issued line costs are
 frozen.
 
+### 2026-11-10 — Goods receipts are their own series, not a document type
+A bon de réception carries `BR-yyyyMMdd-0001` and lives in `purchases.json`, not
+in the invoice history: it is a purchase, and putting a supplier's delivery among
+the documents the shop handed to customers would make the two lists lie. The
+number is derived from the day's existing receipts, so no extra counter has to
+be restored or rewound. Regarding a receipt appends one PURCHASE ledger entry
+per line and updates the cached quantity and the article's purchase price;
+deleting it appends the reverse entries, so the shelf returns to what it would
+have been and the history keeps the receipt that was cancelled.
+
+### 2026-11-10 — Unknown cost is not zero
+`StockEntry.unitCost` and `InvoiceLine.unitCostHt` are optional facts, not
+numbers that default to a useful value: an inbound movement without a price
+leaves the weighted average alone, a sale of an article with no known cost gets
+no frozen cost, and the margin report counts that line as "sans coût" instead of
+reporting it as pure profit. A line sold below its frozen cost raises a
+non-blocking `PRIX_SOUS_COUT` warning: a loss leader is a decision, not an error.
+
 ### 2026-11-10 — Attributes: free key/value
 Item attributes are a list of key/value pairs with neutral suggestions
 (Référence, Marque, Modèle, Dimensions, Lot / série…). No hard-coded
