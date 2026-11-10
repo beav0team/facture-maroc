@@ -487,7 +487,10 @@ fun HomeScreen(
         val scoped = if (showAllArticles || articleFolder == null) {
             items
         } else {
-            SavedItemStore.itemsIn(articleFolder, items)
+            // `deep = true`: an article filed under 13/175 70R13/Michelin is
+            // still in 13, which is exactly how the shelf map counts it. Without
+            // this, every folder above the brand level opened empty.
+            SavedItemStore.itemsIn(articleFolder, items, deep = true)
         }
         sortArticles(filterToReorder(scoped, reorderOnly), articleSort)
     }
