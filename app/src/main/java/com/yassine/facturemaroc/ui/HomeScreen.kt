@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.MoreVert
@@ -196,6 +197,8 @@ fun HomeScreen(
     var editingClient by remember { mutableStateOf<InvoiceClient?>(null) }
     var itemEditorOpen by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<SavedItem?>(null) }
+    /* The article whose stock history is open, if any. */
+    var historyItem by remember { mutableStateOf<SavedItem?>(null) }
     /*
      * Where the Articles tab is filtering.
      *
@@ -705,6 +708,7 @@ fun HomeScreen(
                                     onEdit = onEditItem,
                                     onDelete = onDeleteItem,
                                     onMove = { movingItem = it },
+                                    onHistory = { historyItem = it },
                                 )
                             }
 
@@ -729,6 +733,7 @@ fun HomeScreen(
                                 onEdit = onEditItem,
                                 onDelete = onDeleteItem,
                                 onMove = { movingItem = it },
+                                onHistory = { historyItem = it },
                             )
 
                             else -> ArticlesFoldersGrid(
@@ -764,6 +769,7 @@ fun HomeScreen(
                             onEdit = onEditItem,
                             onDelete = onDeleteItem,
                             onMove = { movingItem = it },
+                            onHistory = { historyItem = it },
                         )
                     } else {
                         Column(Modifier.fillMaxSize()) {
@@ -800,6 +806,7 @@ fun HomeScreen(
                                     onEdit = onEditItem,
                                     onDelete = onDeleteItem,
                                     onMove = { movingItem = it },
+                                    onHistory = { historyItem = it },
                                 )
                             }
                             ArticlesSummary(items = articleList, fields = itemFields)
@@ -881,6 +888,17 @@ fun HomeScreen(
                     itemEditorOpen = false
                 }
             },
+        )
+    }
+
+    historyItem?.let { item ->
+        // Read once per opening: the ledger is a file, and the row is a record
+        // of what already happened, not a live counter.
+        val entries = remember(item.id) { viewModel.savedItems.entriesFor(item.id) }
+        StockHistoryDialog(
+            item = item,
+            entries = entries,
+            onDismiss = { historyItem = null },
         )
     }
 
@@ -2008,6 +2026,8 @@ private fun FolderContents(
     onEdit: (SavedItem) -> Unit,
     onDelete: (SavedItem) -> Unit,
     onMove: (SavedItem) -> Unit,
+    /** Opening one article's stock history; nothing for a service. */
+    onHistory: (SavedItem) -> Unit = {},
     /** The "Tous les articles" view: same grid, but nothing is a sub-folder. */
     allArticles: Boolean = false,
     /**
@@ -2066,7 +2086,7 @@ private fun FolderContents(
         // overload and would take the list for a number of blank cells.
         gridItems(
             articles,
-            key = { "item-${it.label.lowercase()}" },
+            key = { "item-${it.id.ifBlank { it.label.lowercase() }}" },
             span = { GridItemSpan(maxLineSpan) },
         ) { item ->
             ItemCard(
@@ -2075,6 +2095,7 @@ private fun FolderContents(
                 onClick = { onEdit(item) },
                 onDelete = { onDelete(item) },
                 onMove = { onMove(item) },
+                onHistory = { onHistory(item) },
             )
         }
     }
@@ -2454,6 +2475,8 @@ private fun ArticlesList(
     onEdit: (SavedItem) -> Unit,
     onDelete: (SavedItem) -> Unit,
     onMove: (SavedItem) -> Unit,
+    /** Opening one article's stock history. */
+    onHistory: (SavedItem) -> Unit = {},
 ) {
     if (items.isEmpty()) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
@@ -2471,7 +2494,7 @@ private fun ArticlesList(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 104.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        items(items, key = { "item-${it.label.lowercase()}" }) { item ->
+        items(items, key = { "item-${it.id.ifBlank { it.label.lowercase() }}" }) { item ->
             ItemCard(
                 item = item,
                 showFolder = showFolder,
@@ -2479,6 +2502,7 @@ private fun ArticlesList(
                 onClick = { onEdit(item) },
                 onDelete = { onDelete(item) },
                 onMove = { onMove(item) },
+                onHistory = { onHistory(item) },
             )
         }
     }
@@ -2515,6 +2539,8 @@ private fun ItemCard(
     onClick: () -> Unit,
     onDelete: () -> Unit,
     onMove: () -> Unit,
+    /** Opens this article's stock history; only offered for a counted article. */
+    onHistory: () -> Unit = {},
     /** Which optional fields the shop asked to see. */
     fields: Set<ItemField> = ItemField.entries.toSet(),
     /** False inside a folder, where repeating its name on every row is noise. */
@@ -2702,6 +2728,19 @@ private fun ItemCard(
                             onClick = {
                                 menuOpen = false
                                 onMove()
+                            },
+                        )
+                    }
+                    // Only a counted article has a history to show; offering it
+                    // on a service would open an empty screen and suggest the
+                    // app lost something.
+                    if (item.tracksStock) {
+                        DropdownMenuItem(
+                            text = { Text("Historique du stock") },
+                            leadingIcon = { Icon(Icons.Filled.History, contentDescription = null) },
+                            onClick = {
+                                menuOpen = false
+                                onHistory()
                             },
                         )
                     }
