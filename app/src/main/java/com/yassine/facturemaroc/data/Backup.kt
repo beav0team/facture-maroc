@@ -59,6 +59,9 @@ object Backup {
         counters: Map<String, Int>,
         folders: List<String> = emptyList(),
         logos: Map<String, ByteArray> = emptyMap(),
+        /** Only the prefixes the shop customised; absent keys mean the default. */
+        prefixes: Map<String, String> = emptyMap(),
+        resetAnnually: Boolean = false,
         exportedAt: Long = System.currentTimeMillis(),
     ): String = JSONObject().apply {
         put("app", APP)
@@ -98,6 +101,25 @@ object Backup {
             "counters",
             JSONObject().apply {
                 DocumentType.entries.forEach { type -> put(type.id, counters[type.id] ?: 1) }
+            },
+        )
+        // Numbering rules, written as an object so an older build that does not
+        // know it can ignore it and read the counters above as before. Only
+        // customised prefixes are listed: a missing type means its default.
+        put(
+            "numbering",
+            JSONObject().apply {
+                put("resetAnnually", resetAnnually)
+                put(
+                    "prefixes",
+                    JSONObject().apply {
+                        prefixes.forEach { (id, prefix) ->
+                            if (DocumentType.entries.any { it.id == id } && prefix.isNotBlank()) {
+                                put(id, prefix)
+                            }
+                        }
+                    },
+                )
             },
         )
         put(
@@ -154,6 +176,8 @@ object Backup {
         counters: Map<String, Int>,
         folders: List<String> = emptyList(),
         logos: Map<String, ByteArray> = emptyMap(),
+        prefixes: Map<String, String> = emptyMap(),
+        resetAnnually: Boolean = false,
         exportedAt: Long = System.currentTimeMillis(),
     ): Built {
         fun render(withLogo: ByteArray?, withLogos: Map<String, ByteArray> = logos) = build(
@@ -166,6 +190,8 @@ object Backup {
             counters = counters,
             folders = folders,
             logos = withLogos,
+            prefixes = prefixes,
+            resetAnnually = resetAnnually,
             exportedAt = exportedAt,
         )
 
@@ -251,6 +277,22 @@ object Backup {
         val counters = DocumentType.entries.associate { type ->
             type.id to (countersObject?.optInt(type.id, 1) ?: 1).coerceAtLeast(1)
         }
+        // A backup written before numbering was configurable has no
+        // "numbering" object: that means the defaults (type prefixes, no
+        // annual reset), which is exactly how those files were numbered.
+        val numberingObject = root.optJSONObject("numbering")
+        val prefixesObject = numberingObject?.optJSONObject("prefixes") ?: JSONObject()
+        val prefixes = buildMap {
+            prefixesObject.keys().forEach { id ->
+                val value = prefixesObject.optString(id, "").trim()
+                if (DocumentType.entries.any { it.id == id } &&
+                    NumberingStore.isValidPrefix(value)
+                ) {
+                    put(id, value)
+                }
+            }
+        }
+        val resetAnnually = numberingObject?.optBoolean("resetAnnually", false) ?: false
 
         val clients = root.optJSONArray("clients").mapObjects { InvoiceJson.clientFromJson(it) }
             .filter { it.name.isNotBlank() }
@@ -293,6 +335,8 @@ object Backup {
             counters = counters,
             folders = folders,
             logos = logos,
+            prefixes = prefixes,
+            resetAnnually = resetAnnually,
             exportedAt = root.optLong("exportedAt", 0L),
         )
     }
@@ -417,6 +461,10 @@ data class BackupData(
     val folders: List<String> = emptyList(),
     /** Logo blobs referenced by [invoices], keyed by their content hash. */
     val logos: Map<String, ByteArray> = emptyMap(),
+    /** Customised number prefixes; a missing type means its default. */
+    val prefixes: Map<String, String> = emptyMap(),
+    /** Whether number sequences restart every January. */
+    val resetAnnually: Boolean = false,
     val exportedAt: Long,
 )
 

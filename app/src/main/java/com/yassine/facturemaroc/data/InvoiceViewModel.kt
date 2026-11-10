@@ -982,6 +982,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             counters = InvoiceNumber.counters(app),
             folders = savedItems.folders.value,
             logos = snapshotLogos,
+            prefixes = NumberingStore(app).overrides(),
+            resetAnnually = NumberingStore(app).resetAnnually(),
         )
     }
 
@@ -1104,6 +1106,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             savedItems.replaceAll(backup.items, backup.folders)
             invoices.replaceAll(backup.invoices)
             InvoiceNumber.writeCounters(app, backup.counters)
+            NumberingStore(app).writeAll(backup.prefixes, backup.resetAnnually)
             _shop.value = backup.shop
             _design.value = backup.design
             newDraft()

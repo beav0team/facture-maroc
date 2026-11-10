@@ -105,6 +105,8 @@ class BackupTest {
         invoices = invoices,
         counters = counters,
         folders = folders,
+        prefixes = mapOf("facture" to "FA", "devis" to "DEV"),
+        resetAnnually = true,
         exportedAt = 1_234L,
     )
 
@@ -141,7 +143,32 @@ class BackupTest {
         assertEquals(folders, restored.folders)
         assertEquals(invoices, restored.invoices)
         assertEquals(counters, restored.counters)
+        assertEquals(mapOf("facture" to "FA", "devis" to "DEV"), restored.prefixes)
+        assertTrue(restored.resetAnnually)
         assertEquals(1_234L, restored.exportedAt)
+    }
+
+    @Test
+    fun `a backup from before numbering restores the defaults`() {
+        val json = mutated { remove("numbering") }
+
+        val restored = Backup.parse(json)
+
+        assertTrue(restored.prefixes.isEmpty())
+        assertFalse(restored.resetAnnually)
+    }
+
+    @Test
+    fun `a prefix that cannot be a filename is not restored`() {
+        val json = mutated {
+            getJSONObject("numbering")
+                .getJSONObject("prefixes")
+                .put("facture", "../F")
+        }
+
+        val restored = Backup.parse(json)
+
+        assertEquals(mapOf("devis" to "DEV"), restored.prefixes)
     }
 
     @Test

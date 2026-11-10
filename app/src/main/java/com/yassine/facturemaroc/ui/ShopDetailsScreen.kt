@@ -80,6 +80,7 @@ import com.yassine.facturemaroc.data.InvoiceDesignStore
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceNumber
+import com.yassine.facturemaroc.data.NumberingStore
 import com.yassine.facturemaroc.data.Backup
 import com.yassine.facturemaroc.data.BackupData
 import com.yassine.facturemaroc.data.BackupExportOutcome
@@ -194,6 +195,13 @@ fun ShopDetailsScreen(
     var invoiceCounterText by remember(currentCounter) {
         mutableStateOf(currentCounter.toString())
     }
+    // The numbering rules live in their own prefs file; this screen only shows
+    // them and writes them on "Enregistrer", like every other field here.
+    val numbering = remember(context) { NumberingStore(context) }
+    var resetAnnually by remember(numbering) { mutableStateOf(numbering.resetAnnually()) }
+    var prefixTexts by remember(numbering) {
+        mutableStateOf(DocumentType.entries.associateWith { numbering.prefix(it) })
+    }
 
     val exportBackup = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json"),
@@ -283,6 +291,13 @@ fun ShopDetailsScreen(
         if (counter != currentCounter) {
             InvoiceNumber.rewind(context, DocumentType.FACTURE, counter)
         }
+        // Prefixes and the annual switch are cheap prefs writes; they are
+        // stored even when the rest of the form did not change, because the
+        // screen has no other way to know.
+        DocumentType.entries.forEach { type ->
+            numbering.setPrefix(type, prefixTexts[type].orEmpty())
+        }
+        numbering.setResetAnnually(resetAnnually)
         onBack()
     }
 
@@ -831,7 +846,7 @@ fun ShopDetailsScreen(
                 }
             }
 
-            item(key = "about") {
+            item(key = "numbering") {
                 Surface(
                     shape = MaterialTheme.shapes.medium,
                     color = MaterialTheme.colorScheme.surfaceVariant,
@@ -870,6 +885,75 @@ fun ShopDetailsScreen(
                                 )
                             },
                         )
+                        Spacer(Modifier.height(12.dp))
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    "Repartir de 1 chaque année",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                                Text(
+                                    "Au 1er janvier, la séquence de chaque type recommence à 0001. " +
+                                        "Les documents déjà émis gardent leur numéro.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Switch(
+                                checked = resetAnnually,
+                                onCheckedChange = { resetAnnually = it },
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        HorizontalDivider()
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            "Préfixe par type de document",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Text(
+                            "Lettres, chiffres, tiret et tiret bas. Laissez vide pour " +
+                                "revenir au préfixe d'origine.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        // Two per row keeps ten types a short block; a full
+                        // list of text fields would push the backup section
+                        // off the screen.
+                        DocumentType.entries.chunked(2).forEach { row ->
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                row.forEach { type ->
+                                    OutlinedTextField(
+                                        value = prefixTexts[type].orEmpty(),
+                                        onValueChange = { input ->
+                                            val clean = input
+                                                .filter { it.isLetterOrDigit() || it == '-' || it == '_' }
+                                                .take(12)
+                                            prefixTexts = prefixTexts + (type to clean)
+                                        },
+                                        label = { Text(type.label) },
+                                        placeholder = { Text(type.prefix) },
+                                        singleLine = true,
+                                        modifier = Modifier.weight(1f),
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Text,
+                                            imeAction = ImeAction.Next,
+                                        ),
+                                    )
+                                }
+                                // Keep the last row's single field the same
+                                // width as the ones above it.
+                                if (row.size == 1) Spacer(Modifier.weight(1f))
+                            }
+                            Spacer(Modifier.height(8.dp))
+                        }
                     }
                 }
             }

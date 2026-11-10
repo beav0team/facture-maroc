@@ -417,32 +417,71 @@ data class VatRecap(
 /** Half-up rounding to two decimals. */
 private fun money(value: Double): Double = Math.round(value * 100.0) / 100.0
 
-/** Invoice numbers, in the form Moroccan shops use: `F-20261001-0042`. */
+/**
+ * Invoice numbers, in the form Moroccan shops use: `F-20261001-0042`.
+ *
+ * The printed shape is decided by [format] alone, so a test can pin the
+ * padding and the dashes without Android. The counter and its year live in a
+ * preferences file; the prefix and the annual-reset switch live in
+ * [NumberingStore], a separate file, so editing a prefix can never disturb a
+ * sequence.
+ */
 object InvoiceNumber {
 
     private const val PREFS = "invoice_counter"
 
     /** The next number for a given document type, without consuming it. */
-    fun peek(context: android.content.Context, type: DocumentType = DocumentType.FACTURE): String =
-        format(context, type, nextValue(context, type))
+    fun peek(context: android.content.Context, type: DocumentType = DocumentType.FACTURE): String {
+        val now = java.util.Date()
+        return format(prefixFor(context, type), now, nextValue(context, type, now))
+    }
 
     /** The number for a document that is really being written, and takes it. */
     fun consume(context: android.content.Context, type: DocumentType = DocumentType.FACTURE): String {
-        val value = nextValue(context, type)
-        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
-            .edit()
-            .putInt(keyFor(type), value + 1)
-            .commit()
-        return format(context, type, value)
+        val now = java.util.Date()
+        val value = nextValue(context, type, now)
+        // The year is stamped with every reservation, so a counter taken in
+        // January is never mistaken for one taken last December by a later
+        // rewind or restore.
+        writeCounter(context, type, value + 1, yearOf(now))
+        return format(prefixFor(context, type), now, value)
     }
 
-    private fun nextValue(context: android.content.Context, type: DocumentType): Int =
-        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
-            .getInt(keyFor(type), 1)
+    /**
+     * The next value a type will get, after [resetAnnually] has had its say.
+     *
+     * A counter stamped with another year starts again at 1 when the switch is
+     * on. A counter with no year at all — written before this field existed, or
+     * by a build that did not stamp it — is kept: an unknown year is not a
+     * year that changed, and resetting it would reissue numbers on a shop that
+     * never asked.
+     */
+    fun effectiveNext(
+        stored: Int,
+        storedYear: Int,
+        currentYear: Int,
+        resetAnnually: Boolean,
+    ): Int = if (resetAnnually && storedYear > 0 && storedYear != currentYear) {
+        1
+    } else {
+        stored.coerceAtLeast(1)
+    }
+
+    private fun nextValue(context: android.content.Context, type: DocumentType, now: java.util.Date): Int {
+        val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+        return effectiveNext(
+            stored = prefs.getInt(keyFor(type), 1),
+            storedYear = prefs.getInt(yearKeyFor(type), 0),
+            currentYear = yearOf(now),
+            resetAnnually = NumberingStore(context).resetAnnually(),
+        )
+    }
 
     /** Every counter as the next value, for a backup. */
-    fun counters(context: android.content.Context): Map<String, Int> =
-        DocumentType.entries.associate { it.id to nextValue(context, it) }
+    fun counters(context: android.content.Context): Map<String, Int> {
+        val now = java.util.Date()
+        return DocumentType.entries.associate { it.id to nextValue(context, it, now) }
+    }
 
     /**
      * Puts a counter back after a document could not be produced.
@@ -454,10 +493,7 @@ object InvoiceNumber {
      * number in between.
      */
     fun rewind(context: android.content.Context, type: DocumentType, nextValue: Int) {
-        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
-            .edit()
-            .putInt(keyFor(type), nextValue.coerceAtLeast(1))
-            .commit()
+        writeCounter(context, type, nextValue, yearOf(java.util.Date()))
     }
 
     /**
@@ -465,23 +501,57 @@ object InvoiceNumber {
      *
      * A counter is never allowed below 1: a restored zero would format the next
      * document as `-0000`, which is not a number a shop can hand to a customer.
-     * A missing type is reset to 1, which is what a fresh install has.
+     * A missing type is reset to 1, which is what a fresh install has. Every
+     * counter is stamped with the current year, so a restore of last year's
+     * file cannot make the sequence restart in the middle of this year.
      */
     fun writeCounters(context: android.content.Context, counters: Map<String, Int>) {
+        val year = yearOf(java.util.Date())
         context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
             .edit()
             .apply {
                 DocumentType.entries.forEach { type ->
                     putInt(keyFor(type), (counters[type.id] ?: 1).coerceAtLeast(1))
+                    putInt(yearKeyFor(type), year)
                 }
             }
             .commit()
     }
 
+    private fun writeCounter(context: android.content.Context, type: DocumentType, value: Int, year: Int) {
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+            .edit()
+            .putInt(keyFor(type), value.coerceAtLeast(1))
+            .putInt(yearKeyFor(type), year)
+            .commit()
+    }
+
+    private fun prefixFor(context: android.content.Context, type: DocumentType): String =
+        NumberingStore(context).prefix(type)
+
+    /**
+     * The printed number: `PREFIX-yyyyMMdd-0000`.
+     *
+     * Pure, so the padding and the dashes are tested on the JVM. A prefix that
+     * already ends in `-` does not get a second one; a blank prefix prints the
+     * date and the sequence alone rather than a dangling dash.
+     */
+    fun format(prefix: String, date: java.util.Date, value: Int): String {
+        val stamp = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.US).format(date)
+        val number = java.lang.String.format(
+            java.util.Locale.US,
+            "%04d",
+            value.coerceAtLeast(1),
+        )
+        val clean = prefix.trim().trimEnd('-')
+        return if (clean.isEmpty()) "$stamp-$number" else "$clean-$stamp-$number"
+    }
+
+    /** The calendar year of [date], as stamped beside a counter. */
+    fun yearOf(date: java.util.Date): Int =
+        java.text.SimpleDateFormat("yyyy", java.util.Locale.US).format(date).toInt()
+
     private fun keyFor(type: DocumentType): String = "next_${type.id}"
 
-    private fun format(context: android.content.Context, type: DocumentType, value: Int): String {
-        val stamp = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.US).format(java.util.Date())
-        return "${type.prefix}-$stamp-${java.lang.String.format(java.util.Locale.US, "%04d", value)}"
-    }
+    private fun yearKeyFor(type: DocumentType): String = "year_${type.id}"
 }
