@@ -238,7 +238,7 @@ continue without it, so no field is invented. Revisit only on request.
 
 | | |
 |---|---|
-| Design | jetons Material 3 Expressive lus dans `ui/Theme.kt` (`docs/assets/css/tokens.css`) ; thème clair uniquement |
+| Design | jetons Material 3 Expressive lus dans `ui/Theme.kt` (`docs/assets/css/tokens.css`) ; mode sombre depuis `DarkScheme` |
 | Police | Roboto Flex sous-ensemblée, 44 Ko — `docs/scripts/fonts.sh` |
 | Captures | celles de **0.12.0-beta.2**, base de démonstration « Atelier Atlas » (Factures, Constructeur, fiche client, Stock) |
 | Contrôles | `docs/scripts/site-check.sh` : titre, description, canonical, un seul `<h1>`, dimensions d’image, liens locaux, JSON-LD, budget de polices (120 Ko) |

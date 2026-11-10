@@ -21,7 +21,8 @@
 <meta name="twitter:description" content="Dix documents avec vos mentions légales, le montant en toutes lettres, le stock qui suit. Aucune permission réseau.">
 <meta name="twitter:image" content="https://factureapp.ma/assets/img/apercu-1024.jpg">
 <meta name="theme-color" content="#1D4ED8">
-<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#0D131F" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/img/icone-180.png">
 <link rel="manifest" href="manifest.json">
@@ -125,15 +126,14 @@
 
   <section class="heros contenu">
     <div class="argument">
+      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-hors-ligne"/></svg>Facturation hors ligne</p>
       <h1>Vos factures, même sans réseau.</h1>
       <p class="chapeau chapeau--heros">Facture, devis, bon de commande, ticket, avoir. Dix
         documents avec vos mentions légales, le montant écrit en toutes lettres, et
         votre stock qui suit. Tout reste sur votre téléphone.</p>
       <div class="actions">
-        <div class="groupe-boutons">
-          <a class="bouton bouton--plein" href="test.html">Devenir testeur</a>
-          <a class="bouton bouton--tonal" href="#captures">Voir les captures</a>
-        </div>
+        <a class="bouton bouton--plein" href="test.html">Devenir testeur</a>
+        <a class="bouton bouton--tonal" href="#captures">Voir les captures</a>
       </div>
       <ul class="reperes">
         <li class="puce puce--assorti">Bientôt sur Google Play</li>
@@ -214,46 +214,47 @@
 
   <section class="section" id="fonctionnalites">
     <div class="contenu">
-      <div class="deux-colonnes">
-        <div class="colonne-tete">
-          <h2>Quatre onglets, pas de détour.</h2>
-          <p class="presentation">Tout ce qu’il faut pour établir un document, et
-            rien de plus. Les écrans suivent l’ordre du travail : la facture, le
-            client, l’article, puis le stock qui en découle.</p>
-        </div>
+      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-facture"/></svg>Les quatre onglets</p>
+      <h2>Quatre onglets, pas de détour.</h2>
+      <p class="presentation">Tout ce qu’il faut pour établir un document, et rien de
+        plus. Les écrans suivent l’ordre du travail : la facture, le client, l’article,
+        puis le stock qui en découle.</p>
 
-        <ol class="onglets">
-        <li>
+      <div class="grille">
+        <article class="carte">
+          <div class="carte__icone"><svg class="ico" aria-hidden="true"><use href="#i-facture"/></svg></div>
           <h3>Factures</h3>
-          <p>Ce qui reste à encaisser, ce qui est en retard, le facturé du mois.
-            Brouillons et documents émis, recherche par client, numéro ou date,
-            duplication et export XML.</p>
-        </li>
-        <li>
+          <p>Ce qui reste à encaisser, ce qui est en retard, le facturé du mois. Brouillons
+            et documents émis, recherche par client, numéro ou date, duplication et export
+            XML.</p>
+        </article>
+        <article class="carte carte--accent">
+          <div class="carte__icone"><svg class="ico" aria-hidden="true"><use href="#i-clients"/></svg></div>
           <h3>Clients</h3>
-          <p>Un carnet d’adresses avec ICE, IF, RC, patente, CNSS, téléphone et
-            e-mail ; chaque fiche montre l’identité complète, le solde dû et les
-            documents. Les fournisseurs ont les mêmes champs.</p>
-        </li>
-        <li>
+          <p>Un carnet d’adresses avec ICE, IF, RC, patente, CNSS, téléphone et e-mail ;
+            chaque fiche montre l’identité complète, le solde dû et les documents. Les
+            fournisseurs ont les mêmes champs.</p>
+        </article>
+        <article class="carte">
+          <div class="carte__icone"><svg class="ico" aria-hidden="true"><use href="#i-articles"/></svg></div>
           <h3>Articles</h3>
-          <p>Le catalogue : quantité en stock, prix d’achat, prix de vente et
-            code-barres, tapé ou scanné. Les dossiers s’imbriquent — les coussins se
-            rangent sous Textile — et chaque commerce choisit les champs de sa fiche
-            article.</p>
-        </li>
-          <li>
-            <h3>Stock</h3>
-            <p>Réceptions, inventaire et journal du stock, réunis dans leur propre
-              onglet : chaque entrée et chaque sortie, avec le document qui l’a causée.</p>
-          </li>
-        </ol>
+          <p>Votre catalogue : quantité en stock, prix d’achat, prix de vente et code-barres,
+            tapé ou scanné. Les dossiers s’imbriquent — les coussins se rangent sous
+            Textile — et chaque commerce choisit les champs de sa fiche article.</p>
+        </article>
+        <article class="carte carte--accent">
+          <div class="carte__icone"><svg class="ico" aria-hidden="true"><use href="#i-inventaire"/></svg></div>
+          <h3>Stock</h3>
+          <p>Réceptions, inventaire et journal du stock, réunis dans leur propre onglet :
+            chaque entrée et chaque sortie, avec le document qui l’a causée.</p>
+        </article>
       </div>
     </div>
   </section>
 
   <section class="section" id="documents">
     <div class="contenu">
+      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-document"/></svg>Dix numérotations séparées</p>
       <h2>Dix documents, chacun son numéro.</h2>
       <p class="presentation">Une facture ne partage pas sa séquence avec un devis.
         Les avoirs et les régularisations rappellent le document qu’ils annulent ou
@@ -280,35 +281,37 @@
 
   <section class="section" id="modeles">
     <div class="contenu">
+      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-pdf"/></svg>Quatre modèles imprimables</p>
       <h2>Quatre modèles, du classique au ticket.</h2>
       <p class="presentation">Le document se règle sur le papier : logo, TVA,
         remise générale ou par ligne, prix hors taxe ou toutes taxes comprises, et
         le montant écrit en toutes lettres. Le mode auto-entrepreneur imprime
         « TVA non applicable » sur tous les documents.</p>
 
-      <dl class="modeles">
-        <div>
-          <dt>Classique</dt>
-          <dd>Le modèle sobre, en une colonne, pour les factures de tous les jours.</dd>
-        </div>
-        <div>
-          <dt>Moderne</dt>
-          <dd>Bandeau coloré et lignes aérées, pour un document plus commercial.</dd>
-        </div>
-        <div>
-          <dt>Facture Maroc</dt>
-          <dd>Grille complète et espace de signature, pensé pour les dossiers administratifs.</dd>
-        </div>
-        <div>
-          <dt>Ticket 80 mm</dt>
-          <dd>Format rouleau pour une imprimante de comptoir, sortie rapide.</dd>
-        </div>
-      </dl>
+      <ul class="modeles">
+        <li>
+          <strong>Classique</strong>
+          <span>Le modèle sobre, en une colonne, pour les factures de tous les jours.</span>
+        </li>
+        <li>
+          <strong>Moderne</strong>
+          <span>Bandeau coloré et lignes aérées, pour un document plus commercial.</span>
+        </li>
+        <li>
+          <strong>Facture Maroc</strong>
+          <span>Grille complète et espace de signature, pensé pour les dossiers administratifs.</span>
+        </li>
+        <li>
+          <strong>Ticket 80 mm</strong>
+          <span>Format rouleau pour une imprimante de comptoir, sortie rapide.</span>
+        </li>
+      </ul>
     </div>
   </section>
 
   <section class="section" id="captures">
     <div class="contenu">
+      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-telephone"/></svg>Sur le téléphone</p>
       <h2>Ce que vous avez sous les yeux.</h2>
       <p class="presentation">Quatre écrans, ceux du quotidien : la liste des
         documents, le constructeur, la fiche client et le stock.</p>
@@ -372,6 +375,7 @@
 
   <section class="section" id="stock">
     <div class="contenu">
+      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-achats"/></svg>Un stock qui se tient tout seul</p>
       <h2>Le stock suit le document.</h2>
       <div class="duo">
         <div>
@@ -395,6 +399,7 @@
 
   <section class="bandeau" id="donnees">
     <div class="contenu">
+      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-verrou"/></svg>Confidentialité par construction</p>
       <h2>Vos données restent chez vous.</h2>
       <p class="presentation">L’application n’a pas le droit d’aller sur Internet.
         Ce n’est pas une promesse commerciale, c’est une permission qui n’est pas
@@ -416,7 +421,8 @@
   <section class="section" id="questions">
     <div class="contenu faq">
       <div class="faq-tete">
-          <h2>Ce qu’on me demande avant d’installer.</h2>
+        <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-document"/></svg>Questions fréquentes</p>
+        <h2>Ce qu’on me demande avant d’installer.</h2>
         <p class="presentation">Si votre question n’y est pas, écrivez à
           <a href="mailto:contact%40factureapp.ma">contact&#64;factureapp.ma</a>.</p>
       </div>
@@ -485,7 +491,8 @@
           sans e-mail à écrire.</p>
       </div>
       <div class="actions">
-        <a class="bouton bouton--plein" href="test.html">Voir comment installer</a>
+        <a class="bouton bouton--plein" href="test.html">Voir comment installer
+          <svg class="ico ico--petit" aria-hidden="true"><use href="#i-fleche"/></svg></a>
       </div>
     </div>
   </section>
