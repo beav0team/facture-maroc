@@ -166,7 +166,7 @@ fun ItemPickerSheet(
     }
 
     if (creating) {
-        ItemEditorDialog(
+        ItemEditorScreen(
             initial = null,
             onSave = { item ->
                 // The label is the catalogue's key, so a second article under

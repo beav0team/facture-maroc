@@ -1032,7 +1032,7 @@ fun HomeScreen(
     }
 
     if (itemEditorOpen) {
-        ItemEditorDialog(
+        ItemEditorScreen(
             initial = editingItem,
             folders = folders,
             // A new article lands where the shop is looking: in the folder it

@@ -9,7 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.yassine.facturemaroc.data.ItemField
 import com.yassine.facturemaroc.data.SavedItem
 import com.yassine.facturemaroc.ui.FactureMarocTheme
-import com.yassine.facturemaroc.ui.ItemEditorDialog
+import com.yassine.facturemaroc.ui.ItemEditorScreen
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -42,7 +42,7 @@ class ItemEditorFieldsTest {
     private fun edit(fields: Set<ItemField>, onSave: (SavedItem) -> Unit) {
         compose.setContent {
             FactureMarocTheme {
-                ItemEditorDialog(
+                ItemEditorScreen(
                     initial = article,
                     onSave = onSave,
                     onDismiss = {},

@@ -46,6 +46,9 @@ Travail sur `master`, non publié : la 0.11.1 reste la version livrée.
   paliers, caractéristiques et six derniers mouvements ; la ligne ouvre la
   fiche, « Modifier » ouvre le formulaire. Suppression depuis la fiche, avec
   « Annuler ».
+- Formulaire d'article en pleine page (`ItemEditorScreen`) : en-tête, contenu
+  défilant, et « Annuler / Enregistrer » dans une barre fixe — une boîte de
+  dialogue coupait le formulaire au milieu à 360 dp.
 - Paramètres : index de cinq groupes avec recherche (Boutique, Facturation,
   Catalogue et stock, Données, Diagnostic), retour = un cran en arrière.
   « Diagnostic » est séparé parce que recalculer le stock est une réparation,
@@ -53,7 +56,6 @@ Travail sur `master`, non publié : la 0.11.1 reste la version livrée.
 
 **Reste**
 
-- Éditeur d'article en pleine page au lieu d'une boîte de dialogue.
 - Suppression d'article annulable (snackbar) au lieu d'un effacement immédiat.
 - La carte d'index des Paramètres ne montre pas encore la valeur courante de
   chaque groupe (« TVA 20 % », « Prochaine facture F-… »).

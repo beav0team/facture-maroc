@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -13,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -34,7 +36,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,10 +56,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.unit.dp
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceRecord
@@ -272,10 +283,14 @@ fun ClientEditorDialog(
 /**
  * Create or edit one of the shop's own articles or services.
  *
- * A product and a service share this dialog because they share a shelf. The one
+ * A product and a service share this form because they share a shelf. The one
  * question that separates them is "does it get counted?", and it is asked with a
  * switch rather than by sending the shop to a second screen to decide which kind
  * of thing it is about to type.
+ *
+ * A page rather than a dialog: the form is the longest in the app — price, cost,
+ * stock, threshold, folder, tiers, attributes — and a dialog cut it off in the
+ * middle on a 360 dp screen.
  *
  * [pricesIncludeVat] and [vatPercent] are passed in so the sale price is asked
  * for in the basis the shop actually quotes — typing 150 into a field labelled
@@ -284,7 +299,7 @@ fun ClientEditorDialog(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ItemEditorDialog(
+fun ItemEditorScreen(
     initial: SavedItem?,
     onSave: (SavedItem) -> Unit,
     onDismiss: () -> Unit,
@@ -361,27 +376,146 @@ fun ItemEditorDialog(
     val saleExVat = if (pricesIncludeVat) PriceBasis.excludingVat(price, vatPercent) else price
     val margin = if (purchase > 0.0 && price > 0.0) saleExVat - purchase else null
 
-    AlertDialog(
+    val title = when {
+        initial != null -> "Modifier l'article"
+        // With the stock field switched off the shop has no "prestation"
+        // notion at all, so the form is just an article — saying otherwise
+        // would explain a distinction the screen does not make.
+        !showStock -> "Nouvel article"
+        tracksStock -> "Nouvel article en stock"
+        else -> "Nouvelle prestation"
+    }
+    // One save action, used by the bottom bar: the form is saved from exactly
+    // one place, so the button's enablement cannot drift from the write.
+    val save: () -> Unit = {
+                    onSave(
+                        SavedItem(
+                            label = label.trim(),
+                            price = price,
+                            // A field the shop switched off keeps whatever the
+                            // article already had: hiding it must never erase
+                            // it, or turning the switch back on would show a
+                            // blank where a real value used to be.
+                            unit = if (showUnit) unit.trim() else initial?.unit.orEmpty(),
+                            folder = if (showFolder) folder.trim() else initial?.folder.orEmpty(),
+                            barcode = if (showBarcode) barcode.trim() else initial?.barcode.orEmpty(),
+                            purchasePrice = if (showPurchasePrice) {
+                                purchase
+                            } else {
+                                initial?.purchasePrice ?: 0.0
+                            },
+                            // The one that matters most: null here would turn a
+                            // product into a service at the first edit.
+                            stock = when {
+                                !showStock -> initial?.stock
+                                tracksStock -> stock
+                                else -> null
+                            },
+                            // Hidden with the Stock field, cleared when the
+                            // article became a service, kept when the shop is
+                            // only editing the price.
+                            reorderThreshold = when {
+                                !showStock -> initial?.reorderThreshold
+                                !tracksStock -> null
+                                else -> reorder
+                            },
+                            // Only well-formed tiers survive: a threshold of zero
+                            // or below means "no tier", and a negative price is
+                            // not a price.
+                            priceTiers = tierRows
+                                .filter { it.fromQuantity > 0 && it.unitPrice >= 0.0 }
+                                .toList(),
+                            // Only pairs with something on both sides are kept.
+                            attributes = attrRows
+                                .filter { it.key.isNotBlank() && it.value.isNotBlank() }
+                                .toList(),
+                        ),
+                    )
+    }
+
+    /*
+     * A full screen, not a dialog.
+     *
+     * The form carries a price, a cost, a stock count, a reorder threshold, a
+     * folder, quantity tiers and free attributes. In a dialog it floated in a
+     * box narrower than the phone and pushed "Enregistrer" off the bottom on a
+     * small screen — the shop scrolled a form it could not see the end of.
+     */
+    Dialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                when {
-                    initial != null -> "Modifier l'article"
-                    // With the stock field switched off the shop has no
-                    // "prestation" notion at all, so the form is just an
-                    // article — saying otherwise would explain a distinction
-                    // the screen does not make.
-                    !showStock -> "Nouvel article"
-                    tracksStock -> "Nouvel article en stock"
-                    else -> "Nouvelle prestation"
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
+        ),
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
+            Scaffold(
+                containerColor = MaterialTheme.colorScheme.background,
+                topBar = {
+                    TopAppBar(
+                        navigationIcon = {
+                            IconButton(onClick = onDismiss) {
+                                Icon(Icons.Filled.ArrowBack, contentDescription = "Retour")
+                            }
+                        },
+                        title = {
+                            Text(
+                                title,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.semantics { heading() },
+                            )
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.background,
+                        ),
+                    )
                 },
-            )
-        },
-        text = {
-            Column(
-                Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
+                bottomBar = {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 12.dp,
+                    ) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = onDismiss,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(50.dp),
+                                shape = MaterialTheme.shapes.medium,
+                            ) {
+                                Text("Annuler")
+                            }
+                            Button(
+                                onClick = save,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(50.dp),
+                                shape = MaterialTheme.shapes.medium,
+                                enabled = label.isNotBlank() && price > 0.0,
+                            ) {
+                                Text("Enregistrer")
+                            }
+                        }
+                    }
+                },
+            ) { innerPadding ->
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
@@ -711,65 +845,10 @@ fun ItemEditorDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onSave(
-                        SavedItem(
-                            label = label.trim(),
-                            price = price,
-                            // A field the shop switched off keeps whatever the
-                            // article already had: hiding it must never erase
-                            // it, or turning the switch back on would show a
-                            // blank where a real value used to be.
-                            unit = if (showUnit) unit.trim() else initial?.unit.orEmpty(),
-                            folder = if (showFolder) folder.trim() else initial?.folder.orEmpty(),
-                            barcode = if (showBarcode) barcode.trim() else initial?.barcode.orEmpty(),
-                            purchasePrice = if (showPurchasePrice) {
-                                purchase
-                            } else {
-                                initial?.purchasePrice ?: 0.0
-                            },
-                            // The one that matters most: null here would turn a
-                            // product into a service at the first edit.
-                            stock = when {
-                                !showStock -> initial?.stock
-                                tracksStock -> stock
-                                else -> null
-                            },
-                            // Hidden with the Stock field, cleared when the
-                            // article became a service, kept when the shop is
-                            // only editing the price.
-                            reorderThreshold = when {
-                                !showStock -> initial?.reorderThreshold
-                                !tracksStock -> null
-                                else -> reorder
-                            },
-                            // Only well-formed tiers survive: a threshold of zero
-                            // or below means "no tier", and a negative price is
-                            // not a price.
-                            priceTiers = tierRows
-                                .filter { it.fromQuantity > 0 && it.unitPrice >= 0.0 }
-                                .toList(),
-                            // Only pairs with something on both sides are kept.
-                            attributes = attrRows
-                                .filter { it.key.isNotBlank() && it.value.isNotBlank() }
-                                .toList(),
-                        ),
-                    )
-                },
-                enabled = label.isNotBlank() && price > 0.0,
-                shape = MaterialTheme.shapes.small,
-            ) {
-                Text("Enregistrer")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Annuler") }
-        },
-    )
+        }
+    }
 
     if (scanning) {
         BarcodeScannerDialog(
