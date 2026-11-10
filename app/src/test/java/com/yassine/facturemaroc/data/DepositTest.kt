@@ -27,7 +27,7 @@ class DepositTest {
         lines = lines,
         depositAmount = deposit,
         depositReference = reference,
-        payment = if (paid > 0.0) PaymentInfo(paidAmount = paid) else null,
+        payments = if (paid > 0.0) listOf(PaymentInfo(paidAmount = paid)) else emptyList(),
     )
 
     @Test

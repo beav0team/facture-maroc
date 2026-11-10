@@ -1,12 +1,16 @@
 package com.yassine.facturemaroc.data
 
 /**
- * What the shop has received against one document.
+ * One payment received against one document.
+ *
+ * A document can be settled in several goes — 1 000 DH on account, the rest
+ * next month — so [InvoiceData.payments] holds a list of these and the document
+ * keeps the whole history rather than only the last figure. Each entry is the
+ * amount that arrived on one day, so each can be receipted on its own.
  *
  * Kept on the record, not in the issue-time [ShopSnapshot]: the shop's details
  * are evidence that must not move, while a payment is a later fact about the
- * same document. An unpaid document carries no [PaymentInfo] at all, so every
- * document written before this existed reads back exactly as it was.
+ * same document.
  */
 data class PaymentInfo(
     /** Amount received, in dirhams. Clamped to the document total when read. */

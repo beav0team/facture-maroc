@@ -274,7 +274,7 @@ class InvoicePdfPagesTest {
         val annotated = plain.copy(
             surchargeLabel = "Livraison",
             surchargeAmount = 100.0,
-            payment = PaymentInfo(paidAmount = 500.0, paidAt = "10/11/2026", note = "Chèque 123"),
+            payments = listOf(PaymentInfo(paidAmount = 500.0, paidAt = "10/11/2026", note = "Chèque 123")),
         )
 
         InvoiceTemplate.entries.filterNot { it.isRoll }.forEach { template ->
@@ -299,7 +299,7 @@ class InvoicePdfPagesTest {
     @Test
     fun aSettledInvoicePrintsTheAcquittal() {
         val settled = invoice("F-20261029-9011", 2).copy(
-            payment = PaymentInfo(paidAmount = 2280.0, paidAt = "10/11/2026"),
+            payments = listOf(PaymentInfo(paidAmount = 2280.0, paidAt = "10/11/2026")),
         )
 
         val file = write(settled, InvoiceTemplate.CLASSIQUE)
@@ -367,7 +367,7 @@ class InvoicePdfPagesTest {
             date = "10/11/2026",
             client = InvoiceClient(name = "Client", ice = "009876543000012"),
             lines = listOf(InvoiceLine("Chaise", 2.0, 950.0)),
-            payment = PaymentInfo(paidAmount = 1_000.0, paidAt = "12/11/2026"),
+            payments = listOf(PaymentInfo(paidAmount = 1_000.0, paidAt = "12/11/2026")),
         )
 
         val file = ReceiptPdf.create(context, data, shop, InvoiceDesign())

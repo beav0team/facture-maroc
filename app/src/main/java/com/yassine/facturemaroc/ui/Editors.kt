@@ -1894,18 +1894,21 @@ fun SurchargeDialog(
 @Composable
 fun PaymentDialog(
     record: InvoiceRecord,
-    onConfirm: (PaymentInfo?) -> Unit,
+    onAdd: (PaymentInfo) -> Unit,
+    onRemove: (Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    // What is still owed, not what the document is worth: after a 1 000 DH
+    // deposit the next payment is the balance, and prefilling the total invites
+    // the shop to record money that never came in.
+    val remaining = record.data.balanceDue
     val total = record.data.total
-    val current = record.data.payment
+    val current = record.data.lastPayment
     val today = remember {
         SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE).format(Date())
     }
     var amount by remember {
-        mutableStateOf(
-            if ((current?.paidAmount ?: 0.0) > 0.0) current!!.paidAmount.trimZeros() else total.trimZeros(),
-        )
+        mutableStateOf(remaining.trimZeros())
     }
     var date by remember { mutableStateOf(current?.paidAt?.takeIf { it.isNotBlank() } ?: today) }
     var note by remember { mutableStateOf(current?.note.orEmpty()) }
@@ -1922,8 +1925,44 @@ fun PaymentDialog(
                 Text(
                     "Total TTC : ${total.asDirhams()}",
                     style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    if (remaining > 0.0) {
+                        "Déjà encaissé : ${record.data.paidAmount.asDirhams()} · " +
+                            "Reste à payer : ${remaining.asDirhams()}"
+                    } else {
+                        "Document soldé : plus rien à encaisser."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
+                if (record.data.payments.isNotEmpty()) {
+                    Text("Paiements enregistrés", style = MaterialTheme.typography.labelLarge)
+                    for (index in record.data.payments.indices) {
+                        val entry = record.data.payments[index]
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                buildString {
+                                    append(entry.paidAt.ifBlank { "—" })
+                                    append(" · ")
+                                    append(entry.paidAmount.asDirhams())
+                                    entry.method?.let { append(" (${it.french})") }
+                                    if (entry.note.isNotBlank()) append(" — ${entry.note}")
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f),
+                            )
+                            IconButton(onClick = { onRemove(index) }) {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription = "Supprimer ce paiement",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+                    }
+                }
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { input ->
@@ -1938,9 +1977,9 @@ fun PaymentDialog(
                         imeAction = ImeAction.Next,
                     ),
                 )
-                if (parsed > total) {
+                if (parsed > remaining) {
                     Text(
-                        "Le montant sera plafonné au total (${total.asDirhams()}).",
+                        "Le montant sera plafonné au reste à payer (${remaining.asDirhams()}).",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -1980,36 +2019,33 @@ fun PaymentDialog(
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    val cleaned = amount.trim().replace(',', '.')
-                    val value = cleaned.toDoubleOrNull()?.coerceIn(0.0, total) ?: 0.0
-                    onConfirm(
-                        if (value <= 0.0) {
-                            null
-                        } else {
-                            PaymentInfo(
-                                paidAmount = value,
-                                paidAt = date.trim(),
-                                note = note.trim(),
-                                method = method,
+            if (remaining > 0.0) {
+                Button(
+                    onClick = {
+                        val cleaned = amount.trim().replace(',', '.')
+                        val value = cleaned.toDoubleOrNull()?.coerceIn(0.0, remaining) ?: 0.0
+                        if (value > 0.0) {
+                            onAdd(
+                                PaymentInfo(
+                                    paidAmount = value,
+                                    paidAt = date.trim(),
+                                    note = note.trim(),
+                                    method = method,
+                                ),
                             )
-                        },
-                    )
-                },
-                shape = MaterialTheme.shapes.small,
-            ) {
-                Text("Enregistrer")
+                        }
+                    },
+                    shape = MaterialTheme.shapes.small,
+                ) {
+                    Text("Enregistrer")
+                }
             }
         },
         dismissButton = {
             Row {
-                if (current != null && current.paidAmount > 0.0) {
-                    TextButton(onClick = { onConfirm(null) }) {
-                        Text("Supprimer", color = MaterialTheme.colorScheme.error)
-                    }
+                TextButton(onClick = onDismiss) {
+                    Text(if (remaining > 0.0) "Annuler" else "Fermer")
                 }
-                TextButton(onClick = onDismiss) { Text("Annuler") }
             }
         },
     )

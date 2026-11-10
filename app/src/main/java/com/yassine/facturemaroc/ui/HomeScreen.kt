@@ -128,6 +128,7 @@ import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceRecord
 import com.yassine.facturemaroc.data.PaymentDue
 import com.yassine.facturemaroc.data.PaymentInfo
+import com.yassine.facturemaroc.data.canBePaid
 import com.yassine.facturemaroc.data.PaymentState
 import com.yassine.facturemaroc.data.PaymentReminder
 import com.yassine.facturemaroc.data.InvoiceViewModel
@@ -1115,13 +1116,17 @@ fun HomeScreen(
         )
     }
 
-    paymentRecord?.let { record ->
+    paymentRecord?.let { opened ->
+        // Re-read from the store so removing an entry updates the list in place
+        // instead of leaving the dialog on the copy it was opened with.
+        val record = records.firstOrNull { it.id == opened.id } ?: opened
         PaymentDialog(
             record = record,
-            onConfirm = {
-                viewModel.setPayment(record.id, it)
+            onAdd = { payment ->
+                viewModel.addPayment(record.id, payment)
                 paymentRecord = null
             },
+            onRemove = { index -> viewModel.removePayment(record.id, index) },
             onDismiss = { paymentRecord = null },
         )
     }
@@ -1769,24 +1774,32 @@ private fun InvoiceCard(
                                 onExportXml()
                             },
                         )
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    if (record.data.paymentState == PaymentState.UNPAID) {
-                                        "Encaisser…"
-                                    } else {
-                                        "Modifier le paiement…"
-                                    },
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Filled.Payments, contentDescription = null)
-                            },
-                            onClick = {
-                                menuOpen = false
-                                onPayment()
-                            },
-                        )
+                        // A devis, a proforma, a bon de commande or an avoir asks
+                        // for no money, so it gets no payment action at all.
+                        if (record.data.documentType.canBePaid &&
+                            (record.data.balanceDue > 0.0 || record.data.paidAmount > 0.0)
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        when {
+                                            record.data.balanceDue > 0.0 &&
+                                                record.data.paidAmount > 0.0 ->
+                                                "Encaisser le reste…"
+                                            record.data.balanceDue > 0.0 -> "Encaisser…"
+                                            else -> "Paiements…"
+                                        },
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.Payments, contentDescription = null)
+                                },
+                                onClick = {
+                                    menuOpen = false
+                                    onPayment()
+                                },
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text("Dupliquer") },
                             leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
@@ -3257,6 +3270,16 @@ private fun InvoiceDetailSheet(
             if (record.data.paidAmount > 0.0) {
                 DetailRow("Encaissé", record.data.paidAmount.asDirhams())
                 DetailRow("Reste à payer", record.data.balanceDue.asDirhams())
+                for (entry in record.data.payments) {
+                    DetailRow(
+                        "Paiement ${entry.paidAt.ifBlank { "—" }}",
+                        buildString {
+                            append(entry.paidAmount.asDirhams())
+                            entry.method?.let { append(" · ${it.french}") }
+                            if (entry.note.isNotBlank()) append(" · ${entry.note}")
+                        },
+                    )
+                }
             }
             Spacer(Modifier.height(18.dp))
             if (reminderAvailable) {

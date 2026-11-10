@@ -183,7 +183,7 @@ object PdfExtras {
         val due = data.dueDatePrinted != null
         val state = data.paymentState
         val deposit = data.deposit > 0.0
-        val note = data.payment?.note?.trim().orEmpty()
+        val note = data.lastPayment?.note?.trim().orEmpty()
         val paidLines = when (state) {
             com.yassine.facturemaroc.data.PaymentState.UNPAID -> if (deposit) 1 else 0
             com.yassine.facturemaroc.data.PaymentState.PAID -> 1
@@ -225,10 +225,10 @@ object PdfExtras {
     ): Float {
         if (!paymentBlockShown(data, shop, design)) return y
         var cursor = y
-        val date = data.payment?.paidAt?.trim().orEmpty()
+        val date = data.lastPayment?.paidAt?.trim().orEmpty()
         // What actually came in, when the shop recorded a different method
         // than the one the document was written for.
-        val how = data.payment?.method?.french?.takeIf { it.isNotBlank() }
+        val how = data.lastPayment?.method?.french?.takeIf { it.isNotBlank() }
 
         // Printed whether or not money came in: an unpaid document that names
         // its deadline is the one a customer is most likely to check.
@@ -276,7 +276,13 @@ object PdfExtras {
             PdfText.draw(canvas, line, x, cursor, bold, width.toInt(), maxLines = 1)
             cursor += bold.textSize + 4f
         } else if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.PARTIAL) {
-            val head = if (date.isEmpty()) "Payé" else "Payé le $date"
+            // Several partial payments print as one figure with a count: the
+            // invoice states what was received, the receipts itemise the goes.
+            val head = when {
+                data.paymentCount > 1 -> "Payé en ${data.paymentCount} fois"
+                date.isEmpty() -> "Payé"
+                else -> "Payé le $date"
+            }
             val paid = buildString {
                 append(head)
                 append(" : ")
@@ -292,7 +298,7 @@ object PdfExtras {
             cursor += bold.textSize + 4f
         }
 
-        val note = data.payment?.note?.trim().orEmpty()
+        val note = data.lastPayment?.note?.trim().orEmpty()
         if (note.isNotEmpty()) {
             PdfText.draw(canvas, "Réf. $note", x, cursor, label, width.toInt(), maxLines = 1)
             cursor += label.textSize + 4f

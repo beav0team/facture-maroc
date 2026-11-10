@@ -33,7 +33,7 @@ class CreditNoteTest {
             dueDate = "10/12/2026",
             validityDate = "30/11/2026",
             documentType = type,
-            payment = payment,
+            payments = listOfNotNull(payment),
         ),
         status = InvoiceStatus.ISSUED,
         createdAt = 0L,
@@ -63,7 +63,7 @@ class CreditNoteTest {
     fun `money that moved stays on the invoice`() {
         val avoir = CreditNote.from(invoice())!!
 
-        assertNull(avoir.data.payment)
+        assertTrue(avoir.data.payments.isEmpty())
         assertNull(avoir.data.dueDate)
         assertNull(avoir.data.validityDate)
     }

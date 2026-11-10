@@ -41,7 +41,7 @@ class ClientStatementTest {
             lines = listOf(InvoiceLine("Ligne", 1.0, total, vatPercent = 0.0)),
             documentType = type,
             dueDate = dueDate,
-            payment = if (paid > 0.0) PaymentInfo(paidAmount = paid) else null,
+            payments = if (paid > 0.0) listOf(PaymentInfo(paidAmount = paid)) else emptyList(),
         ),
         status = status,
         createdAt = 0,

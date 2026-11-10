@@ -19,7 +19,7 @@ class PaymentSurchargeTest {
         client = InvoiceClient("Client"),
         lines = lines,
         surchargeAmount = surcharge,
-        payment = payment,
+        payments = listOfNotNull(payment),
     )
 
     @Test
@@ -85,12 +85,12 @@ class PaymentSurchargeTest {
         assertEquals(PaymentState.UNPAID, base.paymentState)
         assertEquals(0.0, base.paidAmount, 0.0)
 
-        val partial = base.copy(payment = PaymentInfo(paidAmount = 50.0, paidAt = "10/11/2026"))
+        val partial = base.copy(payments = listOf(PaymentInfo(paidAmount = 50.0, paidAt = "10/11/2026")))
         assertEquals(PaymentState.PARTIAL, partial.paymentState)
         assertEquals(50.0, partial.paidAmount, 0.0)
         assertEquals(70.0, partial.balanceDue, 0.0)
 
-        val paid = base.copy(payment = PaymentInfo(paidAmount = 120.0, paidAt = "10/11/2026"))
+        val paid = base.copy(payments = listOf(PaymentInfo(paidAmount = 120.0, paidAt = "10/11/2026")))
         assertEquals(PaymentState.PAID, paid.paymentState)
         assertEquals(0.0, paid.balanceDue, 0.0)
         assertTrue(paid.isSettled)
@@ -118,8 +118,8 @@ class PaymentSurchargeTest {
 
         assertEquals(partial, restored)
         assertEquals(30.0, restored.surcharge, 0.0)
-        assertEquals(40.0, restored.payment!!.paidAmount, 0.0)
-        assertEquals("Chèque 123", restored.payment!!.note)
+        assertEquals(40.0, restored.lastPayment!!.paidAmount, 0.0)
+        assertEquals("Chèque 123", restored.lastPayment!!.note)
         assertEquals(PaymentState.PARTIAL, restored.paymentState)
     }
 
@@ -143,7 +143,7 @@ class PaymentSurchargeTest {
         val data = InvoiceJson.dataFromJson(legacy)
 
         assertEquals(0.0, data.surcharge, 0.0)
-        assertNull(data.payment)
+        assertTrue(data.payments.isEmpty())
         assertEquals("Livraison", data.surchargeLabel)
         assertEquals(600.0, data.total, 0.0)
     }

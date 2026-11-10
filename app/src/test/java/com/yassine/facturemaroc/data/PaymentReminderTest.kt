@@ -30,7 +30,7 @@ class PaymentReminderTest {
             lines = listOf(InvoiceLine("Chaise", 1.0, 1_000.0)),
             documentType = type,
             dueDate = dueDate,
-            payment = if (paid > 0.0) PaymentInfo(paidAmount = paid) else null,
+            payments = if (paid > 0.0) listOf(PaymentInfo(paidAmount = paid)) else emptyList(),
         ),
         status = status,
         createdAt = 0,

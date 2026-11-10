@@ -20,21 +20,21 @@ class PaymentMethodTest {
         client = InvoiceClient("Client"),
         lines = listOf(InvoiceLine("Prestation", 1.0, 100.0)),
         paymentMethod = PaymentMethod.TRANSFER,
-        payment = payment,
+        payments = listOfNotNull(payment),
     )
 
     @Test
     fun `a payment keeps the method it was received with`() {
         val data = invoice(PaymentInfo(paidAmount = 120.0, method = PaymentMethod.CASH))
 
-        assertEquals(PaymentMethod.CASH, data.payment!!.method)
+        assertEquals(PaymentMethod.CASH, data.lastPayment!!.method)
     }
 
     @Test
     fun `a payment without its own method follows the document`() {
         val data = invoice(PaymentInfo(paidAmount = 120.0))
 
-        assertNull(data.payment!!.method)
+        assertNull(data.lastPayment!!.method)
         // The document is what the paper prints in that case.
         assertEquals(PaymentMethod.TRANSFER, data.paymentMethod)
     }
@@ -45,7 +45,7 @@ class PaymentMethodTest {
             InvoiceJson.dataToJson(invoice(PaymentInfo(paidAmount = 120.0, method = PaymentMethod.CARD))),
         )
 
-        assertEquals(PaymentMethod.CARD, restored.payment!!.method)
+        assertEquals(PaymentMethod.CARD, restored.lastPayment!!.method)
     }
 
     @Test
@@ -54,7 +54,7 @@ class PaymentMethodTest {
             InvoiceJson.dataToJson(invoice(PaymentInfo(paidAmount = 120.0))),
         )
 
-        assertNull(restored.payment!!.method)
+        assertNull(restored.lastPayment!!.method)
     }
 
     @Test
