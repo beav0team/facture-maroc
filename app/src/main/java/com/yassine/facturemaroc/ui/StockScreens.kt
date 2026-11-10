@@ -101,8 +101,64 @@ fun StockHistoryDialog(
     )
 }
 
+/**
+ * Every article's movements in one list.
+ *
+ * The per-article history answers "why is this three?"; this answers "what
+ * moved today?", which is the question a shop asks after closing, when it is
+ * checking that the day's invoices and receipts all landed.
+ */
 @Composable
-private fun StockEntryRow(entry: StockEntry) {
+fun StockJournalDialog(
+    items: List<SavedItem>,
+    /** Newest first, as the caller read them. */
+    entries: List<StockEntry>,
+    onDismiss: () -> Unit,
+) {
+    val labels = remember(items) { items.associate { it.id to it.label } }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Journal du stock") },
+        text = {
+            Column(
+                Modifier
+                    .heightIn(max = 440.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                if (entries.isEmpty()) {
+                    Text(
+                        "Aucun mouvement enregistré.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    entries.forEachIndexed { index, entry ->
+                        if (index > 0) {
+                            HorizontalDivider(
+                                Modifier.padding(vertical = 6.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant,
+                            )
+                        }
+                        StockEntryRow(
+                            entry = entry,
+                            title = labels[entry.itemId] ?: "Article supprimé",
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Fermer") }
+        },
+    )
+}
+
+@Composable
+private fun StockEntryRow(
+    entry: StockEntry,
+    /** What the movement was about: the reason for one article, its name for the shop-wide journal. */
+    title: String = entry.reason.label,
+) {
     Row(
         Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -110,12 +166,14 @@ private fun StockEntryRow(entry: StockEntry) {
     ) {
         Column(Modifier.weight(1f)) {
             Text(
-                entry.reason.label,
+                title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
             )
             Text(
                 buildList {
+                    if (title != entry.reason.label) add(entry.reason.label)
                     if (entry.reference.isNotBlank()) add(entry.reference)
                     add(stockDate(entry.at))
                     if (entry.note.isNotBlank()) add(entry.note)

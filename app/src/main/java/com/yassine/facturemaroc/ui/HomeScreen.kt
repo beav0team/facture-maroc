@@ -42,6 +42,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Add
@@ -51,6 +52,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Handyman
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -173,6 +175,15 @@ private enum class HomeTab(val label: String) {
     INVOICES("Factures"),
     CLIENTS("Clients"),
     ARTICLES("Articles"),
+
+    /**
+     * What moves the shelves.
+     *
+     * Receipts, the physical count and the movement journal used to be three
+     * icons in the Articles top bar, and the journal an entry in Paramètres:
+     * a daily job behind a gear, three screens deep, next to the signature key.
+     */
+    STOCK("Stock"),
 }
 
 /**
@@ -223,6 +234,8 @@ fun HomeScreen(
     var historyItem by remember { mutableStateOf<SavedItem?>(null) }
     /* The physical count sheet, opened from the Articles tab. */
     var stocktakeOpen by remember { mutableStateOf(false) }
+    /* Every article's movements in one list, opened from the Stock tab. */
+    var stockJournalOpen by remember { mutableStateOf(false) }
     /* The goods receipts list, and the receipt being written. */
     var purchasesOpen by remember { mutableStateOf(false) }
     var purchaseEditorOpen by remember { mutableStateOf(false) }
@@ -324,6 +337,7 @@ fun HomeScreen(
         HomeTab.INVOICES -> "Nouvelle facture"
         HomeTab.CLIENTS -> "Nouveau ${partyRole.label.lowercase()}"
         HomeTab.ARTICLES -> "Ajouter"
+        HomeTab.STOCK -> "Stock"
     }
 
     /*
@@ -570,14 +584,6 @@ fun HomeScreen(
                             Icon(Icons.Filled.Folder, contentDescription = "Dossiers")
                         }
                     }
-                    if (tab == HomeTab.ARTICLES && ItemField.STOCK in itemFields) {
-                        IconButton(onClick = { purchasesOpen = true }) {
-                            Icon(Icons.Filled.ShoppingCart, contentDescription = "Achats")
-                        }
-                        IconButton(onClick = { stocktakeOpen = true }) {
-                            Icon(Icons.Filled.Checklist, contentDescription = "Inventaire")
-                        }
-                    }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Paramètres")
                     }
@@ -604,7 +610,8 @@ fun HomeScreen(
                                 when (candidate) {
                                     HomeTab.INVOICES -> Icons.Filled.ReceiptLong
                                     HomeTab.CLIENTS -> Icons.Filled.People
-                                    HomeTab.ARTICLES -> Icons.Filled.Inventory2
+                                    HomeTab.ARTICLES -> Icons.Filled.Storefront
+                                    HomeTab.STOCK -> Icons.Filled.Inventory2
                                 },
                                 contentDescription = null,
                             )
@@ -622,7 +629,9 @@ fun HomeScreen(
             }
         },
         floatingActionButton = {
-            Box {
+            // The Stock tab is a hub of existing actions, not a list to add to:
+            // a "+" there would create nothing, so it is not drawn.
+            if (tab != HomeTab.STOCK) Box {
                 FloatingActionButton(
                     onClick = {
                         when (tab) {
@@ -631,6 +640,7 @@ fun HomeScreen(
                                 editingClient = null
                                 clientEditorOpen = true
                             }
+                            HomeTab.STOCK -> Unit
                             HomeTab.ARTICLES -> {
                                 // Two things can be created here, and a shop that
                                 // has just made a folder is one tap away from
@@ -686,13 +696,14 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            SearchField(
+            if (tab != HomeTab.STOCK) SearchField(
                 query = query,
                 onQueryChange = { query = it },
                 placeholder = when (tab) {
                     HomeTab.INVOICES -> "Client, numéro ou date"
                     HomeTab.CLIENTS -> "Nom, téléphone ou ICE"
                     HomeTab.ARTICLES -> "Rechercher un article"
+                    HomeTab.STOCK -> ""
                 },
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
@@ -715,6 +726,20 @@ fun HomeScreen(
             }
 
             when (tab) {
+                HomeTab.STOCK -> StockTab(
+                    items = items,
+                    purchases = purchases,
+                    reorderCount = items.count { it.needsReorder },
+                    onReorder = {
+                        reorderOnly = true
+                        tabIndex = HomeTab.ARTICLES.ordinal
+                        query = ""
+                    },
+                    onPurchases = { purchasesOpen = true },
+                    onStocktake = { stocktakeOpen = true },
+                    onJournal = { stockJournalOpen = true },
+                )
+
                 HomeTab.INVOICES -> InvoicesTab(
                     records = records,
                     query = query,
@@ -1065,6 +1090,18 @@ fun HomeScreen(
                     )
                 }
             },
+        )
+    }
+
+    if (stockJournalOpen) {
+        StockJournalDialog(
+            items = items,
+            // Newest first: the journal is read from the top, and the reason a
+            // shelf moved today matters more than one from last month.
+            entries = remember(stockJournalOpen) {
+                viewModel.savedItems.ledger.all().asReversed()
+            },
+            onDismiss = { stockJournalOpen = false },
         )
     }
 
@@ -2736,6 +2773,156 @@ private fun FolderChoice(label: String, selected: Boolean, onClick: () -> Unit) 
  * `null` is "Tous", `""` is "Sans dossier", anything else is a path.
  */
 /**
+ * The shelves, in one place.
+ *
+ * Three things a shop does with stock — receive it, count it, look up why a
+ * number changed — and a shortcut to what needs reordering. They used to live
+ * as two icons in the Articles top bar plus one entry buried in Paramètres,
+ * which put a daily workflow behind a gear.
+ */
+@Composable
+private fun StockTab(
+    items: List<SavedItem>,
+    purchases: List<Purchase>,
+    reorderCount: Int,
+    onReorder: () -> Unit,
+    onPurchases: () -> Unit,
+    onStocktake: () -> Unit,
+    onJournal: () -> Unit,
+) {
+    val counted = items.count { it.stock != null }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            "Stock",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.semantics { heading() },
+        )
+        Text(
+            if (counted == 0) {
+                "Aucun article n'est compté pour l'instant."
+            } else {
+                "$counted article${if (counted > 1) "s" else ""} suivi${if (counted > 1) "s" else ""} sur l'étagère."
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        if (reorderCount > 0) {
+            Card(
+                onClick = onReorder,
+                shape = MaterialTheme.shapes.medium,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(
+                        "$reorderCount article${if (reorderCount > 1) "s" else ""} à commander",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                    )
+                    Text(
+                        "Au seuil de réapprovisionnement ou en dessous.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f),
+                    )
+                }
+            }
+        }
+
+        StockHubRow(
+            icon = Icons.Filled.ShoppingCart,
+            title = "Achats et réceptions",
+            subtitle = when (purchases.size) {
+                0 -> "Un bon de commande reçu augmente le stock."
+                1 -> "1 bon de commande enregistré."
+                else -> "${purchases.size} bons de commande enregistrés."
+            },
+            onClick = onPurchases,
+        )
+        StockHubRow(
+            icon = Icons.Filled.Checklist,
+            title = "Inventaire",
+            subtitle = if (counted == 0) {
+                "Compter ce qui est sur l'étagère et corriger les écarts."
+            } else {
+                "Compter les $counted articles suivis et corriger les écarts."
+            },
+            onClick = onStocktake,
+        )
+        StockHubRow(
+            icon = Icons.Filled.Description,
+            title = "Journal du stock",
+            subtitle = "Chaque entrée et sortie, avec le document qui l'a causée.",
+            onClick = onJournal,
+        )
+        Spacer(Modifier.height(80.dp))
+    }
+}
+
+/** One destination inside the Stock tab: an icon, what it does, a chevron. */
+@Composable
+private fun StockHubRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Card(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/**
  * The catalogue's order, as one control.
  *
  * A dropdown rather than four chips on the row: the chips underneath already
@@ -3101,16 +3288,38 @@ private fun ItemCard(
                 .padding(start = 14.dp, top = 12.dp, bottom = 12.dp, end = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            /*
+             * The icon says what kind of thing this is before the label is
+             * read: a service cannot run out, and an article that has run out
+             * should not look like the twenty beside it. Every row used to
+             * carry the same shopfront, which told the shop nothing.
+             */
+            val service = item.stock == null
+            val empty = !service && item.outOfStock
             Box(
                 Modifier
                     .size(44.dp)
-                    .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
+                    .background(
+                        when {
+                            empty -> MaterialTheme.colorScheme.errorContainer
+                            service -> MaterialTheme.colorScheme.secondaryContainer
+                            else -> MaterialTheme.colorScheme.primaryContainer
+                        },
+                        CircleShape,
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    Icons.Filled.Storefront,
+                    when {
+                        service -> Icons.Filled.Handyman
+                        else -> Icons.Filled.Inventory2
+                    },
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    tint = when {
+                        empty -> MaterialTheme.colorScheme.onErrorContainer
+                        service -> MaterialTheme.colorScheme.onSecondaryContainer
+                        else -> MaterialTheme.colorScheme.onPrimaryContainer
+                    },
                     modifier = Modifier.size(21.dp),
                 )
             }
