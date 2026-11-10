@@ -171,4 +171,28 @@ class StockLedgerTest {
         assertFalse(ledger.append(StockEntry("chair", -1, StockReason.INVOICE)))
         assertEquals(0, ledger.balance("chair"))
     }
+
+    @Test
+    fun `the whole shelf can be read in one pass`() {
+        // The list asks for every quantity at once: `balance()` per row walks the
+        // whole journal per article, which is quadratic on a real catalogue.
+        val ledger = ledger()
+        ledger.appendAll(
+            listOf(
+                StockEntry("chair", 10, StockReason.PURCHASE),
+                StockEntry("chair", -3, StockReason.INVOICE),
+                StockEntry("table", 4, StockReason.PURCHASE),
+                StockEntry("table", -4, StockReason.INVOICE),
+                StockEntry("montage", 0, StockReason.ADJUSTMENT),
+            ),
+        )
+
+        val balances = ledger.balances()
+
+        assertEquals(7, balances["chair"])
+        assertEquals(0, balances["table"])
+        assertEquals(0, balances["montage"])
+        // Nothing invented for an article that never moved.
+        assertEquals(null, balances["unknown"])
+    }
 }

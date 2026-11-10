@@ -68,6 +68,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
@@ -290,16 +291,6 @@ fun HomeScreen(
     var purchasesOpen by remember { mutableStateOf(false) }
     var purchaseEditorOpen by remember { mutableStateOf(false) }
     /*
-     * Where the Articles tab is filtering.
-     *
-     * `null` is "Tous": the tab opens on the whole catalogue, because a shop
-     * looks for "the chair" far more often than it wants to browse shelves.
-     * `""` is the articles in no folder, and any other value is a folder path
-     * whose sub-folders are included — an article filed under Mobilier/Chaises is
-     * still in Mobilier.
-     */
-    var articleFilter by rememberSaveable { mutableStateOf<String?>(null) }
-    /*
      * Whether the list is limited to the articles at or below their reorder
      * threshold. It composes with the folder chips rather than replacing them:
      * "what is low in Mobilier?" is the question a shop actually asks.
@@ -312,16 +303,17 @@ fun HomeScreen(
      * to be reordered.
      */
     var articleSortIndex by rememberSaveable { mutableIntStateOf(0) }
-    val articleSort = ArticleSort.entries[articleSortIndex]
+    /* The scanner opened from the Articles bar, filling the search field. */
+    var articleScanOpen by remember { mutableStateOf(false) }
     /*
-     * Whether the folder screen is open.
+     * Where the shop is standing in the catalogue.
      *
-     * Folders are still a real tree — create, rename, delete, nest — but that
-     * is rare work, so it lives behind the "Dossiers" action instead of being
-     * the screen the tab lands on. [inFolder] and [showAllArticles] only
-     * describe where the shop is standing inside it.
+     * One state, three levels, no mode toggle: `null` is the shelf map (the
+     * folder grid), `""` is the articles filed nowhere, any other value is that
+     * folder and everything under it. The grid used to sit behind an icon in
+     * the top bar, which made the same tab two screens with two card layouts,
+     * two sets of actions and two search scopes.
      */
-    var foldersOpen by rememberSaveable { mutableStateOf(false) }
     var inFolder by rememberSaveable { mutableStateOf<String?>(null) }
     var showAllArticles by rememberSaveable { mutableStateOf(false) }
     var folderEditorOpen by remember { mutableStateOf(false) }
@@ -387,17 +379,38 @@ fun HomeScreen(
         HomeTab.STOCK -> "Stock"
     }
 
-    /*
-     * The folder screen is a stack — the grid, then one folder at each depth —
-     * and both the top bar and the tab content read from these, so the title
-     * can never disagree with the list about which folder is open.
-     *
-     * `null` is the grid, `""` is "Sans dossier", and anything else is a folder
-     * path such as "Mobilier/Chaises".
-     */
-    val articleFolder = inFolder
-    val managingFolders = tab == HomeTab.ARTICLES && foldersOpen
     val itemFields = visibleItemFields(shop)
+    /*
+     * Where the shop is standing, once the folder field is known.
+     *
+     * `null` is the shelf map, `""` is "Sans dossier", anything else is a path
+     * such as "Mobilier/Chaises". A folder can disappear while it is open —
+     * deleted from the grid, or the field switched off in Paramètres — and
+     * standing on a path that no longer exists would leave an empty list under
+     * a breadcrumb with nothing to go back to.
+     */
+    val articleFolder = inFolder?.takeIf { path ->
+        ItemField.FOLDER in itemFields &&
+            (path.isEmpty() || folders.any { it.equals(path, ignoreCase = true) })
+    }
+    val managingFolders = tab == HomeTab.ARTICLES && ItemField.FOLDER in itemFields
+    /*
+     * Only the orders the shop can actually read.
+     *
+     * « Trier : Stock » on a catalogue whose stock field is switched off sorts
+     * by a number nobody can see, and the list then looks arbitrary. Same for
+     * margin without a purchase price.
+     */
+    val articleSorts = remember(itemFields) {
+        ArticleSort.entries.filter { sort ->
+            when (sort) {
+                ArticleSort.STOCK -> ItemField.STOCK in itemFields
+                ArticleSort.MARGIN -> ItemField.PURCHASE_PRICE in itemFields
+                else -> true
+            }
+        }
+    }
+    val articleSort = articleSorts.getOrElse(articleSortIndex) { ArticleSort.NAME }
     /*
      * What one unit of each article is worth, read once per catalogue change.
      *
@@ -414,6 +427,18 @@ fun HomeScreen(
         items.associate { item ->
             item.id to (known[item.id] ?: item.purchasePrice.takeIf { it > 0.0 })
         }
+    }
+    /*
+     * What is really on the shelf.
+     *
+     * `SavedItem.stock` is a cache written by the same call that appends a
+     * movement; the journal is the truth. They can drift — that is exactly what
+     * Diagnostic repairs — and a list that shows the cache while the journal says
+     * otherwise is a list that lies quietly.
+     */
+    val stockOf: (SavedItem) -> Int = remember(items) {
+        val balances = viewModel.savedItems.ledger.balances()
+        return@remember { item: SavedItem -> balances[item.id] ?: (item.stock ?: 0) }
     }
     val marginOf: (SavedItem) -> MarginHint? = remember(unitCosts, shop) {
         { item ->
@@ -436,23 +461,10 @@ fun HomeScreen(
             }
         }
     }
-    /*
-     * The filter the list really applies. A folder can disappear while it is
-     * the active filter (deleted from the folder screen, or its field switched
-     * off in Paramètres), and filtering on a path that no longer exists would
-     * leave an empty list under a chip that cannot clear itself.
-     */
-    val activeArticleFilter = articleFilter?.takeIf { path ->
-        ItemField.FOLDER in itemFields &&
-            (path.isEmpty() || folders.any { it.equals(path, ignoreCase = true) })
-    }
-    val articleList = remember(items, activeArticleFilter, reorderOnly, articleSort) {
-        sortArticles(
-            filterToReorder(filterArticles(items, activeArticleFilter), reorderOnly),
-            articleSort,
-        )
-    }
     val articleMatches = remember(items, query, reorderOnly, articleSort) {
+        // One search rule, always the whole catalogue. Inside a folder the field
+        // used to search that subtree only, so an article filed elsewhere read
+        // as "it is gone".
         val matched = if (query.isBlank()) emptyList() else items.filter { SavedItemStore.matches(it, query) }
         sortArticles(filterToReorder(matched, reorderOnly), articleSort)
     }
@@ -466,24 +478,35 @@ fun HomeScreen(
             SavedItemStore.children(articleFolder, folders)
         }
     }
-    val articleScopeItems = when {
-        showAllArticles || articleFolder == null -> items
-        else -> SavedItemStore.itemsIn(articleFolder, items)
+    /*
+     * What is on screen: everything under the current folder, or the whole
+     * catalogue under "Tous". The reorder filter composes with the folder
+     * instead of replacing it — "what is low in Mobilier?" is a real question.
+     */
+    val articleScopeItems = remember(items, articleFolder, showAllArticles, reorderOnly, articleSort) {
+        val scoped = if (showAllArticles || articleFolder == null) {
+            items
+        } else {
+            SavedItemStore.itemsIn(articleFolder, items)
+        }
+        sortArticles(filterToReorder(scoped, reorderOnly), articleSort)
     }
 
-    // Up one level, not out of the app: the folder grid, then each parent, so
-    // the system back gesture walks the same tree the tiles do — and at the
-    // grid it leaves the folder screen for the article list.
+    // Up one level, not out of the app: each parent folder, then the shelf map,
+    // where the system back leaves the tab alone.
     val goUp: () -> Unit = {
         val path = inFolder
         when {
             showAllArticles -> showAllArticles = false
-            path == null -> foldersOpen = false
+            path == null -> Unit
             path.contains(SavedItemStore.SEPARATOR) -> inFolder = SavedItemStore.parentOf(path)
             else -> inFolder = null
         }
     }
-    BackHandler(enabled = managingFolders, onBack = goUp)
+    BackHandler(
+        enabled = managingFolders && (articleFolder != null || showAllArticles),
+        onBack = goUp,
+    )
 
     /*
      * Where a folder made from here belongs. From the folder screen it is the
@@ -491,10 +514,7 @@ fun HomeScreen(
      * list it is the folder the filter is on, so a shop filtering on Mobilier and
      * asking for a folder gets Mobilier/<name>, not a second Mobilier beside itself.
      */
-    val newFolderHome = when {
-        managingFolders -> if (showAllArticles) "" else inFolder.orEmpty()
-        else -> activeArticleFilter.orEmpty()
-    }
+    val newFolderHome = if (showAllArticles) "" else inFolder.orEmpty()
     val startNewFolder: (String) -> Unit = { parent ->
         newFolderParent = parent
         renamingFolder = null
@@ -508,15 +528,15 @@ fun HomeScreen(
             TopAppBar(
                 title = {
                     when {
-                        managingFolders -> Column {
+                        tab == HomeTab.ARTICLES -> Column {
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Text(
                                     when {
+                                        // The tab is the catalogue; the shelf
+                                        // map is its first level, not another
+                                        // screen, so the heading stays "Articles".
                                         showAllArticles -> "Tous les articles"
-                                        // The grid itself: the folders, not the
-                                        // articles, so it is named for what it
-                                        // manages rather than for the tab.
-                                        articleFolder == null -> "Dossiers"
+                                        articleFolder == null -> "Articles"
                                         articleFolder.isEmpty() -> "Sans dossier"
                                         // Just the folder's own name: the path
                                         // under it says where it lives.
@@ -553,36 +573,6 @@ fun HomeScreen(
                             }
                         }
 
-                        /*
-                         * The Articles tab opens on the catalogue, not on a
-                         * cabinet of folders, so its heading is the list itself
-                         * and the count is what the current filter holds.
-                         */
-                        tab == HomeTab.ARTICLES -> Column {
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                Text(
-                                    "Articles",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.semantics { heading() },
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(
-                                    // A search is a different question, so the
-                                    // count answers it: the filtered total
-                                    // beside one visible row would read as a
-                                    // list that lost four articles.
-                                    countLine(
-                                        if (query.isNotBlank()) articleMatches.size else articleList.size,
-                                        0,
-                                    ),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                )
-                            }
-                        }
-
                         else -> Column {
                             Text(
                                 "Facture Maroc",
@@ -600,7 +590,9 @@ fun HomeScreen(
                     }
                 },
                 navigationIcon = {
-                    if (managingFolders) {
+                    // A way up exists only below the shelf map: at the map the
+                    // back gesture leaves the tab alone.
+                    if (managingFolders && (articleFolder != null || showAllArticles)) {
                         IconButton(onClick = goUp) {
                             Icon(
                                 Icons.Filled.ArrowBack,
@@ -614,21 +606,14 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    /*
-                     * Managing folders is rare work: it opens the existing
-                     * folder screen, where create / rename / delete and the
-                     * nesting still live. The tab itself no longer lands there.
-                     */
-                    if (tab == HomeTab.ARTICLES && !managingFolders && ItemField.FOLDER in itemFields) {
-                        IconButton(
-                            onClick = {
-                                foldersOpen = true
-                                inFolder = null
-                                showAllArticles = false
-                                query = ""
-                            },
-                        ) {
-                            Icon(Icons.Filled.Folder, contentDescription = "Dossiers")
+                    if (tab == HomeTab.ARTICLES) {
+                        // A barcode is a search key, but typing thirteen digits
+                        // to find an article is not a shop gesture.
+                        IconButton(onClick = { articleScanOpen = true }) {
+                            Icon(
+                                Icons.Filled.QrCodeScanner,
+                                contentDescription = "Chercher par code-barres",
+                            )
                         }
                     }
                     IconButton(onClick = onOpenSettings) {
@@ -840,138 +825,88 @@ fun HomeScreen(
                         editingItem = it
                         itemEditorOpen = true
                     }
-                    if (managingFolders) {
-                        /*
-                         * The folder screen: the grid, then one folder at each
-                         * depth. A search typed on the grid looks through the
-                         * whole catalogue, because from there the shop is asking
-                         * "where did I put this?". Typed inside a folder it
-                         * looks through that folder and everything below it,
-                         * because there the question is "is it here?" and an article
-                         * filed under Mobilier/Chaises is still in Mobilier.
-                         */
-                        val searching = query.isNotBlank()
-                        val searchingEverything =
-                            searching && (showAllArticles || articleFolder == null)
-                        when {
-                            searching -> {
-                                val scopeItems = if (searchingEverything) {
-                                    items
-                                } else {
-                                    SavedItemStore.itemsIn(
-                                        articleFolder.orEmpty(),
-                                        items,
-                                        deep = true,
-                                    )
-                                }
-                                ArticlesList(
-                                    // One search rule for the whole app, the
-                                    // same one the invoice picker uses, barcode
-                                    // included.
-                                    items = remember(scopeItems, query) {
-                                        scopeItems.filter { SavedItemStore.matches(it, query) }
-                                    },
-                                    // A result can come from a sub-folder, and
-                                    // an article the shop cannot place is an
-                                    // article it will not find again.
-                                    showFolder = ItemField.FOLDER in itemFields &&
-                                        (searchingEverything || showAllArticles || subFolders.isNotEmpty()),
-                                    fields = itemFields,
-                                    emptyTitle = "Aucun résultat",
-                                    emptyMessage = "Essayez un autre mot.",
-                                    onOpen = onOpenItem,
-                                    onEdit = onEditItem,
-                                    onDelete = onDeleteItem,
-                                    onMove = { movingItem = it },
-                                    onHistory = { historyItem = it },
-                                    marginOf = marginOf,
-                                )
-                            }
+                    // The shelf map is the first level: the folders and what they
+                    // hold, plus "Tous" for the whole catalogue. Everything below
+                    // it is a list of rows, so one gesture works everywhere.
+                    val atShelfMap =
+                        managingFolders && articleFolder == null && !showAllArticles
 
-                            showAllArticles || articleFolder != null -> FolderContents(
-                                articles = articleScopeItems,
-                                subFolders = subFolders,
-                                allItems = items,
-                                allArticles = showAllArticles,
-                                nested = !articleFolder.isNullOrEmpty(),
-                                onOpenFolder = { path ->
-                                    inFolder = path
-                                    query = ""
-                                },
-                                onCreateFolder = {
-                                    startNewFolder(if (articleFolder == null) "" else articleFolder)
-                                },
-                                onRenameFolder = {
-                                    renamingFolder = it
-                                    folderEditorOpen = true
-                                },
-                                onDeleteFolder = { deleteFolder = it },
+                    when {
+                        /*
+                         * A search is never scoped: the whole catalogue is the
+                         * only scope a shop can predict, and the line says so.
+                         */
+                        query.isNotBlank() -> Column(Modifier.fillMaxSize()) {
+                            Text(
+                                "Recherche dans tout le catalogue",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+                            )
+                            ArticlesList(
+                                items = articleMatches,
+                                showFolder = ItemField.FOLDER in itemFields,
+                                fields = itemFields,
+                                emptyTitle = "Aucun résultat",
+                                emptyMessage = "Essayez un autre mot.",
                                 onOpen = onOpenItem,
                                 onEdit = onEditItem,
                                 onDelete = onDeleteItem,
                                 onMove = { movingItem = it },
                                 onHistory = { historyItem = it },
                                 marginOf = marginOf,
-                            )
-
-                            else -> ArticlesFoldersGrid(
-                                items = items,
-                                folders = folders,
-                                onOpenAll = { showAllArticles = true },
-                                onOpenFolder = { path ->
-                                    inFolder = path
-                                    query = ""
-                                },
-                                onCreateFolder = {
-                                    startNewFolder(if (articleFolder == null) "" else articleFolder)
-                                },
-                                onRenameFolder = {
-                                    renamingFolder = it
-                                    folderEditorOpen = true
-                                },
-                                onDeleteFolder = { deleteFolder = it },
+                                stockOf = stockOf,
                             )
                         }
-                    } else if (query.isNotBlank()) {
-                        /*
-                         * From the flat list, a search reaches the whole
-                         * catalogue — barcode included — because the article
-                         * the shop wants may be filed somewhere it forgot.
-                         */
-                        ArticlesList(
-                            items = articleMatches,
-                            showFolder = ItemField.FOLDER in itemFields,
-                            fields = itemFields,
-                            emptyTitle = "Aucun résultat",
-                            emptyMessage = "Essayez un autre mot.",
-                            onOpen = onOpenItem,
-                            onEdit = onEditItem,
-                            onDelete = onDeleteItem,
-                            onMove = { movingItem = it },
-                            onHistory = { historyItem = it },
-                            marginOf = marginOf,
+
+                        atShelfMap -> ArticlesFoldersGrid(
+                            items = items,
+                            folders = folders,
+                            onOpenAll = {
+                                showAllArticles = true
+                                inFolder = null
+                                query = ""
+                            },
+                            onOpenFolder = { path ->
+                                inFolder = path
+                                showAllArticles = false
+                                query = ""
+                            },
+                            onCreateFolder = { startNewFolder("") },
+                            onRenameFolder = {
+                                renamingFolder = it
+                                folderEditorOpen = true
+                            },
+                            onDeleteFolder = { deleteFolder = it },
                         )
-                    } else {
-                        Column(Modifier.fillMaxSize()) {
+
+                        else -> Column(Modifier.fillMaxSize()) {
                             if (items.isNotEmpty()) {
                                 SortRow(
                                     label = articleSort.label,
-                                    options = ArticleSort.entries.map { it.label },
-                                    selected = articleSortIndex,
+                                    options = articleSorts.map { it.label },
+                                    selected = articleSorts.indexOf(articleSort),
                                     onSelect = { articleSortIndex = it },
                                     modifier = Modifier.padding(horizontal = 12.dp),
                                 )
                             }
-                            if (ItemField.FOLDER in itemFields || ItemField.STOCK in itemFields) {
+                            if (managingFolders || ItemField.STOCK in itemFields) {
                                 ArticleFilterChips(
                                     folders = folders,
-                                    selected = activeArticleFilter,
-                                    showFolders = ItemField.FOLDER in itemFields,
-                                    onSelect = {
-                                        articleFilter = it
+                                    // "Tous" is the whole catalogue; the way up
+                                    // to the folders is the back arrow.
+                                    selected = if (showAllArticles) null else articleFolder,
+                                    showFolders = managingFolders,
+                                    onSelect = { path ->
+                                        if (path == null) {
+                                            showAllArticles = true
+                                            inFolder = null
+                                        } else {
+                                            inFolder = path
+                                            showAllArticles = false
+                                        }
                                         // A chip is a new question; a search
-                                        // left over from the previous one would
-                                        // answer a different one.
+                                        // left over would answer another one.
                                         query = ""
                                     },
                                     reorderCount = items.count { it.needsReorder },
@@ -981,7 +916,7 @@ fun HomeScreen(
                             }
                             Box(Modifier.weight(1f)) {
                                 ArticlesList(
-                                    items = articleList,
+                                    items = articleScopeItems,
                                     showFolder = ItemField.FOLDER in itemFields,
                                     fields = itemFields,
                                     emptyTitle = when {
@@ -997,7 +932,7 @@ fun HomeScreen(
                                         reorderOnly ->
                                             "Tous les articles de cette sélection sont au-dessus " +
                                                 "de leur seuil de réapprovisionnement."
-                                        else -> "Essayez un autre filtre."
+                                        else -> "Déplacez-y un article, ou créez-en un ici."
                                     },
                                     onOpen = onOpenItem,
                                     onEdit = onEditItem,
@@ -1005,14 +940,26 @@ fun HomeScreen(
                                     onMove = { movingItem = it },
                                     onHistory = { historyItem = it },
                                     marginOf = marginOf,
+                                    stockOf = stockOf,
                                 )
                             }
-                            ArticlesSummary(items = articleList, fields = itemFields)
+                            ArticlesSummary(items = articleScopeItems, fields = itemFields)
                         }
                     }
                 }
             }
         }
+    }
+
+    if (articleScanOpen) {
+        BarcodeScannerDialog(
+            onScanned = { value ->
+                query = value
+                tabIndex = HomeTab.ARTICLES.ordinal
+                articleScanOpen = false
+            },
+            onDismiss = { articleScanOpen = false },
+        )
     }
 
     if (clientEditorOpen) {
@@ -1054,11 +1001,7 @@ fun HomeScreen(
             folders = folders,
             // A new article lands where the shop is looking: in the folder it
             // opened from the folder screen, or in the folder its filter is on.
-            defaultFolder = when {
-                managingFolders && !showAllArticles -> inFolder.orEmpty()
-                managingFolders -> ""
-                else -> activeArticleFilter.orEmpty()
-            },
+            defaultFolder = if (showAllArticles) "" else inFolder.orEmpty(),
             fields = itemFields,
             // The sale price is asked for in the basis the shop quotes, so the
             // number typed here is the number the customer is told.
@@ -1394,7 +1337,6 @@ fun HomeScreen(
                         // The new folder is what the shop should see, not the
                         // results of a search typed before it existed.
                         query = ""
-                        if (!managingFolders) foldersOpen = true
                         folderEditorOpen = false
                     } else {
                         scope.launch { snackbar.showSnackbar("Ce dossier existe déjà ici.") }
@@ -2635,111 +2577,6 @@ private fun ArticlesFoldersGrid(
 }
 
 /**
- * One open folder: the shelves inside it first, then what sits on it directly.
- *
- * Both are drawn on one scrolling surface by one grid, because they are one
- * place: walking into "Mobilier" and seeing "Chaises" above the articles filed
- * straight there is how a cupboard looks. A second list would need a second
- * scroll position and a sentence explaining that it is not the whole folder.
- *
- * Sub-folder tiles carry everything inside them, sub-shelves included, while
- * the title above counts what is on this level — a tile that said "2" while
- * three more articles sat in Mobilier/Chaises would read as inventory that vanished.
- */
-@Composable
-private fun FolderContents(
-    articles: List<SavedItem>,
-    subFolders: List<String>,
-    allItems: List<SavedItem>,
-    onOpenFolder: (String) -> Unit,
-    onCreateFolder: () -> Unit,
-    onRenameFolder: (String) -> Unit,
-    onDeleteFolder: (String) -> Unit,
-    /** Opens the article's page: figures, characteristics, movements. */
-    onOpen: (SavedItem) -> Unit,
-    onEdit: (SavedItem) -> Unit,
-    onDelete: (SavedItem) -> Unit,
-    onMove: (SavedItem) -> Unit,
-    /** Opening one article's stock history; nothing for a service. */
-    onHistory: (SavedItem) -> Unit = {},
-    /** The margin line under the price, when a cost is known. */
-    marginOf: (SavedItem) -> MarginHint? = { null },
-    /** The "Tous les articles" view: same grid, but nothing is a sub-folder. */
-    allArticles: Boolean = false,
-    /**
-     * Whether a folder made here can be nested at all. "Sans dossier" has no
-     * shelves of its own, so it offers a plain "Nouveau dossier" rather than
-     * promising a sub-folder it would file at the root anyway.
-     */
-    nested: Boolean = true,
-) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 104.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        gridItems(subFolders, key = { "sub-$it" }) { path ->
-            FolderTile(
-                title = SavedItemStore.nameOf(path),
-                count = SavedItemStore.itemsIn(path, allItems, deep = true).size,
-                icon = Icons.Filled.Folder,
-                onClick = { onOpenFolder(path) },
-                onRename = { onRenameFolder(path) },
-                onDelete = { onDeleteFolder(path) },
-            )
-        }
-        item(key = "new-subfolder") {
-            NewFolderTile(
-                onCreateFolder,
-                label = if (allArticles || !nested) "Nouveau dossier" else "Nouveau sous-dossier",
-            )
-        }
-        if (articles.isNotEmpty()) {
-            item(key = "articles-heading", span = { GridItemSpan(maxLineSpan) }) {
-                SectionHeading(
-                    "Articles",
-                    trailing = "${articles.size} ici",
-                    modifier = Modifier.padding(top = 6.dp),
-                )
-            }
-        } else {
-            item(key = "no-articles", span = { GridItemSpan(maxLineSpan) }) {
-                Text(
-                    if (allArticles) {
-                        "Aucun article enregistré."
-                    } else {
-                        "Aucun article directement dans ce dossier."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-        }
-        // The alias, because `items` inside a grid scope is the count-based
-        // overload and would take the list for a number of blank cells.
-        gridItems(
-            articles,
-            key = { "item-${it.id.ifBlank { it.label.lowercase() }}" },
-            span = { GridItemSpan(maxLineSpan) },
-        ) { item ->
-            ItemCard(
-                item = item,
-                showFolder = false,
-                onClick = { onOpen(item) },
-                onEdit = { onEdit(item) },
-                onDelete = { onDelete(item) },
-                onMove = { onMove(item) },
-                onHistory = { onHistory(item) },
-                marginOf = marginOf,
-            )
-        }
-    }
-}
-
-/**
  * One square in the folder grid.
  *
  * Rename and delete live on the tile itself, in a small overflow menu, rather
@@ -3300,6 +3137,8 @@ private fun ArticlesList(
     onHistory: (SavedItem) -> Unit = {},
     /** The margin line under the price, when a cost is known. */
     marginOf: (SavedItem) -> MarginHint? = { null },
+    /** What the stock journal says is on the shelf. */
+    stockOf: (SavedItem) -> Int = { it.stock ?: 0 },
 ) {
     if (items.isEmpty()) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
@@ -3328,6 +3167,7 @@ private fun ArticlesList(
                 onMove = { onMove(item) },
                 onHistory = { onHistory(item) },
                 marginOf = marginOf,
+                stockOf = stockOf,
             )
         }
     }
@@ -3373,8 +3213,12 @@ private fun ItemCard(
     showFolder: Boolean = true,
     /** The margin line under the price, when a cost is known. */
     marginOf: (SavedItem) -> MarginHint? = { null },
+    /** What the journal says is on the shelf, rather than the cached field. */
+    stockOf: (SavedItem) -> Int = { it.stock ?: 0 },
 ) {
     var menuOpen by remember { mutableStateOf(false) }
+    val onShelf = stockOf(item)
+    val emptyOnShelf = !item.tracksStock || onShelf <= 0
     val subtitle = listOf(
         // A hidden field is not shown, but it is still on the article: the
         // switch turns the label off, never the data.
@@ -3496,7 +3340,7 @@ private fun ItemCard(
              * carry the same shopfront, which told the shop nothing.
              */
             val service = item.stock == null
-            val empty = !service && item.outOfStock
+            val empty = !service && emptyOnShelf
             Box(
                 Modifier
                     .size(44.dp)
@@ -3560,7 +3404,8 @@ private fun ItemCard(
                 // price on the card and a cost is really known: an invented
                 // margin is worse than none.
                 if (ItemField.PURCHASE_PRICE in fields) {
-                    marginOf(item)?.let { hint ->
+                    val hint = marginOf(item)
+                    if (hint != null) {
                         Text(
                             hint.text,
                             style = MaterialTheme.typography.labelSmall,
@@ -3572,6 +3417,15 @@ private fun ItemCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
+                    } else {
+                        // No cost is not the same as a thin margin, and a
+                        // missing line made the two look identical.
+                        Text(
+                            "marge inconnue",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            maxLines = 1,
+                        )
                     }
                 }
                 // A quantity is the difference between a catalogue and an
@@ -3580,18 +3434,15 @@ private fun ItemCard(
                 // with the Stock switch, like every other optional field.
                 if (item.tracksStock && ItemField.STOCK in fields) {
                     Text(
-                        when (val stock = item.stock) {
-                            null -> ""
-                            0 -> if (item.needsReorder) "Épuisé · à commander" else "Épuisé"
-                            1 -> if (item.needsReorder) "1 en stock · à commander" else "1 en stock"
-                            else -> if (item.needsReorder) {
-                                "$stock en stock · à commander"
-                            } else {
-                                "$stock en stock"
-                            }
+                        when {
+                            !item.tracksStock -> ""
+                            onShelf <= 0 -> if (item.needsReorder) "Épuisé · à commander" else "Épuisé"
+                            onShelf == 1 -> if (item.needsReorder) "1 en stock · à commander" else "1 en stock"
+                            item.needsReorder -> "$onShelf en stock · à commander"
+                            else -> "$onShelf en stock"
                         },
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (item.outOfStock || item.needsReorder) {
+                        color = if (emptyOnShelf || item.needsReorder) {
                             MaterialTheme.colorScheme.error
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant

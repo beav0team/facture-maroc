@@ -84,6 +84,17 @@ class StockLedger(private val file: File) {
     fun balance(itemId: String): Int =
         entries.sumOf { if (it.itemId == itemId) it.delta else 0 }
 
+    /**
+     * Every article's quantity, in one pass.
+     *
+     * `balance()` walks the whole journal once per call, which is fine for one
+     * article and quadratic for a catalogue: a shop with 300 articles and 5 000
+     * movements recomposed the list 1,5 million times per redraw. The list asks
+     * for this map instead.
+     */
+    fun balances(): Map<String, Int> =
+        entries.groupingBy { it.itemId }.fold(0) { acc, entry -> acc + entry.delta }
+
     /** Appends one movement. Returns false when the file could not be written. */
     fun append(entry: StockEntry): Boolean {
         val written = runCatching {
