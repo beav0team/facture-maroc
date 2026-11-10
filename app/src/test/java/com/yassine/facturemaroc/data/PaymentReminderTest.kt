@@ -43,7 +43,7 @@ class PaymentReminderTest {
     fun `an unpaid invoice names the balance and the shop`() {
         val text = PaymentReminder.text(record(), shop)
 
-        assertTrue(text!!.contains("1 200,00 DH"))
+        assertTrue(text!!.normaliseSpaces().contains("1 200,00 DH"))
         assertTrue(text.contains("F-20261110-0001"))
         assertTrue(text.contains("Atelier Nord"))
         assertTrue(text.contains("0600000000"))
@@ -55,8 +55,8 @@ class PaymentReminderTest {
         val text = PaymentReminder.text(record(paid = 200.0), shop)!!
 
         assertTrue(text.contains("bien reçu"))
-        assertTrue(text.contains("200,00 DH"))
-        assertTrue(text.contains("1 000,00 DH"))
+        assertTrue(text.normaliseSpaces().contains("200,00 DH"))
+        assertTrue(text.normaliseSpaces().contains("1 000,00 DH"))
     }
 
     @Test
@@ -97,3 +97,12 @@ class PaymentReminderTest {
         assertFalse(text.contains("—"))
     }
 }
+
+/**
+ * The money formatter is the single source of truth for amounts, and it uses a
+ * narrow no-break space between thousands. These tests are about the wording of
+ * a reminder, so they compare with a plain space and let `MoneyTest` pin the
+ * typography.
+ */
+private fun String.normaliseSpaces(): String =
+    replace('\u202F', ' ').replace('\u00A0', ' ')

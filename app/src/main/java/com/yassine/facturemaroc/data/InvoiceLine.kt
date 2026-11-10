@@ -231,8 +231,4 @@ fun quantityValue(quantity: Double): String {
 fun quantityText(quantity: Double): String = quantityValue(quantity).replace('.', ',')
 
 /** `1 234,50` — a French amount, without the currency. */
-internal fun moneyText(value: Double): String =
-    java.lang.String
-        .format(java.util.Locale.FRANCE, "%,.2f", value)
-        .replace('\u202F', ' ')
-        .replace('\u00A0', ' ')
+internal fun moneyText(value: Double): String = Money.plain(value)

@@ -97,9 +97,5 @@ object PaymentReminder {
      * paper cannot drift: a customer comparing the two must not see two
      * spellings of the same number.
      */
-    private fun money(value: Double): String =
-        String.format(java.util.Locale.FRANCE, "%,.2f", value)
-            .replace('\u202F', ' ')
-            .replace('\u00A0', ' ') +
-            " DH"
+    private fun money(value: Double): String = Money.dirhams(value)
 }

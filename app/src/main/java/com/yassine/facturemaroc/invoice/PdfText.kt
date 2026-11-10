@@ -109,8 +109,7 @@ object PdfText {
      * comma for the decimal point, because that is how the figure is read aloud
      * and written on the same document the amount in words appears on.
      */
-    fun money(value: Double): String =
-        String.format(java.util.Locale.FRANCE, "%,.2f", value) + " DH"
+    fun money(value: Double): String = com.yassine.facturemaroc.data.Money.dirhams(value)
 
     /**
      * A percentage the way the rest of the document writes numbers: `20%`, and

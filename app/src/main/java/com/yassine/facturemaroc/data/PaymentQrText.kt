@@ -13,8 +13,7 @@ import java.util.Locale
 object PaymentQrText {
 
     /** Money the way an invoice writes it, without pulling in the PDF code. */
-    private fun money(value: Double): String =
-        String.format(Locale.FRANCE, "%,.2f", value) + " DH"
+    private fun money(value: Double): String = Money.dirhams(value)
 
     /**
      * The payload, or null when there is no RIB to scan.
