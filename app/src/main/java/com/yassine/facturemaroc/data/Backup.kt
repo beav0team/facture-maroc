@@ -136,6 +136,7 @@ object Backup {
                 items.forEach { item ->
                     put(
                         JSONObject().apply {
+                            put("id", item.id)
                             put("label", item.label)
                             put("price", item.price)
                             put("unit", item.unit)
@@ -145,6 +146,7 @@ object Backup {
                             // Absent rather than null for a service, so a backup
                             // stays readable by an older build of the app.
                             item.stock?.let { put("stock", it) }
+                            item.reorderThreshold?.let { put("reorderThreshold", it) }
                         },
                     )
                 }
@@ -299,6 +301,10 @@ object Backup {
         val folders = root.optJSONArray("folders").mapStrings()
         val items = root.optJSONArray("items").mapObjects { obj ->
             SavedItem(
+                // Kept so a restore preserves the link between an old invoice
+                // line and its article. A file written before ids existed has
+                // none, and the startup migration assigns them afterwards.
+                id = obj.optString("id", "").trim(),
                 label = obj.optString("label", ""),
                 price = obj.optDouble("price", 0.0).let { if (it.isNaN()) 0.0 else it },
                 unit = obj.optString("unit", ""),
@@ -309,6 +315,11 @@ object Backup {
                 // restore must not invent one: those items become services with
                 // no counted stock, which is what they were.
                 stock = if (obj.has("stock") && !obj.isNull("stock")) obj.optInt("stock", 0) else null,
+                reorderThreshold = if (obj.has("reorderThreshold") && !obj.isNull("reorderThreshold")) {
+                    obj.optInt("reorderThreshold", 0).coerceAtLeast(0)
+                } else {
+                    null
+                },
             )
         }.filter { it.label.isNotBlank() && it.price > 0.0 }
         val invoices = root.optJSONArray("invoices").mapObjects(InvoiceJson::recordFromJson)

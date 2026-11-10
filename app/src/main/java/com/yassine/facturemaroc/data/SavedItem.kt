@@ -68,12 +68,48 @@ data class SavedItem(
      * shop needs to see rather than a number quietly floored at zero.
      */
     val stock: Int? = null,
+    /**
+     * The quantity at which the shop wants to be told to reorder.
+     *
+     * `null` is "no threshold set", which is different from `0`: zero would
+     * say "order when it is already out", and a shop that has not thought
+     * about it should not be nagged. The comparison is `stock <= threshold`,
+     * because a threshold of 2 means the third one sold leaves a shelf that
+     * needs refilling.
+     */
+    val reorderThreshold: Int? = null,
+    /**
+     * The stable name of this article inside the app.
+     *
+     * The label used to be the key, which meant a rename broke every link an
+     * invoice line had back to the shelf: the line still printed the old name,
+     * but nothing could tell that it was the same article, so a stock movement
+     * after a rename silently did nothing. A UUID survives a rename, and the
+     * same id is copied onto every [InvoiceLine] the article produces.
+     *
+     * `""` means "not assigned yet": files written before this field existed,
+     * and items built by a test. [SavedItemStore] assigns an id before it
+     * writes an item, so a blank id is never a value the shop can see twice.
+     *
+     * Declared last on purpose: every constructor that predates it passes
+     * label, price and optionals positionally, and moving it to the front would
+     * have silently turned a label into an id.
+     */
+    val id: String = "",
 ) {
     /** Whether this is a countable thing rather than a service. */
     val tracksStock: Boolean get() = stock != null
 
     /** Stock at or below zero, where the next sale is a promise the shop cannot keep. */
     val outOfStock: Boolean get() = stock != null && stock <= 0
+
+    /**
+     * Whether this article has reached the level the shop chose to reorder at.
+     *
+     * A service and an article with no threshold both answer false: one has
+     * nothing to count, the other has never been given a number to count to.
+     */
+    val needsReorder: Boolean get() = stock != null && reorderThreshold != null && stock <= reorderThreshold
 
     /**
      * What one unit earns before TVA, or `null` when the purchase price is not
@@ -99,5 +135,9 @@ data class SavedItem(
         quantity = quantity,
         unitPrice = price,
         unit = unit,
+        // The link back to the shelf. A blank id (a test, or a catalogue entry
+        // that somehow skipped the store) leaves it null so the line is still a
+        // valid document; the label fallback in StockMovement handles it.
+        itemId = id.takeIf { it.isNotBlank() },
     )
 }

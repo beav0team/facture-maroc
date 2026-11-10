@@ -155,6 +155,11 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     init {
         _shop.value = ShopSettingsStore(application).read()
         _design.value = InvoiceDesignStore(application).read(application)
+        // The catalogue and the history are given stable ids before any screen
+        // can read them. It is idempotent, so a launch after a restore simply
+        // links whatever the backup could not know about.
+        val migrated = savedItems.migrateIdentities(invoices.invoices.value)
+        if (migrated !== invoices.invoices.value) invoices.replaceAll(migrated)
         refreshInvoice()
     }
 

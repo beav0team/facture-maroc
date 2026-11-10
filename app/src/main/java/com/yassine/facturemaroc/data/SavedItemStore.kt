@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.util.UUID
 
 /**
  * The shop's own items, saved once and reused on every invoice.
@@ -60,7 +61,11 @@ class SavedItemStore(context: Context) {
         val existing = _items.value.toMutableList()
         val index = existing.indexOfFirst { it.label.trim().lowercase() == key }
         if (index >= 0) {
-            existing[index] = clean
+            // Identity belongs to the row, not to the form that edited it. A
+            // blank id means "I do not know which article this is", which is
+            // exactly what a screen built from an old item looks like, and the
+            // row it matched keeps its id.
+            existing[index] = clean.copy(id = existing[index].id)
         } else {
             existing.add(clean)
         }
@@ -80,6 +85,29 @@ class SavedItemStore(context: Context) {
                 .distinctBy { it.label.trim().lowercase() },
             folders,
         )
+    }
+
+    /**
+     * Gives old articles their id and links old invoice lines, once.
+     *
+     * The file is copied to `saved_items.json.avant-migration` before the first
+     * rewrite, because this is the only operation that changes every row of the
+     * catalogue at once. The copy is kept only when the migration really changes
+     * something, so a shop that has already migrated is not given a new file
+     * (and a restore cannot make the "before" copy describe the new file).
+     *
+     * Returns the records, linked where they could be. The caller writes them
+     * back through [InvoiceStore], which owns that file.
+     */
+    fun migrateIdentities(records: List<InvoiceRecord>): List<InvoiceRecord> {
+        val plan = ItemMigration.plan(_items.value, records)
+        if (!plan.changed) return records
+        runCatching {
+            val copy = File(file.parentFile, "$FILE.avant-migration")
+            if (file.isFile && !copy.exists()) file.copyTo(copy, overwrite = false)
+        }
+        persist(plan.items, _folders.value)
+        return plan.records
     }
 
     /**
@@ -213,7 +241,12 @@ class SavedItemStore(context: Context) {
     }
 
     private fun persist(items: List<SavedItem>, folders: List<String>) {
-        val cleanItems = sorted(items)
+        // An id is assigned at the door and never re-rolled: a blank one would
+        // mean a rename could adopt the identity of another article.
+        val identified = items.map { item ->
+            if (item.id.isBlank()) item.copy(id = UUID.randomUUID().toString()) else item
+        }
+        val cleanItems = sorted(identified)
         _items.value = cleanItems
         _folders.value = cleanFolders(folders, cleanItems)
         val payload = JSONObject().apply {
@@ -240,6 +273,7 @@ class SavedItemStore(context: Context) {
     }
 
     private fun SavedItem.toJson() = JSONObject().apply {
+        put("id", id)
         put("label", label)
         put("price", price)
         put("unit", unit)
@@ -249,9 +283,13 @@ class SavedItemStore(context: Context) {
         put("barcode", barcode)
         put("purchasePrice", purchasePrice)
         if (stock != null) put("stock", stock)
+        if (reorderThreshold != null) put("reorderThreshold", reorderThreshold)
     }
 
     private fun JSONObject.toItem() = SavedItem(
+        // Absent on every item written before ids existed; the store assigns
+        // one before the file is written again.
+        id = optString("id", "").trim(),
         label = optString("label", ""),
         price = optDouble("price", 0.0),
         unit = optString("unit", ""),
@@ -261,6 +299,12 @@ class SavedItemStore(context: Context) {
         // No "stock" key means an article saved before the inventory existed,
         // which was a catalogue entry and not a counted product.
         stock = if (has("stock") && !isNull("stock")) optInt("stock", 0) else null,
+        // No key means the shop never set one, which is not the same as zero.
+        reorderThreshold = if (has("reorderThreshold") && !isNull("reorderThreshold")) {
+            optInt("reorderThreshold", 0).coerceAtLeast(0)
+        } else {
+            null
+        },
     ).takeIf {
         // An item with no price is not an item: it would sit on the list unable
         // to be added, because adding it would put a zero on the invoice.

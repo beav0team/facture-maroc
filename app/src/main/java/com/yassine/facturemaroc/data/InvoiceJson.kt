@@ -65,6 +65,9 @@ object InvoiceJson {
         // Written only when the shop quoted TTC, so an HT line stays exactly
         // what it is: a number that does not depend on who is buying.
         line.ttcPrice?.let { put("ttcPrice", it) }
+        // Absent on a line typed by hand and on every line written before ids
+        // existed, so those files stay byte-for-byte what they were.
+        line.itemId?.takeIf { it.isNotBlank() }?.let { put("itemId", it) }
     }
 
     fun lineFromJson(obj: JSONObject): InvoiceLine = InvoiceLine(
@@ -82,6 +85,7 @@ object InvoiceJson {
         taxExempt = obj.optBoolean("taxExempt", false),
         vatPercent = obj.optDouble("vatPercent", Double.NaN).let { if (it.isNaN()) null else it.coerceAtLeast(0.0) },
         ttcPrice = obj.optDouble("ttcPrice", Double.NaN).let { if (it.isNaN()) null else it },
+        itemId = obj.optString("itemId", "").trim().takeIf { it.isNotEmpty() },
     )
 
     fun dataToJson(data: InvoiceData): JSONObject = JSONObject().apply {

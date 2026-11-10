@@ -66,6 +66,16 @@ data class InvoiceLine(
      * Null means the price was already HT, and an HT price never moves.
      */
     val ttcPrice: Double? = null,
+    /**
+     * The saved article this line came from, when it came from one.
+     *
+     * Copied at the moment the line is made and never resolved through the
+     * catalogue: that is what lets the label on the paper stay what the customer
+     * read while the shop renames the article in its list. Null means the line
+     * was typed by hand or written before ids existed, and the label is then
+     * the only link — see `StockMovement`.
+     */
+    val itemId: String? = null,
 ) {
     val total: Double get() {
         val gross = quantity * unitPrice
