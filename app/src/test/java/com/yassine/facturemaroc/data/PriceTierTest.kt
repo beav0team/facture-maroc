@@ -157,6 +157,78 @@ class PriceTierTest {
     }
 
     @Test
+    fun `a tier price is in the shop's basis, like the article price`() {
+        // A shop that quotes TTC types 100 in the tier row, exactly as it types
+        // 120 for the article itself. The line is converted once on the way in,
+        // so the customer is charged the 100 the shop meant and not 83,33.
+        val item = SavedItem(
+            label = "Câble",
+            price = 120.0,
+            priceTiers = listOf(PriceTier(10, 100.0)),
+        )
+
+        val line = item.toLine(quantity = 10.0)
+
+        assertEquals(100.0, line.unitPrice, 0.001)
+        assertEquals(100.0, line.appliedTierPrice!!, 0.001)
+        // The document stores HT; converting the typed TTC price once is what
+        // makes the printed TTC come back to 100.
+        val storedHt = PriceBasis.excludingVat(line.unitPrice, 20.0)
+        assertEquals(100.0, PriceBasis.includingVat(storedHt, 20.0), 0.001)
+    }
+
+    @Test
+    fun `a fixed discount keeps two lines apart`() {
+        val plain = InvoiceLine("Chaise", quantity = 2.0, unitPrice = 300.0)
+        val reduced = plain.copy(lineDiscountFixed = 50.0)
+
+        assertTrue(plain.sameSaleAs(plain.copy(quantity = 5.0)))
+        assertTrue(!plain.sameSaleAs(reduced))
+    }
+
+    @Test
+    fun `two different articles with the same name stay two lines`() {
+        val shelf = InvoiceLine("Chaise", 1.0, 300.0, itemId = "a1")
+        val typed = InvoiceLine("Chaise", 1.0, 300.0)
+
+        assertTrue(!shelf.sameSaleAs(typed))
+        assertTrue(shelf.sameSaleAs(shelf.copy(quantity = 4.0)))
+    }
+
+    @Test
+    fun `a line edited below its tier stops claiming it`() {
+        // "dès 10" on a line of 5 units explains a price the customer is not
+        // paying; the price stays, the claim goes.
+        val line = tiered().toLine(quantity = 12.0)
+
+        val edited = line.withQuantity(5.0)
+
+        assertEquals(5.0, edited.quantity, 0.0)
+        assertNull(edited.tierFromQuantity)
+        assertNull(edited.appliedTierPrice)
+        assertEquals(90.0, edited.unitPrice, 0.001)
+    }
+
+    @Test
+    fun `a line still at or above its tier keeps the marker`() {
+        val line = tiered().toLine(quantity = 12.0)
+
+        val edited = line.withQuantity(50.0)
+
+        assertEquals(10, edited.tierFromQuantity)
+        assertEquals(90.0, edited.appliedTierPrice!!, 0.001)
+    }
+
+    @Test
+    fun `a tier marker goes when the quantity stops being whole`() {
+        // 2,5 m has no whole-unit boundary to cross, so the tier that was
+        // applied when the line read 10 units no longer describes it.
+        val line = tiered().toLine(quantity = 10.0)
+
+        assertNull(line.withQuantity(2.5).tierFromQuantity)
+    }
+
+    @Test
     fun `an article with tiers and attributes reads back from its own JSON shape`() {
         // The store writes each item through the same two helpers; this guards
         // the shape the next launch has to read.

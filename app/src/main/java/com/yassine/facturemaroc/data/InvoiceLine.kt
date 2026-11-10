@@ -155,6 +155,46 @@ data class InvoiceLine(
      */
     fun rateFor(documentRate: Double): Double =
         if (taxExempt) 0.0 else (vatPercent ?: documentRate).coerceAtLeast(0.0)
+
+    /**
+     * Whether [other] is the same sale, so adding it may just raise the quantity.
+     *
+     * Matched on everything that prints as a column or changes the money: two
+     * lines with the same name at different prices are two sales, and folding
+     * them together would silently drop the second price. The fixed discount and
+     * the article it comes from are part of that — a -50 DH line and a plain one
+     * look identical in the label but are not the same sale, and the same text
+     * typed by hand for two different articles must stay two lines.
+     */
+    fun sameSaleAs(other: InvoiceLine): Boolean =
+        description == other.description &&
+            unit == other.unit &&
+            unitPrice == other.unitPrice &&
+            lineDiscountPercent == other.lineDiscountPercent &&
+            lineDiscountFixed == other.lineDiscountFixed &&
+            taxExempt == other.taxExempt &&
+            vatPercent == other.vatPercent &&
+            itemId == other.itemId
+
+    /**
+     * This line at [quantity], dropping the tier marker once it no longer holds.
+     *
+     * The tier threshold is printed to explain a price — `9,00 DH · dès 10` — so
+     * a line edited down to 5 units must stop claiming a ten-unit tier. The price
+     * itself is left alone: it was settled when the line was made, and silently
+     * raising a sale's price because the customer took two more would be worse
+     * than a line without its explanation.
+     */
+    fun withQuantity(quantity: Double): InvoiceLine {
+        val keepsTier = tierFromQuantity?.let { from ->
+            quantity == quantity.toInt().toDouble() && quantity >= from
+        } ?: true
+        return if (keepsTier) {
+            copy(quantity = quantity)
+        } else {
+            copy(quantity = quantity, tierFromQuantity = null, appliedTierPrice = null)
+        }
+    }
 }
 
 /** `20`, `10`, `7.5` — a rate printed without trailing zeros. */

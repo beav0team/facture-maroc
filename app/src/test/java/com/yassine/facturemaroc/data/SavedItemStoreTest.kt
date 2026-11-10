@@ -1,5 +1,6 @@
 package com.yassine.facturemaroc.data
 
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -78,6 +79,55 @@ class SavedItemStoreTest {
         assertEquals(1, store.items.value.size)
         assertEquals("Chaise", store.items.value.first().label)
         assertTrue(store.folders.value.contains("Mobilier"))
+    }
+
+    @Test
+    fun `a tier price is written in the shop's basis under its new key`() {
+        val store = open()
+        store.save(
+            SavedItem(
+                label = "Câble",
+                price = 120.0,
+                priceTiers = listOf(PriceTier(fromQuantity = 10, unitPrice = 100.0)),
+            ),
+        )
+
+        val item = JSONObject(catalogue().readText()).getJSONArray("items").getJSONObject(0)
+        val tier = item.getJSONArray("priceTiers").getJSONObject(0)
+
+        // The tier follows the article price, so it is stored as typed, with no
+        // TVA arithmetic of its own — that is what keeps it honest for a shop
+        // quoting TTC.
+        assertEquals(100.0, tier.getDouble("unitPrice"), 0.001)
+        assertFalse("the old name must not be written any more", tier.has("unitPriceHt"))
+
+        val reopened = open()
+        assertEquals(100.0, reopened.items.value.single().priceTiers.single().unitPrice, 0.001)
+    }
+
+    @Test
+    fun `a catalogue written before the basis change still reads its tiers`() {
+        // The key every catalogue in the wild carries today.
+        catalogue().writeText(
+            """
+            {
+              "version": 3,
+              "folders": [],
+              "items": [
+                {
+                  "id": "a1",
+                  "label": "Câble",
+                  "price": 120.0,
+                  "priceTiers": [{ "fromQuantity": 10, "unitPriceHt": 100.0 }]
+                }
+              ]
+            }
+            """.trimIndent(),
+        )
+
+        val store = open()
+
+        assertEquals(100.0, store.items.value.single().priceTiers.single().unitPrice, 0.001)
     }
 
     @Test

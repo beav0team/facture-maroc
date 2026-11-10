@@ -505,8 +505,9 @@ class SavedItemStore(
         put("purchasePrice", purchasePrice)
         if (stock != null) put("stock", stock)
         if (reorderThreshold != null) put("reorderThreshold", reorderThreshold)
-        // Price tiers: written as an array of {fromQuantity, unitPriceHt}.
-        // Absent on older files, which means the single price applies.
+        // Price tiers: written as an array of {fromQuantity, unitPrice}, in the
+        // shop's basis like `price`. Absent on older files, which means the
+        // single price applies.
         if (priceTiers.isNotEmpty()) {
             put(
                 "priceTiers",
@@ -515,7 +516,7 @@ class SavedItemStore(
                         put(
                             JSONObject().apply {
                                 put("fromQuantity", tier.fromQuantity)
-                                put("unitPriceHt", tier.unitPriceHt)
+                                put("unitPrice", tier.unitPrice)
                             },
                         )
                     }
@@ -566,10 +567,16 @@ class SavedItemStore(
             if (array == null) emptyList() else {
                 (0 until array.length()).mapNotNull { index ->
                     array.optJSONObject(index)?.let { tier ->
+                        // `unitPriceHt` is the key 0.11.0 wrote; reading it keeps
+                        // a catalogue saved before this release intact.
+                        val raw = when {
+                            tier.has("unitPrice") && !tier.isNull("unitPrice") ->
+                                tier.optDouble("unitPrice", 0.0)
+                            else -> tier.optDouble("unitPriceHt", 0.0)
+                        }
                         PriceTier(
                             fromQuantity = tier.optInt("fromQuantity", 0),
-                            unitPriceHt = tier.optDouble("unitPriceHt", 0.0)
-                                .let { if (it.isNaN() || it.isInfinite()) 0.0 else it },
+                            unitPrice = if (raw.isNaN() || raw.isInfinite()) 0.0 else raw,
                         )
                     }
                 }

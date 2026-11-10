@@ -331,6 +331,10 @@ fun ItemEditorDialog(
     }
     var newTierFrom by remember { mutableStateOf("") }
     var newTierPrice by remember { mutableStateOf("") }
+    // A tier price is in the same basis as the article's price, so the field has
+    // to say which one that is: a shop quoting TTC typing into a field labelled
+    // "HT" is exactly how the tier price ended up converted twice.
+    val tierPriceLabel = if (pricesIncludeVat) "Prix TTC" else "Prix HT"
     // Attributes: free key/value carried onto every line this article produces.
     val attrRows = remember(initial) {
         mutableStateListOf<ItemAttribute>().apply { addAll(initial?.attributes.orEmpty()) }
@@ -602,6 +606,7 @@ fun ItemEditorDialog(
                     tierRows.forEachIndexed { index, tier ->
                         TierRow(
                             tier = tier,
+                            priceLabel = tierPriceLabel,
                             onUpdate = { tierRows[index] = it },
                             onRemove = { tierRows.removeAt(index) },
                         )
@@ -627,7 +632,7 @@ fun ItemEditorDialog(
                             onValueChange = { input ->
                                 newTierPrice = input.filter { it.isDigit() || it == '.' || it == ',' }
                             },
-                            label = { Text("Prix HT") },
+                            label = { Text(tierPriceLabel) },
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                             keyboardOptions = KeyboardOptions(
@@ -746,7 +751,7 @@ fun ItemEditorDialog(
                             // or below means "no tier", and a negative price is
                             // not a price.
                             priceTiers = tierRows
-                                .filter { it.fromQuantity > 0 && it.unitPriceHt >= 0.0 }
+                                .filter { it.fromQuantity > 0 && it.unitPrice >= 0.0 }
                                 .toList(),
                             // Only pairs with something on both sides are kept.
                             attributes = attrRows
@@ -778,15 +783,17 @@ fun ItemEditorDialog(
 }
 
 /**
- * One quantity-tier row: "from this quantity, at this HT price".
+ * One quantity-tier row: "from this quantity, at this price".
  *
- * A row rather than a dialog because a shop with three tiers should not open
- * three dialogs, and a compact row keeps the whole ladder visible at once.
+ * The price is in the shop's basis, so the label is passed in rather than
+ * assumed. A row rather than a dialog because a shop with three tiers should not
+ * open three dialogs, and a compact row keeps the whole ladder visible at once.
  * Zero and negative quantities are refused by the caller; this only edits.
  */
 @Composable
 private fun TierRow(
     tier: PriceTier,
+    priceLabel: String,
     onUpdate: (PriceTier) -> Unit,
     onRemove: () -> Unit,
 ) {
@@ -810,12 +817,12 @@ private fun TierRow(
             ),
         )
         OutlinedTextField(
-            value = tier.unitPriceHt.trimZeros(),
+            value = tier.unitPrice.trimZeros(),
             onValueChange = { input ->
                 val v = input.replace(',', '.').toDoubleOrNull()
-                if (v != null && v >= 0.0) onUpdate(tier.copy(unitPriceHt = v))
+                if (v != null && v >= 0.0) onUpdate(tier.copy(unitPrice = v))
             },
-            label = { Text("Prix HT") },
+            label = { Text(priceLabel) },
             singleLine = true,
             modifier = Modifier.weight(1f),
             keyboardOptions = KeyboardOptions(

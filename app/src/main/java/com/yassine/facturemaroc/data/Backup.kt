@@ -175,7 +175,7 @@ object Backup {
                                             put(
                                                 JSONObject().apply {
                                                     put("fromQuantity", tier.fromQuantity)
-                                                    put("unitPriceHt", tier.unitPriceHt)
+                                                    put("unitPrice", tier.unitPrice)
                                                 },
                                             )
                                         }
@@ -377,10 +377,16 @@ object Backup {
                 // Same keys the store writes, so a backup keeps the quantity
                 // prices and the attributes of every article.
                 priceTiers = obj.optJSONArray("priceTiers")?.mapObjects { tier ->
+                    val raw = when {
+                        // `unitPriceHt` is the key 0.11.0 wrote, kept readable so
+                        // an old backup restores with its tiers intact.
+                        tier.has("unitPrice") && !tier.isNull("unitPrice") ->
+                            tier.optDouble("unitPrice", 0.0)
+                        else -> tier.optDouble("unitPriceHt", 0.0)
+                    }
                     PriceTier(
                         fromQuantity = tier.optInt("fromQuantity", 0),
-                        unitPriceHt = tier.optDouble("unitPriceHt", 0.0)
-                            .let { if (it.isNaN() || it.isInfinite()) 0.0 else it },
+                        unitPrice = if (raw.isNaN() || raw.isInfinite()) 0.0 else raw,
                     )
                 }.orEmpty(),
                 attributes = obj.optJSONArray("attributes")?.mapObjects { attr ->

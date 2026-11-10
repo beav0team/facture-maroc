@@ -156,7 +156,7 @@ data class SavedItem(
         return priceTiers
             .filter { it.fromQuantity <= qty }
             .maxByOrNull { it.fromQuantity }
-            ?.unitPriceHt ?: price
+            ?.unitPrice ?: price
     }
 
     /**
@@ -176,7 +176,7 @@ data class SavedItem(
         // shelf offered at the moment the line was written, even if the shop
         // later edits the tiers or raises the base price.
         tierFromQuantity = matchingTier(quantity)?.fromQuantity,
-        appliedTierPrice = matchingTier(quantity)?.unitPriceHt,
+        appliedTierPrice = matchingTier(quantity)?.unitPrice,
         // The link back to the shelf. A blank id (a test, or a catalogue entry
         // that somehow skipped the store) leaves it null so the line is still a
         // valid document; the label fallback in StockMovement handles it.

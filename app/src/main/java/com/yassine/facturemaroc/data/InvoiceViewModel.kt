@@ -243,14 +243,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      */
     fun addLine(line: InvoiceLine) {
         val entry = inShopPriceBasis(line)
-        val existing = _lines.value.firstOrNull {
-            it.description == entry.description &&
-                it.unit == entry.unit &&
-                it.unitPrice == entry.unitPrice &&
-                it.lineDiscountPercent == entry.lineDiscountPercent &&
-                it.taxExempt == entry.taxExempt &&
-                it.vatPercent == entry.vatPercent
-        }
+        val existing = _lines.value.firstOrNull { it.sameSaleAs(entry) }
         _lines.value = if (existing == null) {
             _lines.value + entry
         } else {
@@ -294,7 +287,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             return
         }
         _lines.value = _lines.value.mapIndexed { i, line ->
-            if (i == index) line.copy(quantity = quantity) else line
+            if (i == index) line.withQuantity(quantity) else line
         }
         refreshInvoice()
     }
