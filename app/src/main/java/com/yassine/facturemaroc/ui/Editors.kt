@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceRecord
 import com.yassine.facturemaroc.data.PaymentInfo
+import com.yassine.facturemaroc.data.PaymentMethod
 import com.yassine.facturemaroc.data.InvoiceLine
 import com.yassine.facturemaroc.data.ItemField
 import com.yassine.facturemaroc.data.PartyRole
@@ -1450,6 +1451,9 @@ fun PaymentDialog(
     }
     var date by remember { mutableStateOf(current?.paidAt?.takeIf { it.isNotBlank() } ?: today) }
     var note by remember { mutableStateOf(current?.note.orEmpty()) }
+    // What actually came in. Defaults to what the document says, which is what
+    // an untouched dialog records.
+    var method by remember { mutableStateOf(current?.method ?: record.data.paymentMethod) }
     val parsed = amount.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
 
     AlertDialog(
@@ -1490,6 +1494,18 @@ fun PaymentDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Column(Modifier.fillMaxWidth()) {
+                    Text("Moyen de paiement", style = MaterialTheme.typography.bodyMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        PaymentMethod.entries.forEach { candidate ->
+                            ChoiceChip(
+                                label = candidate.french,
+                                selected = method == candidate,
+                                onClick = { method = candidate },
+                            )
+                        }
+                    }
+                }
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it.take(60) },
@@ -1518,6 +1534,7 @@ fun PaymentDialog(
                                 paidAmount = value,
                                 paidAt = date.trim(),
                                 note = note.trim(),
+                                method = method,
                             )
                         },
                     )

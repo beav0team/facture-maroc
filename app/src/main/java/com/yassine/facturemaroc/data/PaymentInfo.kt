@@ -15,6 +15,14 @@ data class PaymentInfo(
     val paidAt: String = "",
     /** Free reference: cheque number, transfer id, remark. */
     val note: String = "",
+    /**
+     * How this payment was made, when it differs from what the document says.
+     *
+     * A customer can say "espèces" when the invoice was written "virement", and
+     * the paper must record what actually happened. Null means "as the document
+     * says" — every payment written before this field existed.
+     */
+    val method: PaymentMethod? = null,
 ) {
     val isEmpty: Boolean get() = paidAmount <= 0.0
 }

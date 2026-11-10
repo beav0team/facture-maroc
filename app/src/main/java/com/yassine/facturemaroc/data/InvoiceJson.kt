@@ -129,6 +129,7 @@ object InvoiceJson {
                     put("paidAmount", it.paidAmount)
                     put("paidAt", it.paidAt)
                     put("note", it.note)
+                    it.method?.let { method -> put("method", method.id) }
                 },
             )
         }
@@ -265,6 +266,11 @@ object InvoiceJson {
                         .let { if (it.isNaN() || it.isInfinite()) 0.0 else it },
                     paidAt = payment.optString("paidAt", ""),
                     note = payment.optString("note", ""),
+                    // Absent on every payment written before the field
+                    // existed: the document's own method still applies.
+                    method = payment.optString("method", "")
+                        .takeIf { it.isNotBlank() }
+                        ?.let(PaymentMethod::fromId),
                 )
             },
         )

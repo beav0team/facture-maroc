@@ -22,11 +22,26 @@ object AmountWords {
         "QUATRE-VINGT", "QUATRE-VINGT"
     )
 
-    fun sentence(amount: Double, documentType: DocumentType = DocumentType.FACTURE): String {
+    /**
+     * The amount alone, in words: "CINQ CENTS DIRHAMS ET QUINZE CENTIMES".
+     *
+     * Used where the sentence's legal opening would be wrong — a payment
+     * receipt states a sum received, it does not "arrêter la présente facture".
+     */
+    fun amount(amount: Double): String {
         val dirhams = Math.floor(amount).toInt()
         val centimes = Math.round((amount - dirhams) * 100).toInt()
         val dirhamsText = if (dirhams == 0) "ZÉRO" else numberToWords(dirhams)
         val centimesText = if (centimes == 0) "" else numberToWords(centimes)
+        return "$dirhamsText ${if (dirhams == 1) "DIRHAM" else "DIRHAMS"}" +
+            if (centimesText.isNotEmpty()) {
+                " ET $centimesText ${if (centimes == 1) "CENTIME" else "CENTIMES"}"
+            } else {
+                ""
+            }
+    }
+
+    fun sentence(amount: Double, documentType: DocumentType = DocumentType.FACTURE): String {
         val opening = when (documentType) {
             DocumentType.DEVIS -> "ARRÊTÉ LE PRÉSENT DEVIS À LA SOMME DE :"
             DocumentType.BON_DE_COMMANDE -> "ARRÊTÉ LE PRÉSENT BON DE COMMANDE À LA SOMME DE :"
@@ -39,7 +54,7 @@ object AmountWords {
             DocumentType.EXPORT ->
                 "ARRÊTÉE LA PRÉSENTE FACTURE À LA SOMME DE :"
         }
-        return "$opening $dirhamsText ${if (dirhams == 1) "DIRHAM" else "DIRHAMS"}${if (centimesText.isNotEmpty()) " ET $centimesText ${if (centimes == 1) "CENTIME" else "CENTIMES"}" else ""}."
+        return "$opening ${amount(amount)}."
     }
 
     private fun numberToWords(n: Int): String {

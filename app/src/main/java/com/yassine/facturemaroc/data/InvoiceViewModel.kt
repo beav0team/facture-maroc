@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.yassine.facturemaroc.invoice.InvoicePdf
+import com.yassine.facturemaroc.invoice.ReceiptPdf
 import com.yassine.facturemaroc.invoice.InvoiceXml
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -787,6 +788,27 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             _design.value,
         )
         // Re-sending keeps the same entry: the archive dedups by content hash.
+        if (outcome is InvoicePdf.Outcome.HandedOff) {
+            runCatching { outcome.file.readBytes() }.getOrNull()
+                ?.let { archive.recordPdf(record.data, it) }
+        }
+        outcome
+    }
+
+    /**
+     * Writes the payment receipt and hands it to the share sheet.
+     *
+     * A receipt is worth archiving like the invoice: it is the only proof of a
+     * deposit, and the hash chain is what makes the two documents answer each
+     * other if a customer ever disputes what they paid.
+     */
+    suspend fun shareReceipt(record: InvoiceRecord): InvoicePdf.Outcome = withContext(Dispatchers.IO) {
+        val outcome = ReceiptPdf.share(
+            getApplication(),
+            record.data,
+            _shop.value,
+            _design.value,
+        )
         if (outcome is InvoicePdf.Outcome.HandedOff) {
             runCatching { outcome.file.readBytes() }.getOrNull()
                 ?.let { archive.recordPdf(record.data, it) }

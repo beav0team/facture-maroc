@@ -16,6 +16,7 @@ import com.yassine.facturemaroc.data.PaymentInfo
 import com.yassine.facturemaroc.data.ShopSettings
 import com.yassine.facturemaroc.data.ShopSnapshot
 import com.yassine.facturemaroc.invoice.InvoicePdf
+import com.yassine.facturemaroc.invoice.ReceiptPdf
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -352,5 +353,23 @@ class InvoicePdfPagesTest {
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         bitmap.recycle()
         return ImageBytes(out.toByteArray())
+    }
+
+    @Test
+    fun aDepositReceiptIsWrittenAsOnePage() {
+        val data = InvoiceData(
+            number = "F-20261110-0007",
+            date = "10/11/2026",
+            client = InvoiceClient(name = "Client", ice = "009876543000012"),
+            lines = listOf(InvoiceLine("Chaise", 2, 950.0)),
+            payment = PaymentInfo(paidAmount = 1_000.0, paidAt = "12/11/2026"),
+        )
+
+        val file = ReceiptPdf.create(context, data, shop, InvoiceDesign())
+        assertNotNull(file)
+
+        PdfRenderer(ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)).use { renderer ->
+            assertEquals(1, renderer.pageCount)
+        }
     }
 }

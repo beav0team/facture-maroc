@@ -172,6 +172,9 @@ object PdfExtras {
         }
         var cursor = y
         val date = data.payment?.paidAt?.trim().orEmpty()
+        // What actually came in, when the shop recorded a different method
+        // than the one the document was written for.
+        val how = data.payment?.method?.french?.takeIf { it.isNotBlank() }
 
         // Printed whether or not money came in: an unpaid document that names
         // its deadline is the one a customer is most likely to check.
@@ -187,14 +190,21 @@ object PdfExtras {
             } else {
                 "Document acquitté"
             }
-            val line = if (date.isEmpty()) settled else "$settled le $date"
+            val line = listOfNotNull(
+                settled,
+                date.takeIf { it.isNotEmpty() }?.let { "le $it" },
+                how?.let { "· $it" },
+            ).joinToString(" ")
+
             PdfText.draw(canvas, line, x, cursor, bold, width.toInt(), maxLines = 1)
             cursor += bold.textSize + 4f
         } else {
-            val paid = if (date.isEmpty()) {
-                "Payé : ${PdfText.money(data.paidAmount)}"
-            } else {
-                "Payé le $date : ${PdfText.money(data.paidAmount)}"
+            val head = if (date.isEmpty()) "Payé" else "Payé le $date"
+            val paid = buildString {
+                append(head)
+                append(" : ")
+                append(PdfText.money(data.paidAmount))
+                if (how != null) append(" ($how)")
             }
             PdfText.draw(canvas, paid, x, cursor, body, width.toInt(), maxLines = 1)
             cursor += body.textSize + 4f

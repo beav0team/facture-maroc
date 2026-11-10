@@ -199,7 +199,7 @@ object InvoicePdf {
      * live settings for a draft. The logo bytes live in [LogoStore], which is
      * why this needs a context the data model does not have.
      */
-    private fun InvoiceData.printedShop(context: Context, live: ShopSettings): ShopSettings {
+    internal fun InvoiceData.printedShop(context: Context, live: ShopSettings): ShopSettings {
         val snapshot = shop ?: return live
         val logo = snapshot.logoHash?.let { LogoStore.read(context, it) } ?: snapshot.logo?.bytes
         return snapshot.toSettings(logo)

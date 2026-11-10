@@ -60,6 +60,7 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.AlertDialog
@@ -615,6 +616,12 @@ fun HomeScreen(
                             snackbar.showSnackbar(outcome.shareMessage())
                         }
                     },
+                    onShareReceipt = { record ->
+                        scope.launch {
+                            val outcome = viewModel.shareReceipt(record)
+                            snackbar.showSnackbar(outcome.shareMessage())
+                        }
+                    },
                     onExportXml = ::exportXml,
                     onDuplicate = onOpenRecord,
                     onDelete = { deleteInvoice = it },
@@ -1130,6 +1137,7 @@ private fun InvoicesTab(
     onOpenRecord: (InvoiceRecord) -> Unit,
     onShowDetail: (InvoiceRecord) -> Unit,
     onShare: (InvoiceRecord) -> Unit,
+    onShareReceipt: (InvoiceRecord) -> Unit,
     onExportXml: (InvoiceRecord) -> Unit,
     onDuplicate: (InvoiceRecord) -> Unit,
     onDelete: (InvoiceRecord) -> Unit,
@@ -1184,6 +1192,7 @@ private fun InvoicesTab(
                     record = record,
                     onClick = { onOpenRecord(record) },
                     onShare = { onShare(record) },
+                    onShareReceipt = { onShareReceipt(record) },
                     onExportXml = { onExportXml(record) },
                     onDuplicate = { onDuplicate(record) },
                     onDelete = { onDelete(record) },
@@ -1201,6 +1210,7 @@ private fun InvoicesTab(
                     record = record,
                     onClick = { onShowDetail(record) },
                     onShare = { onShare(record) },
+                    onShareReceipt = { onShareReceipt(record) },
                     onExportXml = { onExportXml(record) },
                     onDuplicate = { onDuplicate(record) },
                     onDelete = { onDelete(record) },
@@ -1289,6 +1299,7 @@ private fun InvoiceCard(
     record: InvoiceRecord,
     onClick: () -> Unit,
     onShare: () -> Unit,
+    onShareReceipt: () -> Unit,
     onExportXml: () -> Unit,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
@@ -1438,6 +1449,18 @@ private fun InvoiceCard(
                                 onShare()
                             },
                         )
+                        if (record.data.paidAmount > 0.0) {
+                            DropdownMenuItem(
+                                text = { Text("Partager le reçu") },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.Receipt, contentDescription = null)
+                                },
+                                onClick = {
+                                    menuOpen = false
+                                    onShareReceipt()
+                                },
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text("Exporter en XML") },
                             leadingIcon = {
