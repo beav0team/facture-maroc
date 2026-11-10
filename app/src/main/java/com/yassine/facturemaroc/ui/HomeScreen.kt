@@ -5,7 +5,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
@@ -42,6 +43,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CreateNewFolder
@@ -103,13 +105,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
@@ -135,6 +141,7 @@ import com.yassine.facturemaroc.data.PaymentReminder
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.ItemField
 import com.yassine.facturemaroc.data.MarginReport
+import com.yassine.facturemaroc.data.ArticleSort
 import com.yassine.facturemaroc.data.PartyRole
 import com.yassine.facturemaroc.data.Purchase
 import com.yassine.facturemaroc.data.PurchaseOutcome
@@ -152,6 +159,7 @@ import com.yassine.facturemaroc.data.filterToReorder
 import com.yassine.facturemaroc.data.labelTaken
 import com.yassine.facturemaroc.data.nameTaken
 import com.yassine.facturemaroc.data.outstanding
+import com.yassine.facturemaroc.data.sortArticles
 import com.yassine.facturemaroc.data.summarizeArticles
 import com.yassine.facturemaroc.data.visibleItemFields
 import com.yassine.facturemaroc.invoice.InvoiceXml
@@ -234,6 +242,14 @@ fun HomeScreen(
      * "what is low in Mobilier?" is the question a shop actually asks.
      */
     var reorderOnly by rememberSaveable { mutableStateOf(false) }
+    /*
+     * Which order the catalogue is shown in. Alphabetical by default, because a
+     * shop usually looks for a name it knows; the other orders answer the two
+     * questions the same list gets asked — what is worth the most, and what has
+     * to be reordered.
+     */
+    var articleSortIndex by rememberSaveable { mutableIntStateOf(0) }
+    val articleSort = ArticleSort.entries[articleSortIndex]
     /*
      * Whether the folder screen is open.
      *
@@ -369,12 +385,15 @@ fun HomeScreen(
         ItemField.FOLDER in itemFields &&
             (path.isEmpty() || folders.any { it.equals(path, ignoreCase = true) })
     }
-    val articleList = remember(items, activeArticleFilter, reorderOnly) {
-        filterToReorder(filterArticles(items, activeArticleFilter), reorderOnly)
+    val articleList = remember(items, activeArticleFilter, reorderOnly, articleSort) {
+        sortArticles(
+            filterToReorder(filterArticles(items, activeArticleFilter), reorderOnly),
+            articleSort,
+        )
     }
-    val articleMatches = remember(items, query, reorderOnly) {
+    val articleMatches = remember(items, query, reorderOnly, articleSort) {
         val matched = if (query.isBlank()) emptyList() else items.filter { SavedItemStore.matches(it, query) }
-        filterToReorder(matched, reorderOnly)
+        sortArticles(filterToReorder(matched, reorderOnly), articleSort)
     }
     val subFolders = remember(folders, articleFolder) {
         // `""` is "Sans dossier", which has no shelves of its own. Without this,
@@ -858,6 +877,12 @@ fun HomeScreen(
                         )
                     } else {
                         Column(Modifier.fillMaxSize()) {
+                            if (items.isNotEmpty()) {
+                                ArticleSortRow(
+                                    sort = articleSort,
+                                    onSort = { articleSortIndex = it.ordinal },
+                                )
+                            }
                             if (ItemField.FOLDER in itemFields || ItemField.STOCK in itemFields) {
                                 ArticleFilterChips(
                                     folders = folders,
@@ -2710,6 +2735,66 @@ private fun FolderChoice(label: String, selected: Boolean, onClick: () -> Unit) 
  *
  * `null` is "Tous", `""` is "Sans dossier", anything else is a path.
  */
+/**
+ * The catalogue's order, as one control.
+ *
+ * A dropdown rather than four chips on the row: the chips underneath already
+ * carry the folders, and a second row of filters above them would push the
+ * first article off a 360 dp screen. The current order is written on the
+ * control, so the shop can see why the list is in this order.
+ */
+@Composable
+private fun ArticleSortRow(
+    sort: ArticleSort,
+    onSort: (ArticleSort) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.small)
+                .clickable { open = true }
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+        ) {
+            Icon(
+                Icons.Filled.SwapVert,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                "Trier : ${sort.label}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            ArticleSort.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.label) },
+                    leadingIcon = {
+                        if (option == sort) {
+                            Icon(Icons.Filled.Check, contentDescription = null)
+                        } else {
+                            Spacer(Modifier.size(24.dp))
+                        }
+                    },
+                    onClick = {
+                        open = false
+                        onSort(option)
+                    },
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ArticleFilterChips(
@@ -2927,9 +3012,28 @@ private fun ItemCard(
     val canMove = ItemField.FOLDER in fields
     val actionWidth = 56.dp
     val revealWidth = with(density) { (actionWidth * (if (canMove) 2 else 1)).toPx() }
-    val offsetX = remember(item.label) { Animatable(0f) }
+    /*
+     * A plain float, not an Animatable.
+     *
+     * The old version launched a coroutine on every drag delta to `snapTo` an
+     * Animatable and read `offsetX.value` during composition, so a drag
+     * recomposed the row on every frame and queued one coroutine per pixel.
+     * The offset is now read only inside `graphicsLayer` (a draw-phase lambda)
+     * and one animation runs per gesture, when the finger lifts.
+     */
+    var offsetX by remember(item.id) { mutableFloatStateOf(0f) }
     val scope = rememberCoroutineScope()
-    val close: () -> Unit = { scope.launch { offsetX.animateTo(0f) } }
+    val haptics = LocalHapticFeedback.current
+    // Slides the row back. Animation runs on the composition scope, one per
+    // gesture, and writes the float the layer already reads.
+    val swipeTo: (Float) -> Unit = { target ->
+        scope.launch {
+            animate(offsetX, target, animationSpec = tween(durationMillis = 180)) { value, _ ->
+                offsetX = value
+            }
+        }
+    }
+    val close: () -> Unit = { swipeTo(0f) }
 
     Box(Modifier.fillMaxWidth()) {
         Row(
@@ -2964,26 +3068,30 @@ private fun ItemCard(
     Card(
         // An open row closes on a tap before it edits: the shop aimed at the
         // card it can still see, not at the button it just opened.
-        onClick = { if (offsetX.value != 0f) close() else onClick() },
+        onClick = { if (offsetX != 0f) close() else onClick() },
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+            .graphicsLayer { translationX = offsetX }
             .draggable(
                 orientation = Orientation.Horizontal,
                 state = rememberDraggableState { delta ->
-                    scope.launch {
-                        offsetX.snapTo((offsetX.value + delta).coerceIn(-revealWidth, 0f))
-                    }
+                    offsetX = (offsetX + delta).coerceIn(-revealWidth, 0f)
                 },
                 onDragStopped = {
                     // Past a third of the strip it stays open; below that it
                     // springs back, so a half-swipe never leaves a stuck row.
-                    val target = if (offsetX.value < -revealWidth / 3f) -revealWidth else 0f
-                    offsetX.animateTo(target)
+                    val target = if (offsetX < -revealWidth / 3f) -revealWidth else 0f
+                    if (target != 0f) {
+                        // A short tick when the actions really open: the row
+                        // has moved, and a shop looking at the list rather than
+                        // at its thumb needs to feel that.
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    }
+                    swipeTo(target)
                 },
             ),
     ) {
