@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.Remove
@@ -147,6 +148,7 @@ fun BuilderScreen(
     var showDiscountDialog by remember { mutableStateOf(false) }
     var showValidityDialog by remember { mutableStateOf(false) }
     var showDueDateDialog by remember { mutableStateOf(false) }
+    var showDepositDialog by remember { mutableStateOf(false) }
     var showSignatureDialog by remember { mutableStateOf(false) }
     var showSurchargeDialog by remember { mutableStateOf(false) }
     var editingNote by remember { mutableStateOf<NoteKind?>(null) }
@@ -430,6 +432,8 @@ fun BuilderScreen(
                     isDevis = invoice.isDevis,
                     validityDate = invoice.validityDate,
                     dueDate = invoice.dueDate,
+                    depositAmount = invoice.depositAmount,
+                    depositReference = invoice.depositReference,
                     discountFixed = invoice.discountFixed,
                     surchargeLabel = invoice.surchargeLabel,
                     surchargeAmount = invoice.surcharge,
@@ -439,6 +443,7 @@ fun BuilderScreen(
                     onPayment = viewModel::setPaymentMethod,
                     onValidity = { showValidityDialog = true },
                     onDueDate = { showDueDateDialog = true },
+                    onDeposit = { showDepositDialog = true },
                     onOpenSettings = {
                         viewModel.saveDraftNow()
                         onOpenSettings()
@@ -573,6 +578,18 @@ fun BuilderScreen(
                 showDiscountDialog = false
             },
             onDismiss = { showDiscountDialog = false },
+        )
+    }
+
+    if (showDepositDialog) {
+        DepositDialog(
+            initialAmount = invoice.depositAmount,
+            initialReference = invoice.depositReference,
+            onConfirm = { amount, reference ->
+                viewModel.setDeposit(amount, reference)
+                showDepositDialog = false
+            },
+            onDismiss = { showDepositDialog = false },
         )
     }
 
@@ -1156,6 +1173,8 @@ private fun OptionsCard(
     isDevis: Boolean,
     validityDate: String?,
     dueDate: String?,
+    depositAmount: Double,
+    depositReference: String,
     surchargeLabel: String,
     surchargeAmount: Double,
     surchargePercent: Double,
@@ -1164,6 +1183,7 @@ private fun OptionsCard(
     onPayment: (PaymentMethod) -> Unit,
     onValidity: () -> Unit,
     onDueDate: () -> Unit,
+    onDeposit: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     Card(
@@ -1216,6 +1236,14 @@ private fun OptionsCard(
                     onClick = onDueDate,
                 )
             }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            OptionRow(
+                icon = Icons.Filled.Payments,
+                label = if (depositReference.isBlank()) "Acompte déjà versé" else "Acompte ($depositReference)",
+                value = if (depositAmount <= 0.0) "Aucun" else "−${depositAmount.asDirhams()}",
+                onClick = onDeposit,
+            )
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Row(

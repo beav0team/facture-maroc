@@ -1136,6 +1136,80 @@ fun PercentDialog(
 }
 
 /**
+ * The deposit already received on another document.
+ *
+ * It is entered as an amount and a reference, never as a percentage: an acompte
+ * is a sum the customer actually paid, and a document that recomputed it would
+ * disagree with the receipt they hold.
+ */
+@Composable
+fun DepositDialog(
+    initialAmount: Double,
+    initialReference: String,
+    onConfirm: (Double, String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var amount by remember(initialAmount) {
+        mutableStateOf(if (initialAmount > 0.0) initialAmount.trimZeros() else "")
+    }
+    var reference by remember(initialReference) { mutableStateOf(initialReference) }
+    val value = amount.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Acompte déjà versé") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { input ->
+                        amount = input.filter { it.isDigit() || it == ',' || it == '.' }.take(12)
+                    },
+                    label = { Text("Montant TTC") },
+                    suffix = { Text("DH") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = ImeAction.Next,
+                    ),
+                )
+                OutlinedTextField(
+                    value = reference,
+                    onValueChange = { reference = it.take(40) },
+                    label = { Text("Document de l'acompte (facultatif)") },
+                    placeholder = { Text("Facture d'acompte n°") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    "Déduit de ce que le client doit encore payer. La TVA n'est pas " +
+                        "recalculée : l'acompte a déjà été taxé sur son propre document.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(value, reference.trim()) },
+                shape = MaterialTheme.shapes.small,
+            ) {
+                Text("Appliquer")
+            }
+        },
+        dismissButton = {
+            Row {
+                if (initialAmount > 0.0 || initialReference.isNotBlank()) {
+                    TextButton(onClick = { onConfirm(0.0, "") }) { Text("Retirer") }
+                }
+                TextButton(onClick = onDismiss) { Text("Annuler") }
+            }
+        },
+    )
+}
+
+/**
  * Sets the day the money is due.
  *
  * Moroccan shops quote "comptant", "30 jours" or "60 jours", so those get a

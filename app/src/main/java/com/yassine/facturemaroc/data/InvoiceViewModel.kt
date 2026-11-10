@@ -99,6 +99,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     val surchargeAmount: StateFlow<Double> = _surchargeAmount.asStateFlow()
 
     /** A surcharge as a percentage of the discounted total. */
+    /** A deposit already invoiced, deducted from what remains to pay. */
+    private val _depositAmount = MutableStateFlow(0.0)
+    val depositAmount: StateFlow<Double> = _depositAmount.asStateFlow()
+
+    private val _depositReference = MutableStateFlow("")
+    val depositReference: StateFlow<String> = _depositReference.asStateFlow()
+
     private val _surchargePercent = MutableStateFlow(0.0)
     val surchargePercent: StateFlow<Double> = _surchargePercent.asStateFlow()
 
@@ -170,6 +177,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         surchargeLabel = _surchargeLabel.value,
         surchargeAmount = _surchargeAmount.value,
         surchargePercent = _surchargePercent.value,
+        depositAmount = _depositAmount.value,
+        depositReference = _depositReference.value,
     )
 
     private fun refreshInvoice() {
@@ -418,6 +427,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /** Sets or clears the extra charge printed after the discount. */
+    /** Sets or clears the deposit already received on another document. */
+    fun setDeposit(amount: Double, reference: String) {
+        _depositAmount.value = amount.coerceAtLeast(0.0)
+        _depositReference.value = reference.trim()
+        refreshInvoice()
+    }
+
     fun setSurcharge(label: String, amount: Double) {
         _surchargeLabel.value = label.trim().ifBlank { "Livraison" }
         _surchargeAmount.value = amount.coerceAtLeast(0.0)
@@ -511,6 +527,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _surchargeLabel.value = data.surchargeLabel
         _surchargeAmount.value = data.surchargeAmount
         _surchargePercent.value = data.surchargePercent
+        _depositAmount.value = data.depositAmount
+        _depositReference.value = data.depositReference
         repriceForClient(_client.value)
         refreshInvoice()
     }
@@ -535,6 +553,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _surchargeLabel.value = "Livraison"
         _surchargeAmount.value = 0.0
         _surchargePercent.value = 0.0
+        _depositAmount.value = 0.0
+        _depositReference.value = ""
         refreshInvoice()
     }
 
@@ -613,6 +633,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         surchargeLabel = _surchargeLabel.value,
         surchargeAmount = _surchargeAmount.value,
         surchargePercent = _surchargePercent.value,
+        depositAmount = _depositAmount.value,
+        depositReference = _depositReference.value,
     )
 
     /**
@@ -1149,7 +1171,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     fun setPayment(id: String, payment: PaymentInfo?) {
         val record = invoices.find(id) ?: return
         if (record.isDraft) return
-        val amount = (payment?.paidAmount ?: 0.0).coerceIn(0.0, record.data.total)
+        val amount = (payment?.paidAmount ?: 0.0).coerceIn(0.0, record.data.netToPay)
         val cleaned = if (amount <= 0.0) {
             null
         } else {

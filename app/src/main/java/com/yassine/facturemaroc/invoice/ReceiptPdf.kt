@@ -204,7 +204,8 @@ object ReceiptPdf {
             },
         )
         val values = listOf(
-            "TOTAL DE LA FACTURE" to PdfText.money(data.total),
+            (if (data.deposit > 0.0) "NET À PAYER" else "TOTAL DE LA FACTURE") to
+                PdfText.money(data.netToPay),
             "TOTAL PAYÉ" to PdfText.money(data.paidAmount),
             "RESTE À PAYER" to PdfText.money(data.balanceDue),
         )
@@ -215,6 +216,17 @@ object ReceiptPdf {
             PdfText.draw(canvas, value, x + 8f, boxTop + 22f, body, (cellW - 16).toInt(), maxLines = 1)
         }
         y = boxTop + boxH + 18f
+
+        if (data.deposit > 0.0) {
+            val ref = data.depositReference.trim()
+            val line = if (ref.isEmpty()) {
+                "Acompte déjà versé : ${PdfText.money(data.deposit)}"
+            } else {
+                "Acompte déjà versé ($ref) : ${PdfText.money(data.deposit)}"
+            }
+            PdfText.draw(canvas, line, MARGIN, y, small, width.toInt(), maxLines = 1)
+            y += 10f
+        }
 
         if (data.paymentState == PaymentState.PAID) {
             PdfText.draw(

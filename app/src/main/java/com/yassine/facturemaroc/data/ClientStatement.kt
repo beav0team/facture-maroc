@@ -100,7 +100,10 @@ object ClientStatements {
                     dueDate = data.dueDatePrinted,
                     total = total,
                     paid = paid,
-                    balance = if (credit) money(-total) else money(total - paid),
+                    // The deposit the customer already paid on another document
+                    // is not a debt either, so the line shows what is really
+                    // left on this one.
+                    balance = if (credit) money(-total) else money(data.balanceDue),
                     isCredit = credit,
                     // An avoir owes nothing, so it is never late: calling a
                     // credit note overdue would chase a customer for money the

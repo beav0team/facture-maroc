@@ -136,14 +136,17 @@ object PdfExtras {
     fun paymentHeight(data: InvoiceData, label: TextPaint, body: TextPaint): Float {
         val due = data.dueDatePrinted != null
         val state = data.paymentState
-        if (state == com.yassine.facturemaroc.data.PaymentState.UNPAID && !due) return 0f
+        val deposit = data.deposit > 0.0
+        if (state == com.yassine.facturemaroc.data.PaymentState.UNPAID && !due && !deposit) return 0f
         val note = data.payment?.note?.trim().orEmpty()
         val paidLines = when (state) {
-            com.yassine.facturemaroc.data.PaymentState.UNPAID -> 0
+            com.yassine.facturemaroc.data.PaymentState.UNPAID -> if (deposit) 1 else 0
             com.yassine.facturemaroc.data.PaymentState.PAID -> 1
             else -> 2
         }
-        val lines = paidLines + if (due) 1 else 0
+        // A settled document still shows the deposit line and the zero balance.
+        val depositLines = if (deposit) 1 else 0
+        val lines = paidLines + depositLines + if (due) 1 else 0
         return lines * (body.textSize + 4f) + if (note.isNotEmpty()) label.textSize + 4f else 0f
     }
 
@@ -166,7 +169,8 @@ object PdfExtras {
         bold: TextPaint,
     ): Float {
         if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.UNPAID &&
-            data.dueDatePrinted == null
+            data.dueDatePrinted == null &&
+            data.deposit <= 0.0
         ) {
             return y
         }
@@ -182,13 +186,37 @@ object PdfExtras {
             PdfText.draw(canvas, "Échéance : $due", x, cursor, body, width.toInt(), maxLines = 1)
             cursor += body.textSize + 4f
         }
-        if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.UNPAID) return cursor
+        // A deposit is money already received on another document, so it is
+        // stated before what was received here — and it reduces the balance
+        // without touching the invoice's VAT, which was taxed on the deposit.
+        if (data.deposit > 0.0) {
+            val ref = data.depositReference.trim()
+            val label = if (ref.isEmpty()) "Acompte déjà versé" else "Acompte déjà versé ($ref)"
+            PdfText.draw(
+                canvas, "$label : ${PdfText.money(data.deposit)}", x, cursor, body,
+                width.toInt(), maxLines = 1,
+            )
+            cursor += body.textSize + 4f
+        }
+        if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.UNPAID) {
+            if (data.deposit > 0.0) {
+                PdfText.draw(
+                    canvas, "Reste à payer : ${PdfText.money(data.balanceDue)}",
+                    x, cursor, bold, width.toInt(), maxLines = 1,
+                )
+                cursor += bold.textSize + 4f
+            }
+            return cursor
+        }
 
         if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.PAID) {
-            val settled = if (data.documentType == com.yassine.facturemaroc.data.DocumentType.FACTURE) {
-                "Facture acquittée"
-            } else {
-                "Document acquitté"
+            val isInvoiceType =
+                data.documentType == com.yassine.facturemaroc.data.DocumentType.FACTURE
+            val settled = when {
+                data.deposit > 0.0 && data.paidAmount <= 0.0 ->
+                    if (isInvoiceType) "Facture soldée par acompte" else "Document soldé par acompte"
+                isInvoiceType -> "Facture acquittée"
+                else -> "Document acquitté"
             }
             val line = listOfNotNull(
                 settled,

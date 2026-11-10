@@ -26,6 +26,8 @@ enum class ValidationCode {
     MISSING_ICE,
     INVALID_DUE_DATE,
     DUE_DATE_BEFORE_ISSUE,
+    INVALID_DEPOSIT,
+    DEPOSIT_ABOVE_TOTAL,
 }
 
 /** Whether an issue stops the document leaving the phone. */
@@ -144,6 +146,27 @@ object InvoiceValidation {
                     )
                 }
             }
+        }
+
+        if (data.depositAmount < 0.0 || data.depositAmount.isNaN() ||
+            data.depositAmount.isInfinite()
+        ) {
+            add(
+                ValidationIssue(
+                    ValidationCode.INVALID_DEPOSIT,
+                    "L'acompte déduit n'est pas un montant valide.",
+                ),
+            )
+        } else if (data.depositAmount > data.total) {
+            // Not blocking: the shop may be typing while the lines are still
+            // being added, and the deposit is clamped on the page either way.
+            add(
+                ValidationIssue(
+                    ValidationCode.DEPOSIT_ABOVE_TOTAL,
+                    "L'acompte dépasse le total : il sera plafonné au total.",
+                    severity = Severity.WARNING,
+                ),
+            )
         }
 
         if (data.discountFixed < 0.0 || data.discountFixed.isNaN() || data.discountFixed.isInfinite()) {

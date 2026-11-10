@@ -70,6 +70,16 @@ data class InvoiceData(
      * amount, e.g. 2 % for packaging. Takes over from [surchargeAmount].
      */
     val surchargePercent: Double = 0.0,
+    /**
+     * A deposit already invoiced and paid on another document, TTC.
+     *
+     * It is not a discount and it does not touch the taxable base: the deposit
+     * document already carried its own VAT, and deducting it here only says
+     * what the customer still owes. 0 means none.
+     */
+    val depositAmount: Double = 0.0,
+    /** The number of the deposit document, printed with the deduction. */
+    val depositReference: String = "",
     /** What the shop has received; null on an unpaid document. */
     val payment: PaymentInfo? = null,
 ) {
@@ -350,19 +360,31 @@ data class InvoiceData(
     /** Whether a signature or stamp image was captured for this document. */
     val hasSignature: Boolean get() = signature != null
 
-    /** What has been received, never more than the document is worth. */
+    /** The deposit actually applied: never more than the document is worth. */
+    val deposit: Double get() = money(depositAmount.coerceIn(0.0, total))
+
+    /** The figure the customer still has to pay after the deposit. */
+    val netToPay: Double get() = money(total - deposit)
+
+    /** What has been received against [netToPay], never more than it is worth. */
     val paidAmount: Double
-        get() = money((payment?.paidAmount ?: 0.0).coerceIn(0.0, total))
+        get() = money((payment?.paidAmount ?: 0.0).coerceIn(0.0, netToPay))
 
     /** What is still owed; 0 once the document is settled. */
-    val balanceDue: Double get() = money(total - paidAmount)
+    val balanceDue: Double get() = money(netToPay - paidAmount)
 
-    /** Derived, never stored: the amount decides, not a flag that can drift. */
+    /**
+     * Derived, never stored: the amounts decide, not a flag that can drift.
+     *
+     * A document whose whole price was covered by a deposit is settled even
+     * though no payment was recorded against it — that money arrived on the
+     * deposit document, which is where it belongs.
+     */
     val paymentState: PaymentState
         get() = when {
-            paidAmount <= 0.0 -> PaymentState.UNPAID
-            paidAmount >= total -> PaymentState.PAID
-            else -> PaymentState.PARTIAL
+            total > 0.0 && balanceDue <= 0.0 -> PaymentState.PAID
+            paidAmount > 0.0 -> PaymentState.PARTIAL
+            else -> PaymentState.UNPAID
         }
 
     /** True when every dirham of the document has been received. */

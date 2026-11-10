@@ -48,7 +48,7 @@ statement and the payment tracking must keep agreeing on what is really owed.
 | Client statement | **Exists** | per client: billed / credited / paid / balance, credit notes subtracted, drafts, quotes and orders excluded; A4 PDF from the client card |
 | Quote → invoice | **Exists** | one tap from a devis; lines, prices, rates and discount copied; quote number kept as reference |
 | Invoice → credit note | **Exists** | one tap; the avoir repeats the invoice exactly and drops payment/deadline |
-| Deposit deduction | **Missing** | acompte is not subtracted from the final invoice |
+| Deposit deduction | **Exists** | `depositAmount`/`depositReference`, deducted from the balance only (never from the VAT base), printed with the payment block, carried by the receipt and the statement |
 | Numbering | **Partial** | per-type sequences; only invoice counter editable; no annual reset |
 | ICE validation | **Exists** | 15-digit check + missing-ICE warning on a business invoice (non-blocking) |
 | Notes / signature | **Exists** | client note, terms, thank-you, drawn/photo signature |

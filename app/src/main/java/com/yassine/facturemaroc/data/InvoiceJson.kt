@@ -120,6 +120,10 @@ object InvoiceJson {
         put("surchargeLabel", data.surchargeLabel)
         put("surchargeAmount", data.surchargeAmount)
         if (data.surchargePercent > 0.0) put("surchargePercent", data.surchargePercent)
+        if (data.depositAmount > 0.0) {
+            put("depositAmount", data.depositAmount)
+            if (data.depositReference.isNotBlank()) put("depositReference", data.depositReference)
+        }
         // Omitted when nothing was received, so an unpaid document says so by
         // saying nothing and old files stay byte-for-byte compatible.
         data.payment?.takeIf { !it.isEmpty || it.paidAt.isNotBlank() }?.let {
@@ -260,6 +264,9 @@ object InvoiceJson {
                 .let { if (it.isNaN() || it.isInfinite()) 0.0 else it },
             surchargePercent = obj.optDouble("surchargePercent", 0.0)
                 .let { if (it.isNaN() || it.isInfinite()) 0.0 else it.coerceIn(0.0, 100.0) },
+            depositAmount = obj.optDouble("depositAmount", 0.0)
+                .let { if (it.isNaN() || it.isInfinite()) 0.0 else it.coerceAtLeast(0.0) },
+            depositReference = obj.optString("depositReference", ""),
             payment = obj.optJSONObject("payment")?.let { payment ->
                 PaymentInfo(
                     paidAmount = payment.optDouble("paidAmount", 0.0)
