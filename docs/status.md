@@ -42,6 +42,10 @@ Travail sur `master`, non publié : la 0.11.1 reste la version livrée.
 - Fiche client **et fournisseur** (`PartyDetailScreen`) : identité, chiffres
   (solde dû et relevé pour un client, achats HT et nombre de réceptions pour un
   fournisseur), documents, et deux actions — Modifier, Nouveau document.
+- Fiche article (`ArticleDetailScreen`) : prix, marge HT, coût d'achat, stock,
+  paliers, caractéristiques et six derniers mouvements ; la ligne ouvre la
+  fiche, « Modifier » ouvre le formulaire. Suppression depuis la fiche, avec
+  « Annuler ».
 - Paramètres : index de cinq groupes avec recherche (Boutique, Facturation,
   Catalogue et stock, Données, Diagnostic), retour = un cran en arrière.
   « Diagnostic » est séparé parce que recalculer le stock est une réparation,
@@ -49,7 +53,6 @@ Travail sur `master`, non publié : la 0.11.1 reste la version livrée.
 
 **Reste**
 
-- Fiche article (prix, marge, stock, paliers, documents qui l'ont vendu).
 - Éditeur d'article en pleine page au lieu d'une boîte de dialogue.
 - Suppression d'article annulable (snackbar) au lieu d'un effacement immédiat.
 - La carte d'index des Paramètres ne montre pas encore la valeur courante de

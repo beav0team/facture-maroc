@@ -231,6 +231,39 @@ fun HomeScreen(
     var clientEditorOpen by remember { mutableStateOf(false) }
     /* The party whose page is open (client or supplier), if any. */
     var partyDetail by remember { mutableStateOf<InvoiceClient?>(null) }
+    /*
+     * The article whose page is open, by id rather than by value: an edit
+     * writes a new SavedItem, and holding the old object would show the price
+     * the shop just corrected. A deleted article resolves to null and the page
+     * closes on its own.
+     */
+    var articleDetailId by remember { mutableStateOf<String?>(null) }
+
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    /*
+     * Deleting an article is undoable rather than confirmed.
+     *
+     * A dialog asks the shop to prove it meant the tap; a snackbar gives the row
+     * back if it did not, which is the same guarantee without a second screen
+     * between the menu and the result. Restoring goes through
+     * `SavedItemStore.restore`, so the ledger is untouched.
+     */
+    val onOpenItem: (SavedItem) -> Unit = { articleDetailId = it.id }
+    val onDeleteItem: (SavedItem) -> Unit = { item ->
+        viewModel.savedItems.delete(item)
+        scope.launch {
+            val answer = snackbar.showSnackbar(
+                message = "« ${item.label} » supprimé.",
+                actionLabel = "Annuler",
+                duration = SnackbarDuration.Short,
+            )
+            if (answer == SnackbarResult.ActionPerformed) {
+                viewModel.savedItems.restore(item)
+            }
+        }
+    }
     var editingClient by remember { mutableStateOf<InvoiceClient?>(null) }
     var itemEditorOpen by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<SavedItem?>(null) }
@@ -298,8 +331,6 @@ fun HomeScreen(
     var deleteClient by remember { mutableStateOf<InvoiceClient?>(null) }
     var movingItem by remember { mutableStateOf<SavedItem?>(null) }
 
-    val snackbar = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     // A write that failed leaves the screen and the file disagreeing, so it is
     // said out loud rather than left to be discovered after a relaunch.
@@ -795,29 +826,6 @@ fun HomeScreen(
                         editingItem = it
                         itemEditorOpen = true
                     }
-                    /*
-                     * Deleting an article is undoable rather than confirmed.
-                     *
-                     * A dialog asks the shop to prove it meant the tap; a
-                     * snackbar gives the row back if it did not, which is the
-                     * same guarantee without a second screen between the menu
-                     * and the result. Restoring goes through
-                     * `SavedItemStore.restore`, so the ledger is untouched.
-                     */
-                    val onDeleteItem: (SavedItem) -> Unit = { item ->
-                        viewModel.savedItems.delete(item)
-                        scope.launch {
-                            val answer = snackbar.showSnackbar(
-                                message = "« ${item.label} » supprimé.",
-                                actionLabel = "Annuler",
-                                duration = SnackbarDuration.Short,
-                            )
-                            if (answer == SnackbarResult.ActionPerformed) {
-                                viewModel.savedItems.restore(item)
-                            }
-                        }
-                    }
-
                     if (managingFolders) {
                         /*
                          * The folder screen: the grid, then one folder at each
@@ -857,6 +865,7 @@ fun HomeScreen(
                                     fields = itemFields,
                                     emptyTitle = "Aucun résultat",
                                     emptyMessage = "Essayez un autre mot.",
+                                    onOpen = onOpenItem,
                                     onEdit = onEditItem,
                                     onDelete = onDeleteItem,
                                     onMove = { movingItem = it },
@@ -883,6 +892,7 @@ fun HomeScreen(
                                     folderEditorOpen = true
                                 },
                                 onDeleteFolder = { deleteFolder = it },
+                                onOpen = onOpenItem,
                                 onEdit = onEditItem,
                                 onDelete = onDeleteItem,
                                 onMove = { movingItem = it },
@@ -920,6 +930,7 @@ fun HomeScreen(
                             fields = itemFields,
                             emptyTitle = "Aucun résultat",
                             emptyMessage = "Essayez un autre mot.",
+                            onOpen = onOpenItem,
                             onEdit = onEditItem,
                             onDelete = onDeleteItem,
                             onMove = { movingItem = it },
@@ -971,6 +982,7 @@ fun HomeScreen(
                                                 "de leur seuil de réapprovisionnement."
                                         else -> "Essayez un autre filtre."
                                     },
+                                    onOpen = onOpenItem,
                                     onEdit = onEditItem,
                                     onDelete = onDeleteItem,
                                     onMove = { movingItem = it },
@@ -1115,6 +1127,32 @@ fun HomeScreen(
                         },
                     )
                 }
+            },
+        )
+    }
+
+    items.firstOrNull { it.id == articleDetailId }?.let { article ->
+        ArticleDetailScreen(
+            item = article,
+            shop = shop,
+            unitCost = unitCosts[article.id] ?: 0.0,
+            entries = remember(article.id, article.stock) { viewModel.stockEntries(article.id) }
+                .asReversed(),
+            onClose = { articleDetailId = null },
+            onEdit = {
+                articleDetailId = null
+                editingItem = article
+                itemEditorOpen = true
+            },
+            onHistory = { historyItem = article },
+            onMove = if (ItemField.FOLDER in itemFields) {
+                { movingItem = article }
+            } else {
+                null
+            },
+            onDelete = {
+                articleDetailId = null
+                onDeleteItem(article)
             },
         )
     }
@@ -2458,6 +2496,8 @@ private fun FolderContents(
     onCreateFolder: () -> Unit,
     onRenameFolder: (String) -> Unit,
     onDeleteFolder: (String) -> Unit,
+    /** Opens the article's page: figures, characteristics, movements. */
+    onOpen: (SavedItem) -> Unit,
     onEdit: (SavedItem) -> Unit,
     onDelete: (SavedItem) -> Unit,
     onMove: (SavedItem) -> Unit,
@@ -2529,7 +2569,8 @@ private fun FolderContents(
             ItemCard(
                 item = item,
                 showFolder = false,
-                onClick = { onEdit(item) },
+                onClick = { onOpen(item) },
+                onEdit = { onEdit(item) },
                 onDelete = { onDelete(item) },
                 onMove = { onMove(item) },
                 onHistory = { onHistory(item) },
@@ -3151,6 +3192,8 @@ private fun ArticlesList(
     fields: Set<ItemField> = ItemField.entries.toSet(),
     emptyTitle: String,
     emptyMessage: String,
+    /** Opens the article's page: figures, characteristics, movements. */
+    onOpen: (SavedItem) -> Unit,
     onEdit: (SavedItem) -> Unit,
     onDelete: (SavedItem) -> Unit,
     onMove: (SavedItem) -> Unit,
@@ -3180,7 +3223,8 @@ private fun ArticlesList(
                 item = item,
                 showFolder = showFolder,
                 fields = fields,
-                onClick = { onEdit(item) },
+                onClick = { onOpen(item) },
+                onEdit = { onEdit(item) },
                 onDelete = { onDelete(item) },
                 onMove = { onMove(item) },
                 onHistory = { onHistory(item) },
@@ -3219,6 +3263,7 @@ private fun QuickAction(
 private fun ItemCard(
     item: SavedItem,
     onClick: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
     onMove: () -> Unit,
     /** Opens this article's stock history; only offered for a counted article. */
@@ -3469,7 +3514,7 @@ private fun ItemCard(
                         leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
                         onClick = {
                             menuOpen = false
-                            onClick()
+                            onEdit()
                         },
                     )
                     if (canMove) {
@@ -3541,6 +3586,7 @@ private fun ItemCardPreview() {
             ItemCard(
                 item = previewArticle,
                 onClick = {},
+                onEdit = {},
                 onDelete = {},
                 onMove = {},
             )
@@ -3556,6 +3602,7 @@ private fun ItemCardWithoutOptionalFieldsPreview() {
             ItemCard(
                 item = previewArticle,
                 onClick = {},
+                onEdit = {},
                 onDelete = {},
                 onMove = {},
                 fields = setOf(ItemField.UNIT),
