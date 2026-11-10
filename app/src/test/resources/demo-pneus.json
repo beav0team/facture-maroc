@@ -1,0 +1,5340 @@
+{
+  "app": "facture-maroc",
+  "format": "backup",
+  "version": 1,
+  "exportedAt": 1794384000000,
+  "shop": {
+    "name": "Pneus Atlas",
+    "address": "Zone industrielle Sidi Maârouf, lot 41 — Casablanca",
+    "phone": "05 22 97 44 10",
+    "email": "contact@pneus-atlas.ma",
+    "ice": "002784531000067",
+    "ifNumber": "40551287",
+    "rc": "884210",
+    "patente": "36219054",
+    "cnss": "8842017",
+    "vatPercent": 20,
+    "vatNotApplicable": false,
+    "pricesIncludeVat": true,
+    "showItemBarcode": true,
+    "showItemPurchasePrice": true,
+    "showItemUnit": true,
+    "showItemStock": true,
+    "showItemFolder": true,
+    "costMethod": "cmp"
+  },
+  "logo": null,
+  "design": {
+    "template": "maroc",
+    "logoEnabled": true,
+    "accent": "#0B57D0",
+    "showAmountWords": true,
+    "showLegalIdentifiers": true,
+    "showPaymentMethod": true,
+    "showPaymentStatus": true,
+    "showFooter": true
+  },
+  "logos": {},
+  "counters": {
+    "facture": 4,
+    "devis": 2,
+    "bon_commande": 1,
+    "ticket": 1,
+    "avoir": 1,
+    "proforma": 1,
+    "acompte": 1,
+    "regul": 1,
+    "simplifiee": 1,
+    "export": 1
+  },
+  "numbering": {
+    "resetAnnually": false,
+    "prefixes": {}
+  },
+  "clients": [
+    {
+      "name": "Garage Al Baraka",
+      "address": "14, rue Ibn Sina — Casablanca",
+      "ice": "001845230000071",
+      "ifNumber": "36220147",
+      "rc": "",
+      "patente": "",
+      "cnss": "",
+      "phone": "06 61 44 92 08",
+      "email": "",
+      "vatExempt": false,
+      "role": "client"
+    },
+    {
+      "name": "Taxi Rosso — M. Amrani",
+      "address": "Rue 6, Derb Sultan — Casablanca",
+      "ice": "001122334000045",
+      "ifNumber": "",
+      "rc": "",
+      "patente": "",
+      "cnss": "",
+      "phone": "06 70 81 55 23",
+      "email": "",
+      "vatExempt": false,
+      "role": "client"
+    },
+    {
+      "name": "Trans Log SARL",
+      "address": "Route de Rabat, km 12 — Casablanca",
+      "ice": "003214587000028",
+      "ifNumber": "41120875",
+      "rc": "",
+      "patente": "",
+      "cnss": "",
+      "phone": "05 22 35 78 11",
+      "email": "",
+      "vatExempt": false,
+      "role": "client"
+    },
+    {
+      "name": "Grossiste Pneus Maroc",
+      "address": "Zone industrielle Aïn Sebaâ — Casablanca",
+      "ice": "001245789000033",
+      "ifNumber": "40112456",
+      "rc": "",
+      "patente": "",
+      "cnss": "",
+      "phone": "05 22 60 33 12",
+      "email": "",
+      "vatExempt": false,
+      "role": "supplier"
+    }
+  ],
+  "folders": [
+    "Services",
+    "13",
+    "13/155 70R13",
+    "13/155 70R13/Michelin",
+    "13/155 70R13/Goodyear",
+    "13/155 70R13/Hankook",
+    "13/155 70R13/Barum",
+    "13/155 70R13/Triangle",
+    "13/165 70R13",
+    "13/165 70R13/Michelin",
+    "13/165 70R13/Goodyear",
+    "13/165 70R13/Hankook",
+    "13/165 70R13/Barum",
+    "13/165 70R13/Triangle",
+    "13/175 70R13",
+    "13/175 70R13/Michelin",
+    "13/175 70R13/Goodyear",
+    "13/175 70R13/Hankook",
+    "13/175 70R13/Barum",
+    "13/175 70R13/Triangle",
+    "13/185 70R13",
+    "13/185 70R13/Michelin",
+    "13/185 70R13/Goodyear",
+    "13/185 70R13/Hankook",
+    "13/185 70R13/Barum",
+    "13/185 70R13/Triangle",
+    "14",
+    "14/165 65R14",
+    "14/165 65R14/Michelin",
+    "14/165 65R14/Continental",
+    "14/165 65R14/Nexen",
+    "14/165 65R14/Barum",
+    "14/165 65R14/Triangle",
+    "14/175 65R14",
+    "14/175 65R14/Michelin",
+    "14/175 65R14/Continental",
+    "14/175 65R14/Nexen",
+    "14/175 65R14/Barum",
+    "14/175 65R14/Triangle",
+    "14/185 65R14",
+    "14/185 65R14/Michelin",
+    "14/185 65R14/Continental",
+    "14/185 65R14/Nexen",
+    "14/185 65R14/Barum",
+    "14/185 65R14/Triangle",
+    "14/195 65R14",
+    "14/195 65R14/Michelin",
+    "14/195 65R14/Continental",
+    "14/195 65R14/Nexen",
+    "14/195 65R14/Barum",
+    "14/195 65R14/Triangle",
+    "15",
+    "15/185 60R15",
+    "15/185 60R15/Michelin",
+    "15/185 60R15/Continental",
+    "15/185 60R15/Goodyear",
+    "15/185 60R15/Nexen",
+    "15/185 60R15/Triangle",
+    "15/195 60R15",
+    "15/195 60R15/Michelin",
+    "15/195 60R15/Continental",
+    "15/195 60R15/Goodyear",
+    "15/195 60R15/Nexen",
+    "15/195 60R15/Triangle",
+    "15/195 65R15",
+    "15/195 65R15/Michelin",
+    "15/195 65R15/Continental",
+    "15/195 65R15/Goodyear",
+    "15/195 65R15/Nexen",
+    "15/195 65R15/Triangle",
+    "15/205 65R15",
+    "15/205 65R15/Michelin",
+    "15/205 65R15/Continental",
+    "15/205 65R15/Goodyear",
+    "15/205 65R15/Nexen",
+    "15/205 65R15/Triangle",
+    "16",
+    "16/205 55R16",
+    "16/205 55R16/Michelin",
+    "16/205 55R16/Bridgestone",
+    "16/205 55R16/Continental",
+    "16/205 55R16/Hankook",
+    "16/205 55R16/Nexen",
+    "16/205 60R16",
+    "16/205 60R16/Michelin",
+    "16/205 60R16/Bridgestone",
+    "16/205 60R16/Continental",
+    "16/205 60R16/Hankook",
+    "16/205 60R16/Nexen",
+    "16/215 60R16",
+    "16/215 60R16/Michelin",
+    "16/215 60R16/Bridgestone",
+    "16/215 60R16/Continental",
+    "16/215 60R16/Hankook",
+    "16/215 60R16/Nexen",
+    "16/225 55R16",
+    "16/225 55R16/Michelin",
+    "16/225 55R16/Bridgestone",
+    "16/225 55R16/Continental",
+    "16/225 55R16/Hankook",
+    "16/225 55R16/Nexen",
+    "17",
+    "17/205 50R17",
+    "17/205 50R17/Michelin",
+    "17/205 50R17/Continental",
+    "17/205 50R17/Bridgestone",
+    "17/205 50R17/Pirelli",
+    "17/205 50R17/Dunlop",
+    "17/215 55R17",
+    "17/215 55R17/Michelin",
+    "17/215 55R17/Continental",
+    "17/215 55R17/Bridgestone",
+    "17/215 55R17/Pirelli",
+    "17/215 55R17/Dunlop",
+    "17/225 45R17",
+    "17/225 45R17/Michelin",
+    "17/225 45R17/Continental",
+    "17/225 45R17/Bridgestone",
+    "17/225 45R17/Pirelli",
+    "17/225 45R17/Dunlop",
+    "17/225 50R17",
+    "17/225 50R17/Michelin",
+    "17/225 50R17/Continental",
+    "17/225 50R17/Bridgestone",
+    "17/225 50R17/Pirelli",
+    "17/225 50R17/Dunlop",
+    "18",
+    "18/225 45R18",
+    "18/225 45R18/Michelin",
+    "18/225 45R18/Continental",
+    "18/225 45R18/Bridgestone",
+    "18/225 45R18/Pirelli",
+    "18/235 45R18",
+    "18/235 45R18/Michelin",
+    "18/235 45R18/Continental",
+    "18/235 45R18/Bridgestone",
+    "18/235 45R18/Pirelli",
+    "18/245 45R18",
+    "18/245 45R18/Michelin",
+    "18/245 45R18/Continental",
+    "18/245 45R18/Bridgestone",
+    "18/245 45R18/Pirelli",
+    "19",
+    "19/225 40R19",
+    "19/225 40R19/Michelin",
+    "19/225 40R19/Continental",
+    "19/225 40R19/Pirelli",
+    "19/235 35R19",
+    "19/235 35R19/Michelin",
+    "19/235 35R19/Continental",
+    "19/235 35R19/Pirelli",
+    "19/245 40R19",
+    "19/245 40R19/Michelin",
+    "19/245 40R19/Continental",
+    "19/245 40R19/Pirelli"
+  ],
+  "stockLedger": [
+    {
+      "itemId": "399f5f83-1118-46a1-9f06-d200f9d0ba13",
+      "delta": 4,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 390.0
+    },
+    {
+      "itemId": "cbf24046-cbb5-4590-af4a-8236b62b553c",
+      "delta": 4,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 350.0
+    },
+    {
+      "itemId": "562bd4a4-d755-4759-ac61-e224863dcdb6",
+      "delta": 4,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 310.0
+    },
+    {
+      "itemId": "91a2abe5-7cec-458c-99a5-5fca6e4d29f7",
+      "delta": 4,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 250.0
+    },
+    {
+      "itemId": "2ce46e14-052a-4dba-aa0e-94939d9985e4",
+      "delta": 4,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 210.0
+    },
+    {
+      "itemId": "8283baca-8895-44f6-9638-784d105819a0",
+      "delta": 1,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 390.0
+    },
+    {
+      "itemId": "24d34f0e-dee3-4e0c-9547-e0c0aa465ee7",
+      "delta": 1,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 350.0
+    },
+    {
+      "itemId": "4898f615-2341-4a26-abd7-762c3c1d2100",
+      "delta": 1,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 310.0
+    },
+    {
+      "itemId": "c251fc64-3dda-42b5-a9db-7c518589f8d4",
+      "delta": 1,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 250.0
+    },
+    {
+      "itemId": "e1ed0d8c-1607-40ed-96d1-cb3dac88de0e",
+      "delta": 1,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 210.0
+    },
+    {
+      "itemId": "a68cf278-a342-434e-b9c9-a8c61653bb22",
+      "delta": 11,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 390.0
+    },
+    {
+      "itemId": "6b363d44-7d19-4381-8655-cfbb85f5027e",
+      "delta": 11,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 350.0
+    },
+    {
+      "itemId": "f92d6604-9de7-4098-a89e-867fafdb7a3d",
+      "delta": 11,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 310.0
+    },
+    {
+      "itemId": "43bab369-3c19-445d-ba4d-492713524d91",
+      "delta": 11,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 250.0
+    },
+    {
+      "itemId": "5c290eff-f75b-4d18-9901-5ee944f7fc90",
+      "delta": 11,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 210.0
+    },
+    {
+      "itemId": "d2061063-b9d1-45d7-91a5-b4a6d6ec3b8b",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 440.0
+    },
+    {
+      "itemId": "b26935b8-ecd6-4986-ab5c-860c616b6e02",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 395.0
+    },
+    {
+      "itemId": "aa630b08-d717-4d66-965e-768ce970c0f1",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 350.0
+    },
+    {
+      "itemId": "d754cc49-d528-4b45-bd2f-5d5bb331adc6",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 280.0
+    },
+    {
+      "itemId": "9e2161ab-3715-4192-a8ff-1e436a3cb4d2",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 235.0
+    },
+    {
+      "itemId": "5a40608b-344a-4020-a824-48b6868f37b1",
+      "delta": 3,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 455.0
+    },
+    {
+      "itemId": "68eee1be-b353-4647-b109-7cc4369f2387",
+      "delta": 3,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 430.0
+    },
+    {
+      "itemId": "8b0e4b1d-e16e-4727-af25-b9c01118bf28",
+      "delta": 3,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 330.0
+    },
+    {
+      "itemId": "40d1aad2-b545-4f0c-8f78-2c16b9ea7398",
+      "delta": 3,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 290.0
+    },
+    {
+      "itemId": "c9f286c5-addf-4dd8-9c5d-869c36893ea2",
+      "delta": 3,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 245.0
+    },
+    {
+      "itemId": "2f7b5c46-eb76-4dfa-93e8-985bd6858e72",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 505.0
+    },
+    {
+      "itemId": "ede0b2fd-f691-48e2-a494-c9e3eb52cceb",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 475.0
+    },
+    {
+      "itemId": "0b638e5a-62b8-4cc8-983c-8a241191b550",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 365.0
+    },
+    {
+      "itemId": "060de10c-08f1-4313-b544-fc7e5ce676c3",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 320.0
+    },
+    {
+      "itemId": "ee9c8b86-a6b1-4972-86b4-d22fbf2d91ef",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 270.0
+    },
+    {
+      "itemId": "640e1946-9845-49e9-9b93-6315f162610d",
+      "delta": 7,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 555.0
+    },
+    {
+      "itemId": "472178e6-4cb4-4c1d-8693-7bc1475e3c42",
+      "delta": 7,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 520.0
+    },
+    {
+      "itemId": "ba5c10a1-ccf7-47c9-940c-2a5674c2a326",
+      "delta": 7,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 400.0
+    },
+    {
+      "itemId": "719dcdfb-4dca-42f8-91bb-b2c26f01e883",
+      "delta": 7,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 355.0
+    },
+    {
+      "itemId": "0e2ad4ac-3eec-445e-a694-c4f459de70d9",
+      "delta": 7,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 295.0
+    },
+    {
+      "itemId": "9a61cea0-594d-45cf-ac18-099be7b57dcb",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 605.0
+    },
+    {
+      "itemId": "0f0b1d6b-ead8-4b9c-b53e-5b11a74c3ad9",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 570.0
+    },
+    {
+      "itemId": "840430b9-a9d2-4d98-849e-44e6b3f73bcf",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 545.0
+    },
+    {
+      "itemId": "0b7813c8-b2dc-4412-8669-03ca8da9d28c",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 440.0
+    },
+    {
+      "itemId": "991c7230-bd87-4042-a359-71f674a1a538",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 325.0
+    },
+    {
+      "itemId": "3802725f-d7dc-4863-9a11-42d62caf2024",
+      "delta": 9,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 655.0
+    },
+    {
+      "itemId": "c69e25b5-1b97-4ef9-9b0c-0d0a5dac23cd",
+      "delta": 9,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 615.0
+    },
+    {
+      "itemId": "7fd2bfd9-f826-42dd-86a4-4e4ccc4c6618",
+      "delta": 9,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 590.0
+    },
+    {
+      "itemId": "e408f483-4436-40e3-8149-95d6bdb6658f",
+      "delta": 9,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 475.0
+    },
+    {
+      "itemId": "eee1a989-81cc-49df-a104-7ea4d416fe91",
+      "delta": 9,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 350.0
+    },
+    {
+      "itemId": "f8168676-f223-4129-80f4-4cdf141e03f6",
+      "delta": 1,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 655.0
+    },
+    {
+      "itemId": "52cb982a-2c32-4ee3-93eb-ccd0665bbf8c",
+      "delta": 1,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 615.0
+    },
+    {
+      "itemId": "4f41ffda-f13a-482c-b4ae-d9f61c1f6d5d",
+      "delta": 1,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 590.0
+    },
+    {
+      "itemId": "2e6b554b-2ba4-4a0d-976f-1b081c52b0c8",
+      "delta": 1,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 475.0
+    },
+    {
+      "itemId": "ef8f5862-5843-475b-922d-0ceeb08f225d",
+      "delta": 1,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 350.0
+    },
+    {
+      "itemId": "34e8b942-1817-4460-8670-59190c547304",
+      "delta": 11,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 705.0
+    },
+    {
+      "itemId": "3ab31c12-f1b3-4813-8e4a-1519cb9335fe",
+      "delta": 11,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 665.0
+    },
+    {
+      "itemId": "d1eba915-47e9-4e8e-a344-d517bf9933b8",
+      "delta": 11,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 635.0
+    },
+    {
+      "itemId": "e4e83e92-7d30-42ef-ae7e-02339a8d4343",
+      "delta": 11,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 510.0
+    },
+    {
+      "itemId": "4a3c1047-6d37-4684-86fd-d68bddf61e37",
+      "delta": 11,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 380.0
+    },
+    {
+      "itemId": "d5787c0c-8ec9-421d-ab87-736cde25f72f",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 890.0
+    },
+    {
+      "itemId": "cfdf736a-226e-44af-a9e1-e2f2ff180399",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 850.0
+    },
+    {
+      "itemId": "1827b25d-743b-448d-ad51-2f7803bb5c75",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 840.0
+    },
+    {
+      "itemId": "90d0e7b0-8960-4041-937e-3c526121ea45",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 710.0
+    },
+    {
+      "itemId": "82a4f801-4f40-445b-bb2b-124e76af6bab",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 645.0
+    },
+    {
+      "itemId": "5be984a5-2440-43db-b838-5e9e88f79378",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 910.0
+    },
+    {
+      "itemId": "d568c774-99d1-4b1e-b1a8-4ba35fabc565",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 870.0
+    },
+    {
+      "itemId": "90b9ed41-babc-4bc1-8e15-dbd0d6818df7",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 860.0
+    },
+    {
+      "itemId": "1468679e-a180-4a67-9aa7-4cce018892e6",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 725.0
+    },
+    {
+      "itemId": "af5dc941-9d7f-472a-ade2-71c4819483f3",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 660.0
+    },
+    {
+      "itemId": "9c7d1c86-4873-428b-8948-63adca13402f",
+      "delta": 2,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 990.0
+    },
+    {
+      "itemId": "7c70aaf5-5f2d-40a4-9bc6-bfd39ab7b350",
+      "delta": 2,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 945.0
+    },
+    {
+      "itemId": "299d987b-cd5d-442a-9895-17d9a301d812",
+      "delta": 2,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 935.0
+    },
+    {
+      "itemId": "7f8dbd16-1771-437c-a659-75ede533b742",
+      "delta": 2,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 790.0
+    },
+    {
+      "itemId": "86ed4179-3ccc-427a-acf2-47f1273eb72d",
+      "delta": 2,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 715.0
+    },
+    {
+      "itemId": "9b6b9620-421f-4add-bf6b-6b87eec12c86",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1125.0
+    },
+    {
+      "itemId": "f3dc0530-9c1e-4929-962c-e2c7975f5a3a",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1060.0
+    },
+    {
+      "itemId": "a746d355-9e06-4522-bad5-f507c6c89f94",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1075.0
+    },
+    {
+      "itemId": "7238273b-f3ba-4ccb-aff8-4c940d029d06",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1090.0
+    },
+    {
+      "itemId": "2ddacedb-d018-4df7-885e-475bb359ee9f",
+      "delta": 10,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 950.0
+    },
+    {
+      "itemId": "33c1c10b-55e0-46a4-a0de-41a26213b46c",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1145.0
+    },
+    {
+      "itemId": "e6c1e981-ee97-45e9-82c4-64e7163d46f5",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1080.0
+    },
+    {
+      "itemId": "41970922-565d-4686-94e8-c0553c746313",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1100.0
+    },
+    {
+      "itemId": "7a3cc873-d849-481f-9bf0-a0722198dd71",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1115.0
+    },
+    {
+      "itemId": "3721765a-65b2-47ff-8bdb-fd8686c4913e",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 965.0
+    },
+    {
+      "itemId": "6ca0ee9f-c14d-4c1e-93fd-3f9c248aeab6",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1255.0
+    },
+    {
+      "itemId": "8a8528ab-4778-40a2-a6db-9e8893bf6a94",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1180.0
+    },
+    {
+      "itemId": "9ea82008-d396-442b-be5c-f909d137c085",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1200.0
+    },
+    {
+      "itemId": "6cb5c733-123d-40fa-aa2f-98c70c0687ec",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1220.0
+    },
+    {
+      "itemId": "6709989d-5b76-4e86-a1b4-d95d562960a4",
+      "delta": 12,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1055.0
+    },
+    {
+      "itemId": "f35f1a2c-cc89-4d6a-bd17-287b468657b5",
+      "delta": 4,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1225.0
+    },
+    {
+      "itemId": "4618fa57-2871-455f-a49b-1117734ab4cb",
+      "delta": 4,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1155.0
+    },
+    {
+      "itemId": "327db2b2-8a6c-42b4-aa8a-142cede0adb4",
+      "delta": 4,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1175.0
+    },
+    {
+      "itemId": "b3fe2a10-e3ec-42e2-9bb5-50de9c4eb65c",
+      "delta": 4,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1190.0
+    },
+    {
+      "itemId": "6203fb23-3b2b-42e3-a770-f10535c4874d",
+      "delta": 4,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1030.0
+    },
+    {
+      "itemId": "c9c6fb4c-0f66-440c-ad3b-6ff9c17e45aa",
+      "delta": 6,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1525.0
+    },
+    {
+      "itemId": "b815c780-1262-49f5-8a69-8bdbcc45b49e",
+      "delta": 6,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1440.0
+    },
+    {
+      "itemId": "15480164-e671-4be0-8504-72bf32d05c51",
+      "delta": 6,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1460.0
+    },
+    {
+      "itemId": "33de9283-96ca-4bba-88c7-9d7592fae46c",
+      "delta": 6,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1480.0
+    },
+    {
+      "itemId": "f99237f4-31fd-4528-ac2a-8032a80478d6",
+      "delta": 3,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1580.0
+    },
+    {
+      "itemId": "ad52a50d-961d-4aae-90d4-e6ea2c8ab41f",
+      "delta": 3,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1485.0
+    },
+    {
+      "itemId": "25e20b74-f466-488d-8033-b01c893ac9b6",
+      "delta": 3,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1510.0
+    },
+    {
+      "itemId": "d9f3dcad-b40a-4253-8139-3323f7754569",
+      "delta": 3,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1535.0
+    },
+    {
+      "itemId": "d1c1d5cc-13c5-4c4c-bcbf-450deb5a5f65",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1895.0
+    },
+    {
+      "itemId": "0f09f6e9-a4ef-4ffb-8b52-69d012baa592",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1785.0
+    },
+    {
+      "itemId": "bdb01d30-98e1-4f0a-9e64-51a34a54a51b",
+      "delta": 8,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1840.0
+    },
+    {
+      "itemId": "657100c1-979d-4fcf-9d66-7da33f197199",
+      "delta": 2,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1995.0
+    },
+    {
+      "itemId": "d7dc0728-c8b1-4c6a-9738-0b3ef60e8a7d",
+      "delta": 2,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1880.0
+    },
+    {
+      "itemId": "936d46ac-ca4b-4985-b3da-266a06971fbb",
+      "delta": 2,
+      "reason": "adjustment",
+      "reference": "",
+      "note": "Stock initial",
+      "at": 1790843400000,
+      "unitCost": 1940.0
+    }
+  ],
+  "purchases": [],
+  "items": [
+    {
+      "id": "399f5f83-1118-46a1-9f06-d200f9d0ba13",
+      "label": "Michelin Primacy 4+ 155/70 R13",
+      "price": 650.0,
+      "unit": "pneu",
+      "folder": "13/155 70R13/Michelin",
+      "barcode": "6111000000001",
+      "purchasePrice": 390.0,
+      "stock": 4,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 610.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-1557013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "cbf24046-cbb5-4590-af4a-8236b62b553c",
+      "label": "Goodyear EfficientGrip Performance 155/70 R13",
+      "price": 585.0,
+      "unit": "pneu",
+      "folder": "13/155 70R13/Goodyear",
+      "barcode": "6111000000002",
+      "purchasePrice": 350.0,
+      "stock": 4,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 550.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "GOO-1557013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "562bd4a4-d755-4759-ac61-e224863dcdb6",
+      "label": "Hankook Ventus Prime 3 155/70 R13",
+      "price": 515.0,
+      "unit": "pneu",
+      "folder": "13/155 70R13/Hankook",
+      "barcode": "6111000000003",
+      "purchasePrice": 310.0,
+      "stock": 4,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 485.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "HAN-1557013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "91a2abe5-7cec-458c-99a5-5fca6e4d29f7",
+      "label": "Barum Bravuris 5HM 155/70 R13",
+      "price": 415.0,
+      "unit": "pneu",
+      "folder": "13/155 70R13/Barum",
+      "barcode": "6111000000004",
+      "purchasePrice": 250.0,
+      "stock": 4,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 390.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BAR-1557013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "2ce46e14-052a-4dba-aa0e-94939d9985e4",
+      "label": "Triangle AdvanteX TC101 155/70 R13",
+      "price": 350.0,
+      "unit": "pneu",
+      "folder": "13/155 70R13/Triangle",
+      "barcode": "6111000000005",
+      "purchasePrice": 210.0,
+      "stock": 4,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 330.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "TRI-1557013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "8283baca-8895-44f6-9638-784d105819a0",
+      "label": "Michelin Primacy 4+ 165/70 R13",
+      "price": 650.0,
+      "unit": "pneu",
+      "folder": "13/165 70R13/Michelin",
+      "barcode": "6111000000006",
+      "purchasePrice": 390.0,
+      "stock": 1,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 610.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-1657013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "24d34f0e-dee3-4e0c-9547-e0c0aa465ee7",
+      "label": "Goodyear EfficientGrip Performance 165/70 R13",
+      "price": 585.0,
+      "unit": "pneu",
+      "folder": "13/165 70R13/Goodyear",
+      "barcode": "6111000000007",
+      "purchasePrice": 350.0,
+      "stock": 1,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 550.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "GOO-1657013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "4898f615-2341-4a26-abd7-762c3c1d2100",
+      "label": "Hankook Ventus Prime 3 165/70 R13",
+      "price": 515.0,
+      "unit": "pneu",
+      "folder": "13/165 70R13/Hankook",
+      "barcode": "6111000000008",
+      "purchasePrice": 310.0,
+      "stock": 1,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 485.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "HAN-1657013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "c251fc64-3dda-42b5-a9db-7c518589f8d4",
+      "label": "Barum Bravuris 5HM 165/70 R13",
+      "price": 415.0,
+      "unit": "pneu",
+      "folder": "13/165 70R13/Barum",
+      "barcode": "6111000000009",
+      "purchasePrice": 250.0,
+      "stock": 1,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 390.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BAR-1657013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "e1ed0d8c-1607-40ed-96d1-cb3dac88de0e",
+      "label": "Triangle AdvanteX TC101 165/70 R13",
+      "price": 350.0,
+      "unit": "pneu",
+      "folder": "13/165 70R13/Triangle",
+      "barcode": "6111000000010",
+      "purchasePrice": 210.0,
+      "stock": 1,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 330.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "TRI-1657013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "a68cf278-a342-434e-b9c9-a8c61653bb22",
+      "label": "Michelin Primacy 4+ 175/70 R13",
+      "price": 650.0,
+      "unit": "pneu",
+      "folder": "13/175 70R13/Michelin",
+      "barcode": "6111000000011",
+      "purchasePrice": 390.0,
+      "stock": 11,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 610.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-1757013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "82H"
+        }
+      ]
+    },
+    {
+      "id": "6b363d44-7d19-4381-8655-cfbb85f5027e",
+      "label": "Goodyear EfficientGrip Performance 175/70 R13",
+      "price": 585.0,
+      "unit": "pneu",
+      "folder": "13/175 70R13/Goodyear",
+      "barcode": "6111000000012",
+      "purchasePrice": 350.0,
+      "stock": 11,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 550.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "GOO-1757013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "82H"
+        }
+      ]
+    },
+    {
+      "id": "f92d6604-9de7-4098-a89e-867fafdb7a3d",
+      "label": "Hankook Ventus Prime 3 175/70 R13",
+      "price": 515.0,
+      "unit": "pneu",
+      "folder": "13/175 70R13/Hankook",
+      "barcode": "6111000000013",
+      "purchasePrice": 310.0,
+      "stock": 11,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 485.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "HAN-1757013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "82H"
+        }
+      ]
+    },
+    {
+      "id": "43bab369-3c19-445d-ba4d-492713524d91",
+      "label": "Barum Bravuris 5HM 175/70 R13",
+      "price": 415.0,
+      "unit": "pneu",
+      "folder": "13/175 70R13/Barum",
+      "barcode": "6111000000014",
+      "purchasePrice": 250.0,
+      "stock": 11,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 390.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BAR-1757013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "82H"
+        }
+      ]
+    },
+    {
+      "id": "5c290eff-f75b-4d18-9901-5ee944f7fc90",
+      "label": "Triangle AdvanteX TC101 175/70 R13",
+      "price": 350.0,
+      "unit": "pneu",
+      "folder": "13/175 70R13/Triangle",
+      "barcode": "6111000000015",
+      "purchasePrice": 210.0,
+      "stock": 11,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 330.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "TRI-1757013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "82H"
+        }
+      ]
+    },
+    {
+      "id": "d2061063-b9d1-45d7-91a5-b4a6d6ec3b8b",
+      "label": "Michelin Primacy 4+ 185/70 R13",
+      "price": 730.0,
+      "unit": "pneu",
+      "folder": "13/185 70R13/Michelin",
+      "barcode": "6111000000016",
+      "purchasePrice": 440.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 685.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-1857013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "86H"
+        }
+      ]
+    },
+    {
+      "id": "b26935b8-ecd6-4986-ab5c-860c616b6e02",
+      "label": "Goodyear EfficientGrip Performance 185/70 R13",
+      "price": 655.0,
+      "unit": "pneu",
+      "folder": "13/185 70R13/Goodyear",
+      "barcode": "6111000000017",
+      "purchasePrice": 395.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 615.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "GOO-1857013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "86H"
+        }
+      ]
+    },
+    {
+      "id": "aa630b08-d717-4d66-965e-768ce970c0f1",
+      "label": "Hankook Ventus Prime 3 185/70 R13",
+      "price": 585.0,
+      "unit": "pneu",
+      "folder": "13/185 70R13/Hankook",
+      "barcode": "6111000000018",
+      "purchasePrice": 350.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 550.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "HAN-1857013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "86H"
+        }
+      ]
+    },
+    {
+      "id": "d754cc49-d528-4b45-bd2f-5d5bb331adc6",
+      "label": "Barum Bravuris 5HM 185/70 R13",
+      "price": 465.0,
+      "unit": "pneu",
+      "folder": "13/185 70R13/Barum",
+      "barcode": "6111000000019",
+      "purchasePrice": 280.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 435.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BAR-1857013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "86H"
+        }
+      ]
+    },
+    {
+      "id": "9e2161ab-3715-4192-a8ff-1e436a3cb4d2",
+      "label": "Triangle AdvanteX TC101 185/70 R13",
+      "price": 390.0,
+      "unit": "pneu",
+      "folder": "13/185 70R13/Triangle",
+      "barcode": "6111000000020",
+      "purchasePrice": 235.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 365.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "TRI-1857013"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "86H"
+        }
+      ]
+    },
+    {
+      "id": "5a40608b-344a-4020-a824-48b6868f37b1",
+      "label": "Michelin Energy Saver 165/65 R14",
+      "price": 760.0,
+      "unit": "pneu",
+      "folder": "14/165 65R14/Michelin",
+      "barcode": "6111000000021",
+      "purchasePrice": 455.0,
+      "stock": 3,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 715.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-1656514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "68eee1be-b353-4647-b109-7cc4369f2387",
+      "label": "Continental EcoContact 6 165/65 R14",
+      "price": 715.0,
+      "unit": "pneu",
+      "folder": "14/165 65R14/Continental",
+      "barcode": "6111000000022",
+      "purchasePrice": 430.0,
+      "stock": 3,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 670.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-1656514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "8b0e4b1d-e16e-4727-af25-b9c01118bf28",
+      "label": "Nexen N'Blue HD Plus 165/65 R14",
+      "price": 550.0,
+      "unit": "pneu",
+      "folder": "14/165 65R14/Nexen",
+      "barcode": "6111000000023",
+      "purchasePrice": 330.0,
+      "stock": 3,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 515.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "NEX-1656514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "40d1aad2-b545-4f0c-8f78-2c16b9ea7398",
+      "label": "Barum Bravuris 5HM 165/65 R14",
+      "price": 485.0,
+      "unit": "pneu",
+      "folder": "14/165 65R14/Barum",
+      "barcode": "6111000000024",
+      "purchasePrice": 290.0,
+      "stock": 3,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 455.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BAR-1656514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "c9f286c5-addf-4dd8-9c5d-869c36893ea2",
+      "label": "Triangle AdvanteX TC101 165/65 R14",
+      "price": 405.0,
+      "unit": "pneu",
+      "folder": "14/165 65R14/Triangle",
+      "barcode": "6111000000025",
+      "purchasePrice": 245.0,
+      "stock": 3,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 380.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "TRI-1656514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "79H"
+        }
+      ]
+    },
+    {
+      "id": "9c6e6347-cc5d-4e7c-bf4d-d41144fa4cb5",
+      "label": "Michelin Energy Saver 175/65 R14",
+      "price": 760.0,
+      "unit": "pneu",
+      "folder": "14/175 65R14/Michelin",
+      "barcode": "6111000000026",
+      "purchasePrice": 455.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 715.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-1756514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "82H"
+        }
+      ]
+    },
+    {
+      "id": "3b84a4b0-377c-4085-a92d-f8888e7e50be",
+      "label": "Continental EcoContact 6 175/65 R14",
+      "price": 715.0,
+      "unit": "pneu",
+      "folder": "14/175 65R14/Continental",
+      "barcode": "6111000000027",
+      "purchasePrice": 430.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 670.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-1756514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "82H"
+        }
+      ]
+    },
+    {
+      "id": "33201e89-0cb6-417f-9526-e05aca9cffec",
+      "label": "Nexen N'Blue HD Plus 175/65 R14",
+      "price": 550.0,
+      "unit": "pneu",
+      "folder": "14/175 65R14/Nexen",
+      "barcode": "6111000000028",
+      "purchasePrice": 330.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 515.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "NEX-1756514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "82H"
+        }
+      ]
+    },
+    {
+      "id": "5a414a1c-0bd9-477b-9acb-99dfbdee134f",
+      "label": "Barum Bravuris 5HM 175/65 R14",
+      "price": 485.0,
+      "unit": "pneu",
+      "folder": "14/175 65R14/Barum",
+      "barcode": "6111000000029",
+      "purchasePrice": 290.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 455.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BAR-1756514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "82H"
+        }
+      ]
+    },
+    {
+      "id": "884277ad-92ac-4d08-8b08-b0d9e7b560d8",
+      "label": "Triangle AdvanteX TC101 175/65 R14",
+      "price": 405.0,
+      "unit": "pneu",
+      "folder": "14/175 65R14/Triangle",
+      "barcode": "6111000000030",
+      "purchasePrice": 245.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 380.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "TRI-1756514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "82H"
+        }
+      ]
+    },
+    {
+      "id": "2f7b5c46-eb76-4dfa-93e8-985bd6858e72",
+      "label": "Michelin Energy Saver 185/65 R14",
+      "price": 840.0,
+      "unit": "pneu",
+      "folder": "14/185 65R14/Michelin",
+      "barcode": "6111000000031",
+      "purchasePrice": 505.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 790.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-1856514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "86H"
+        }
+      ]
+    },
+    {
+      "id": "ede0b2fd-f691-48e2-a494-c9e3eb52cceb",
+      "label": "Continental EcoContact 6 185/65 R14",
+      "price": 795.0,
+      "unit": "pneu",
+      "folder": "14/185 65R14/Continental",
+      "barcode": "6111000000032",
+      "purchasePrice": 475.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 745.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-1856514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "86H"
+        }
+      ]
+    },
+    {
+      "id": "0b638e5a-62b8-4cc8-983c-8a241191b550",
+      "label": "Nexen N'Blue HD Plus 185/65 R14",
+      "price": 610.0,
+      "unit": "pneu",
+      "folder": "14/185 65R14/Nexen",
+      "barcode": "6111000000033",
+      "purchasePrice": 365.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 575.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "NEX-1856514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "86H"
+        }
+      ]
+    },
+    {
+      "id": "060de10c-08f1-4313-b544-fc7e5ce676c3",
+      "label": "Barum Bravuris 5HM 185/65 R14",
+      "price": 535.0,
+      "unit": "pneu",
+      "folder": "14/185 65R14/Barum",
+      "barcode": "6111000000034",
+      "purchasePrice": 320.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 505.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BAR-1856514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "86H"
+        }
+      ]
+    },
+    {
+      "id": "ee9c8b86-a6b1-4972-86b4-d22fbf2d91ef",
+      "label": "Triangle AdvanteX TC101 185/65 R14",
+      "price": 450.0,
+      "unit": "pneu",
+      "folder": "14/185 65R14/Triangle",
+      "barcode": "6111000000035",
+      "purchasePrice": 270.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 425.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "TRI-1856514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "86H"
+        }
+      ]
+    },
+    {
+      "id": "640e1946-9845-49e9-9b93-6315f162610d",
+      "label": "Michelin Energy Saver 195/65 R14",
+      "price": 925.0,
+      "unit": "pneu",
+      "folder": "14/195 65R14/Michelin",
+      "barcode": "6111000000036",
+      "purchasePrice": 555.0,
+      "stock": 7,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 870.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-1956514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "89H"
+        }
+      ]
+    },
+    {
+      "id": "472178e6-4cb4-4c1d-8693-7bc1475e3c42",
+      "label": "Continental EcoContact 6 195/65 R14",
+      "price": 870.0,
+      "unit": "pneu",
+      "folder": "14/195 65R14/Continental",
+      "barcode": "6111000000037",
+      "purchasePrice": 520.0,
+      "stock": 7,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 820.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-1956514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "89H"
+        }
+      ]
+    },
+    {
+      "id": "ba5c10a1-ccf7-47c9-940c-2a5674c2a326",
+      "label": "Nexen N'Blue HD Plus 195/65 R14",
+      "price": 670.0,
+      "unit": "pneu",
+      "folder": "14/195 65R14/Nexen",
+      "barcode": "6111000000038",
+      "purchasePrice": 400.0,
+      "stock": 7,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 630.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "NEX-1956514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "89H"
+        }
+      ]
+    },
+    {
+      "id": "719dcdfb-4dca-42f8-91bb-b2c26f01e883",
+      "label": "Barum Bravuris 5HM 195/65 R14",
+      "price": 590.0,
+      "unit": "pneu",
+      "folder": "14/195 65R14/Barum",
+      "barcode": "6111000000039",
+      "purchasePrice": 355.0,
+      "stock": 7,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 555.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BAR-1956514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "89H"
+        }
+      ]
+    },
+    {
+      "id": "0e2ad4ac-3eec-445e-a694-c4f459de70d9",
+      "label": "Triangle AdvanteX TC101 195/65 R14",
+      "price": 495.0,
+      "unit": "pneu",
+      "folder": "14/195 65R14/Triangle",
+      "barcode": "6111000000040",
+      "purchasePrice": 295.0,
+      "stock": 7,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 465.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "TRI-1956514"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "89H"
+        }
+      ]
+    },
+    {
+      "id": "9a61cea0-594d-45cf-ac18-099be7b57dcb",
+      "label": "Michelin Primacy 4+ 185/60 R15",
+      "price": 1005.0,
+      "unit": "pneu",
+      "folder": "15/185 60R15/Michelin",
+      "barcode": "6111000000041",
+      "purchasePrice": 605.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 945.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-1856015"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "84H"
+        }
+      ]
+    },
+    {
+      "id": "0f0b1d6b-ead8-4b9c-b53e-5b11a74c3ad9",
+      "label": "Continental PremiumContact 6 185/60 R15",
+      "price": 950.0,
+      "unit": "pneu",
+      "folder": "15/185 60R15/Continental",
+      "barcode": "6111000000042",
+      "purchasePrice": 570.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 895.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-1856015"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "84H"
+        }
+      ]
+    },
+    {
+      "id": "840430b9-a9d2-4d98-849e-44e6b3f73bcf",
+      "label": "Goodyear EfficientGrip Performance 185/60 R15",
+      "price": 905.0,
+      "unit": "pneu",
+      "folder": "15/185 60R15/Goodyear",
+      "barcode": "6111000000043",
+      "purchasePrice": 545.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 850.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "GOO-1856015"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "84H"
+        }
+      ]
+    },
+    {
+      "id": "0b7813c8-b2dc-4412-8669-03ca8da9d28c",
+      "label": "Nexen N'Blue HD Plus 185/60 R15",
+      "price": 730.0,
+      "unit": "pneu",
+      "folder": "15/185 60R15/Nexen",
+      "barcode": "6111000000044",
+      "purchasePrice": 440.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 685.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "NEX-1856015"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "84H"
+        }
+      ]
+    },
+    {
+      "id": "991c7230-bd87-4042-a359-71f674a1a538",
+      "label": "Triangle AdvanteX TC101 185/60 R15",
+      "price": 540.0,
+      "unit": "pneu",
+      "folder": "15/185 60R15/Triangle",
+      "barcode": "6111000000045",
+      "purchasePrice": 325.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 510.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "TRI-1856015"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "84H"
+        }
+      ]
+    },
+    {
+      "id": "3802725f-d7dc-4863-9a11-42d62caf2024",
+      "label": "Michelin Primacy 4+ 195/60 R15",
+      "price": 1090.0,
+      "unit": "pneu",
+      "folder": "15/195 60R15/Michelin",
+      "barcode": "6111000000046",
+      "purchasePrice": 655.0,
+      "stock": 9,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1025.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-1956015"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "88H"
+        }
+      ]
+    },
+    {
+      "id": "c69e25b5-1b97-4ef9-9b0c-0d0a5dac23cd",
+      "label": "Continental PremiumContact 6 195/60 R15",
+      "price": 1025.0,
+      "unit": "pneu",
+      "folder": "15/195 60R15/Continental",
+      "barcode": "6111000000047",
+      "purchasePrice": 615.0,
+      "stock": 9,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 965.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-1956015"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "88H"
+        }
+      ]
+    },
+    {
+      "id": "7fd2bfd9-f826-42dd-86a4-4e4ccc4c6618",
+      "label": "Goodyear EfficientGrip Performance 195/60 R15",
+      "price": 980.0,
+      "unit": "pneu",
+      "folder": "15/195 60R15/Goodyear",
+      "barcode": "6111000000048",
+      "purchasePrice": 590.0,
+      "stock": 9,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 920.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "GOO-1956015"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "88H"
+        }
+      ]
+    },
+    {
+      "id": "e408f483-4436-40e3-8149-95d6bdb6658f",
+      "label": "Nexen N'Blue HD Plus 195/60 R15",
+      "price": 790.0,
+      "unit": "pneu",
+      "folder": "15/195 60R15/Nexen",
+      "barcode": "6111000000049",
+      "purchasePrice": 475.0,
+      "stock": 9,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 745.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "NEX-1956015"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "88H"
+        }
+      ]
+    },
+    {
+      "id": "eee1a989-81cc-49df-a104-7ea4d416fe91",
+      "label": "Triangle AdvanteX TC101 195/60 R15",
+      "price": 585.0,
+      "unit": "pneu",
+      "folder": "15/195 60R15/Triangle",
+      "barcode": "6111000000050",
+      "purchasePrice": 350.0,
+      "stock": 9,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 550.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "TRI-1956015"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "88H"
+        }
+      ]
+    },
+    {
+      "id": "f8168676-f223-4129-80f4-4cdf141e03f6",
+      "label": "Michelin Primacy 4+ 195/65 R15",
+      "price": 1090.0,
+      "unit": "pneu",
+      "folder": "15/195 65R15/Michelin",
+      "barcode": "6111000000051",
+      "purchasePrice": 655.0,
+      "stock": 1,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1025.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-1956515"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91H"
+        }
+      ]
+    },
+    {
+      "id": "52cb982a-2c32-4ee3-93eb-ccd0665bbf8c",
+      "label": "Continental PremiumContact 6 195/65 R15",
+      "price": 1025.0,
+      "unit": "pneu",
+      "folder": "15/195 65R15/Continental",
+      "barcode": "6111000000052",
+      "purchasePrice": 615.0,
+      "stock": 1,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 965.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-1956515"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91H"
+        }
+      ]
+    },
+    {
+      "id": "4f41ffda-f13a-482c-b4ae-d9f61c1f6d5d",
+      "label": "Goodyear EfficientGrip Performance 195/65 R15",
+      "price": 980.0,
+      "unit": "pneu",
+      "folder": "15/195 65R15/Goodyear",
+      "barcode": "6111000000053",
+      "purchasePrice": 590.0,
+      "stock": 1,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 920.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "GOO-1956515"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91H"
+        }
+      ]
+    },
+    {
+      "id": "2e6b554b-2ba4-4a0d-976f-1b081c52b0c8",
+      "label": "Nexen N'Blue HD Plus 195/65 R15",
+      "price": 790.0,
+      "unit": "pneu",
+      "folder": "15/195 65R15/Nexen",
+      "barcode": "6111000000054",
+      "purchasePrice": 475.0,
+      "stock": 1,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 745.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "NEX-1956515"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91H"
+        }
+      ]
+    },
+    {
+      "id": "ef8f5862-5843-475b-922d-0ceeb08f225d",
+      "label": "Triangle AdvanteX TC101 195/65 R15",
+      "price": 585.0,
+      "unit": "pneu",
+      "folder": "15/195 65R15/Triangle",
+      "barcode": "6111000000055",
+      "purchasePrice": 350.0,
+      "stock": 1,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 550.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "TRI-1956515"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91H"
+        }
+      ]
+    },
+    {
+      "id": "34e8b942-1817-4460-8670-59190c547304",
+      "label": "Michelin Primacy 4+ 205/65 R15",
+      "price": 1175.0,
+      "unit": "pneu",
+      "folder": "15/205 65R15/Michelin",
+      "barcode": "6111000000056",
+      "purchasePrice": 705.0,
+      "stock": 11,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1105.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2056515"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94H"
+        }
+      ]
+    },
+    {
+      "id": "3ab31c12-f1b3-4813-8e4a-1519cb9335fe",
+      "label": "Continental PremiumContact 6 205/65 R15",
+      "price": 1105.0,
+      "unit": "pneu",
+      "folder": "15/205 65R15/Continental",
+      "barcode": "6111000000057",
+      "purchasePrice": 665.0,
+      "stock": 11,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1040.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2056515"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94H"
+        }
+      ]
+    },
+    {
+      "id": "d1eba915-47e9-4e8e-a344-d517bf9933b8",
+      "label": "Goodyear EfficientGrip Performance 205/65 R15",
+      "price": 1055.0,
+      "unit": "pneu",
+      "folder": "15/205 65R15/Goodyear",
+      "barcode": "6111000000058",
+      "purchasePrice": 635.0,
+      "stock": 11,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 990.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "GOO-2056515"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94H"
+        }
+      ]
+    },
+    {
+      "id": "e4e83e92-7d30-42ef-ae7e-02339a8d4343",
+      "label": "Nexen N'Blue HD Plus 205/65 R15",
+      "price": 850.0,
+      "unit": "pneu",
+      "folder": "15/205 65R15/Nexen",
+      "barcode": "6111000000059",
+      "purchasePrice": 510.0,
+      "stock": 11,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 800.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "NEX-2056515"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94H"
+        }
+      ]
+    },
+    {
+      "id": "4a3c1047-6d37-4684-86fd-d68bddf61e37",
+      "label": "Triangle AdvanteX TC101 205/65 R15",
+      "price": 630.0,
+      "unit": "pneu",
+      "folder": "15/205 65R15/Triangle",
+      "barcode": "6111000000060",
+      "purchasePrice": 380.0,
+      "stock": 11,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 590.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "TRI-2056515"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94H"
+        }
+      ]
+    },
+    {
+      "id": "d5787c0c-8ec9-421d-ab87-736cde25f72f",
+      "label": "Michelin Energy Saver 205/55 R16",
+      "price": 1485.0,
+      "unit": "pneu",
+      "folder": "16/205 55R16/Michelin",
+      "barcode": "6111000000061",
+      "purchasePrice": 890.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1395.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2055516"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91V"
+        }
+      ]
+    },
+    {
+      "id": "cfdf736a-226e-44af-a9e1-e2f2ff180399",
+      "label": "Bridgestone Turanza T005 205/55 R16",
+      "price": 1420.0,
+      "unit": "pneu",
+      "folder": "16/205 55R16/Bridgestone",
+      "barcode": "6111000000062",
+      "purchasePrice": 850.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1335.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BRI-2055516"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91V"
+        }
+      ]
+    },
+    {
+      "id": "1827b25d-743b-448d-ad51-2f7803bb5c75",
+      "label": "Continental EcoContact 6 205/55 R16",
+      "price": 1400.0,
+      "unit": "pneu",
+      "folder": "16/205 55R16/Continental",
+      "barcode": "6111000000063",
+      "purchasePrice": 840.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1315.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2055516"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91V"
+        }
+      ]
+    },
+    {
+      "id": "90d0e7b0-8960-4041-937e-3c526121ea45",
+      "label": "Hankook Ventus Prime 3 205/55 R16",
+      "price": 1180.0,
+      "unit": "pneu",
+      "folder": "16/205 55R16/Hankook",
+      "barcode": "6111000000064",
+      "purchasePrice": 710.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1110.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "HAN-2055516"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91V"
+        }
+      ]
+    },
+    {
+      "id": "82a4f801-4f40-445b-bb2b-124e76af6bab",
+      "label": "Nexen N'Blue HD Plus 205/55 R16",
+      "price": 1075.0,
+      "unit": "pneu",
+      "folder": "16/205 55R16/Nexen",
+      "barcode": "6111000000065",
+      "purchasePrice": 645.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1010.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "NEX-2055516"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91V"
+        }
+      ]
+    },
+    {
+      "id": "a51ca2a5-2552-4d5a-94cc-49859b75b15f",
+      "label": "Michelin Energy Saver 205/60 R16",
+      "price": 1435.0,
+      "unit": "pneu",
+      "folder": "16/205 60R16/Michelin",
+      "barcode": "6111000000066",
+      "purchasePrice": 860.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1350.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2056016"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "92H"
+        }
+      ]
+    },
+    {
+      "id": "e63c6a37-f45a-4b65-864b-92b176df0e2c",
+      "label": "Bridgestone Turanza T005 205/60 R16",
+      "price": 1375.0,
+      "unit": "pneu",
+      "folder": "16/205 60R16/Bridgestone",
+      "barcode": "6111000000067",
+      "purchasePrice": 825.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1290.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BRI-2056016"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "92H"
+        }
+      ]
+    },
+    {
+      "id": "54a16fc7-ac18-4373-b382-03b13b999d88",
+      "label": "Continental EcoContact 6 205/60 R16",
+      "price": 1350.0,
+      "unit": "pneu",
+      "folder": "16/205 60R16/Continental",
+      "barcode": "6111000000068",
+      "purchasePrice": 810.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1270.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2056016"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "92H"
+        }
+      ]
+    },
+    {
+      "id": "de0ab2da-cd66-4441-93ab-496abec1dd5d",
+      "label": "Hankook Ventus Prime 3 205/60 R16",
+      "price": 1145.0,
+      "unit": "pneu",
+      "folder": "16/205 60R16/Hankook",
+      "barcode": "6111000000069",
+      "purchasePrice": 685.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1075.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "HAN-2056016"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "92H"
+        }
+      ]
+    },
+    {
+      "id": "cb171639-0e78-46a2-9fad-13324128a882",
+      "label": "Nexen N'Blue HD Plus 205/60 R16",
+      "price": 1040.0,
+      "unit": "pneu",
+      "folder": "16/205 60R16/Nexen",
+      "barcode": "6111000000070",
+      "purchasePrice": 625.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 980.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "NEX-2056016"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "92H"
+        }
+      ]
+    },
+    {
+      "id": "5be984a5-2440-43db-b838-5e9e88f79378",
+      "label": "Michelin Energy Saver 215/60 R16",
+      "price": 1520.0,
+      "unit": "pneu",
+      "folder": "16/215 60R16/Michelin",
+      "barcode": "6111000000071",
+      "purchasePrice": 910.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1430.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2156016"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "95H"
+        }
+      ]
+    },
+    {
+      "id": "d568c774-99d1-4b1e-b1a8-4ba35fabc565",
+      "label": "Bridgestone Turanza T005 215/60 R16",
+      "price": 1450.0,
+      "unit": "pneu",
+      "folder": "16/215 60R16/Bridgestone",
+      "barcode": "6111000000072",
+      "purchasePrice": 870.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1365.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BRI-2156016"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "95H"
+        }
+      ]
+    },
+    {
+      "id": "90b9ed41-babc-4bc1-8e15-dbd0d6818df7",
+      "label": "Continental EcoContact 6 215/60 R16",
+      "price": 1430.0,
+      "unit": "pneu",
+      "folder": "16/215 60R16/Continental",
+      "barcode": "6111000000073",
+      "purchasePrice": 860.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1345.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2156016"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "95H"
+        }
+      ]
+    },
+    {
+      "id": "1468679e-a180-4a67-9aa7-4cce018892e6",
+      "label": "Hankook Ventus Prime 3 215/60 R16",
+      "price": 1210.0,
+      "unit": "pneu",
+      "folder": "16/215 60R16/Hankook",
+      "barcode": "6111000000074",
+      "purchasePrice": 725.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1135.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "HAN-2156016"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "95H"
+        }
+      ]
+    },
+    {
+      "id": "af5dc941-9d7f-472a-ade2-71c4819483f3",
+      "label": "Nexen N'Blue HD Plus 215/60 R16",
+      "price": 1100.0,
+      "unit": "pneu",
+      "folder": "16/215 60R16/Nexen",
+      "barcode": "6111000000075",
+      "purchasePrice": 660.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1035.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "NEX-2156016"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "95H"
+        }
+      ]
+    },
+    {
+      "id": "9c7d1c86-4873-428b-8948-63adca13402f",
+      "label": "Michelin Energy Saver 225/55 R16",
+      "price": 1650.0,
+      "unit": "pneu",
+      "folder": "16/225 55R16/Michelin",
+      "barcode": "6111000000076",
+      "purchasePrice": 990.0,
+      "stock": 2,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1550.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2255516"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "96V"
+        }
+      ]
+    },
+    {
+      "id": "7c70aaf5-5f2d-40a4-9bc6-bfd39ab7b350",
+      "label": "Bridgestone Turanza T005 225/55 R16",
+      "price": 1575.0,
+      "unit": "pneu",
+      "folder": "16/225 55R16/Bridgestone",
+      "barcode": "6111000000077",
+      "purchasePrice": 945.0,
+      "stock": 2,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1480.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BRI-2255516"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "96V"
+        }
+      ]
+    },
+    {
+      "id": "299d987b-cd5d-442a-9895-17d9a301d812",
+      "label": "Continental EcoContact 6 225/55 R16",
+      "price": 1555.0,
+      "unit": "pneu",
+      "folder": "16/225 55R16/Continental",
+      "barcode": "6111000000078",
+      "purchasePrice": 935.0,
+      "stock": 2,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1460.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2255516"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "96V"
+        }
+      ]
+    },
+    {
+      "id": "7f8dbd16-1771-437c-a659-75ede533b742",
+      "label": "Hankook Ventus Prime 3 225/55 R16",
+      "price": 1315.0,
+      "unit": "pneu",
+      "folder": "16/225 55R16/Hankook",
+      "barcode": "6111000000079",
+      "purchasePrice": 790.0,
+      "stock": 2,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1235.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "HAN-2255516"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "96V"
+        }
+      ]
+    },
+    {
+      "id": "86ed4179-3ccc-427a-acf2-47f1273eb72d",
+      "label": "Nexen N'Blue HD Plus 225/55 R16",
+      "price": 1195.0,
+      "unit": "pneu",
+      "folder": "16/225 55R16/Nexen",
+      "barcode": "6111000000080",
+      "purchasePrice": 715.0,
+      "stock": 2,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1125.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "NEX-2255516"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "96V"
+        }
+      ]
+    },
+    {
+      "id": "9b6b9620-421f-4add-bf6b-6b87eec12c86",
+      "label": "Michelin Primacy 4+ 205/50 R17",
+      "price": 1875.0,
+      "unit": "pneu",
+      "folder": "17/205 50R17/Michelin",
+      "barcode": "6111000000081",
+      "purchasePrice": 1125.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1760.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2055017"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "89V"
+        }
+      ]
+    },
+    {
+      "id": "f3dc0530-9c1e-4929-962c-e2c7975f5a3a",
+      "label": "Continental PremiumContact 6 205/50 R17",
+      "price": 1770.0,
+      "unit": "pneu",
+      "folder": "17/205 50R17/Continental",
+      "barcode": "6111000000082",
+      "purchasePrice": 1060.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1665.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2055017"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "89V"
+        }
+      ]
+    },
+    {
+      "id": "a746d355-9e06-4522-bad5-f507c6c89f94",
+      "label": "Bridgestone Turanza T005 205/50 R17",
+      "price": 1795.0,
+      "unit": "pneu",
+      "folder": "17/205 50R17/Bridgestone",
+      "barcode": "6111000000083",
+      "purchasePrice": 1075.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1685.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BRI-2055017"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "89V"
+        }
+      ]
+    },
+    {
+      "id": "7238273b-f3ba-4ccb-aff8-4c940d029d06",
+      "label": "Pirelli Cinturato P7 205/50 R17",
+      "price": 1820.0,
+      "unit": "pneu",
+      "folder": "17/205 50R17/Pirelli",
+      "barcode": "6111000000084",
+      "purchasePrice": 1090.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1710.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "PIR-2055017"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "89V"
+        }
+      ]
+    },
+    {
+      "id": "2ddacedb-d018-4df7-885e-475bb359ee9f",
+      "label": "Dunlop SP Sport FM800 205/50 R17",
+      "price": 1580.0,
+      "unit": "pneu",
+      "folder": "17/205 50R17/Dunlop",
+      "barcode": "6111000000085",
+      "purchasePrice": 950.0,
+      "stock": 10,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1485.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "DUN-2055017"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "89V"
+        }
+      ]
+    },
+    {
+      "id": "33c1c10b-55e0-46a4-a0de-41a26213b46c",
+      "label": "Michelin Primacy 4+ 215/55 R17",
+      "price": 1910.0,
+      "unit": "pneu",
+      "folder": "17/215 55R17/Michelin",
+      "barcode": "6111000000086",
+      "purchasePrice": 1145.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1795.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2155517"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94V"
+        }
+      ]
+    },
+    {
+      "id": "e6c1e981-ee97-45e9-82c4-64e7163d46f5",
+      "label": "Continental PremiumContact 6 215/55 R17",
+      "price": 1800.0,
+      "unit": "pneu",
+      "folder": "17/215 55R17/Continental",
+      "barcode": "6111000000087",
+      "purchasePrice": 1080.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1690.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2155517"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94V"
+        }
+      ]
+    },
+    {
+      "id": "41970922-565d-4686-94e8-c0553c746313",
+      "label": "Bridgestone Turanza T005 215/55 R17",
+      "price": 1830.0,
+      "unit": "pneu",
+      "folder": "17/215 55R17/Bridgestone",
+      "barcode": "6111000000088",
+      "purchasePrice": 1100.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1720.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BRI-2155517"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94V"
+        }
+      ]
+    },
+    {
+      "id": "7a3cc873-d849-481f-9bf0-a0722198dd71",
+      "label": "Pirelli Cinturato P7 215/55 R17",
+      "price": 1855.0,
+      "unit": "pneu",
+      "folder": "17/215 55R17/Pirelli",
+      "barcode": "6111000000089",
+      "purchasePrice": 1115.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1745.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "PIR-2155517"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94V"
+        }
+      ]
+    },
+    {
+      "id": "3721765a-65b2-47ff-8bdb-fd8686c4913e",
+      "label": "Dunlop SP Sport FM800 215/55 R17",
+      "price": 1605.0,
+      "unit": "pneu",
+      "folder": "17/215 55R17/Dunlop",
+      "barcode": "6111000000090",
+      "purchasePrice": 965.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1510.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "DUN-2155517"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94V"
+        }
+      ]
+    },
+    {
+      "id": "6ca0ee9f-c14d-4c1e-93fd-3f9c248aeab6",
+      "label": "Michelin Primacy 4+ 225/45 R17",
+      "price": 2090.0,
+      "unit": "pneu",
+      "folder": "17/225 45R17/Michelin",
+      "barcode": "6111000000091",
+      "purchasePrice": 1255.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1965.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2254517"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91V"
+        }
+      ]
+    },
+    {
+      "id": "8a8528ab-4778-40a2-a6db-9e8893bf6a94",
+      "label": "Continental PremiumContact 6 225/45 R17",
+      "price": 1970.0,
+      "unit": "pneu",
+      "folder": "17/225 45R17/Continental",
+      "barcode": "6111000000092",
+      "purchasePrice": 1180.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1850.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2254517"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91V"
+        }
+      ]
+    },
+    {
+      "id": "9ea82008-d396-442b-be5c-f909d137c085",
+      "label": "Bridgestone Turanza T005 225/45 R17",
+      "price": 2000.0,
+      "unit": "pneu",
+      "folder": "17/225 45R17/Bridgestone",
+      "barcode": "6111000000093",
+      "purchasePrice": 1200.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1880.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BRI-2254517"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91V"
+        }
+      ]
+    },
+    {
+      "id": "6cb5c733-123d-40fa-aa2f-98c70c0687ec",
+      "label": "Pirelli Cinturato P7 225/45 R17",
+      "price": 2030.0,
+      "unit": "pneu",
+      "folder": "17/225 45R17/Pirelli",
+      "barcode": "6111000000094",
+      "purchasePrice": 1220.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1910.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "PIR-2254517"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91V"
+        }
+      ]
+    },
+    {
+      "id": "6709989d-5b76-4e86-a1b4-d95d562960a4",
+      "label": "Dunlop SP Sport FM800 225/45 R17",
+      "price": 1755.0,
+      "unit": "pneu",
+      "folder": "17/225 45R17/Dunlop",
+      "barcode": "6111000000095",
+      "purchasePrice": 1055.0,
+      "stock": 12,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1650.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "DUN-2254517"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "91V"
+        }
+      ]
+    },
+    {
+      "id": "f35f1a2c-cc89-4d6a-bd17-287b468657b5",
+      "label": "Michelin Primacy 4+ 225/50 R17",
+      "price": 2040.0,
+      "unit": "pneu",
+      "folder": "17/225 50R17/Michelin",
+      "barcode": "6111000000096",
+      "purchasePrice": 1225.0,
+      "stock": 4,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1920.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2255017"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94V"
+        }
+      ]
+    },
+    {
+      "id": "4618fa57-2871-455f-a49b-1117734ab4cb",
+      "label": "Continental PremiumContact 6 225/50 R17",
+      "price": 1925.0,
+      "unit": "pneu",
+      "folder": "17/225 50R17/Continental",
+      "barcode": "6111000000097",
+      "purchasePrice": 1155.0,
+      "stock": 4,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1810.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2255017"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94V"
+        }
+      ]
+    },
+    {
+      "id": "327db2b2-8a6c-42b4-aa8a-142cede0adb4",
+      "label": "Bridgestone Turanza T005 225/50 R17",
+      "price": 1955.0,
+      "unit": "pneu",
+      "folder": "17/225 50R17/Bridgestone",
+      "barcode": "6111000000098",
+      "purchasePrice": 1175.0,
+      "stock": 4,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1840.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BRI-2255017"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94V"
+        }
+      ]
+    },
+    {
+      "id": "b3fe2a10-e3ec-42e2-9bb5-50de9c4eb65c",
+      "label": "Pirelli Cinturato P7 225/50 R17",
+      "price": 1985.0,
+      "unit": "pneu",
+      "folder": "17/225 50R17/Pirelli",
+      "barcode": "6111000000099",
+      "purchasePrice": 1190.0,
+      "stock": 4,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1865.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "PIR-2255017"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94V"
+        }
+      ]
+    },
+    {
+      "id": "6203fb23-3b2b-42e3-a770-f10535c4874d",
+      "label": "Dunlop SP Sport FM800 225/50 R17",
+      "price": 1715.0,
+      "unit": "pneu",
+      "folder": "17/225 50R17/Dunlop",
+      "barcode": "6111000000100",
+      "purchasePrice": 1030.0,
+      "stock": 4,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 1610.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "DUN-2255017"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "94V"
+        }
+      ]
+    },
+    {
+      "id": "c9c6fb4c-0f66-440c-ad3b-6ff9c17e45aa",
+      "label": "Michelin Energy Saver 225/45 R18",
+      "price": 2545.0,
+      "unit": "pneu",
+      "folder": "18/225 45R18/Michelin",
+      "barcode": "6111000000101",
+      "purchasePrice": 1525.0,
+      "stock": 6,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2390.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2254518"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "95V"
+        }
+      ]
+    },
+    {
+      "id": "b815c780-1262-49f5-8a69-8bdbcc45b49e",
+      "label": "Continental EcoContact 6 225/45 R18",
+      "price": 2400.0,
+      "unit": "pneu",
+      "folder": "18/225 45R18/Continental",
+      "barcode": "6111000000102",
+      "purchasePrice": 1440.0,
+      "stock": 6,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2255.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2254518"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "95V"
+        }
+      ]
+    },
+    {
+      "id": "15480164-e671-4be0-8504-72bf32d05c51",
+      "label": "Bridgestone Turanza T005 225/45 R18",
+      "price": 2435.0,
+      "unit": "pneu",
+      "folder": "18/225 45R18/Bridgestone",
+      "barcode": "6111000000103",
+      "purchasePrice": 1460.0,
+      "stock": 6,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2290.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BRI-2254518"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "95V"
+        }
+      ]
+    },
+    {
+      "id": "33de9283-96ca-4bba-88c7-9d7592fae46c",
+      "label": "Pirelli Cinturato P7 225/45 R18",
+      "price": 2470.0,
+      "unit": "pneu",
+      "folder": "18/225 45R18/Pirelli",
+      "barcode": "6111000000104",
+      "purchasePrice": 1480.0,
+      "stock": 6,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2320.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "PIR-2254518"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "95V"
+        }
+      ]
+    },
+    {
+      "id": "f99237f4-31fd-4528-ac2a-8032a80478d6",
+      "label": "Michelin Energy Saver 235/45 R18",
+      "price": 2630.0,
+      "unit": "pneu",
+      "folder": "18/235 45R18/Michelin",
+      "barcode": "6111000000105",
+      "purchasePrice": 1580.0,
+      "stock": 3,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2470.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2354518"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "98V"
+        }
+      ]
+    },
+    {
+      "id": "ad52a50d-961d-4aae-90d4-e6ea2c8ab41f",
+      "label": "Continental EcoContact 6 235/45 R18",
+      "price": 2475.0,
+      "unit": "pneu",
+      "folder": "18/235 45R18/Continental",
+      "barcode": "6111000000106",
+      "purchasePrice": 1485.0,
+      "stock": 3,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2325.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2354518"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "98V"
+        }
+      ]
+    },
+    {
+      "id": "25e20b74-f466-488d-8033-b01c893ac9b6",
+      "label": "Bridgestone Turanza T005 235/45 R18",
+      "price": 2515.0,
+      "unit": "pneu",
+      "folder": "18/235 45R18/Bridgestone",
+      "barcode": "6111000000107",
+      "purchasePrice": 1510.0,
+      "stock": 3,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2365.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BRI-2354518"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "98V"
+        }
+      ]
+    },
+    {
+      "id": "d9f3dcad-b40a-4253-8139-3323f7754569",
+      "label": "Pirelli Cinturato P7 235/45 R18",
+      "price": 2555.0,
+      "unit": "pneu",
+      "folder": "18/235 45R18/Pirelli",
+      "barcode": "6111000000108",
+      "purchasePrice": 1535.0,
+      "stock": 3,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2400.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "PIR-2354518"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "98V"
+        }
+      ]
+    },
+    {
+      "id": "1a458fba-ff61-4319-bbee-87f922519e6b",
+      "label": "Michelin Energy Saver 245/45 R18",
+      "price": 2710.0,
+      "unit": "pneu",
+      "folder": "18/245 45R18/Michelin",
+      "barcode": "6111000000109",
+      "purchasePrice": 1625.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2545.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2454518"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "100V"
+        }
+      ]
+    },
+    {
+      "id": "2de49fc3-ef57-4482-9f44-c945cb4440f0",
+      "label": "Continental EcoContact 6 245/45 R18",
+      "price": 2555.0,
+      "unit": "pneu",
+      "folder": "18/245 45R18/Continental",
+      "barcode": "6111000000110",
+      "purchasePrice": 1535.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2400.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2454518"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "100V"
+        }
+      ]
+    },
+    {
+      "id": "cbd4825c-72ba-42ca-8f31-91430d6b2efd",
+      "label": "Bridgestone Turanza T005 245/45 R18",
+      "price": 2595.0,
+      "unit": "pneu",
+      "folder": "18/245 45R18/Bridgestone",
+      "barcode": "6111000000111",
+      "purchasePrice": 1555.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2440.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "BRI-2454518"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "100V"
+        }
+      ]
+    },
+    {
+      "id": "14c9e650-09e6-4013-a257-ed1f24855ec0",
+      "label": "Pirelli Cinturato P7 245/45 R18",
+      "price": 2635.0,
+      "unit": "pneu",
+      "folder": "18/245 45R18/Pirelli",
+      "barcode": "6111000000112",
+      "purchasePrice": 1580.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2475.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "PIR-2454518"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "100V"
+        }
+      ]
+    },
+    {
+      "id": "d1c1d5cc-13c5-4c4c-bcbf-450deb5a5f65",
+      "label": "Michelin Primacy 4+ 225/40 R19",
+      "price": 3160.0,
+      "unit": "pneu",
+      "folder": "19/225 40R19/Michelin",
+      "barcode": "6111000000113",
+      "purchasePrice": 1895.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2970.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2254019"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "93V"
+        }
+      ]
+    },
+    {
+      "id": "0f09f6e9-a4ef-4ffb-8b52-69d012baa592",
+      "label": "Continental PremiumContact 6 225/40 R19",
+      "price": 2975.0,
+      "unit": "pneu",
+      "folder": "19/225 40R19/Continental",
+      "barcode": "6111000000114",
+      "purchasePrice": 1785.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2795.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2254019"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "93V"
+        }
+      ]
+    },
+    {
+      "id": "bdb01d30-98e1-4f0a-9e64-51a34a54a51b",
+      "label": "Pirelli Cinturato P7 225/40 R19",
+      "price": 3070.0,
+      "unit": "pneu",
+      "folder": "19/225 40R19/Pirelli",
+      "barcode": "6111000000115",
+      "purchasePrice": 1840.0,
+      "stock": 8,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2885.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "PIR-2254019"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "93V"
+        }
+      ]
+    },
+    {
+      "id": "b8b3d5d4-0d3c-4a16-8fc9-84d082948a8d",
+      "label": "Michelin Primacy 4+ 235/35 R19",
+      "price": 3290.0,
+      "unit": "pneu",
+      "folder": "19/235 35R19/Michelin",
+      "barcode": "6111000000116",
+      "purchasePrice": 1975.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 3095.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2353519"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "96V"
+        }
+      ]
+    },
+    {
+      "id": "ae5e9a78-ec96-4352-8f03-86544339c82a",
+      "label": "Continental PremiumContact 6 235/35 R19",
+      "price": 3100.0,
+      "unit": "pneu",
+      "folder": "19/235 35R19/Continental",
+      "barcode": "6111000000117",
+      "purchasePrice": 1860.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2915.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2353519"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "96V"
+        }
+      ]
+    },
+    {
+      "id": "2f5c9055-5567-48b7-9345-63e108803923",
+      "label": "Pirelli Cinturato P7 235/35 R19",
+      "price": 3195.0,
+      "unit": "pneu",
+      "folder": "19/235 35R19/Pirelli",
+      "barcode": "6111000000118",
+      "purchasePrice": 1915.0,
+      "stock": 0,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 3005.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "PIR-2353519"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "96V"
+        }
+      ]
+    },
+    {
+      "id": "657100c1-979d-4fcf-9d66-7da33f197199",
+      "label": "Michelin Primacy 4+ 245/40 R19",
+      "price": 3325.0,
+      "unit": "pneu",
+      "folder": "19/245 40R19/Michelin",
+      "barcode": "6111000000119",
+      "purchasePrice": 1995.0,
+      "stock": 2,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 3125.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "MIC-2454019"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "98V"
+        }
+      ]
+    },
+    {
+      "id": "d7dc0728-c8b1-4c6a-9738-0b3ef60e8a7d",
+      "label": "Continental PremiumContact 6 245/40 R19",
+      "price": 3135.0,
+      "unit": "pneu",
+      "folder": "19/245 40R19/Continental",
+      "barcode": "6111000000120",
+      "purchasePrice": 1880.0,
+      "stock": 2,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 2945.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "CON-2454019"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "98V"
+        }
+      ]
+    },
+    {
+      "id": "936d46ac-ca4b-4985-b3da-266a06971fbb",
+      "label": "Pirelli Cinturato P7 245/40 R19",
+      "price": 3230.0,
+      "unit": "pneu",
+      "folder": "19/245 40R19/Pirelli",
+      "barcode": "6111000000121",
+      "purchasePrice": 1940.0,
+      "stock": 2,
+      "reorderThreshold": 4,
+      "priceTiers": [
+        {
+          "fromQuantity": 4,
+          "unitPrice": 3035.0
+        }
+      ],
+      "attributes": [
+        {
+          "key": "Référence",
+          "value": "PIR-2454019"
+        },
+        {
+          "key": "Saison",
+          "value": "Toutes saisons"
+        },
+        {
+          "key": "Indice",
+          "value": "98V"
+        }
+      ]
+    },
+    {
+      "id": "c6ad8694-2a3c-4493-ad9a-c2ebf11d2c7e",
+      "label": "Montage et équilibrage",
+      "price": 60,
+      "unit": "roue",
+      "folder": "Services",
+      "barcode": "",
+      "purchasePrice": 15
+    },
+    {
+      "id": "1b5c7734-e1d5-4b2e-9ff2-d7bb122da778",
+      "label": "Valve et bouchon",
+      "price": 20,
+      "unit": "pièce",
+      "folder": "Services",
+      "barcode": "",
+      "purchasePrice": 6
+    },
+    {
+      "id": "cae6271c-67a6-4c64-9ea5-b918369d08ca",
+      "label": "Recyclage du pneu usagé",
+      "price": 10,
+      "unit": "forfait",
+      "folder": "Services",
+      "barcode": "",
+      "purchasePrice": 0
+    },
+    {
+      "id": "57039412-ef1a-4d1c-bc6b-6879ff974d48",
+      "label": "Géométrie (train avant)",
+      "price": 150,
+      "unit": "prestation",
+      "folder": "Services",
+      "barcode": "",
+      "purchasePrice": 40
+    }
+  ],
+  "invoices": [
+    {
+      "id": "9e979052-2b26-417b-a658-acb6bbf3f5b1",
+      "status": "issued",
+      "createdAt": 1793611200000,
+      "updatedAt": 1793611200000,
+      "data": {
+        "number": "F-20261102-0001",
+        "date": "02/11/2026",
+        "client": {
+          "name": "Garage Al Baraka",
+          "address": "14, rue Ibn Sina — Casablanca",
+          "ice": "001845230000071",
+          "ifNumber": "36220147",
+          "rc": "",
+          "patente": "",
+          "cnss": "",
+          "phone": "06 61 44 92 08",
+          "email": "",
+          "vatExempt": false,
+          "role": "client"
+        },
+        "lines": [
+          {
+            "description": "Michelin Primacy 4+ 205/55 R16",
+            "quantity": 4,
+            "unitPrice": 1010,
+            "unit": "pneu",
+            "lineDiscountPercent": 0,
+            "taxExempt": false,
+            "vatPercent": 20,
+            "itemId": "",
+            "tierFromQuantity": 4,
+            "appliedTierPrice": 950
+          },
+          {
+            "description": "Montage et équilibrage",
+            "quantity": 4,
+            "unitPrice": 60,
+            "unit": "roue",
+            "lineDiscountPercent": 0,
+            "taxExempt": false,
+            "vatPercent": 20,
+            "itemId": "c6ad8694-2a3c-4493-ad9a-c2ebf11d2c7e"
+          }
+        ],
+        "discountPercent": 0,
+        "vatPercent": 20,
+        "paymentMethod": "transfer",
+        "documentType": "facture",
+        "dueDate": "02/12/2026",
+        "validityDate": null,
+        "supplier": null,
+        "referenceNumber": "",
+        "incoterm": "",
+        "vatNotApplicable": false,
+        "customerNote": "",
+        "termsNote": "Règlement à 30 jours.",
+        "thankYouNote": "Merci de votre confiance.",
+        "surchargeLabel": "",
+        "surchargeAmount": 0.0,
+        "shop": {
+          "name": "Pneus Atlas",
+          "address": "Zone industrielle Sidi Maârouf, lot 41 — Casablanca",
+          "phone": "05 22 97 44 10",
+          "email": "contact@pneus-atlas.ma",
+          "ice": "002784531000067",
+          "ifNumber": "40551287",
+          "rc": "884210",
+          "patente": "36219054",
+          "cnss": "8842017",
+          "bankName": "Attijariwafa Bank",
+          "bankRib": "007780000123456789012345",
+          "bankHolder": "Pneus Atlas",
+          "vatPercent": 20,
+          "vatNotApplicable": false,
+          "pricesIncludeVat": true
+        }
+      },
+      "stockApplied": true
+    },
+    {
+      "id": "7360ba1f-2e60-4742-996e-a5a989c502ad",
+      "status": "issued",
+      "createdAt": 1793545500000,
+      "updatedAt": 1793545500000,
+      "data": {
+        "number": "F-20261101-0001",
+        "date": "01/11/2026",
+        "client": {
+          "name": "Taxi Rosso — M. Amrani",
+          "address": "Rue 6, Derb Sultan — Casablanca",
+          "ice": "001122334000045",
+          "ifNumber": "",
+          "rc": "",
+          "patente": "",
+          "cnss": "",
+          "phone": "06 70 81 55 23",
+          "email": "",
+          "vatExempt": false,
+          "role": "client"
+        },
+        "lines": [
+          {
+            "description": "Barum Bravuris 5HM 165/65 R14",
+            "quantity": 2,
+            "unitPrice": 485,
+            "unit": "pneu",
+            "lineDiscountPercent": 0,
+            "taxExempt": false,
+            "vatPercent": 20,
+            "itemId": "40d1aad2-b545-4f0c-8f78-2c16b9ea7398"
+          },
+          {
+            "description": "Montage et équilibrage",
+            "quantity": 2,
+            "unitPrice": 60,
+            "unit": "roue",
+            "lineDiscountPercent": 0,
+            "taxExempt": false,
+            "vatPercent": 20,
+            "itemId": "c6ad8694-2a3c-4493-ad9a-c2ebf11d2c7e"
+          },
+          {
+            "description": "Valve et bouchon",
+            "quantity": 2,
+            "unitPrice": 20,
+            "unit": "pièce",
+            "lineDiscountPercent": 0,
+            "taxExempt": false,
+            "vatPercent": 20,
+            "itemId": "1b5c7734-e1d5-4b2e-9ff2-d7bb122da778"
+          }
+        ],
+        "discountPercent": 0,
+        "vatPercent": 20,
+        "paymentMethod": "cash",
+        "documentType": "facture",
+        "dueDate": null,
+        "validityDate": null,
+        "supplier": null,
+        "referenceNumber": "",
+        "incoterm": "",
+        "vatNotApplicable": false,
+        "customerNote": "",
+        "termsNote": "",
+        "thankYouNote": "Merci de votre confiance.",
+        "surchargeLabel": "",
+        "surchargeAmount": 0.0,
+        "shop": {
+          "name": "Pneus Atlas",
+          "address": "Zone industrielle Sidi Maârouf, lot 41 — Casablanca",
+          "phone": "05 22 97 44 10",
+          "email": "contact@pneus-atlas.ma",
+          "ice": "002784531000067",
+          "ifNumber": "40551287",
+          "rc": "884210",
+          "patente": "36219054",
+          "cnss": "8842017",
+          "bankName": "Attijariwafa Bank",
+          "bankRib": "007780000123456789012345",
+          "bankHolder": "Pneus Atlas",
+          "vatPercent": 20,
+          "vatNotApplicable": false,
+          "pricesIncludeVat": true
+        },
+        "payments": [
+          {
+            "paidAmount": 660.0,
+            "paidAt": "01/11/2026",
+            "note": "",
+            "method": "cash"
+          }
+        ]
+      },
+      "stockApplied": true
+    },
+    {
+      "id": "89f2d71d-8a07-4b07-bef6-6be183779f05",
+      "status": "issued",
+      "createdAt": 1793792400000,
+      "updatedAt": 1793792400000,
+      "data": {
+        "number": "F-20261104-0001",
+        "date": "04/11/2026",
+        "client": {
+          "name": "Trans Log SARL",
+          "address": "Route de Rabat, km 12 — Casablanca",
+          "ice": "003214587000028",
+          "ifNumber": "41120875",
+          "rc": "",
+          "patente": "",
+          "cnss": "",
+          "phone": "05 22 35 78 11",
+          "email": "",
+          "vatExempt": false,
+          "role": "client"
+        },
+        "lines": [
+          {
+            "description": "Nexen N'Blue HD Plus 195/60 R15",
+            "quantity": 4,
+            "unitPrice": 700,
+            "unit": "pneu",
+            "lineDiscountPercent": 0,
+            "taxExempt": false,
+            "vatPercent": 20,
+            "itemId": "e408f483-4436-40e3-8149-95d6bdb6658f",
+            "tierFromQuantity": 4,
+            "appliedTierPrice": 660
+          },
+          {
+            "description": "Michelin Primacy 4+ 175/70 R13",
+            "quantity": 2,
+            "unitPrice": 640,
+            "unit": "pneu",
+            "lineDiscountPercent": 0,
+            "taxExempt": false,
+            "vatPercent": 20,
+            "itemId": "a68cf278-a342-434e-b9c9-a8c61653bb22"
+          },
+          {
+            "description": "Montage et équilibrage",
+            "quantity": 6,
+            "unitPrice": 60,
+            "unit": "roue",
+            "lineDiscountPercent": 0,
+            "taxExempt": false,
+            "vatPercent": 20,
+            "itemId": "c6ad8694-2a3c-4493-ad9a-c2ebf11d2c7e"
+          }
+        ],
+        "discountPercent": 0,
+        "vatPercent": 20,
+        "paymentMethod": "cash",
+        "documentType": "facture",
+        "dueDate": "19/11/2026",
+        "validityDate": null,
+        "supplier": null,
+        "referenceNumber": "",
+        "incoterm": "",
+        "vatNotApplicable": false,
+        "customerNote": "",
+        "termsNote": "",
+        "thankYouNote": "Merci de votre confiance.",
+        "surchargeLabel": "",
+        "surchargeAmount": 0.0,
+        "shop": {
+          "name": "Pneus Atlas",
+          "address": "Zone industrielle Sidi Maârouf, lot 41 — Casablanca",
+          "phone": "05 22 97 44 10",
+          "email": "contact@pneus-atlas.ma",
+          "ice": "002784531000067",
+          "ifNumber": "40551287",
+          "rc": "884210",
+          "patente": "36219054",
+          "cnss": "8842017",
+          "bankName": "Attijariwafa Bank",
+          "bankRib": "007780000123456789012345",
+          "bankHolder": "Pneus Atlas",
+          "vatPercent": 20,
+          "vatNotApplicable": false,
+          "pricesIncludeVat": true
+        }
+      },
+      "stockApplied": true
+    },
+    {
+      "id": "cf483e78-3935-475c-9b71-b89c73ef5b13",
+      "status": "issued",
+      "createdAt": 1794132000000,
+      "updatedAt": 1794132000000,
+      "data": {
+        "number": "D-20261108-0001",
+        "date": "08/11/2026",
+        "client": {
+          "name": "Garage Al Baraka",
+          "address": "14, rue Ibn Sina — Casablanca",
+          "ice": "001845230000071",
+          "ifNumber": "36220147",
+          "rc": "",
+          "patente": "",
+          "cnss": "",
+          "phone": "06 61 44 92 08",
+          "email": "",
+          "vatExempt": false,
+          "role": "client"
+        },
+        "lines": [
+          {
+            "description": "Michelin Primacy 4+ 205/55 R16",
+            "quantity": 4,
+            "unitPrice": 1010,
+            "unit": "pneu",
+            "lineDiscountPercent": 0,
+            "taxExempt": false,
+            "vatPercent": 20,
+            "itemId": "",
+            "tierFromQuantity": 4,
+            "appliedTierPrice": 950
+          },
+          {
+            "description": "Géométrie (train avant)",
+            "quantity": 1,
+            "unitPrice": 150,
+            "unit": "pneu",
+            "lineDiscountPercent": 0,
+            "taxExempt": false,
+            "vatPercent": 20,
+            "itemId": "57039412-ef1a-4d1c-bc6b-6879ff974d48"
+          }
+        ],
+        "discountPercent": 0,
+        "vatPercent": 20,
+        "paymentMethod": "cash",
+        "documentType": "devis",
+        "dueDate": null,
+        "validityDate": "08/12/2026",
+        "supplier": null,
+        "referenceNumber": "",
+        "incoterm": "",
+        "vatNotApplicable": false,
+        "customerNote": "Prix valables un mois, montage compris.",
+        "termsNote": "",
+        "thankYouNote": "Merci de votre confiance.",
+        "surchargeLabel": "",
+        "surchargeAmount": 0.0,
+        "shop": {
+          "name": "Pneus Atlas",
+          "address": "Zone industrielle Sidi Maârouf, lot 41 — Casablanca",
+          "phone": "05 22 97 44 10",
+          "email": "contact@pneus-atlas.ma",
+          "ice": "002784531000067",
+          "ifNumber": "40551287",
+          "rc": "884210",
+          "patente": "36219054",
+          "cnss": "8842017",
+          "bankName": "Attijariwafa Bank",
+          "bankRib": "007780000123456789012345",
+          "bankHolder": "Pneus Atlas",
+          "vatPercent": 20,
+          "vatNotApplicable": false,
+          "pricesIncludeVat": true
+        }
+      }
+    }
+  ]
+}
