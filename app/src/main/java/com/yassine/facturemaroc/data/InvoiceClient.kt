@@ -80,6 +80,19 @@ enum class PaymentMethod(val id: String, val french: String) {
     }
 }
 
+/**
+ * Whether this document can be corrected by an avoir.
+ *
+ * Same rule as the history: only a document that sold something can be
+ * credited. Crediting an avoir cancels the cancellation, crediting a devis
+ * refunds a price nobody paid, and a bon de commande is money going out.
+ */
+val DocumentType.canBeCredited: Boolean
+    get() = this == DocumentType.FACTURE ||
+        this == DocumentType.TICKET ||
+        this == DocumentType.SIMPLIFIEE ||
+        this == DocumentType.EXPORT
+
 /** What kind of document this is. Each has its own numbering and layout rules. */
 enum class DocumentType(val id: String, val label: String, val prefix: String) {
     FACTURE("facture", "Facture", "F"),

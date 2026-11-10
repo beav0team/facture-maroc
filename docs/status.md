@@ -46,8 +46,8 @@ statement and the payment tracking must keep agreeing on what is really owed.
 | Receipt PDF | **Exists** | A5 receipt for any recorded payment: sum in words, method, reference, invoice/settled/balance |
 | Due date / overdue | **Exists** | deadline (comptant/30/60 or a typed date), printed on the 6 templates, overdue pill and detail row; validity date stays for quotes |
 | Client statement | **Exists** | per client: billed / credited / paid / balance, credit notes subtracted, drafts, quotes and orders excluded; A4 PDF from the client card |
-| Quote → invoice | **Missing** | duplication keeps the same document type |
-| Invoice → credit note | **Missing** | credit notes are built manually |
+| Quote → invoice | **Exists** | one tap from a devis; lines, prices, rates and discount copied; quote number kept as reference |
+| Invoice → credit note | **Exists** | one tap; the avoir repeats the invoice exactly and drops payment/deadline |
 | Deposit deduction | **Missing** | acompte is not subtracted from the final invoice |
 | Numbering | **Partial** | per-type sequences; only invoice counter editable; no annual reset |
 | ICE validation | **Exists** | 15-digit check + missing-ICE warning on a business invoice (non-blocking) |
@@ -82,8 +82,8 @@ statement and the payment tracking must keep agreeing on what is really owed.
 1. **VAT per line** — art. 145 CGI requires the rate per line; current model is
    one rate per invoice.
 2. **ICE** — should be 15 digits; client ICE needed for business clients.
-3. **Issued invoices are deletable** in the UI; the legal route is a credit note
-   or a rectifying invoice.
+3. ~~Issued invoices are deletable~~ — fixed in A3: only drafts can be deleted,
+   and the menu/sheet offer an avoir instead.
 4. **Retention** — 10 years (CGI art. 211 / law 9-88); no accountant export or
    age indicator.
 5. **VAT withholding (RAS TVA)** — 75 %/100 % withheld by some clients; no field.

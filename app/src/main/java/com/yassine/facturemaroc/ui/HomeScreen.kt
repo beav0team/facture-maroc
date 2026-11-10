@@ -40,6 +40,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CreateNewFolder
@@ -57,10 +58,11 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.AlertDialog
@@ -117,6 +119,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yassine.facturemaroc.data.ClientStatements
 import com.yassine.facturemaroc.data.DocumentType
+import com.yassine.facturemaroc.data.canBeCredited
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceRecord
 import com.yassine.facturemaroc.data.PaymentDue
@@ -166,6 +169,8 @@ fun HomeScreen(
     onNewInvoice: (InvoiceClient?) -> Unit,
     onNewOrder: (InvoiceClient) -> Unit,
     onOpenRecord: (InvoiceRecord) -> Unit,
+    onCreditNote: (InvoiceRecord) -> Unit,
+    onConvertQuote: (InvoiceRecord) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val records by viewModel.invoices.invoices.collectAsStateWithLifecycle()
@@ -625,6 +630,8 @@ fun HomeScreen(
                     },
                     onExportXml = ::exportXml,
                     onDuplicate = onOpenRecord,
+                    onCreditNote = onCreditNote,
+                    onConvertQuote = onConvertQuote,
                     onDelete = { deleteInvoice = it },
                     onPayment = { paymentRecord = it },
                 )
@@ -896,9 +903,13 @@ fun HomeScreen(
                 detailRecord = null
                 onOpenRecord(record)
             },
-            onDelete = {
+            onCreditNote = {
                 detailRecord = null
-                deleteInvoice = record
+                onCreditNote(record)
+            },
+            onConvertQuote = {
+                detailRecord = null
+                onConvertQuote(record)
             },
         )
     }
@@ -915,34 +926,18 @@ fun HomeScreen(
     }
 
     deleteInvoice?.let { record ->
-        // What deletion does now depends on what the document was, so the
-        // sentence has to match. Telling a shop "the line only disappears" and
-        // then quietly adding an article back to its shelf is how an app loses
-        // trust over a dialog nobody rereads.
-        val effect = when {
-            record.isDraft -> "Le brouillon disparaît de l'historique."
-            record.stockApplied && StockMovement.direction(record.data.documentType) > 0 ->
-                "Le PDF déjà envoyé reste chez le client ; les quantités rendues par l'avoir sont reprises du stock."
-            record.stockApplied ->
-                "Le PDF déjà envoyé reste chez le client ; les quantités vendues retournent au stock."
-            else -> "Le PDF déjà envoyé reste chez le client ; la ligne disparaît de l'historique."
-        }
+        // Only a draft reaches this dialog: an issued document is corrected by
+        // an avoir, so the branch that used to talk about the customer keeping
+        // "the PDF already sent" no longer exists.
         ConfirmDeleteDialog(
-            title = if (record.isDraft) "Supprimer ce brouillon ?" else "Supprimer ce document ?",
-            message = "${record.data.number} · ${record.title} — ${record.data.total.asDirhams()}. $effect",
+            title = "Supprimer ce brouillon ?",
+            message = "${record.data.number} · ${record.title} — ${record.data.total.asDirhams()}. " +
+                "Le brouillon disparaît de l'historique.",
             onDismiss = { deleteInvoice = null },
             onConfirm = {
                 viewModel.deleteRecord(record.id)
                 deleteInvoice = null
-                scope.launch {
-                    snackbar.showSnackbar(
-                        if (record.stockApplied) {
-                            "Document supprimé, stock rétabli."
-                        } else {
-                            "Document supprimé de l'historique."
-                        },
-                    )
-                }
+                scope.launch { snackbar.showSnackbar("Brouillon supprimé.") }
             },
         )
     }
@@ -1147,6 +1142,8 @@ private fun InvoicesTab(
     onShareReceipt: (InvoiceRecord) -> Unit,
     onExportXml: (InvoiceRecord) -> Unit,
     onDuplicate: (InvoiceRecord) -> Unit,
+    onCreditNote: (InvoiceRecord) -> Unit,
+    onConvertQuote: (InvoiceRecord) -> Unit,
     onDelete: (InvoiceRecord) -> Unit,
     onPayment: (InvoiceRecord) -> Unit,
 ) {
@@ -1202,6 +1199,8 @@ private fun InvoicesTab(
                     onShareReceipt = { onShareReceipt(record) },
                     onExportXml = { onExportXml(record) },
                     onDuplicate = { onDuplicate(record) },
+                    onCreditNote = { onCreditNote(record) },
+                    onConvertQuote = { onConvertQuote(record) },
                     onDelete = { onDelete(record) },
                     onPayment = { onPayment(record) },
                 )
@@ -1220,6 +1219,8 @@ private fun InvoicesTab(
                     onShareReceipt = { onShareReceipt(record) },
                     onExportXml = { onExportXml(record) },
                     onDuplicate = { onDuplicate(record) },
+                    onCreditNote = { onCreditNote(record) },
+                    onConvertQuote = { onConvertQuote(record) },
                     onDelete = { onDelete(record) },
                     onPayment = { onPayment(record) },
                 )
@@ -1309,6 +1310,8 @@ private fun InvoiceCard(
     onShareReceipt: () -> Unit,
     onExportXml: () -> Unit,
     onDuplicate: () -> Unit,
+    onCreditNote: () -> Unit,
+    onConvertQuote: () -> Unit,
     onDelete: () -> Unit,
     onPayment: () -> Unit,
 ) {
@@ -1504,22 +1507,66 @@ private fun InvoiceCard(
                                 onDuplicate()
                             },
                         )
-                    }
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text = { Text("Supprimer", color = MaterialTheme.colorScheme.error) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.Delete,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
+                        if (record.data.documentType == DocumentType.DEVIS) {
+                            DropdownMenuItem(
+                                text = { Text("Convertir en facture") },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.Check, contentDescription = null)
+                                },
+                                onClick = {
+                                    menuOpen = false
+                                    onConvertQuote()
+                                },
                             )
-                        },
-                        onClick = {
-                            menuOpen = false
-                            onDelete()
-                        },
-                    )
+                        }
+                        if (record.data.documentType == DocumentType.DEVIS) {
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = onConvertQuote,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Convertir en facture")
+                }
+            }
+            if (record.data.documentType.canBeCredited) {
+                            DropdownMenuItem(
+                                text = { Text("Créer un avoir") },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.Remove, contentDescription = null)
+                                },
+                                onClick = {
+                                    menuOpen = false
+                                    onCreditNote()
+                                },
+                            )
+                        }
+                    }
+                    // Only a draft can be deleted. An issued document has
+                    // been handed to a customer and, under Moroccan rules,
+                    // leaves the history through an avoir or a rectifying
+                    // invoice — never by disappearing from the shop's own
+                    // records, which is the difference between a correction and
+                    // a document that never existed.
+                    if (record.isDeletable) {
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text("Supprimer", color = MaterialTheme.colorScheme.error) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                )
+                            },
+                            onClick = {
+                                menuOpen = false
+                                onDelete()
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -2740,7 +2787,8 @@ private fun InvoiceDetailSheet(
     onShare: () -> Unit,
     onExportXml: () -> Unit,
     onDuplicate: () -> Unit,
-    onDelete: () -> Unit,
+    onCreditNote: () -> Unit,
+    onConvertQuote: () -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -2867,13 +2915,22 @@ private fun InvoiceDetailSheet(
                 Spacer(Modifier.width(8.dp))
                 Text("Dupliquer en nouvelle facture")
             }
-            TextButton(
-                onClick = onDelete,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Supprimer de l'historique", color = MaterialTheme.colorScheme.error)
+            // No delete here on purpose: this sheet only opens issued
+            // documents. The correction is an avoir, so the shop keeps the
+            // paper it sent and the tax office keeps a trail.
+            if (record.data.documentType.canBeCredited) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onCreditNote,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Icon(Icons.Filled.Remove, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Créer un avoir")
+                }
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
         }
     }
 }

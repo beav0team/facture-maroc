@@ -84,6 +84,16 @@ fun FactureMarocApp(viewModel: InvoiceViewModel) {
                     viewModel.loadRecord(record)
                     destination = Destination.Builder
                 },
+                onCreditNote = { record ->
+                    // Opens the builder on a draft avoir that reverses the
+                    // document; the number is taken only when it is issued.
+                    viewModel.loadAsAvoir(record)
+                    destination = Destination.Builder
+                },
+                onConvertQuote = { record ->
+                    viewModel.loadAsInvoice(record)
+                    destination = Destination.Builder
+                },
                 onOpenSettings = { destination = Destination.Settings },
             )
 

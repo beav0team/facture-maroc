@@ -1108,16 +1108,33 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         }.getOrDefault(false)
     }
 
+    /**
+     * Opens a credit note that reverses [record].
+     *
+     * An avoir is not a new sale: it repeats the lines, prices and rates of the
+     * document it corrects, and carries its number as a reference so the two
+     * read together. Payment, deadline and quote validity are dropped — money
+     * that came in belongs to the invoice, not to the credit.
+     */
+    /** Opens the invoice draft that bills [record], when it is a quote. */
+    fun loadAsInvoice(record: InvoiceRecord) {
+        val invoice = QuoteConversion.invoiceFrom(record) ?: return
+        loadRecord(invoice)
+    }
+
+    fun loadAsAvoir(record: InvoiceRecord) {
+        val avoir = CreditNote.from(record) ?: return
+        loadRecord(avoir)
+    }
+
     fun deleteRecord(id: String) {
-        // An issued document that disappears from the history takes its stock
-        // movement with it, otherwise deleting a mistake would leave the shelf
-        // short by a sale that no longer exists on paper. [InvoiceRecord.stockApplied]
-        // is what decides, not the document type: a facture written before the
-        // inventory existed never took anything off a shelf, and crediting it
-        // now would invent stock. Deleting a draft moves nothing either way.
-        invoices.invoices.value.firstOrNull { it.id == id }
-            ?.takeIf { it.stockApplied }
-            ?.let { savedItems.applyStockMovement(it.data, reversing = true) }
+        // An issued document is not deletable, whatever the screen offered: the
+        // check lives in the model so a stale menu cannot bypass it. A
+        // correction is an avoir, which is also what restores the stock — a
+        // document that simply vanishes takes its movement with it and leaves
+        // the shelf short for a sale that no longer exists on paper.
+        val record = invoices.find(id) ?: return
+        if (!record.isDeletable) return
         invoices.delete(id)
         if (id == draftId) newDraft()
     }

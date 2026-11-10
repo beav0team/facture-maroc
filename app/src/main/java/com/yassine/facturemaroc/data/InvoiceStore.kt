@@ -45,6 +45,17 @@ data class InvoiceRecord(
     val stockApplied: Boolean = false,
 ) {
     /**
+     * Whether the shop may delete this document.
+     *
+     * Only a draft, because a draft has not left the phone. Once a document is
+     * issued the customer holds a copy, and Moroccan practice is to correct it
+     * with a credit note or a rectifying invoice rather than remove it: a file
+     * that an invoice can vanish from is not a set of accounts, it is a list.
+     * The rule lives here so the screen and the view model cannot disagree.
+     */
+    val isDeletable: Boolean get() = isDraft
+
+    /**
      * What the history list calls it.
      *
      * The party the document is addressed to, which is the supplier on a bon
