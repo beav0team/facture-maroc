@@ -183,8 +183,9 @@ de surfaces, formes et typographie — copié une fois dans
 `docs/assets/css/tokens.css` depuis `ui/Theme.kt`, afin que la page et les
 captures ne puissent pas diverger. Material 3 Expressive passe par le CSS
 (formes arrondies, boutons pleins, mouvements), pas par `@material/web`, qui est
-en maintenance : le site reste HTML et CSS seuls. Le mode sombre suit
-`prefers-color-scheme`, les icônes sont des SVG Material Symbols en ligne, et
+en maintenance : le site reste HTML et CSS seuls. Le site est clair uniquement
+(choix explicite, pas d’inversion automatique), les icônes sont des SVG Material
+Symbols en ligne, et
 l’unique police est Roboto Flex, sous-ensemblée par `docs/scripts/fonts.sh`
 (1,8 Mo → 44 Ko).
 

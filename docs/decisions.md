@@ -241,8 +241,10 @@ Material 3 Expressive is expressed in the CSS (cookie-shaped cards, pill
 buttons, state layers, emphasized easing) rather than by adopting
 `@material/web`: that project is in maintenance mode pending new maintainers,
 and using it would put JavaScript and a vendored bundle on a site whose promise
-is HTML, CSS and no external request. Dark mode is `DarkScheme` behind
-`prefers-color-scheme`, not a second palette invented for the web. Icons are
+is HTML, CSS and no external request. **Light only, no dark theme**: the site is
+read next to a printed invoice, and Yassine asked for it explicitly
+(2026-11-11). `color-scheme` stays `light` so a phone in dark mode does not
+invert form controls behind our back. Icons are
 inline Material Symbols SVGs — no icon font, no extra request. The single font
 is Roboto Flex, subset to French by `docs/scripts/fonts.sh` (1.8 MB → 44 KB).
 

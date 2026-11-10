@@ -4,13 +4,13 @@
    Une seule source de vérité pour les couleurs, les formes, la
    typographie et le mouvement. Les valeurs viennent de l'application
    elle-même : app/src/main/java/com/yassine/facturemaroc/ui/Theme.kt
-   (LightScheme, DarkScheme, AppTypography, AppShapes). Le site et le
-   téléphone doivent se ressembler, donc ils lisent le même jeu.
+   (LightScheme, AppTypography, AppShapes). Le site et le téléphone
+   doivent se ressembler, donc ils lisent le même jeu.
 
    Rien d'autre dans le site ne doit écrire une couleur en clair :
    un composant demande son rôle (--md-sys-color-*), il n'invente pas
-   un gris. C'est ce qui fait que le mode sombre reste cohérent sans
-   être retouché écran par écran.
+   un gris. Le site est clair uniquement : c'est le choix explicite de
+   Yassine (2026-11-11), pas un oubli de feuille de style.
    ============================================================ */
 
 /* --- Roboto Flex (l'unique famille du site) ---
@@ -163,57 +163,4 @@
   --md-sys-layout-max: 1240px;
   --md-sys-layout-prose: 44rem;
   --md-sys-layout-margin: clamp(20px, 5vw, 48px);
-}
-
-/* ---------- couleurs : schéma sombre (DarkScheme) ---------- */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-
-    --md-sys-color-primary: #9DB7FF;
-    --md-sys-color-on-primary: #06215C;
-    --md-sys-color-primary-container: #173A86;
-    --md-sys-color-on-primary-container: #DCE6FF;
-    --md-sys-color-inverse-primary: #1D4ED8;
-
-    --md-sys-color-secondary: #7DD8CE;
-    --md-sys-color-on-secondary: #00332E;
-    --md-sys-color-secondary-container: #124E48;
-    --md-sys-color-on-secondary-container: #CCFBF1;
-
-    --md-sys-color-tertiary: #F5C26B;
-    --md-sys-color-on-tertiary: #3F2600;
-    --md-sys-color-tertiary-container: #5C3B0A;
-    --md-sys-color-on-tertiary-container: #FEF3C7;
-
-    --md-sys-color-background: #0D131F;
-    --md-sys-color-on-background: #E8ECF4;
-    --md-sys-color-surface: #151D2B;
-    --md-sys-color-on-surface: #E8ECF4;
-    --md-sys-color-surface-variant: #202A3B;
-    --md-sys-color-on-surface-variant: #A9B3C4;
-
-    --md-sys-color-surface-dim: #0B1019;
-    --md-sys-color-surface-bright: #333F52;
-    --md-sys-color-surface-container-lowest: #080D16;
-    --md-sys-color-surface-container-low: #111826;
-    --md-sys-color-surface-container: #171F2E;
-    --md-sys-color-surface-container-high: #1D2636;
-    --md-sys-color-surface-container-highest: #242E40;
-
-    --md-sys-color-inverse-surface: #E8ECF4;
-    --md-sys-color-inverse-on-surface: #151D2B;
-    --md-sys-color-outline: #3C4A61;
-    --md-sys-color-outline-variant: #27344A;
-
-    --md-sys-color-error: #FFB4AB;
-    --md-sys-color-on-error: #690005;
-    --md-sys-color-error-container: #5C1710;
-    --md-sys-color-on-error-container: #FFDAD6;
-
-    --md-sys-elevation-1: 0 1px 2px rgba(0, 0, 0, .4), 0 1px 3px 1px rgba(0, 0, 0, .2);
-    --md-sys-elevation-2: 0 2px 6px rgba(0, 0, 0, .45), 0 1px 2px rgba(0, 0, 0, .3);
-    --md-sys-elevation-3: 0 12px 28px -12px rgba(0, 0, 0, .65), 0 2px 6px rgba(0, 0, 0, .3);
-    --md-sys-elevation-4: 0 28px 60px -28px rgba(0, 0, 0, .8), 0 2px 6px rgba(0, 0, 0, .35);
-  }
 }
