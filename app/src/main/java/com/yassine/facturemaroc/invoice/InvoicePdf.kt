@@ -16,6 +16,7 @@ import androidx.core.content.FileProvider
 import com.yassine.facturemaroc.data.InvoiceData
 import com.yassine.facturemaroc.data.InvoiceDesign
 import com.yassine.facturemaroc.data.InvoiceTemplate
+import com.yassine.facturemaroc.data.LogoStore
 import com.yassine.facturemaroc.data.ShopSettings
 import java.io.File
 import java.text.SimpleDateFormat
@@ -68,7 +69,7 @@ object InvoicePdf {
         val template = design.template
         // An issued document draws the shop it was issued for; only a draft
         // falls back to the live settings.
-        val printShop = data.printingShop(shop)
+        val printShop = data.printedShop(context, shop)
         val height = if (template.isRoll) {
             TicketRenderer.height(data, printShop, design)
         } else {
@@ -163,7 +164,7 @@ object InvoicePdf {
         widthPx: Int,
     ): Bitmap? {
         val template = design.template
-        val printShop = data.printingShop(shop)
+        val printShop = data.printedShop(context, shop)
         val scale = widthPx.toDouble() /
             (if (template.isRoll) TicketRenderer.WIDTH.toDouble() else PAGE_W.toDouble())
         val height = if (template.isRoll) {
@@ -191,6 +192,17 @@ object InvoicePdf {
             android.util.Log.w("InvoicePdf", "preview failed for ${template.id}", e)
             null
         }
+    }
+
+    /**
+     * The shop the page must show: the issue-time copy with its logo, or the
+     * live settings for a draft. The logo bytes live in [LogoStore], which is
+     * why this needs a context the data model does not have.
+     */
+    private fun InvoiceData.printedShop(context: Context, live: ShopSettings): ShopSettings {
+        val snapshot = shop ?: return live
+        val logo = snapshot.logoHash?.let { LogoStore.read(context, it) } ?: snapshot.logo?.bytes
+        return snapshot.toSettings(logo)
     }
 
     private fun rendererFor(template: InvoiceTemplate): PdfRenderer = when (template) {

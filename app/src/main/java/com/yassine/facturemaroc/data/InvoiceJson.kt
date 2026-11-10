@@ -101,6 +101,20 @@ object InvoiceJson {
         data.signature?.let {
             put("signature", Base64.getEncoder().encodeToString(it.bytes))
         }
+        put("surchargeLabel", data.surchargeLabel)
+        put("surchargeAmount", data.surchargeAmount)
+        // Omitted when nothing was received, so an unpaid document says so by
+        // saying nothing and old files stay byte-for-byte compatible.
+        data.payment?.takeIf { !it.isEmpty || it.paidAt.isNotBlank() }?.let {
+            put(
+                "payment",
+                JSONObject().apply {
+                    put("paidAmount", it.paidAmount)
+                    put("paidAt", it.paidAt)
+                    put("note", it.note)
+                },
+            )
+        }
     }
 
     /** The issue-time shop copy, as stored with a document. */
@@ -117,6 +131,10 @@ object InvoiceJson {
         put("vatPercent", snapshot.vatPercent)
         put("vatNotApplicable", snapshot.vatNotApplicable)
         put("pricesIncludeVat", snapshot.pricesIncludeVat)
+        snapshot.logoHash?.takeIf { it.isNotBlank() }?.let { put("logoHash", it) }
+        // Only records written by 0.9.0 still carry the bytes; new snapshots
+        // point at LogoStore. Written back when present so nothing is lost if
+        // the file is read by a build that predates the migration.
         snapshot.logo?.let { put("logo", Base64.getEncoder().encodeToString(it.bytes)) }
     }
 
@@ -145,6 +163,7 @@ object InvoiceJson {
             vatPercent = obj.optDouble("vatPercent", 20.0).let { if (it.isNaN()) 20.0 else it },
             vatNotApplicable = obj.optBoolean("vatNotApplicable", false),
             pricesIncludeVat = obj.optBoolean("pricesIncludeVat", false),
+            logoHash = obj.optString("logoHash", "").takeIf { it.isNotBlank() },
             logo = logo?.takeIf { it.isNotEmpty() }?.let(::ImageBytes),
         )
     }
@@ -211,6 +230,17 @@ object InvoiceJson {
                 obj.optString("signature", "").takeIf { it.isNotBlank() }
                     ?.let { Base64.getDecoder().decode(it) }
             }.getOrNull()?.takeIf { it.isNotEmpty() }?.let(::ImageBytes),
+            surchargeLabel = obj.optString("surchargeLabel", "Livraison"),
+            surchargeAmount = obj.optDouble("surchargeAmount", 0.0)
+                .let { if (it.isNaN() || it.isInfinite()) 0.0 else it },
+            payment = obj.optJSONObject("payment")?.let { payment ->
+                PaymentInfo(
+                    paidAmount = payment.optDouble("paidAmount", 0.0)
+                        .let { if (it.isNaN() || it.isInfinite()) 0.0 else it },
+                    paidAt = payment.optString("paidAt", ""),
+                    note = payment.optString("note", ""),
+                )
+            },
         )
     }
 }

@@ -26,6 +26,7 @@ class ShopSnapshotTest {
     )
 
     private val logo = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
+    private val logoHash = LogoStore.sha256Hex(logo)
 
     @Test
     fun `a snapshot keeps what the document printed, not what the shop says now`() {
@@ -34,7 +35,7 @@ class ShopSnapshotTest {
             date = "01/01/2026",
             client = InvoiceClient(name = "Client"),
             lines = listOf(InvoiceLine("Montage", 1, 100.0)),
-            shop = ShopSnapshot.of(shop, logo),
+            shop = ShopSnapshot.of(shop, logoHash),
         )
 
         // The shop moves and re-registers: the old invoice must not follow.
@@ -51,6 +52,25 @@ class ShopSnapshotTest {
         assertEquals("12 rue des Fleurs, Casablanca", printed.address)
         assertEquals("001234567000089", printed.ice)
         assertEquals(20.0, printed.vatPercent, 0.0)
+        // The hash still points at the issue-time logo; the bytes themselves
+        // live once in LogoStore, not in this record.
+        assertEquals(logoHash, issued.shop!!.logoHash)
+        assertNull(printed.logoBytes)
+    }
+
+    @Test
+    fun `a 0_9_0 record with embedded logo bytes still prints them`() {
+        val legacy = InvoiceData(
+            number = "F-20260101-0002",
+            date = "01/01/2026",
+            client = InvoiceClient(name = "Client"),
+            lines = emptyList(),
+            shop = ShopSnapshot.of(shop).copy(logo = ImageBytes(logo)),
+        )
+
+        val printed = legacy.printingShop(shop.copy(name = "Autre"))
+
+        assertEquals("Garage Atlas", printed.name)
         assertArrayEquals(logo, printed.logoBytes)
     }
 
@@ -74,7 +94,7 @@ class ShopSnapshotTest {
             date = "01/01/2026",
             client = InvoiceClient(name = "Client"),
             lines = listOf(InvoiceLine("Pneu", 2, 500.0)),
-            shop = ShopSnapshot.of(shop, logo),
+            shop = ShopSnapshot.of(shop, logoHash),
             customerNote = "Merci de vérifier la marchandise.",
             termsNote = "Paiement comptant.",
             thankYouNote = "À bientôt !",
@@ -88,7 +108,8 @@ class ShopSnapshotTest {
         assertEquals("Paiement comptant.", restored.termsNote)
         assertEquals("À bientôt !", restored.thankYouNote)
         assertArrayEquals(byteArrayOf(1, 2, 3, 4), restored.signature!!.bytes)
-        assertArrayEquals(logo, restored.shop!!.logo!!.bytes)
+        assertEquals(logoHash, restored.shop!!.logoHash)
+        assertNull(restored.shop!!.logo)
     }
 
     @Test

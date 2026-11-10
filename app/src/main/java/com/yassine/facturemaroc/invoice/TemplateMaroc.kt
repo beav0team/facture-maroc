@@ -69,7 +69,7 @@ class MarocRenderer : PdfRenderer {
         canvas.drawRect(margin, headerTop, right, headerTop + headerH, tint)
 
         var nameX = margin + 10f
-        PdfText.loadShopLogo(context, design, shop)?.let { logo ->
+        PdfText.loadShopLogo(context, design, shop, allowFileFallback = data.shop == null)?.let { logo ->
             nameX = PdfText.drawLogo(canvas, logo, margin + 10f, headerTop + 26f, 34f) + 10f
         }
         PdfText.draw(canvas, shop.name, nameX, headerTop + 12f, title, (right - nameX - 140f).toInt(), maxLines = 2)
@@ -215,6 +215,15 @@ class MarocRenderer : PdfRenderer {
             )
             ty += 16f
         }
+        if (data.surcharge > 0.0) {
+            PdfTotals.row(
+                canvas, box,
+                data.surchargeLabel.ifBlank { "Livraison" },
+                PdfText.money(data.surcharge),
+                ty, body, cellRight,
+            )
+            ty += 16f
+        }
         if (data.vatNotApplicable) {
             PdfTotals.label(canvas, box, "TVA non applicable", ty, body)
         } else {
@@ -235,6 +244,12 @@ class MarocRenderer : PdfRenderer {
 
         // ---- the amount in words, then the notes and the signature space
         var sigY = ty
+        if (design.showPaymentStatus) {
+            ty = PdfExtras.drawPayment(
+                canvas, data, margin, ty + 6f,
+                (contentW - 210).coerceAtLeast(140).toFloat(), label, body, bodyBold,
+            )
+        }
         if (design.showAmountWords) {
             PdfText.draw(canvas, data.amountInWords, margin, ty + 12f, words, contentW, maxLines = 3)
             ty += 12f + PdfText.height(data.amountInWords, words, contentW, 3)
@@ -291,12 +306,13 @@ class MarocRenderer : PdfRenderer {
         words: TextPaint,
         contentW: Int,
     ): Float {
-        val rows = 2 + if (data.discountPercent > 0) 1 else 0
+        val rows = 2 + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         var h = 18f + 16f * rows + 26f
         if (design.showAmountWords) {
             h += 12f + PdfText.height(data.amountInWords, words, contentW, 3)
         }
         val notePaint = PdfText.paint(9f, 0)
+        if (design.showPaymentStatus) h += 6f + PdfExtras.paymentHeight(data, notePaint, notePaint)
         h += 10f + PdfExtras.notesHeight(data, notePaint, notePaint, (contentW - 210).coerceAtLeast(140))
         // The signature box is part of the tail: a page that ends just above it
         // would push the stamp onto the next sheet with the totals behind.

@@ -289,4 +289,16 @@ class InvoiceArchiveTest {
         assertFalse(verification.ok)
         assertTrue(verification.problem!!.contains("journal"))
     }
+
+    @Test
+    fun `a shared PDF is stored under its own hash and verifies`() {
+        val pdf = byteArrayOf(0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x37)
+        val entry = archive.recordPdf(data, pdf)
+
+        assertNotNull(entry)
+        val hash = ArchiveLedger.sha256Hex(pdf)
+        assertTrue(File(root, "archive/documents/$hash.pdf").isFile)
+        val verification = archive.verify()
+        assertTrue(verification.message, verification.ok)
+    }
 }

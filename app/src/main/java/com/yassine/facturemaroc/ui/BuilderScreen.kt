@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PersonAdd
@@ -144,6 +145,7 @@ fun BuilderScreen(
     var showDiscountDialog by remember { mutableStateOf(false) }
     var showValidityDialog by remember { mutableStateOf(false) }
     var showSignatureDialog by remember { mutableStateOf(false) }
+    var showSurchargeDialog by remember { mutableStateOf(false) }
     var editingNote by remember { mutableStateOf<NoteKind?>(null) }
     var editingLine by remember { mutableStateOf<Int?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -417,7 +419,10 @@ fun BuilderScreen(
                     showPayment = invoice.showPaymentMethod,
                     isDevis = invoice.isDevis,
                     validityDate = invoice.validityDate,
+                    surchargeLabel = invoice.surchargeLabel,
+                    surchargeAmount = invoice.surcharge,
                     onDiscount = { showDiscountDialog = true },
+                    onSurcharge = { showSurchargeDialog = true },
                     onPayment = viewModel::setPaymentMethod,
                     onValidity = { showValidityDialog = true },
                     onOpenSettings = {
@@ -587,6 +592,18 @@ fun BuilderScreen(
                 editingNote = null
             },
             onDismiss = { editingNote = null },
+        )
+    }
+
+    if (showSurchargeDialog) {
+        SurchargeDialog(
+            initialLabel = invoice.surchargeLabel,
+            initialAmount = invoice.surcharge,
+            onConfirm = { label, amount ->
+                viewModel.setSurcharge(label, amount)
+                showSurchargeDialog = false
+            },
+            onDismiss = { showSurchargeDialog = false },
         )
     }
 
@@ -1095,7 +1112,10 @@ private fun OptionsCard(
     showPayment: Boolean,
     isDevis: Boolean,
     validityDate: String?,
+    surchargeLabel: String,
+    surchargeAmount: Double,
     onDiscount: () -> Unit,
+    onSurcharge: () -> Unit,
     onPayment: (PaymentMethod) -> Unit,
     onValidity: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -1113,6 +1133,18 @@ private fun OptionsCard(
                 label = "Remise générale",
                 value = if (discountPercent == 0) "Aucune" else "−$discountPercent %",
                 onClick = onDiscount,
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            OptionRow(
+                icon = Icons.Filled.LocalShipping,
+                label = "Livraison / surcharge",
+                value = if (surchargeAmount <= 0.0) {
+                    "Aucune"
+                } else {
+                    "$surchargeLabel · ${surchargeAmount.asDirhams()}"
+                },
+                onClick = onSurcharge,
             )
 
             if (isDevis) {

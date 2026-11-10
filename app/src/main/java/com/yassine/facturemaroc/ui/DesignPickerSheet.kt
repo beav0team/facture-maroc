@@ -200,6 +200,12 @@ fun DesignPickerSheet(
                 onCheckedChange = { onSelect(design.copy(showPaymentMethod = it)) },
             )
             SwitchRow(
+                title = "Paiement reçu",
+                subtitle = "Le montant encaissé et le reste à payer, quand il y en a.",
+                checked = design.showPaymentStatus,
+                onCheckedChange = { onSelect(design.copy(showPaymentStatus = it)) },
+            )
+            SwitchRow(
                 title = "Pied de page",
                 subtitle = "Un mot de remerciement en bas du document.",
                 checked = design.showFooter,

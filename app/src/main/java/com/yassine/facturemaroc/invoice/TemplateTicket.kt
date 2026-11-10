@@ -161,6 +161,14 @@ class TicketRenderer : PdfRenderer {
                 money,
             )
         }
+        if (data.surcharge > 0.0) {
+            totalRow(
+                data.surchargeLabel.ifBlank { "Livraison" },
+                PdfText.money(data.surcharge),
+                small,
+                money,
+            )
+        }
         if (data.vatNotApplicable) {
             PdfText.draw(canvas, "TVA non applicable", margin, y, small, contentW)
             y += 10f

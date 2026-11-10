@@ -99,6 +99,15 @@ object InvoiceXml {
         // The amount spelled out is the line that makes a paper document hard
         // to alter, so it travels in the file too rather than only on the PDF.
         x.element("cbc:Note", data.amountInWords)
+        if (data.isSettled) {
+            val date = data.payment?.paidAt?.trim().orEmpty()
+            val settled = if (data.documentType == DocumentType.FACTURE) {
+                "Facture acquittée"
+            } else {
+                "Document acquitté"
+            }
+            x.element("cbc:Note", if (date.isEmpty()) settled else "$settled le $date")
+        }
 
         x.element("cbc:DocumentCurrencyCode", CURRENCY)
 
@@ -137,6 +146,9 @@ object InvoiceXml {
         if (data.discountPercent > 0 && data.discountAmount > 0.0) {
             allowance(x, data.discountPercent, data.discountAmount, data.subtotal)
         }
+        if (data.surcharge > 0.0) {
+            charge(x, data.surchargeLabel.ifBlank { "Livraison" }, data.surcharge)
+        }
 
         // --- sequence 48: tax, one subtotal per rate actually applied
         //
@@ -145,26 +157,33 @@ object InvoiceXml {
         // and a receiver that reads `S · 0 %` codes it as the second.
         x.open("cac:TaxTotal")
         x.money("cbc:TaxAmount", data.vatAmount)
-        val exemptBase = round(data.totalExcludingVat - data.vatBase)
+        val taxExclusive = round(data.totalExcludingVat + data.surcharge)
+        val exemptBase = round(taxExclusive - data.vatBase)
         if (data.effectiveVatPercent > 0.0 && data.vatBase > 0.0) {
             taxSubtotal(x, data.vatBase, data.vatAmount, data.effectiveVatPercent, taxable = true)
             if (exemptBase > 0.0) {
                 taxSubtotal(x, exemptBase, 0.0, 0.0, taxable = false)
             }
         } else {
-            taxSubtotal(x, data.totalExcludingVat, 0.0, 0.0, taxable = false)
+            taxSubtotal(x, taxExclusive, 0.0, 0.0, taxable = false)
         }
         x.close("cac:TaxTotal")
 
         // --- sequence 50: totals
         x.open("cac:LegalMonetaryTotal")
         x.money("cbc:LineExtensionAmount", data.subtotal)
-        x.money("cbc:TaxExclusiveAmount", data.totalExcludingVat)
+        x.money("cbc:TaxExclusiveAmount", taxExclusive)
         x.money("cbc:TaxInclusiveAmount", data.total)
         if (data.discountAmount > 0.0) {
             x.money("cbc:AllowanceTotalAmount", data.discountAmount)
         }
-        x.money("cbc:PayableAmount", data.total)
+        if (data.surcharge > 0.0) {
+            x.money("cbc:ChargeTotalAmount", data.surcharge)
+        }
+        if (data.paidAmount > 0.0) {
+            x.money("cbc:PrepaidAmount", data.paidAmount)
+        }
+        x.money("cbc:PayableAmount", data.balanceDue)
         x.close("cac:LegalMonetaryTotal")
 
         // --- sequence 51: lines
@@ -360,6 +379,15 @@ object InvoiceXml {
         x.element("cbc:MultiplierFactorNumeric", formatMoney(percent / 100.0))
         x.money("cbc:Amount", amount)
         x.money("cbc:BaseAmount", base)
+        x.close("cac:AllowanceCharge")
+    }
+
+    /** A positive charge, the mirror of [allowance]. */
+    private fun charge(x: Xml, label: String, amount: Double) {
+        x.open("cac:AllowanceCharge")
+        x.element("cbc:ChargeIndicator", "true")
+        x.element("cbc:AllowanceChargeReason", label)
+        x.money("cbc:Amount", amount)
         x.close("cac:AllowanceCharge")
     }
 

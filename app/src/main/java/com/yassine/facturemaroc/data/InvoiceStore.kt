@@ -71,11 +71,40 @@ data class InvoiceRecord(
  * that was already shared — the PDF the customer received is — so a corrupted
  * file costs the history, never the ability to invoice.
  */
-class InvoiceStore(context: Context) {
+class InvoiceStore(private val context: Context) {
 
     private val file = File(context.filesDir, FILE)
     private val _invoices = MutableStateFlow(load())
     val invoices: StateFlow<List<InvoiceRecord>> = _invoices.asStateFlow()
+
+    init {
+        migrateLegacyLogos()
+    }
+
+    /**
+     * Moves logo bytes written by 0.9.0 into [LogoStore].
+     *
+     * Those records hold the whole image in their JSON, so a shop with fifty
+     * invoices carries fifty copies. The bytes are written once, the record
+     * keeps the hash, and the file is rewritten only when something moved.
+     * A failure leaves the record untouched: the bytes still print, and the
+     * next launch tries again.
+     */
+    private fun migrateLegacyLogos() {
+        var changed = false
+        val updated = _invoices.value.map { record ->
+            val snapshot = record.data.shop ?: return@map record
+            val legacy = snapshot.logo ?: return@map record
+            val hash = LogoStore.put(context, legacy.bytes) ?: return@map record
+            changed = true
+            record.copy(
+                data = record.data.copy(
+                    shop = snapshot.copy(logoHash = hash, logo = null),
+                ),
+            )
+        }
+        if (changed) persist(updated)
+    }
 
     /** Adds a record, or replaces the one with the same id. */
     fun upsert(record: InvoiceRecord) {

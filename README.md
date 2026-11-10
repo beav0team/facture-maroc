@@ -5,7 +5,7 @@ Factures, devis, bons de commande, tickets, avoirs, proformas, acomptes,
 régularisations, factures simplifiées et factures à l'export — avec ICE, IF, RC,
 patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
-Version **0.8.2** (versionCode 14) · Android 8.0+ (minSdk 26) · Français.
+Version **0.10.0** (versionCode 16) · Android 8.0+ (minSdk 26) · Français.
 
 <img src="play_store/screenshots/01-factures.png" width="260" alt="Écran Factures">
 
@@ -87,7 +87,14 @@ Dans le constructeur de document :
 - **Les coordonnées du commerce sont figées sur le document émis** : changer
   l'ICE, l'adresse, le logo ou le taux de TVA plus tard ne réécrit pas une
   facture déjà remise. Un brouillon, lui, suit les réglages du jour jusqu'à son
-  émission.
+  émission. Le logo est stocké **une fois** par contenu (`files/logo-snapshots/`),
+  le document ne garde que son empreinte.
+- **Surcharge ou livraison** : un montant fixe avec son libellé, ajouté après la
+  remise et avant la TVA. À zéro, la ligne disparaît des totaux.
+- **Paiements** : depuis l'historique, « Encaisser… » enregistre un montant, une
+  date et une référence. Le document affiche alors « Payé … / Reste à payer … »,
+  ou « Facture acquittée le … » une fois soldé. L'état (impayée, partielle,
+  payée) est calculé, jamais saisi ; un duplicata repart à zéro.
 
 Les documents sont générés en PDF dans le cache de l’application, puis remis au
 sélecteur Android. Android ne dit pas si ce sélecteur a été utilisé ou refermé :
@@ -139,7 +146,7 @@ wrapper Gradle fourni.
 
 ```bash
 export JAVA_HOME="$HOME/.local/jdk"      # ou votre JDK 21
-./gradlew testDebugUnitTest             # 250 tests JVM
+./gradlew testDebugUnitTest             # 260 tests JVM
 ./gradlew assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew bundleRelease                 # app/build/outputs/bundle/release/app-release.aab
 ./gradlew assembleRelease               # app/build/outputs/apk/release/app-release.apk
@@ -157,7 +164,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 
 ## Tests
 
-**250 tests JVM**, plus treize tests instrumentés :
+**260 tests JVM**, plus quinze tests instrumentés :
 
 | Suite | Ce qu’elle protège |
 |---|---|
@@ -168,7 +175,9 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 | `PdfTextTest` | Montants et pourcentages à la française, adresse sur une ligne |
 | `PageFlowTest` | Où couper une page, ce qui se répète en haut de la suivante |
 | `InvoiceJsonTest` | Aller-retour JSON sans perdre un champ imprimé |
-| `ShopSnapshotTest` | Les coordonnées figées à l’émission ne suivent pas les changements du magasin ; ancien JSON relu sans snapshot |
+| `ShopSnapshotTest` | Les coordonnées figées à l’émission ne suivent pas les changements du magasin ; ancien JSON relu sans snapshot ; logo 0.9.0 encore lisible |
+| `PaymentSurchargeTest` | Surcharge avant TVA, remise, exonération, plafonnement du paiement, états dérivés |
+| `InvoiceArchiveTest` | … et un PDF partagé est stocké sous son empreinte et vérifié |
 | `InvoiceValidationTest` | Champs obligatoires et blocage des documents incomplets |
 | `InvoiceXmlTest` | UBL 2.1 : espaces de noms, codes de type, totaux, échappement, document relu par un parseur |
 | `InvoiceArchiveTest` | Chaîne de hachage : modification, suppression, réordonnancement, document remplacé, journal illisible |
@@ -218,7 +227,7 @@ Tout est local, en JSON ou dans les préférences Android :
   écrit avant l'imbrication se relit tel quel.
 - `filesDir/shop_logo.png` — logo copié depuis le sélecteur de photos.
 - `filesDir/archive/ledger.jsonl` — chaîne de hachage des XML exportés.
-- `filesDir/archive/documents/<sha256>.xml` — copie exacte de chaque XML exporté.
+- `filesDir/archive/documents/<sha256>.xml|.pdf` — copie exacte de chaque XML exporté et de chaque PDF partagé.
 - `filesDir/backups/auto-AAAAMMJJ-HHMMSS.json` — sept copies automatiques
   quotidiennes, même format que la sauvegarde manuelle, lues par le même code.
 - Préférences — commerce, clients, compteurs de numérotation, design.
@@ -247,7 +256,7 @@ rendra obligatoires, et la signature électronique, ne sont donc pas écrits. Le
 fichier est du UBL 2.1 valide, pas encore du UBL « accepté par la DGI », et un
 seul fichier — `invoice/InvoiceXml.kt` — sera à modifier quand le profil sortira.
 
-**Archive** : chaque XML exporté est recopié dans `filesDir/archive/`, nommé par
+**Archive** : chaque XML exporté et chaque PDF partagé sont recopiés dans `filesDir/archive/`, nommés par
 son empreinte SHA-256 et enchaîné au précédent. Modifier, retirer ou réordonner
 une ligne du journal, ou remplacer un document, est détecté. C'est une chaîne de
 hachage et non une signature : elle prouve qu'un document n'a pas bougé depuis
@@ -273,8 +282,8 @@ base de données, aucun appel réseau.
 - Ce n’est **pas un logiciel de comptabilité certifié**. Les mentions
   obligatoires (ICE, IF, RC, patente, CNSS, TVA) doivent être validées par le
   comptable du commerce.
-- Pas de suivi des paiements, de crédit client ni de rapports : choix de
-  périmètre de cette version.
+- Le suivi couvre les **paiements reçus par document**, pas le crédit client
+  (relevés, relances) ni les rapports : choix de périmètre de cette version.
 - Pas encore de synchronisation cloud ni de connexion Google. Une sauvegarde
   cloud facultative viendra plus tard, dans une version séparée, avec sa propre
   mise à jour de la politique de confidentialité.
@@ -303,6 +312,8 @@ vérifiée par Google) dans Play Console.
 
 ## Historique
 
+- **0.10.0** — paiements encaissés (partiels), surcharge de livraison, logo
+  stocké une fois par contenu, PDF partagés dans l'archive vérifiable.
 - **0.8.2** — exemples génériques. Les écrans vides, les brouillons, les
   dossiers de stock et la recherche d’articles ne parlent plus de pneus : ils
   montrent une chaise en rotin, une livraison et un montage, comme n’importe

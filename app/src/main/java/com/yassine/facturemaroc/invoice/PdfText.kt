@@ -159,7 +159,12 @@ object PdfText {
      * than fail to be produced. A file that is not a decodable image is treated
      * the same way as no file at all.
      */
-    fun loadShopLogo(context: Context, design: InvoiceDesign, shop: ShopSettings): Bitmap? {
+    fun loadShopLogo(
+        context: Context,
+        design: InvoiceDesign,
+        shop: ShopSettings,
+        allowFileFallback: Boolean = true,
+    ): Bitmap? {
         if (!design.logoEnabled) return null
         // A document issued before the logo was changed carries its own copy;
         // the live settings carry none (the logo lives in a file), so the file
@@ -168,6 +173,10 @@ object PdfText {
             runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
                 .getOrNull()?.let { return it }
         }
+        // An issued document must not pick up the logo the shop has *now* when
+        // its own copy is missing: that would rewrite the document. Only a
+        // draft, whose shop settings are the live ones, reads the file.
+        if (!allowFileFallback) return null
         val file = InvoiceDesignStore(context).logoFile(context)
         if (!file.isFile) return null
         return runCatching { BitmapFactory.decodeFile(file.path) }.getOrNull()

@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.ReceiptLong
@@ -116,6 +117,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceRecord
+import com.yassine.facturemaroc.data.PaymentInfo
+import com.yassine.facturemaroc.data.PaymentState
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.ItemField
 import com.yassine.facturemaroc.data.PartyRole
@@ -222,6 +225,7 @@ fun HomeScreen(
     var detailRecord by remember { mutableStateOf<InvoiceRecord?>(null) }
     var xmlRecord by remember { mutableStateOf<InvoiceRecord?>(null) }
     var deleteInvoice by remember { mutableStateOf<InvoiceRecord?>(null) }
+    var paymentRecord by remember { mutableStateOf<InvoiceRecord?>(null) }
     var deleteClient by remember { mutableStateOf<InvoiceClient?>(null) }
     var deleteItem by remember { mutableStateOf<SavedItem?>(null) }
     var movingItem by remember { mutableStateOf<SavedItem?>(null) }
@@ -613,6 +617,7 @@ fun HomeScreen(
                     onExportXml = ::exportXml,
                     onDuplicate = onOpenRecord,
                     onDelete = { deleteInvoice = it },
+                    onPayment = { paymentRecord = it },
                 )
 
                 HomeTab.CLIENTS -> ClientsTab(
@@ -883,6 +888,17 @@ fun HomeScreen(
         )
     }
 
+    paymentRecord?.let { record ->
+        PaymentDialog(
+            record = record,
+            onConfirm = {
+                viewModel.setPayment(record.id, it)
+                paymentRecord = null
+            },
+            onDismiss = { paymentRecord = null },
+        )
+    }
+
     deleteInvoice?.let { record ->
         // What deletion does now depends on what the document was, so the
         // sentence has to match. Telling a shop "the line only disappears" and
@@ -1116,6 +1132,7 @@ private fun InvoicesTab(
     onExportXml: (InvoiceRecord) -> Unit,
     onDuplicate: (InvoiceRecord) -> Unit,
     onDelete: (InvoiceRecord) -> Unit,
+    onPayment: (InvoiceRecord) -> Unit,
 ) {
     val filtered = remember(records, query) {
         val q = query.trim().lowercase()
@@ -1169,6 +1186,7 @@ private fun InvoicesTab(
                     onExportXml = { onExportXml(record) },
                     onDuplicate = { onDuplicate(record) },
                     onDelete = { onDelete(record) },
+                    onPayment = { onPayment(record) },
                 )
             }
         }
@@ -1185,6 +1203,7 @@ private fun InvoicesTab(
                     onExportXml = { onExportXml(record) },
                     onDuplicate = { onDuplicate(record) },
                     onDelete = { onDelete(record) },
+                    onPayment = { onPayment(record) },
                 )
             }
         }
@@ -1272,6 +1291,7 @@ private fun InvoiceCard(
     onExportXml: () -> Unit,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
+    onPayment: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val draft = record.isDraft
@@ -1359,6 +1379,27 @@ private fun InvoiceCard(
                         MaterialTheme.colorScheme.onSecondaryContainer
                     },
                 )
+                if (!draft && record.data.paymentState != PaymentState.UNPAID) {
+                    Spacer(Modifier.height(4.dp))
+                    val settled = record.data.paymentState == PaymentState.PAID
+                    StatusPill(
+                        text = if (settled) {
+                            "Payée"
+                        } else {
+                            "${record.data.balanceDue.asDirhams()} dû"
+                        },
+                        container = if (settled) {
+                            MaterialTheme.colorScheme.tertiaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.errorContainer
+                        },
+                        content = if (settled) {
+                            MaterialTheme.colorScheme.onTertiaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onErrorContainer
+                        },
+                    )
+                }
             }
             Box {
                 IconButton(onClick = { menuOpen = true }) {
@@ -1394,6 +1435,24 @@ private fun InvoiceCard(
                             onClick = {
                                 menuOpen = false
                                 onExportXml()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (record.data.paymentState == PaymentState.UNPAID) {
+                                        "Encaisser…"
+                                    } else {
+                                        "Modifier le paiement…"
+                                    },
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Payments, contentDescription = null)
+                            },
+                            onClick = {
+                                menuOpen = false
+                                onPayment()
                             },
                         )
                         DropdownMenuItem(

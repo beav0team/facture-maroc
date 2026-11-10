@@ -12,6 +12,7 @@ import com.yassine.facturemaroc.data.InvoiceDesign
 import com.yassine.facturemaroc.data.InvoiceLine
 import com.yassine.facturemaroc.data.InvoiceTemplate
 import com.yassine.facturemaroc.data.ImageBytes
+import com.yassine.facturemaroc.data.PaymentInfo
 import com.yassine.facturemaroc.data.ShopSettings
 import com.yassine.facturemaroc.data.ShopSnapshot
 import com.yassine.facturemaroc.invoice.InvoicePdf
@@ -236,6 +237,47 @@ class InvoicePdfPagesTest {
         assertEquals(1, pageCount(withSnapshot))
         withSnapshot.delete()
         withoutSnapshot.delete()
+    }
+
+    @Test
+    fun aPaymentAndASurchargePrintWithoutOverflowingTheSheet() {
+        val plain = invoice("F-20261029-9010", 3)
+        val annotated = plain.copy(
+            surchargeLabel = "Livraison",
+            surchargeAmount = 100.0,
+            payment = PaymentInfo(paidAmount = 500.0, paidAt = "10/11/2026", note = "Chèque 123"),
+        )
+
+        InvoiceTemplate.entries.filterNot { it.isRoll }.forEach { template ->
+            val plainFile = write(plain, template)
+            val before = preserve(plainFile, "plain-${template.id}.pdf")
+            val after = write(annotated, template)
+
+            assertEquals(
+                "${template.id} added a sheet for the payment",
+                pageCount(before),
+                pageCount(after),
+            )
+            assertTrue(
+                "${template.id} printed nothing for the payment",
+                differingPixels(after, before) > 200,
+            )
+            before.delete()
+            after.delete()
+        }
+    }
+
+    @Test
+    fun aSettledInvoicePrintsTheAcquittal() {
+        val settled = invoice("F-20261029-9011", 2).copy(
+            payment = PaymentInfo(paidAmount = 2280.0, paidAt = "10/11/2026"),
+        )
+
+        val file = write(settled, InvoiceTemplate.CLASSIQUE)
+
+        assertEquals(1, pageCount(file))
+        assertTrue(inkOn(file, 0) > 100)
+        file.delete()
     }
 
     /** A small render of one page, for comparing two documents pixel by pixel. */

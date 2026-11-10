@@ -26,11 +26,23 @@ data class ShopSnapshot(
     val vatPercent: Double = 20.0,
     val vatNotApplicable: Boolean = false,
     val pricesIncludeVat: Boolean = false,
-    /** The logo as it was at issue time; the live file may have changed since. */
+    /**
+     * The logo as it was at issue time, referred to by content hash.
+     *
+     * The bytes live once in [LogoStore]; see that file for why they are not
+     * copied into every record.
+     */
+    val logoHash: String? = null,
+    /**
+     * Logo bytes written by 0.9.0, kept only so those records still print.
+     *
+     * New snapshots never fill this: [InvoiceStore] moves legacy bytes into
+     * [LogoStore] at startup and rewrites the record with [logoHash].
+     */
     val logo: ImageBytes? = null,
 ) {
     /** The same values in the shape the renderers already read. */
-    fun toSettings(): ShopSettings = ShopSettings(
+    fun toSettings(logoBytes: ByteArray? = logo?.bytes): ShopSettings = ShopSettings(
         name = name,
         address = address,
         phone = phone,
@@ -40,15 +52,15 @@ data class ShopSnapshot(
         rc = rc,
         patente = patente,
         cnss = cnss,
-        logoBytes = logo?.bytes,
+        logoBytes = logoBytes,
         vatPercent = vatPercent,
         vatNotApplicable = vatNotApplicable,
         pricesIncludeVat = pricesIncludeVat,
     )
 
     companion object {
-        /** Snapshots the printed fields of [settings], with [logo] already read. */
-        fun of(settings: ShopSettings, logo: ByteArray? = settings.logoBytes): ShopSnapshot =
+        /** Snapshots the printed fields of [settings]; the logo is stored by [LogoStore]. */
+        fun of(settings: ShopSettings, logoHash: String? = null): ShopSnapshot =
             ShopSnapshot(
                 name = settings.name,
                 address = settings.address,
@@ -62,7 +74,7 @@ data class ShopSnapshot(
                 vatPercent = settings.vatPercent,
                 vatNotApplicable = settings.vatNotApplicable,
                 pricesIncludeVat = settings.pricesIncludeVat,
-                logo = logo?.takeIf { it.isNotEmpty() }?.let(::ImageBytes),
+                logoHash = logoHash?.takeIf { it.isNotBlank() },
             )
     }
 }

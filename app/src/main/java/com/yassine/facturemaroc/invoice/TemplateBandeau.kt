@@ -65,7 +65,7 @@ class BandeauRenderer : PdfRenderer {
         canvas.drawRect(0f, 0f, A4.WIDTH, BAND_H, band)
 
         var nameX = margin
-        PdfText.loadShopLogo(context, design, shop)?.let { logo ->
+        PdfText.loadShopLogo(context, design, shop, allowFileFallback = data.shop == null)?.let { logo ->
             // A white plate behind the logo: shop logos are drawn for white
             // paper, and a dark one on the accent would vanish into it.
             canvas.drawRect(margin, 27f, margin + 58f, 85f, Paint().apply { color = Color.WHITE })
@@ -199,7 +199,7 @@ class BandeauRenderer : PdfRenderer {
         val box = PdfTotals.Box(right - 258f, right - 8f)
         var ty = lastRowEnd + 22f
         val panelTop = ty - 10f
-        val rowCount = 2 + if (data.discountPercent > 0) 1 else 0
+        val rowCount = 2 + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         val bandTop = ty + 16f * rowCount + 2f
 
         // The panel goes down before the rows. A fill painted afterwards covers
@@ -225,6 +225,15 @@ class BandeauRenderer : PdfRenderer {
             )
             ty += 16f
         }
+        if (data.surcharge > 0.0) {
+            PdfTotals.row(
+                canvas, box,
+                data.surchargeLabel.ifBlank { "Livraison" },
+                PdfText.money(data.surcharge),
+                ty, rowLabel, rowValue,
+            )
+            ty += 16f
+        }
         if (data.vatNotApplicable) {
             PdfTotals.label(canvas, box, "TVA non applicable", ty, rowLabel)
         } else {
@@ -238,6 +247,12 @@ class BandeauRenderer : PdfRenderer {
         ty = bandTop + 30f + 14f
 
         var tailY = ty
+        if (design.showPaymentStatus) {
+            tailY = PdfExtras.drawPayment(
+                canvas, data, margin, tailY + 6f,
+                (contentW - 160).coerceAtLeast(120).toFloat(), label, body, lead,
+            )
+        }
         if (data.showIncoterm && data.incoterm.isNotBlank()) {
             PdfText.draw(canvas, "Incoterms : ${data.incoterm}", margin, tailY, small, contentW, maxLines = 1)
             tailY += 16f
@@ -269,11 +284,12 @@ class BandeauRenderer : PdfRenderer {
         words: TextPaint,
         contentW: Int,
     ): Float {
-        val rows = 2 + if (data.discountPercent > 0) 1 else 0
+        val rows = 2 + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         var h = 22f + 16f * rows + 2f + 30f + 14f
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += 8f + PdfText.height(data.amountInWords, words, contentW, 4)
         val notePaint = PdfText.paint(9f, 0)
+        if (design.showPaymentStatus) h += 6f + PdfExtras.paymentHeight(data, notePaint, notePaint)
         h += 8f + PdfExtras.notesHeight(data, notePaint, notePaint, (contentW - 160).coerceAtLeast(120))
         h += PdfExtras.signatureHeight(data)
         return h

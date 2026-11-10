@@ -129,6 +129,71 @@ object PdfExtras {
         return y + height + if (drawCaption) CAPTION_H + 4f else 0f
     }
 
+    /**
+     * Height of the payment block; 0 when nothing was received or the design
+     * hides it. The caller reserves this before the page is broken.
+     */
+    fun paymentHeight(data: InvoiceData, label: TextPaint, body: TextPaint): Float {
+        if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.UNPAID) return 0f
+        val note = data.payment?.note?.trim().orEmpty()
+        val lines = if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.PAID) 1 else 2
+        return lines * (body.textSize + 4f) + if (note.isNotEmpty()) label.textSize + 4f else 0f
+    }
+
+    /**
+     * Prints what the shop received.
+     *
+     * Only a document that carries a payment prints this, so an unpaid invoice
+     * looks exactly as it did before the feature existed. A settled document
+     * says so in one line; a partial one prints both figures, because "Payé
+     * 500" alone leaves the customer guessing what is left.
+     */
+    fun drawPayment(
+        canvas: Canvas,
+        data: InvoiceData,
+        x: Float,
+        y: Float,
+        width: Float,
+        label: TextPaint,
+        body: TextPaint,
+        bold: TextPaint,
+    ): Float {
+        if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.UNPAID) return y
+        var cursor = y
+        val date = data.payment?.paidAt?.trim().orEmpty()
+
+        if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.PAID) {
+            val settled = if (data.documentType == com.yassine.facturemaroc.data.DocumentType.FACTURE) {
+                "Facture acquittée"
+            } else {
+                "Document acquitté"
+            }
+            val line = if (date.isEmpty()) settled else "$settled le $date"
+            PdfText.draw(canvas, line, x, cursor, bold, width.toInt(), maxLines = 1)
+            cursor += bold.textSize + 4f
+        } else {
+            val paid = if (date.isEmpty()) {
+                "Payé : ${PdfText.money(data.paidAmount)}"
+            } else {
+                "Payé le $date : ${PdfText.money(data.paidAmount)}"
+            }
+            PdfText.draw(canvas, paid, x, cursor, body, width.toInt(), maxLines = 1)
+            cursor += body.textSize + 4f
+            PdfText.draw(
+                canvas, "Reste à payer : ${PdfText.money(data.balanceDue)}",
+                x, cursor, bold, width.toInt(), maxLines = 1,
+            )
+            cursor += bold.textSize + 4f
+        }
+
+        val note = data.payment?.note?.trim().orEmpty()
+        if (note.isNotEmpty()) {
+            PdfText.draw(canvas, "Réf. $note", x, cursor, label, width.toInt(), maxLines = 1)
+            cursor += label.textSize + 4f
+        }
+        return cursor
+    }
+
     private fun decode(data: InvoiceData): Bitmap? {
         val bytes = data.signature?.bytes ?: return null
         return runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }.getOrNull()

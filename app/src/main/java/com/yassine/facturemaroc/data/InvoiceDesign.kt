@@ -49,6 +49,8 @@ data class InvoiceDesign(
     val showAmountWords: Boolean = true,
     val showLegalIdentifiers: Boolean = true,
     val showPaymentMethod: Boolean = true,
+    /** Whether a received payment and the balance are printed on the document. */
+    val showPaymentStatus: Boolean = true,
     val showFooter: Boolean = true,
 ) {
     /**
@@ -112,6 +114,7 @@ class InvoiceDesignStore(context: Context) {
             showAmountWords = prefs.getBoolean("showAmountWords", true),
             showLegalIdentifiers = prefs.getBoolean("showLegalIdentifiers", true),
             showPaymentMethod = prefs.getBoolean("showPaymentMethod", true),
+            showPaymentStatus = prefs.getBoolean("showPaymentStatus", true),
             showFooter = prefs.getBoolean("showFooter", true),
         )
     }
@@ -143,6 +146,7 @@ class InvoiceDesignStore(context: Context) {
                 .putBoolean("showAmountWords", design.showAmountWords)
                 .putBoolean("showLegalIdentifiers", design.showLegalIdentifiers)
                 .putBoolean("showPaymentMethod", design.showPaymentMethod)
+                .putBoolean("showPaymentStatus", design.showPaymentStatus)
                 .putBoolean("showFooter", design.showFooter)
                 .apply()
         }

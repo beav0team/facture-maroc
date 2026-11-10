@@ -260,8 +260,29 @@ class InvoiceArchive(root: File) {
      * same facture three times ends up with a journal that says three invoices
      * were issued.
      */
-    fun record(data: InvoiceData, xml: String, recordedAt: Instant = Instant.now()): ArchiveEntry? {
-        val bytes = xml.toByteArray(Charsets.UTF_8)
+    fun record(data: InvoiceData, xml: String, recordedAt: Instant = Instant.now()): ArchiveEntry? =
+        recordBytes(data, xml.toByteArray(Charsets.UTF_8), "xml", recordedAt)
+
+    /** Files the exact PDF that was handed to the share sheet. */
+    fun recordPdf(data: InvoiceData, bytes: ByteArray, recordedAt: Instant = Instant.now()): ArchiveEntry? =
+        recordBytes(data, bytes, "pdf", recordedAt)
+
+    /**
+     * Files [bytes] under their own hash and links them into the chain.
+     *
+     * Returns the entry, or `null` when nothing was recorded. It never throws:
+     * the caller has already written the user's file and the archive must not be
+     * able to take that away. A failure here costs the evidence, not the export.
+     *
+     * Recording the same bytes twice is a no-op, so re-sending an invoice does
+     * not add a second entry to the journal.
+     */
+    fun recordBytes(
+        data: InvoiceData,
+        bytes: ByteArray,
+        extension: String,
+        recordedAt: Instant = Instant.now(),
+    ): ArchiveEntry? {
         val contentHash = ArchiveLedger.sha256Hex(bytes)
         synchronized(lock) {
             return try {
@@ -277,7 +298,7 @@ class InvoiceArchive(root: File) {
                     contentSha256 = contentHash,
                     recordedAt = ArchiveLedger.timestamp(recordedAt),
                 )
-                storeDocument(contentHash, bytes)
+                storeDocument(contentHash, bytes, extension)
                 writeLedger(existing + entry)
                 entry
             } catch (error: Exception) {
@@ -323,8 +344,11 @@ class InvoiceArchive(root: File) {
             if (!chain.ok) return chain
 
             entries.forEach { entry ->
-                val file = File(documents, "${entry.contentSha256}.xml")
-                if (!file.isFile) {
+                val file = listOf(
+                    File(documents, "${entry.contentSha256}.xml"),
+                    File(documents, "${entry.contentSha256}.pdf"),
+                ).firstOrNull { it.isFile }
+                if (file == null) {
                     return ArchiveVerification(
                         entries.size,
                         false,
@@ -359,11 +383,11 @@ class InvoiceArchive(root: File) {
         writeAtomically(ledger, ArchiveLedger.toLines(entries).toByteArray(Charsets.UTF_8))
     }
 
-    private fun storeDocument(hash: String, bytes: ByteArray) {
+    private fun storeDocument(hash: String, bytes: ByteArray, extension: String) {
         if (!documents.isDirectory && !documents.mkdirs()) {
             throw IOException("archive: cannot create ${documents.path}")
         }
-        val target = File(documents, "$hash.xml")
+        val target = File(documents, "$hash.$extension")
         // The name is the hash, so a file already there is either the same
         // bytes or an already-compromised archive. Overwriting would erase the
         // second case, which verify() is meant to report.

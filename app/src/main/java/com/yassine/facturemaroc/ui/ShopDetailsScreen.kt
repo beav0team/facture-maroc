@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -182,6 +183,7 @@ fun ShopDetailsScreen(
     val snapshotDate = remember { SimpleDateFormat("dd/MM/yyyy à HH:mm", Locale.FRANCE) }
     LaunchedEffect(Unit) { autoSnapshots = viewModel.autoBackupSnapshots() }
     var restoring by remember { mutableStateOf(false) }
+    var archiveReport by remember { mutableStateOf<String?>(null) }
     // The number the sequence really holds, read from the counter that consumes
     // it. Settings used to keep its own copy of this, which nothing ever wrote
     // back, so the field read 1 on every visit.
@@ -765,6 +767,48 @@ fun ShopDetailsScreen(
                         Icon(Icons.Filled.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Restaurer une copie automatique")
+                    }
+                }
+            }
+
+            item(key = "archive") {
+                SettingsSection(
+                    title = "Archive des documents",
+                    subtitle = "Ce qui est réellement parti, et sa vérification.",
+                ) {
+                    Text(
+                        "Chaque PDF partagé et chaque XML exporté est recopié ici, " +
+                            "nommé par l'empreinte de son contenu. La vérification " +
+                            "recalcule la chaîne : un fichier remplacé ou une entrée " +
+                            "modifiée est signalé.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    archiveReport?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                archiveReport = kotlinx.coroutines.withContext(
+                                    kotlinx.coroutines.Dispatchers.IO,
+                                ) {
+                                    viewModel.archive.verify().message
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        Icon(Icons.Filled.Verified, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Vérifier l'archive")
                     }
                 }
             }

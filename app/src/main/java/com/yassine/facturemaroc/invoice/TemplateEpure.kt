@@ -42,6 +42,7 @@ class EpureRenderer : PdfRenderer {
         val label = spaced(PdfText.paint(7f, muted, bold = true), 0.16f)
         val head = spaced(PdfText.paint(7f, muted, bold = true), 0.14f)
         val cell = PdfText.paint(9.5f, ink)
+        val cellBold = PdfText.paint(9.5f, ink, bold = true)
         val cellRight = PdfText.paint(9.5f, ink)
         val totalLabel = spaced(PdfText.paint(7.5f, muted, bold = true), 0.14f)
         val totalPaint = PdfText.paint(19f, ink, bold = true)
@@ -205,6 +206,15 @@ class EpureRenderer : PdfRenderer {
             )
             ty += 16f
         }
+        if (data.surcharge > 0.0) {
+            PdfTotals.row(
+                canvas, box,
+                data.surchargeLabel.ifBlank { "Livraison" },
+                PdfText.money(data.surcharge),
+                ty, label, cellRight,
+            )
+            ty += 16f
+        }
         if (data.vatNotApplicable) {
             PdfTotals.label(canvas, box, "TVA NON APPLICABLE", ty, label)
         } else {
@@ -223,6 +233,12 @@ class EpureRenderer : PdfRenderer {
         ty += 32f
 
         var tailY = ty
+        if (design.showPaymentStatus) {
+            tailY = PdfExtras.drawPayment(
+                canvas, data, margin, tailY + 6f,
+                (contentW - 160).coerceAtLeast(120).toFloat(), label, cell, cellBold,
+            )
+        }
         if (data.showIncoterm && data.incoterm.isNotBlank()) {
             PdfText.draw(canvas, "Incoterms : ${data.incoterm}", margin, tailY, small, contentW, maxLines = 1)
             tailY += 16f
@@ -255,11 +271,12 @@ class EpureRenderer : PdfRenderer {
         words: TextPaint,
         contentW: Int,
     ): Float {
-        val rows = 2 + if (data.discountPercent > 0) 1 else 0
+        val rows = 2 + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         var h = 26f + 16f * rows + 18f + 12f + 32f
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += 8f + PdfText.height(data.amountInWords, words, contentW, 4)
         val notePaint = PdfText.paint(9.5f, 0)
+        if (design.showPaymentStatus) h += 6f + PdfExtras.paymentHeight(data, notePaint, notePaint)
         h += 8f + PdfExtras.notesHeight(data, notePaint, notePaint, (contentW - 160).coerceAtLeast(120))
         h += PdfExtras.signatureHeight(data)
         return h

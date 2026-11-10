@@ -82,6 +82,12 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     private val _signature = MutableStateFlow<ImageBytes?>(null)
     val signature: StateFlow<ImageBytes?> = _signature.asStateFlow()
 
+    private val _surchargeLabel = MutableStateFlow("Livraison")
+    val surchargeLabel: StateFlow<String> = _surchargeLabel.asStateFlow()
+
+    private val _surchargeAmount = MutableStateFlow(0.0)
+    val surchargeAmount: StateFlow<Double> = _surchargeAmount.asStateFlow()
+
     private val _supplier = MutableStateFlow<InvoiceClient?>(null)
     val supplier: StateFlow<InvoiceClient?> = _supplier.asStateFlow()
 
@@ -145,6 +151,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         termsNote = _termsNote.value,
         thankYouNote = _thankYouNote.value,
         signature = _signature.value,
+        surchargeLabel = _surchargeLabel.value,
+        surchargeAmount = _surchargeAmount.value,
     )
 
     private fun refreshInvoice() {
@@ -358,6 +366,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         refreshInvoice()
     }
 
+    /** Sets or clears the extra charge printed after the discount. */
+    fun setSurcharge(label: String, amount: Double) {
+        _surchargeLabel.value = label.trim().ifBlank { "Livraison" }
+        _surchargeAmount.value = amount.coerceAtLeast(0.0)
+        refreshInvoice()
+    }
+
     /**
      * Saves the shop's settings and re-reads the draft at the new rate.
      *
@@ -426,6 +441,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _termsNote.value = data.termsNote
         _thankYouNote.value = data.thankYouNote
         _signature.value = data.signature
+        _surchargeLabel.value = data.surchargeLabel
+        _surchargeAmount.value = data.surchargeAmount
         repriceForClient(_client.value)
         refreshInvoice()
     }
@@ -445,6 +462,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _termsNote.value = ""
         _thankYouNote.value = ""
         _signature.value = null
+        _surchargeLabel.value = "Livraison"
+        _surchargeAmount.value = 0.0
         refreshInvoice()
     }
 
@@ -518,6 +537,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         termsNote = _termsNote.value,
         thankYouNote = _thankYouNote.value,
         signature = _signature.value,
+        surchargeLabel = _surchargeLabel.value,
+        surchargeAmount = _surchargeAmount.value,
     )
 
     /**
@@ -531,7 +552,11 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         val app = getApplication<Application>()
         val logoFile = InvoiceDesignStore(app).logoFile(app)
         val logo = runCatching { if (logoFile.isFile) logoFile.readBytes() else null }.getOrNull()
-        return ShopSnapshot.of(_shop.value, logo)
+        // The bytes are stored once and the document keeps only their hash; a
+        // failure to write them must not block the invoice, it only leaves the
+        // reprint without its old logo.
+        val hash = logo?.let { LogoStore.put(app, it) }
+        return ShopSnapshot.of(_shop.value, hash)
     }
 
     /** The draft as it currently stands, for a preview. */
@@ -660,6 +685,11 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 stockApplied = moved,
             ),
         )
+        // The PDF is the document the customer actually received, so those
+        // bytes are what the archive keeps. A failure here costs the evidence,
+        // never the invoice.
+        runCatching { pending.file.readBytes() }.getOrNull()
+            ?.let { archive.recordPdf(pending.data, it) }
         newDraft()
         true
     }
@@ -678,12 +708,18 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     /** Sends a document that already exists again, without consuming a number. */
     suspend fun shareRecord(record: InvoiceRecord): InvoicePdf.Outcome = withContext(Dispatchers.IO) {
-        InvoicePdf.share(
+        val outcome = InvoicePdf.share(
             getApplication<Application>(),
             record.data,
             _shop.value,
             _design.value,
         )
+        // Re-sending keeps the same entry: the archive dedups by content hash.
+        if (outcome is InvoicePdf.Outcome.HandedOff) {
+            runCatching { outcome.file.readBytes() }.getOrNull()
+                ?.let { archive.recordPdf(record.data, it) }
+        }
+        outcome
     }
 
     /**
@@ -779,15 +815,22 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         val app = getApplication<Application>()
         val logoFile = InvoiceDesignStore(app).logoFile(app)
         val logo = runCatching { if (logoFile.isFile) logoFile.readBytes() else null }.getOrNull()
+        val records = invoices.invoices.value
+        // One copy per distinct logo an issued document points at, so old
+        // invoices still print their old logo on a restored phone.
+        val snapshotLogos = LogoStore.hashesOf(records)
+            .mapNotNull { hash -> LogoStore.read(app, hash)?.let { hash to it } }
+            .toMap()
         return Backup.buildForExport(
             shop = _shop.value,
             design = _design.value,
             logo = logo,
             clients = clients.clients.value,
             items = savedItems.items.value,
-            invoices = invoices.invoices.value,
+            invoices = records,
             counters = InvoiceNumber.counters(app),
             folders = savedItems.folders.value,
+            logos = snapshotLogos,
         )
     }
 
@@ -903,6 +946,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             } else if (!designStore.saveLogo(app, backup.logo)) {
                 throw IllegalStateException("the logo could not be written")
             }
+            backup.logos.forEach { (hash, bytes) -> LogoStore.put(app, bytes) }
             ShopSettingsStore.write(app, backup.shop)
             InvoiceDesignStore.write(app, backup.design)
             clients.replaceAll(backup.clients)
@@ -947,6 +991,40 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             ?.let { savedItems.applyStockMovement(it.data, reversing = true) }
         invoices.delete(id)
         if (id == draftId) newDraft()
+    }
+
+    /**
+     * Records what the shop received against an issued document.
+     *
+     * The amount is clamped to the total and a zero clears the payment, so a
+     * mistyped figure can never leave a document owing a negative balance. Only
+     * an issued record can carry a payment: a draft has not been handed over.
+     */
+    fun setPayment(id: String, payment: PaymentInfo?) {
+        val record = invoices.find(id) ?: return
+        if (record.isDraft) return
+        val amount = (payment?.paidAmount ?: 0.0).coerceIn(0.0, record.data.total)
+        val cleaned = if (amount <= 0.0) {
+            null
+        } else {
+            payment!!.copy(
+                paidAmount = amount,
+                paidAt = payment.paidAt.trim(),
+                note = payment.note.trim(),
+            )
+        }
+        invoices.upsert(
+            record.copy(
+                data = record.data.copy(payment = cleaned),
+                updatedAt = System.currentTimeMillis(),
+            ),
+        )
+    }
+
+    /** Marks the whole document paid in one step, dated today unless given. */
+    fun markPaid(id: String, date: String = InvoicePdf.today()) {
+        val record = invoices.find(id) ?: return
+        setPayment(id, PaymentInfo(paidAmount = record.data.total, paidAt = date))
     }
 
     /** Saves an issued record as a new draft, keeping the original untouched. */

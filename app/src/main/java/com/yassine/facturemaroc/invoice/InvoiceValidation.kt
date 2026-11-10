@@ -17,6 +17,7 @@ enum class ValidationCode {
     INVALID_PRICE,
     DISCOUNT_OUT_OF_RANGE,
     VAT_RATE_OUT_OF_RANGE,
+    INVALID_SURCHARGE,
     MISSING_DOCUMENT_NUMBER,
     TOTAL_MISMATCH,
 }
@@ -87,6 +88,17 @@ object InvoiceValidation {
             )
         }
 
+        if (data.surchargeAmount < 0.0 || data.surchargeAmount.isNaN() ||
+            data.surchargeAmount.isInfinite()
+        ) {
+            add(
+                ValidationIssue(
+                    ValidationCode.INVALID_SURCHARGE,
+                    "La surcharge doit être un montant positif.",
+                ),
+            )
+        }
+
         if (data.number.isBlank()) {
             add(
                 ValidationIssue(
@@ -109,13 +121,14 @@ object InvoiceValidation {
         val exactSubtotal = data.lines.sumOf { it.total }
         val exactTaxable = data.lines.filterNot { it.taxExempt }.sumOf { it.total }
         val exactDiscount = exactSubtotal * data.discountPercent.coerceIn(0, 100) / 100.0
+        val exactSurcharge = data.surchargeAmount.coerceAtLeast(0.0)
         val taxableNet = if (exactSubtotal == 0.0) {
-            0.0
+            exactSurcharge
         } else {
-            exactTaxable - exactDiscount * (exactTaxable / exactSubtotal)
+            exactTaxable - exactDiscount * (exactTaxable / exactSubtotal) + exactSurcharge
         }
         val recomputedTotal = round(
-            exactSubtotal - exactDiscount +
+            exactSubtotal - exactDiscount + exactSurcharge +
                 taxableNet * data.effectiveVatPercent.coerceAtLeast(0.0) / 100.0,
         )
 

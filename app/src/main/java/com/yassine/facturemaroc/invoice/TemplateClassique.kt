@@ -59,7 +59,7 @@ class ClassiqueRenderer : PdfRenderer {
         // ---- masthead: who is writing, then what is being written
         var leftY = 40f
         var nameX = margin
-        PdfText.loadShopLogo(context, design, shop)?.let { logo ->
+        PdfText.loadShopLogo(context, design, shop, allowFileFallback = data.shop == null)?.let { logo ->
             nameX = PdfText.drawLogo(canvas, logo, margin, 58f, 38f) + 12f
         }
         val shopW = (right - 200f - nameX).toInt().coerceAtLeast(160)
@@ -210,6 +210,15 @@ class ClassiqueRenderer : PdfRenderer {
             )
             ty += 15f
         }
+        if (data.surcharge > 0.0) {
+            PdfTotals.row(
+                canvas, box,
+                data.surchargeLabel.ifBlank { "Livraison" },
+                PdfText.money(data.surcharge),
+                ty, totalLabel, body,
+            )
+            ty += 15f
+        }
         if (data.vatNotApplicable) {
             PdfTotals.label(canvas, box, "TVA non applicable", ty, totalLabel)
         } else {
@@ -233,6 +242,12 @@ class ClassiqueRenderer : PdfRenderer {
         }
 
         var tailY = ty
+        if (design.showPaymentStatus) {
+            tailY = PdfExtras.drawPayment(
+                canvas, data, margin, tailY + 6f,
+                (contentW - 160).coerceAtLeast(120).toFloat(), label, body, bodyBold,
+            )
+        }
         if (design.showAmountWords) {
             PdfText.draw(canvas, data.amountInWords, margin, tailY + 8f, words, contentW, maxLines = 4)
             tailY += 8f + PdfText.height(data.amountInWords, words, contentW, 4)
@@ -258,11 +273,12 @@ class ClassiqueRenderer : PdfRenderer {
         words: TextPaint,
         contentW: Int,
     ): Float {
-        val rows = 2 + if (data.discountPercent > 0) 1 else 0
+        val rows = 2 + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         var h = 54f + 15f * rows
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += 8f + PdfText.height(data.amountInWords, words, contentW, 4)
         val notePaint = PdfText.paint(9f, 0)
+        if (design.showPaymentStatus) h += 6f + PdfExtras.paymentHeight(data, notePaint, notePaint)
         h += 8f + PdfExtras.notesHeight(data, notePaint, notePaint, (contentW - 160).coerceAtLeast(120))
         h += PdfExtras.signatureHeight(data)
         return h

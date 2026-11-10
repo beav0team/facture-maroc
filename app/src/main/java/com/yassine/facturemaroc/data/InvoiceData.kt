@@ -46,6 +46,12 @@ data class InvoiceData(
     val thankYouNote: String = "",
     /** The shop's signature or stamp, drawn at the end of the document. */
     val signature: ImageBytes? = null,
+    /** Label of an extra charge printed after the discount, e.g. "Livraison". */
+    val surchargeLabel: String = "Livraison",
+    /** The charge itself, HT, added to the taxable base. 0 means none. */
+    val surchargeAmount: Double = 0.0,
+    /** What the shop has received; null on an unpaid document. */
+    val payment: PaymentInfo? = null,
 ) {
     /**
      * Total HT as the page adds it up: every line rounded to the centime, then
@@ -74,6 +80,9 @@ data class InvoiceData(
     val totalExcludingVat: Double
         get() = money(subtotal - discountAmount)
 
+    /** Delivery or another charge, HT, after the discount and before TVA. */
+    val surcharge: Double get() = money(surchargeAmount.coerceAtLeast(0.0))
+
     /** Effective VAT: 0 for an auto-entrepreneur or an exempt client. */
     val effectiveVatPercent: Double
         get() = if (vatNotApplicable || client.vatExempt) 0.0 else vatPercent
@@ -101,9 +110,9 @@ data class InvoiceData(
      */
     private val taxableNet: Double
         get() = if (subtotal == 0.0) {
-            0.0
+            surcharge
         } else {
-            taxableSubtotal - discountAmount * (taxableSubtotal / subtotal)
+            taxableSubtotal - discountAmount * (taxableSubtotal / subtotal) + surcharge
         }
 
     /**
@@ -114,9 +123,10 @@ data class InvoiceData(
      */
     private val exactTaxableNet: Double
         get() = if (exactSubtotal == 0.0) {
-            0.0
+            surchargeAmount.coerceAtLeast(0.0)
         } else {
-            exactTaxable - exactDiscount * (exactTaxable / exactSubtotal)
+            exactTaxable - exactDiscount * (exactTaxable / exactSubtotal) +
+                surchargeAmount.coerceAtLeast(0.0)
         }
 
     /** The base a tax office reads: the same figure, to the centime. */
@@ -132,7 +142,7 @@ data class InvoiceData(
      * never agreed to.
      */
     val vatAmount: Double
-        get() = money(total - totalExcludingVat)
+        get() = money(total - totalExcludingVat - surcharge)
 
     /**
      * Total TTC: what the customer pays. The amount spelled out in letters.
@@ -145,7 +155,7 @@ data class InvoiceData(
      */
     val total: Double
         get() = money(
-            exactSubtotal - exactDiscount +
+            exactSubtotal - exactDiscount + surchargeAmount.coerceAtLeast(0.0) +
                 exactTaxableNet * effectiveVatPercent.coerceAtLeast(0.0) / 100.0,
         )
 
@@ -204,7 +214,8 @@ data class InvoiceData(
      * Every renderer and the XML writer read the shop through this, so a
      * reprint cannot mix an old document with today's identifiers.
      */
-    fun printingShop(live: ShopSettings): ShopSettings = shop?.toSettings() ?: live
+    fun printingShop(live: ShopSettings, logoBytes: ByteArray? = null): ShopSettings =
+        shop?.toSettings(logoBytes ?: shop.logo?.bytes) ?: live
 
     /** Whether the free-text block has anything to print. */
     val hasNotes: Boolean
@@ -212,6 +223,24 @@ data class InvoiceData(
 
     /** Whether a signature or stamp image was captured for this document. */
     val hasSignature: Boolean get() = signature != null
+
+    /** What has been received, never more than the document is worth. */
+    val paidAmount: Double
+        get() = money((payment?.paidAmount ?: 0.0).coerceIn(0.0, total))
+
+    /** What is still owed; 0 once the document is settled. */
+    val balanceDue: Double get() = money(total - paidAmount)
+
+    /** Derived, never stored: the amount decides, not a flag that can drift. */
+    val paymentState: PaymentState
+        get() = when {
+            paidAmount <= 0.0 -> PaymentState.UNPAID
+            paidAmount >= total -> PaymentState.PAID
+            else -> PaymentState.PARTIAL
+        }
+
+    /** True when every dirham of the document has been received. */
+    val isSettled: Boolean get() = total > 0.0 && paymentState == PaymentState.PAID
 
     /**
      * The line at the foot of the page.

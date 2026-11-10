@@ -52,6 +52,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yassine.facturemaroc.data.InvoiceClient
+import com.yassine.facturemaroc.data.InvoiceRecord
+import com.yassine.facturemaroc.data.PaymentInfo
 import com.yassine.facturemaroc.data.InvoiceLine
 import com.yassine.facturemaroc.data.ItemField
 import com.yassine.facturemaroc.data.PartyRole
@@ -1019,6 +1021,196 @@ fun NoteDialog(
             Row {
                 if (initial.isNotBlank()) {
                     TextButton(onClick = { onConfirm("") }) { Text("Effacer") }
+                }
+                TextButton(onClick = onDismiss) { Text("Annuler") }
+            }
+        },
+    )
+}
+
+/**
+ * The extra charge printed between the discount and the TVA.
+ *
+ * The label is editable because "Livraison" is only the common case: a shop
+ * also charges for fitting, a deposit or a delivery outside town. An empty
+ * amount removes the row from the totals entirely rather than printing a zero.
+ */
+@Composable
+fun SurchargeDialog(
+    initialLabel: String,
+    initialAmount: Double,
+    onConfirm: (String, Double) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var label by remember(initialLabel) { mutableStateOf(initialLabel) }
+    var amount by remember(initialAmount) {
+        mutableStateOf(if (initialAmount > 0.0) initialAmount.trimZeros() else "")
+    }
+    val value = amount.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Livraison / surcharge") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = label,
+                    onValueChange = { label = it.take(40) },
+                    label = { Text("Libellé") },
+                    placeholder = { Text("Livraison") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { input ->
+                        amount = input.filter { it.isDigit() || it == ',' || it == '.' }.take(10)
+                    },
+                    label = { Text("Montant HT") },
+                    suffix = { Text("DH") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = ImeAction.Done,
+                    ),
+                )
+                Text(
+                    "Ajouté après la remise, avant la TVA.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(label.trim().ifBlank { "Livraison" }, value) },
+                shape = MaterialTheme.shapes.small,
+            ) {
+                Text("Appliquer")
+            }
+        },
+        dismissButton = {
+            Row {
+                if (initialAmount > 0.0) {
+                    TextButton(onClick = { onConfirm("Livraison", 0.0) }) { Text("Retirer") }
+                }
+                TextButton(onClick = onDismiss) { Text("Annuler") }
+            }
+        },
+    )
+}
+
+
+/**
+ * Records what the shop received.
+ *
+ * The amount starts at the whole total because that is the common case — a
+ * shop that is paid in full should not have to type the figure it just read on
+ * the document. Typing less records a partial payment, and leaving it empty (or
+ * removing an existing payment) puts the document back to unpaid.
+ */
+@Composable
+fun PaymentDialog(
+    record: InvoiceRecord,
+    onConfirm: (PaymentInfo?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val total = record.data.total
+    val current = record.data.payment
+    val today = remember {
+        SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE).format(Date())
+    }
+    var amount by remember {
+        mutableStateOf(
+            if ((current?.paidAmount ?: 0.0) > 0.0) current!!.paidAmount.trimZeros() else total.trimZeros(),
+        )
+    }
+    var date by remember { mutableStateOf(current?.paidAt?.takeIf { it.isNotBlank() } ?: today) }
+    var note by remember { mutableStateOf(current?.note.orEmpty()) }
+    val parsed = amount.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Paiement") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Total TTC : ${total.asDirhams()}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { input ->
+                        amount = input.filter { it.isDigit() || it == ',' || it == '.' }.take(12)
+                    },
+                    label = { Text("Montant reçu") },
+                    suffix = { Text("DH") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = ImeAction.Next,
+                    ),
+                )
+                if (parsed > total) {
+                    Text(
+                        "Le montant sera plafonné au total (${total.asDirhams()}).",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                OutlinedTextField(
+                    value = date,
+                    onValueChange = { date = it.take(10) },
+                    label = { Text("Date (jj/mm/aaaa)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it.take(60) },
+                    label = { Text("Référence (facultatif)") },
+                    placeholder = { Text("Chèque n°, virement…") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    "S'il reste moins que le total, le document indique le reste à payer.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val cleaned = amount.trim().replace(',', '.')
+                    val value = cleaned.toDoubleOrNull()?.coerceIn(0.0, total) ?: 0.0
+                    onConfirm(
+                        if (value <= 0.0) {
+                            null
+                        } else {
+                            PaymentInfo(
+                                paidAmount = value,
+                                paidAt = date.trim(),
+                                note = note.trim(),
+                            )
+                        },
+                    )
+                },
+                shape = MaterialTheme.shapes.small,
+            ) {
+                Text("Enregistrer")
+            }
+        },
+        dismissButton = {
+            Row {
+                if (current != null && current.paidAmount > 0.0) {
+                    TextButton(onClick = { onConfirm(null) }) {
+                        Text("Supprimer", color = MaterialTheme.colorScheme.error)
+                    }
                 }
                 TextButton(onClick = onDismiss) { Text("Annuler") }
             }

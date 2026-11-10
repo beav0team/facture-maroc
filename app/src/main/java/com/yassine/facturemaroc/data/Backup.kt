@@ -58,6 +58,7 @@ object Backup {
         invoices: List<InvoiceRecord>,
         counters: Map<String, Int>,
         folders: List<String> = emptyList(),
+        logos: Map<String, ByteArray> = emptyMap(),
         exportedAt: Long = System.currentTimeMillis(),
     ): String = JSONObject().apply {
         put("app", APP)
@@ -79,7 +80,18 @@ object Backup {
                 put("showAmountWords", design.showAmountWords)
                 put("showLegalIdentifiers", design.showLegalIdentifiers)
                 put("showPaymentMethod", design.showPaymentMethod)
+                put("showPaymentStatus", design.showPaymentStatus)
                 put("showFooter", design.showFooter)
+            },
+        )
+        // Logos referenced by issued documents, written once each. Without
+        // them a restored phone would reprint old invoices with no logo.
+        put(
+            "logos",
+            JSONObject().apply {
+                logos.forEach { (hash, bytes) ->
+                    put(hash, Base64.getEncoder().encodeToString(bytes))
+                }
             },
         )
         put(
@@ -141,9 +153,10 @@ object Backup {
         invoices: List<InvoiceRecord>,
         counters: Map<String, Int>,
         folders: List<String> = emptyList(),
+        logos: Map<String, ByteArray> = emptyMap(),
         exportedAt: Long = System.currentTimeMillis(),
     ): Built {
-        fun render(withLogo: ByteArray?) = build(
+        fun render(withLogo: ByteArray?, withLogos: Map<String, ByteArray> = logos) = build(
             shop = shop,
             design = design,
             logo = withLogo,
@@ -152,13 +165,23 @@ object Backup {
             invoices = invoices,
             counters = counters,
             folders = folders,
+            logos = withLogos,
             exportedAt = exportedAt,
         )
 
         val full = render(logo)
         if (full.sizeInBytes() <= MAX_BYTES) return Built(full, logoIncluded = logo != null)
+        // Drop the reprint logos first: they are the largest optional part and
+        // only matter for documents already issued on this phone. The live
+        // logo is the one the next invoice needs.
+        if (logos.isNotEmpty()) {
+            val withoutSnapshots = render(logo, emptyMap())
+            if (withoutSnapshots.sizeInBytes() <= MAX_BYTES) {
+                return Built(withoutSnapshots, logoIncluded = logo != null)
+            }
+        }
         if (logo == null) throw TooLargeException(TOO_LARGE)
-        val trimmed = render(null)
+        val trimmed = render(null, emptyMap())
         if (trimmed.sizeInBytes() > MAX_BYTES) throw TooLargeException(TOO_LARGE)
         return Built(trimmed, logoIncluded = false)
     }
@@ -213,6 +236,16 @@ object Backup {
             bytes.takeIf { it.isNotEmpty() }
         }
 
+        val logos = buildMap {
+            val logosObject = root.optJSONObject("logos") ?: JSONObject()
+            logosObject.keys().forEach { hash ->
+                val bytes = runCatching {
+                    Base64.getDecoder().decode(logosObject.optString(hash, ""))
+                }.getOrNull()?.takeIf { it.isNotEmpty() }
+                if (bytes != null) put(hash, bytes)
+            }
+        }
+
         val designObject = root.optJSONObject("design")
         val countersObject = root.optJSONObject("counters")
         val counters = DocumentType.entries.associate { type ->
@@ -250,6 +283,7 @@ object Backup {
                 showAmountWords = designObject?.optBoolean("showAmountWords", true) ?: true,
                 showLegalIdentifiers = designObject?.optBoolean("showLegalIdentifiers", true) ?: true,
                 showPaymentMethod = designObject?.optBoolean("showPaymentMethod", true) ?: true,
+                showPaymentStatus = designObject?.optBoolean("showPaymentStatus", true) ?: true,
                 showFooter = designObject?.optBoolean("showFooter", true) ?: true,
             ),
             logo = logo,
@@ -258,6 +292,7 @@ object Backup {
             invoices = invoices,
             counters = counters,
             folders = folders,
+            logos = logos,
             exportedAt = root.optLong("exportedAt", 0L),
         )
     }
@@ -380,6 +415,8 @@ data class BackupData(
     val invoices: List<InvoiceRecord>,
     val counters: Map<String, Int>,
     val folders: List<String> = emptyList(),
+    /** Logo blobs referenced by [invoices], keyed by their content hash. */
+    val logos: Map<String, ByteArray> = emptyMap(),
     val exportedAt: Long,
 )
 
