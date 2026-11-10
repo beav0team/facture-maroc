@@ -316,6 +316,11 @@ fun ItemEditorDialog(
     var stockText by remember(initial) {
         mutableStateOf(initial?.stock?.toString() ?: "0")
     }
+    // Blank means "no alert", which is different from "alert at zero": a shop
+    // that has not thought about reordering is not nagged about it.
+    var reorderText by remember(initial) {
+        mutableStateOf(initial?.reorderThreshold?.toString() ?: "")
+    }
     var scanning by remember { mutableStateOf(false) }
     val context = LocalContext.current
     // Hidden on a device with no camera, where a button could only fail.
@@ -330,6 +335,7 @@ fun ItemEditorDialog(
     val price = priceText.replace(',', '.').toDoubleOrNull() ?: 0.0
     val purchase = purchaseText.replace(',', '.').toDoubleOrNull() ?: 0.0
     val stock = stockText.toIntOrNull()?.coerceAtLeast(0) ?: 0
+    val reorder = reorderText.toIntOrNull()?.coerceAtLeast(0)
     val saleExVat = if (pricesIncludeVat) PriceBasis.excludingVat(price, vatPercent) else price
     val margin = if (purchase > 0.0 && price > 0.0) saleExVat - purchase else null
 
@@ -477,6 +483,26 @@ fun ItemEditorDialog(
                             Icon(Icons.Filled.Add, contentDescription = "Ajouter un")
                         }
                     }
+                    /*
+                     * The threshold is where the app speaks up. It is asked only
+                     * of an article that counts, because a service has no shelf
+                     * to run low, and it is optional because most shops reorder
+                     * by looking rather than by being told.
+                     */
+                    OutlinedTextField(
+                        value = reorderText,
+                        onValueChange = { input -> reorderText = input.filter { it.isDigit() }.take(6) },
+                        label = { Text("Seuil de réapprovisionnement (facultatif)") },
+                        supportingText = {
+                            Text("L'article apparaît « à commander » à ce niveau ou en dessous.")
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next,
+                        ),
+                    )
                 }
                 if (showUnit) {
                     OutlinedTextField(
@@ -576,6 +602,14 @@ fun ItemEditorDialog(
                                 !showStock -> initial?.stock
                                 tracksStock -> stock
                                 else -> null
+                            },
+                            // Hidden with the Stock field, cleared when the
+                            // article became a service, kept when the shop is
+                            // only editing the price.
+                            reorderThreshold = when {
+                                !showStock -> initial?.reorderThreshold
+                                !tracksStock -> null
+                                else -> reorder
                             },
                         ),
                     )

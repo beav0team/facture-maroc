@@ -138,6 +138,7 @@ import com.yassine.facturemaroc.data.billedInMonth
 import com.yassine.facturemaroc.data.billedTotalInMonth
 import com.yassine.facturemaroc.data.creditedInMonth
 import com.yassine.facturemaroc.data.filterArticles
+import com.yassine.facturemaroc.data.filterToReorder
 import com.yassine.facturemaroc.data.labelTaken
 import com.yassine.facturemaroc.data.nameTaken
 import com.yassine.facturemaroc.data.summarizeArticles
@@ -212,6 +213,12 @@ fun HomeScreen(
      * still in Mobilier.
      */
     var articleFilter by rememberSaveable { mutableStateOf<String?>(null) }
+    /*
+     * Whether the list is limited to the articles at or below their reorder
+     * threshold. It composes with the folder chips rather than replacing them:
+     * "what is low in Mobilier?" is the question a shop actually asks.
+     */
+    var reorderOnly by rememberSaveable { mutableStateOf(false) }
     /*
      * Whether the folder screen is open.
      *
@@ -299,11 +306,12 @@ fun HomeScreen(
         ItemField.FOLDER in itemFields &&
             (path.isEmpty() || folders.any { it.equals(path, ignoreCase = true) })
     }
-    val articleList = remember(items, activeArticleFilter) {
-        filterArticles(items, activeArticleFilter)
+    val articleList = remember(items, activeArticleFilter, reorderOnly) {
+        filterToReorder(filterArticles(items, activeArticleFilter), reorderOnly)
     }
-    val articleMatches = remember(items, query) {
-        if (query.isBlank()) emptyList() else items.filter { SavedItemStore.matches(it, query) }
+    val articleMatches = remember(items, query, reorderOnly) {
+        val matched = if (query.isBlank()) emptyList() else items.filter { SavedItemStore.matches(it, query) }
+        filterToReorder(matched, reorderOnly)
     }
     val subFolders = remember(folders, articleFolder) {
         // `""` is "Sans dossier", which has no shelves of its own. Without this,
@@ -781,10 +789,11 @@ fun HomeScreen(
                         )
                     } else {
                         Column(Modifier.fillMaxSize()) {
-                            if (ItemField.FOLDER in itemFields) {
+                            if (ItemField.FOLDER in itemFields || ItemField.STOCK in itemFields) {
                                 ArticleFilterChips(
                                     folders = folders,
                                     selected = activeArticleFilter,
+                                    showFolders = ItemField.FOLDER in itemFields,
                                     onSelect = {
                                         articleFilter = it
                                         // A chip is a new question; a search
@@ -792,6 +801,9 @@ fun HomeScreen(
                                         // answer a different one.
                                         query = ""
                                     },
+                                    reorderCount = items.count { it.needsReorder },
+                                    reorderOnly = reorderOnly,
+                                    onToggleReorder = { reorderOnly = !reorderOnly },
                                 )
                             }
                             Box(Modifier.weight(1f)) {
@@ -799,17 +811,20 @@ fun HomeScreen(
                                     items = articleList,
                                     showFolder = ItemField.FOLDER in itemFields,
                                     fields = itemFields,
-                                    emptyTitle = if (items.isEmpty()) {
-                                        "Aucun article enregistré"
-                                    } else {
-                                        "Aucun article ici"
+                                    emptyTitle = when {
+                                        items.isEmpty() -> "Aucun article enregistré"
+                                        reorderOnly -> "Aucun article à commander"
+                                        else -> "Aucun article ici"
                                     },
-                                    emptyMessage = if (items.isEmpty()) {
-                                        "Ajoutez ce que vous vendez souvent — une prestation, " +
-                                            "un produit, une pièce — et retrouvez-le en un geste " +
-                                            "sur chaque facture."
-                                    } else {
-                                        "Essayez un autre filtre."
+                                    emptyMessage = when {
+                                        items.isEmpty() ->
+                                            "Ajoutez ce que vous vendez souvent — une prestation, " +
+                                                "un produit, une pièce — et retrouvez-le en un geste " +
+                                                "sur chaque facture."
+                                        reorderOnly ->
+                                            "Tous les articles de cette sélection sont au-dessus " +
+                                                "de leur seuil de réapprovisionnement."
+                                        else -> "Essayez un autre filtre."
                                     },
                                     onEdit = onEditItem,
                                     onDelete = onDeleteItem,
@@ -2331,6 +2346,20 @@ private fun ArticlesSummary(items: List<SavedItem>, fields: Set<ItemField>) {
                     color = color,
                 )
             }
+            // The number the filter chip also carries, but here it is always
+            // visible: a shop reading the bottom line should not have to notice
+            // a chip to learn that three shelves need refilling.
+            if (summary.reorderCount > 0) {
+                Text(
+                    if (summary.reorderCount == 1) {
+                        "1 à commander"
+                    } else {
+                        "${summary.reorderCount} à commander"
+                    },
+                    style = style,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
         }
     }
 }
@@ -2414,6 +2443,12 @@ private fun ArticleFilterChips(
     folders: List<String>,
     selected: String?,
     onSelect: (String?) -> Unit,
+    /** False when the shop hid the folder field: only "Tous" and stock filters remain. */
+    showFolders: Boolean = true,
+    /** How many articles are at or below their threshold. */
+    reorderCount: Int = 0,
+    reorderOnly: Boolean = false,
+    onToggleReorder: () -> Unit = {},
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val topLevel = remember(folders) {
@@ -2440,46 +2475,57 @@ private fun ArticleFilterChips(
             selected = selected == null,
             onClick = { onSelect(null) },
         )
-        ChoiceChip(
-            label = "Sans dossier",
-            selected = selected == "",
-            onClick = { onSelect("") },
-        )
-        topLevel.forEach { path ->
+        // A count in the label, because "à commander" with nothing behind it is
+        // a filter the shop cannot evaluate before tapping it.
+        if (reorderCount > 0 || reorderOnly) {
             ChoiceChip(
-                label = path,
-                selected = selected.equals(path, ignoreCase = true),
-                onClick = { onSelect(path) },
+                label = if (reorderCount > 0) "À commander ($reorderCount)" else "À commander",
+                selected = reorderOnly,
+                onClick = onToggleReorder,
             )
         }
-        if (activeNested != null) {
+        if (showFolders) {
             ChoiceChip(
-                label = SavedItemStore.display(activeNested),
-                selected = true,
-                onClick = {},
+                label = "Sans dossier",
+                selected = selected == "",
+                onClick = { onSelect("") },
             )
-        }
-        if (nested.isNotEmpty()) {
-            Box {
+            topLevel.forEach { path ->
                 ChoiceChip(
-                    label = "Tous les dossiers",
-                    selected = false,
-                    onClick = { menuOpen = true },
+                    label = path,
+                    selected = selected.equals(path, ignoreCase = true),
+                    onClick = { onSelect(path) },
                 )
-                DropdownMenu(
-                    expanded = menuOpen,
-                    onDismissRequest = { menuOpen = false },
-                ) {
-                    folders.forEach { path ->
-                        DropdownMenuItem(
-                            // The full path, because "Hiver" can exist under
-                            // two different folders.
-                            text = { Text(SavedItemStore.display(path)) },
-                            onClick = {
-                                menuOpen = false
-                                onSelect(path)
-                            },
-                        )
+            }
+            if (activeNested != null) {
+                ChoiceChip(
+                    label = SavedItemStore.display(activeNested),
+                    selected = true,
+                    onClick = {},
+                )
+            }
+            if (nested.isNotEmpty()) {
+                Box {
+                    ChoiceChip(
+                        label = "Tous les dossiers",
+                        selected = false,
+                        onClick = { menuOpen = true },
+                    )
+                    DropdownMenu(
+                        expanded = menuOpen,
+                        onDismissRequest = { menuOpen = false },
+                    ) {
+                        folders.forEach { path ->
+                            DropdownMenuItem(
+                                // The full path, because "Hiver" can exist under
+                                // two different folders.
+                                text = { Text(SavedItemStore.display(path)) },
+                                onClick = {
+                                    menuOpen = false
+                                    onSelect(path)
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -2722,12 +2768,16 @@ private fun ItemCard(
                     Text(
                         when (val stock = item.stock) {
                             null -> ""
-                            0 -> "Épuisé"
-                            1 -> "1 en stock"
-                            else -> "$stock en stock"
+                            0 -> if (item.needsReorder) "Épuisé · à commander" else "Épuisé"
+                            1 -> if (item.needsReorder) "1 en stock · à commander" else "1 en stock"
+                            else -> if (item.needsReorder) {
+                                "$stock en stock · à commander"
+                            } else {
+                                "$stock en stock"
+                            }
                         },
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (item.outOfStock) {
+                        color = if (item.outOfStock || item.needsReorder) {
                             MaterialTheme.colorScheme.error
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant

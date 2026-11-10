@@ -117,4 +117,44 @@ class ItemFieldsTest {
         assertEquals(46, noPurchase.units)
         assertEquals(0.0, noPurchase.stockValue, 0.001)
     }
+
+    @Test
+    fun `a threshold only matters for a counted article`() {
+        val low = chair.copy(stock = 2, reorderThreshold = 2)
+        val above = chair.copy(stock = 3, reorderThreshold = 2)
+        val noThreshold = chair.copy(stock = 0, reorderThreshold = null)
+        val service = fitting.copy(reorderThreshold = 10)
+
+        assertTrue(low.needsReorder)
+        assertFalse(above.needsReorder)
+        assertFalse(noThreshold.needsReorder)
+        assertFalse(service.needsReorder)
+    }
+
+    @Test
+    fun `the reorder filter keeps only what needs ordering`() {
+        val low = chair.copy(label = "Low", stock = 1, reorderThreshold = 2)
+        val plenty = chair.copy(label = "Plenty", stock = 20, reorderThreshold = 2)
+        val list = listOf(low, plenty, cushion, fitting)
+
+        assertEquals(listOf("Low"), filterToReorder(list, only = true).map { it.label })
+        assertEquals(list, filterToReorder(list, only = false))
+    }
+
+    @Test
+    fun `the summary counts only the articles at their threshold`() {
+        val list = listOf(
+            chair.copy(stock = 2, reorderThreshold = 2),
+            cushion.copy(stock = 20, reorderThreshold = 2),
+            table.copy(stock = 0, reorderThreshold = null),
+        )
+
+        assertEquals(1, summarizeArticles(list, ItemField.entries.toSet()).reorderCount)
+        // Hiding Stock hides the count: the shop does not count, so the app
+        // must not claim a shelf is low.
+        assertEquals(
+            0,
+            summarizeArticles(list, ItemField.entries.toSet() - ItemField.STOCK).reorderCount,
+        )
+    }
 }

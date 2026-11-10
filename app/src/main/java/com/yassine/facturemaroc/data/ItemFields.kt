@@ -51,6 +51,8 @@ data class ArticleSummary(
     val units: Int,
     /** What the shelves are worth at purchase price, when it is known. */
     val stockValue: Double,
+    /** Articles at or below the threshold the shop set. */
+    val reorderCount: Int = 0,
 )
 
 /**
@@ -70,5 +72,19 @@ fun summarizeArticles(items: List<SavedItem>, fields: Set<ItemField>): ArticleSu
         } else {
             0.0
         },
+        // A hidden Stock field means the shop does not count, so it cannot have
+        // anything to order either.
+        reorderCount = if (ItemField.STOCK in fields) items.count { it.needsReorder } else 0,
     )
 }
+
+/**
+ * The articles a "à commander" filter shows: those the shop set a threshold on
+ * and has reached.
+ *
+ * Separate from [filterArticles] because the two questions compose — "what is
+ * low in Mobilier?" is a folder filter then this one — and folding it into the
+ * folder argument would have made a folder named "à commander" ambiguous.
+ */
+fun filterToReorder(items: List<SavedItem>, only: Boolean): List<SavedItem> =
+    if (only) items.filter { it.needsReorder } else items
