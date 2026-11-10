@@ -87,6 +87,7 @@
     </div>
 
     <h2>La liste, en un tableau</h2>
+    <div class="tableau">
     <table>
       <caption>Mentions d’une facture entre professionnels au Maroc.</caption>
       <thead>
@@ -98,82 +99,83 @@
       </thead>
       <tbody>
         <tr>
-          <td>Nom, adresse, téléphone du vendeur</td>
-          <td>En-tête</td>
-          <td>Toujours</td>
+          <td data-label="Mention"><span>Nom, adresse, téléphone du vendeur</span></td>
+          <td data-label="Où elle se place"><span>En-tête</span></td>
+          <td data-label="Quand elle est exigée"><span>Toujours</span></td>
         </tr>
         <tr>
-          <td><strong>ICE</strong> — 15 chiffres</td>
-          <td>En-tête</td>
-          <td>Toujours, pour un professionnel immatriculé</td>
+          <td data-label="Mention"><span><strong>ICE</strong> — 15 chiffres</span></td>
+          <td data-label="Où elle se place"><span>En-tête</span></td>
+          <td data-label="Quand elle est exigée"><span>Toujours, pour un professionnel immatriculé</span></td>
         </tr>
         <tr>
-          <td><strong>IF</strong> — identifiant fiscal</td>
-          <td>En-tête</td>
-          <td>Toujours</td>
+          <td data-label="Mention"><span><strong>IF</strong> — identifiant fiscal</span></td>
+          <td data-label="Où elle se place"><span>En-tête</span></td>
+          <td data-label="Quand elle est exigée"><span>Toujours</span></td>
         </tr>
         <tr>
-          <td><strong>RC</strong> — registre de commerce</td>
-          <td>En-tête</td>
-          <td>Commerçants et sociétés immatriculées</td>
+          <td data-label="Mention"><span><strong>RC</strong> — registre de commerce</span></td>
+          <td data-label="Où elle se place"><span>En-tête</span></td>
+          <td data-label="Quand elle est exigée"><span>Commerçants et sociétés immatriculées</span></td>
         </tr>
         <tr>
-          <td><strong>Patente</strong> (taxe professionnelle)</td>
-          <td>En-tête</td>
-          <td>Activités assujetties</td>
+          <td data-label="Mention"><span><strong>Patente</strong> (taxe professionnelle)</span></td>
+          <td data-label="Où elle se place"><span>En-tête</span></td>
+          <td data-label="Quand elle est exigée"><span>Activités assujetties</span></td>
         </tr>
         <tr>
-          <td><strong>CNSS</strong></td>
-          <td>En-tête</td>
-          <td>Employeurs affiliés</td>
+          <td data-label="Mention"><span><strong>CNSS</strong></span></td>
+          <td data-label="Où elle se place"><span>En-tête</span></td>
+          <td data-label="Quand elle est exigée"><span>Employeurs affiliés</span></td>
         </tr>
         <tr>
-          <td>Nom, adresse du client, et son ICE</td>
-          <td>Bloc client</td>
-          <td>Client professionnel</td>
+          <td data-label="Mention"><span>Nom, adresse du client, et son ICE</span></td>
+          <td data-label="Où elle se place"><span>Bloc client</span></td>
+          <td data-label="Quand elle est exigée"><span>Client professionnel</span></td>
         </tr>
         <tr>
-          <td>Date d’émission</td>
-          <td>En-tête ou bloc document</td>
-          <td>Toujours</td>
+          <td data-label="Mention"><span>Date d’émission</span></td>
+          <td data-label="Où elle se place"><span>En-tête ou bloc document</span></td>
+          <td data-label="Quand elle est exigée"><span>Toujours</span></td>
         </tr>
         <tr>
-          <td>Numéro unique et chronologique</td>
-          <td>Bloc document</td>
-          <td>Toujours</td>
+          <td data-label="Mention"><span>Numéro unique et chronologique</span></td>
+          <td data-label="Où elle se place"><span>Bloc document</span></td>
+          <td data-label="Quand elle est exigée"><span>Toujours</span></td>
         </tr>
         <tr>
-          <td>Désignation, quantité, prix unitaire HT</td>
-          <td>Lignes</td>
-          <td>Toujours</td>
+          <td data-label="Mention"><span>Désignation, quantité, prix unitaire HT</span></td>
+          <td data-label="Où elle se place"><span>Lignes</span></td>
+          <td data-label="Quand elle est exigée"><span>Toujours</span></td>
         </tr>
         <tr>
-          <td>Taux et montant de TVA</td>
-          <td>Lignes et récapitulatif</td>
-          <td>Par taux, ligne par ligne</td>
+          <td data-label="Mention"><span>Taux et montant de TVA</span></td>
+          <td data-label="Où elle se place"><span>Lignes et récapitulatif</span></td>
+          <td data-label="Quand elle est exigée"><span>Par taux, ligne par ligne</span></td>
         </tr>
         <tr>
-          <td>Remises et majorations</td>
-          <td>Lignes ou totaux</td>
-          <td>Quand il y en a</td>
+          <td data-label="Mention"><span>Remises et majorations</span></td>
+          <td data-label="Où elle se place"><span>Lignes ou totaux</span></td>
+          <td data-label="Quand elle est exigée"><span>Quand il y en a</span></td>
         </tr>
         <tr>
-          <td>Total HT, total TVA, total TTC</td>
-          <td>Totaux</td>
-          <td>Toujours</td>
+          <td data-label="Mention"><span>Total HT, total TVA, total TTC</span></td>
+          <td data-label="Où elle se place"><span>Totaux</span></td>
+          <td data-label="Quand elle est exigée"><span>Toujours</span></td>
         </tr>
         <tr>
-          <td>Conditions et date de règlement</td>
-          <td>Pied de page</td>
-          <td>Toujours</td>
+          <td data-label="Mention"><span>Conditions et date de règlement</span></td>
+          <td data-label="Où elle se place"><span>Pied de page</span></td>
+          <td data-label="Quand elle est exigée"><span>Toujours</span></td>
         </tr>
         <tr>
-          <td>Montant arrêté en toutes lettres</td>
-          <td>Pied de page</td>
-          <td>Usage constant, attendu par les administrations</td>
+          <td data-label="Mention"><span>Montant arrêté en toutes lettres</span></td>
+          <td data-label="Où elle se place"><span>Pied de page</span></td>
+          <td data-label="Quand elle est exigée"><span>Usage constant, attendu par les administrations</span></td>
         </tr>
       </tbody>
     </table>
+    </div>
 
     <h2>Qui fournit quoi : ICE, IF, RC, patente, CNSS</h2>
     <p>Ces cinq identifiants ne viennent pas du même endroit, et c’est la

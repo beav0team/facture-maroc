@@ -904,3 +904,62 @@ a { color: inherit; }
   color: var(--ardoise);
 }
 .section .note a { color: var(--bleu); }
+
+/* Un tableau de guide ne doit jamais pousser la page en largeur : il défile
+   dans sa boîte. Les cellules restent lisibles, le reste de la page est fixe. */
+.doc .tableau {
+  margin: 0 0 26px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.doc .tableau table {
+  margin: 0;
+  min-width: 520px;
+}
+
+/* Sur un téléphone, trois colonnes ne tiennent pas : le tableau devient une
+   liste de lignes étiquetées. Les intitulés restent dans le <thead> pour les
+   lecteurs d'écran, et chaque cellule porte le sien en `data-label`. */
+@media (max-width: 620px) {
+  .doc .tableau { overflow-x: visible; }
+  .doc .tableau table,
+  .doc .tableau tbody,
+  .doc .tableau tr,
+  .doc .tableau td { display: block; min-width: 0; width: auto; }
+  .doc .tableau thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .doc .tableau caption {
+    display: block;
+    padding: 0 0 12px;
+    text-align: left;
+  }
+  .doc .tableau tr {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--trait);
+  }
+  .doc .tableau tr:first-child { border-top: 1px solid var(--trait); }
+  .doc .tableau td {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 14px;
+    padding: 3px 0;
+    border: 0;
+  }
+  .doc .tableau td::before {
+    content: attr(data-label);
+    font: 600 11px/1.5 var(--texte);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ardoise);
+  }
+  .doc .tableau td:first-child span {
+    font-weight: 600;
+    color: var(--nuit);
+  }
+}
