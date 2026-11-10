@@ -23,7 +23,7 @@ object CreditNote {
             data = record.data.copy(
                 documentType = DocumentType.AVOIR,
                 referenceNumber = record.data.number,
-                payment = null,
+                payments = emptyList(),
                 dueDate = null,
                 validityDate = null,
             ),

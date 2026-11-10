@@ -11,6 +11,7 @@ import androidx.core.content.FileProvider
 import com.yassine.facturemaroc.data.AmountWords
 import com.yassine.facturemaroc.data.InvoiceData
 import com.yassine.facturemaroc.data.InvoiceDesign
+import com.yassine.facturemaroc.data.PaymentInfo
 import com.yassine.facturemaroc.data.PaymentState
 import com.yassine.facturemaroc.data.ShopSettings
 import java.io.File
@@ -69,14 +70,23 @@ object ReceiptPdf {
         }
     }
 
+    /**
+     * Writes the receipt, for [payment] when one is named or for the most
+     * recent payment otherwise.
+     *
+     * Naming the payment is what makes one receipt per payment possible: a
+     * customer who paid twice can be handed the paper for the second go without
+     * the first one being reprinted on top of it.
+     */
     fun create(
         context: Context,
         data: InvoiceData,
         shop: ShopSettings,
         design: InvoiceDesign,
+        payment: PaymentInfo? = null,
     ): File? {
-        val payment = data.payment
-        if (payment == null || payment.paidAmount <= 0.0) return null
+        val received = payment ?: data.lastPayment
+        if (received == null || received.paidAmount <= 0.0) return null
         return try {
         val printShop = with(InvoicePdf) { data.printedShop(context, shop) }
         val dir = File(context.cacheDir, "invoices").apply { mkdirs() }
@@ -85,7 +95,7 @@ object ReceiptPdf {
         file.outputStream().use { out ->
             val doc = PdfDocument()
             val page = doc.startPage(PdfDocument.PageInfo.Builder(PAGE_W, PAGE_H, 1).create())
-            draw(page.canvas, data, printShop, design)
+            draw(page.canvas, data, printShop, design, received)
             doc.finishPage(page)
             doc.writeTo(out)
             doc.close()
@@ -103,6 +113,7 @@ object ReceiptPdf {
         data: InvoiceData,
         shop: ShopSettings,
         design: InvoiceDesign,
+        payment: PaymentInfo,
     ) {
         canvas.drawColor(Color.WHITE)
         val width = (PAGE_W - MARGIN * 2)
@@ -148,7 +159,6 @@ object ReceiptPdf {
         )
         y += PdfText.height("REÇU", title, width.toInt(), 1) + 6f
 
-        val payment = data.payment ?: return
         val paidOn = payment.paidAt.trim().ifBlank { InvoicePdf.today() }
         val how = payment.method?.french ?: data.paymentMethod.french
 

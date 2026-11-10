@@ -102,7 +102,7 @@ object InvoiceXml {
         // to alter, so it travels in the file too rather than only on the PDF.
         x.element("cbc:Note", data.amountInWords)
         if (data.isSettled) {
-            val date = data.payment?.paidAt?.trim().orEmpty()
+            val date = data.lastPayment?.paidAt?.trim().orEmpty()
             val settled = if (data.documentType == DocumentType.FACTURE) {
                 "Facture acquittée"
             } else {

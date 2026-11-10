@@ -56,7 +56,7 @@ class PaymentQrTextTest {
 
     @Test
     fun `a partial payment makes the balance the amount to pay`() {
-        val partial = data.copy(payment = PaymentInfo(paidAmount = 1_000.0))
+        val partial = data.copy(payments = listOf(PaymentInfo(paidAmount = 1_000.0)))
 
         assertEquals(1_280.0, partial.balanceDue, 0.001)
         assertTrue(PaymentQrText.of(partial, shop)!!.normaliseSpaces().contains("1 280,00 DH"))

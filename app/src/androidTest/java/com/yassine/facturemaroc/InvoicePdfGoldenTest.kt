@@ -112,10 +112,12 @@ class InvoicePdfGoldenTest {
         latePenaltyClause = shop.latePenaltyClause,
         depositAmount = 100.0,
         depositReference = "AC-20261101-0001",
-        payment = PaymentInfo(
-            paidAmount = 200.0,
-            paidAt = "15/11/2026",
-            method = PaymentMethod.TRANSFER,
+        payments = listOf(
+            PaymentInfo(
+                paidAmount = 200.0,
+                paidAt = "15/11/2026",
+                method = PaymentMethod.TRANSFER,
+            ),
         ),
     )
 

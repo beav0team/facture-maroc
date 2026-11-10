@@ -1287,37 +1287,56 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Records what the shop received against an issued document.
+     * Records one payment against an issued document.
      *
-     * The amount is clamped to the total and a zero clears the payment, so a
-     * mistyped figure can never leave a document owing a negative balance. Only
-     * an issued record can carry a payment: a draft has not been handed over.
+     * Appends to the history rather than replacing it: a customer who pays
+     * 1 000 DH today and the rest next month gets two entries, and the document
+     * keeps both. The amount is clamped to what is still owed, so a mistyped
+     * figure can never leave the document overpaid or owing a negative balance.
+     *
+     * Only a document that asks to be paid can take a payment — see
+     * [canBePaid]. Nothing happens on a draft, a devis, a proforma or an avoir.
      */
-    fun setPayment(id: String, payment: PaymentInfo?) {
+    fun addPayment(id: String, payment: PaymentInfo) {
         val record = invoices.find(id) ?: return
-        if (record.isDraft) return
-        val amount = (payment?.paidAmount ?: 0.0).coerceIn(0.0, record.data.netToPay)
-        val cleaned = if (amount <= 0.0) {
-            null
-        } else {
-            payment!!.copy(
-                paidAmount = amount,
-                paidAt = payment.paidAt.trim(),
-                note = payment.note.trim(),
-            )
-        }
+        if (record.isDraft || !record.data.documentType.canBePaid) return
+        val remaining = record.data.balanceDue
+        if (remaining <= 0.0) return
+        val amount = payment.paidAmount.coerceIn(0.0, remaining)
+        if (amount <= 0.0) return
+        val cleaned = payment.copy(
+            paidAmount = amount,
+            paidAt = payment.paidAt.trim(),
+            note = payment.note.trim(),
+        )
         invoices.upsert(
             record.copy(
-                data = record.data.copy(payment = cleaned),
+                data = record.data.copy(payments = record.data.payments + cleaned),
                 updatedAt = System.currentTimeMillis(),
             ),
         )
     }
 
-    /** Marks the whole document paid in one step, dated today unless given. */
+    /** Removes one entry of the history by position, oldest first. */
+    fun removePayment(id: String, index: Int) {
+        val record = invoices.find(id) ?: return
+        if (index !in record.data.payments.indices) return
+        invoices.upsert(
+            record.copy(
+                data = record.data.copy(
+                    payments = record.data.payments.filterIndexed { at, _ -> at != index },
+                ),
+                updatedAt = System.currentTimeMillis(),
+            ),
+        )
+    }
+
+    /** Marks the remaining balance paid in one step, dated today unless given. */
     fun markPaid(id: String, date: String = InvoicePdf.today()) {
         val record = invoices.find(id) ?: return
-        setPayment(id, PaymentInfo(paidAmount = record.data.total, paidAt = date))
+        val remaining = record.data.balanceDue
+        if (remaining <= 0.0) return
+        addPayment(id, PaymentInfo(paidAmount = remaining, paidAt = date))
     }
 
     /** One article's filled movements, newest first. */

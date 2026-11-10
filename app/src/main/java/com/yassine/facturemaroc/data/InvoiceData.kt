@@ -95,8 +95,14 @@ data class InvoiceData(
     val depositAmount: Double = 0.0,
     /** The number of the deposit document, printed with the deduction. */
     val depositReference: String = "",
-    /** What the shop has received; null on an unpaid document. */
-    val payment: PaymentInfo? = null,
+    /**
+     * The payments received, oldest first.
+     *
+     * Empty on an unpaid document. The old single `"payment"` object is read
+     * back as a one-entry list, so every document written before payments had
+     * a history still opens with its money intact.
+     */
+    val payments: List<PaymentInfo> = emptyList(),
 ) {
     /**
      * Total HT as the page adds it up: every line rounded to the centime, then
@@ -417,9 +423,21 @@ data class InvoiceData(
     /** The figure the customer still has to pay after the deposit. */
     val netToPay: Double get() = money(total - deposit)
 
-    /** What has been received against [netToPay], never more than it is worth. */
+    /** The most recent payment, for the lines that name "the" payment. */
+    val lastPayment: PaymentInfo? get() = payments.lastOrNull()
+
+    /** How many payments settle this document; 0 when nothing was received. */
+    val paymentCount: Int get() = payments.size
+
+    /**
+     * What has been received against [netToPay], never more than it is worth.
+     *
+     * The sum of the history, not one stored figure: a document paid in three
+     * goes reports what the three add up to, and removing one entry takes it
+     * back out.
+     */
     val paidAmount: Double
-        get() = money((payment?.paidAmount ?: 0.0).coerceIn(0.0, netToPay))
+        get() = money(payments.sumOf { it.paidAmount }.coerceIn(0.0, netToPay))
 
     /** What is still owed; 0 once the document is settled. */
     val balanceDue: Double get() = money(netToPay - paidAmount)

@@ -93,6 +93,24 @@ val DocumentType.canBeCredited: Boolean
         this == DocumentType.SIMPLIFIEE ||
         this == DocumentType.EXPORT
 
+/**
+ * Whether money can be received against this document.
+ *
+ * Only a document that actually asks to be paid: a devis is a price offered,
+ * a bon de commande is something the shop is buying, a proforma has no
+ * accounting value, and an avoir is money going back to the customer. Recording
+ * a payment against any of them turns a quote into a sale that never happened.
+ *
+ * Acompte and régularisation are excluded on purpose too: an acompte is paid
+ * when it is issued (the deposit is carried by the final invoice), and a
+ * régularisation corrects another document that already carries the payment.
+ */
+val DocumentType.canBePaid: Boolean
+    get() = this == DocumentType.FACTURE ||
+        this == DocumentType.TICKET ||
+        this == DocumentType.SIMPLIFIEE ||
+        this == DocumentType.EXPORT
+
 /** What kind of document this is. Each has its own numbering and layout rules. */
 enum class DocumentType(val id: String, val label: String, val prefix: String) {
     FACTURE("facture", "Facture", "F"),

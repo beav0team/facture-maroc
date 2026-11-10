@@ -27,7 +27,7 @@ class PaymentDueTest {
         client = InvoiceClient("Client"),
         lines = listOf(InvoiceLine("Prestation", 1.0, 100.0)),
         dueDate = dueDate,
-        payment = if (paid > 0.0) PaymentInfo(paidAmount = paid) else null,
+        payments = if (paid > 0.0) listOf(PaymentInfo(paidAmount = paid)) else emptyList(),
     )
 
     @Test

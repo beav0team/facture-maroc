@@ -203,15 +203,24 @@ object InvoiceJson {
             if (data.depositReference.isNotBlank()) put("depositReference", data.depositReference)
         }
         // Omitted when nothing was received, so an unpaid document says so by
-        // saying nothing and old files stay byte-for-byte compatible.
-        data.payment?.takeIf { !it.isEmpty || it.paidAt.isNotBlank() }?.let {
+        // saying nothing and old files stay byte-for-byte compatible. The array
+        // carries every entry: overwriting one figure per payment is what lost
+        // the earlier ones.
+        val received = data.payments.filter { !it.isEmpty || it.paidAt.isNotBlank() }
+        if (received.isNotEmpty()) {
             put(
-                "payment",
-                JSONObject().apply {
-                    put("paidAmount", it.paidAmount)
-                    put("paidAt", it.paidAt)
-                    put("note", it.note)
-                    it.method?.let { method -> put("method", method.id) }
+                "payments",
+                JSONArray().apply {
+                    received.forEach { payment ->
+                        put(
+                            JSONObject().apply {
+                                put("paidAmount", payment.paidAmount)
+                                put("paidAt", payment.paidAt)
+                                put("note", payment.note)
+                                payment.method?.let { method -> put("method", method.id) }
+                            },
+                        )
+                    }
                 },
             )
         }
@@ -358,19 +367,36 @@ object InvoiceJson {
             depositAmount = obj.optDouble("depositAmount", 0.0)
                 .let { if (it.isNaN() || it.isInfinite()) 0.0 else it.coerceAtLeast(0.0) },
             depositReference = obj.optString("depositReference", ""),
-            payment = obj.optJSONObject("payment")?.let { payment ->
-                PaymentInfo(
-                    paidAmount = payment.optDouble("paidAmount", 0.0)
-                        .let { if (it.isNaN() || it.isInfinite()) 0.0 else it },
-                    paidAt = payment.optString("paidAt", ""),
-                    note = payment.optString("note", ""),
-                    // Absent on every payment written before the field
-                    // existed: the document's own method still applies.
-                    method = payment.optString("method", "")
-                        .takeIf { it.isNotBlank() }
-                        ?.let(PaymentMethod::fromId),
-                )
-            },
+            payments = readPayments(obj),
         )
+    }
+
+    /**
+     * The payment history as stored, current format first.
+     *
+     * A `payments` array is what this version writes. The single `payment`
+     * object is what every document issued before it carries, and is read back
+     * as a one-entry list rather than migrated: a reprint must print what was
+     * recorded, not what the file happened to look like when it was opened.
+     */
+    private fun readPayments(obj: JSONObject): List<PaymentInfo> {
+        fun parse(source: JSONObject) = PaymentInfo(
+            paidAmount = source.optDouble("paidAmount", 0.0)
+                .let { if (it.isNaN() || it.isInfinite()) 0.0 else it },
+            paidAt = source.optString("paidAt", ""),
+            note = source.optString("note", ""),
+            // Absent on every payment written before the field existed: the
+            // document's own method still applies.
+            method = source.optString("method", "")
+                .takeIf { it.isNotBlank() }
+                ?.let(PaymentMethod::fromId),
+        )
+        val array = obj.optJSONArray("payments")
+        if (array != null) {
+            return (0 until array.length())
+                .mapNotNull { array.optJSONObject(it) }
+                .map(::parse)
+        }
+        return obj.optJSONObject("payment")?.let { listOf(parse(it)) } ?: emptyList()
     }
 }
