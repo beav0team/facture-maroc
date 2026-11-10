@@ -41,6 +41,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -63,6 +64,8 @@ import com.yassine.facturemaroc.data.quantityText
 import com.yassine.facturemaroc.data.ItemField
 import com.yassine.facturemaroc.data.PartyRole
 import com.yassine.facturemaroc.data.PriceBasis
+import com.yassine.facturemaroc.data.ItemAttribute
+import com.yassine.facturemaroc.data.PriceTier
 import com.yassine.facturemaroc.data.SavedItem
 import com.yassine.facturemaroc.data.SavedItemStore
 import java.text.SimpleDateFormat
@@ -321,6 +324,21 @@ fun ItemEditorDialog(
     var reorderText by remember(initial) {
         mutableStateOf(initial?.reorderThreshold?.toString() ?: "")
     }
+    // Price tiers: quantity breaks that lower the unit price. Kept as the shop
+    // typed them until save, so a half-filled row never breaks the form.
+    val tierRows = remember(initial) {
+        mutableStateListOf<PriceTier>().apply { addAll(initial?.priceTiers.orEmpty()) }
+    }
+    var newTierFrom by remember { mutableStateOf("") }
+    var newTierPrice by remember { mutableStateOf("") }
+    // Attributes: free key/value carried onto every line this article produces.
+    val attrRows = remember(initial) {
+        mutableStateListOf<ItemAttribute>().apply { addAll(initial?.attributes.orEmpty()) }
+    }
+    var newAttrKey by remember { mutableStateOf("") }
+    var newAttrValue by remember { mutableStateOf("") }
+    var tiersOpen by rememberSaveable { mutableStateOf(false) }
+    var attrsOpen by rememberSaveable { mutableStateOf(false) }
     var scanning by remember { mutableStateOf(false) }
     val context = LocalContext.current
     // Hidden on a device with no camera, where a button could only fail.
@@ -575,6 +593,119 @@ fun ItemEditorDialog(
                         }
                     }
                 }
+                if (tiersOpen) {
+                    Text(
+                        "Paliers de prix par quantité",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    tierRows.forEachIndexed { index, tier ->
+                        TierRow(
+                            tier = tier,
+                            onUpdate = { tierRows[index] = it },
+                            onRemove = { tierRows.removeAt(index) },
+                        )
+                    }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        OutlinedTextField(
+                            value = newTierFrom,
+                            onValueChange = { input -> newTierFrom = input.filter { it.isDigit() }.take(6) },
+                            label = { Text("Dès qté") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next,
+                            ),
+                        )
+                        OutlinedTextField(
+                            value = newTierPrice,
+                            onValueChange = { input ->
+                                newTierPrice = input.filter { it.isDigit() || it == '.' || it == ',' }
+                            },
+                            label = { Text("Prix HT") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Next,
+                            ),
+                        )
+                        IconButton(onClick = {
+                            val from = newTierFrom.toIntOrNull()
+                            val price = newTierPrice.replace(',', '.').toDoubleOrNull()
+                            if (from != null && from > 0 && price != null && price >= 0.0) {
+                                tierRows.add(PriceTier(from, price))
+                                newTierFrom = ""
+                                newTierPrice = ""
+                            }
+                        }) {
+                            Icon(Icons.Filled.Add, contentDescription = "Ajouter un palier")
+                        }
+                    }
+                    Text(
+                        "Un palier s'applique quand la quantité vendue atteint ce seuil. " +
+                            "Seules les quantités entières ont un palier ; au mètre ou à l'heure le " +
+                            "prix de base s'applique. Le prix le plus bas dont le seuil est atteint l'emporte.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (attrsOpen) {
+                    Text(
+                        "Attributs de l'article",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    attrRows.forEachIndexed { index, attr ->
+                        AttrRow(
+                            attr = attr,
+                            onUpdate = { attrRows[index] = it },
+                            onRemove = { attrRows.removeAt(index) },
+                        )
+                    }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        OutlinedTextField(
+                            value = newAttrKey,
+                            onValueChange = { newAttrKey = it.take(40) },
+                            label = { Text("Clé") },
+                            placeholder = { Text("Référence, Marque…") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                        OutlinedTextField(
+                            value = newAttrValue,
+                            onValueChange = { newAttrValue = it.take(80) },
+                            label = { Text("Valeur") },
+                            placeholder = { Text("E-100, Legrand…") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = {
+                            if (newAttrKey.isNotBlank() && newAttrValue.isNotBlank()) {
+                                attrRows.add(ItemAttribute(newAttrKey.trim(), newAttrValue.trim()))
+                                newAttrKey = ""
+                                newAttrValue = ""
+                            }
+                        }) {
+                            Icon(Icons.Filled.Add, contentDescription = "Ajouter un attribut")
+                        }
+                    }
+                    Text(
+                        "Des clés neutres : Référence, Marque, Modèle, Dimensions, Lot / série. " +
+                            "Chaque attribut est imprimé sur les lignes de facture qui utilisent l'article.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         },
         confirmButton = {
@@ -611,6 +742,16 @@ fun ItemEditorDialog(
                                 !tracksStock -> null
                                 else -> reorder
                             },
+                            // Only well-formed tiers survive: a threshold of zero
+                            // or below means "no tier", and a negative price is
+                            // not a price.
+                            priceTiers = tierRows
+                                .filter { it.fromQuantity > 0 && it.unitPriceHt >= 0.0 }
+                                .toList(),
+                            // Only pairs with something on both sides are kept.
+                            attributes = attrRows
+                                .filter { it.key.isNotBlank() && it.value.isNotBlank() }
+                                .toList(),
                         ),
                     )
                 },
@@ -633,6 +774,90 @@ fun ItemEditorDialog(
             },
             onDismiss = { scanning = false },
         )
+    }
+}
+
+/**
+ * One quantity-tier row: "from this quantity, at this HT price".
+ *
+ * A row rather than a dialog because a shop with three tiers should not open
+ * three dialogs, and a compact row keeps the whole ladder visible at once.
+ * Zero and negative quantities are refused by the caller; this only edits.
+ */
+@Composable
+private fun TierRow(
+    tier: PriceTier,
+    onUpdate: (PriceTier) -> Unit,
+    onRemove: () -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedTextField(
+            value = tier.fromQuantity.toString(),
+            onValueChange = { input ->
+                val v = input.filter { it.isDigit() }.take(6).toIntOrNull()
+                if (v != null && v > 0) onUpdate(tier.copy(fromQuantity = v))
+            },
+            label = { Text("Dès qté") },
+            singleLine = true,
+            modifier = Modifier.weight(1f),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Next,
+            ),
+        )
+        OutlinedTextField(
+            value = tier.unitPriceHt.trimZeros(),
+            onValueChange = { input ->
+                val v = input.replace(',', '.').toDoubleOrNull()
+                if (v != null && v >= 0.0) onUpdate(tier.copy(unitPriceHt = v))
+            },
+            label = { Text("Prix HT") },
+            singleLine = true,
+            modifier = Modifier.weight(1f),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Decimal,
+                imeAction = ImeAction.Next,
+            ),
+        )
+        IconButton(onClick = onRemove) {
+            Icon(Icons.Filled.Delete, contentDescription = "Retirer le palier")
+        }
+    }
+}
+
+/** One attribute row: a free key and its value. */
+@Composable
+private fun AttrRow(
+    attr: ItemAttribute,
+    onUpdate: (ItemAttribute) -> Unit,
+    onRemove: () -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedTextField(
+            value = attr.key,
+            onValueChange = { onUpdate(attr.copy(key = it)) },
+            label = { Text("Clé") },
+            singleLine = true,
+            modifier = Modifier.weight(1f),
+        )
+        OutlinedTextField(
+            value = attr.value,
+            onValueChange = { onUpdate(attr.copy(value = it)) },
+            label = { Text("Valeur") },
+            singleLine = true,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = onRemove) {
+            Icon(Icons.Filled.Delete, contentDescription = "Retirer l'attribut")
+        }
     }
 }
 

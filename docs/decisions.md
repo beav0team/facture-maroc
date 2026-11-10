@@ -67,6 +67,15 @@ Item attributes are a list of key/value pairs with neutral suggestions
 (Référence, Marque, Modèle, Dimensions, Lot / série…). No hard-coded
 industry-specific columns.
 
+### 2026-11-10 — Quantity tiers apply to whole articles only
+An article may carry price tiers ("from 10, at 9 DH HT"). The greatest tier whose
+threshold is reached wins; decimal quantities (metres, kilos, hours) fall back to
+the base price, because a tier boundary is a count of articles on a shelf, not a
+length. The matched tier price and its threshold are frozen on the line when it is
+picked, so a later edit of the ladder never rewrites an issued document, and the
+threshold prints beside the line ("dès 10") so the customer sees why the price is
+what it is.
+
 ### 2026-11-10 — One stock location in 1.0
 Multi-location is out of scope for 1.0. The model keeps a nullable location for
 later, but no UI.

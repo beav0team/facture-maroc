@@ -68,6 +68,27 @@ object InvoiceJson {
         // Absent on a line typed by hand and on every line written before ids
         // existed, so those files stay byte-for-byte what they were.
         line.itemId?.takeIf { it.isNotBlank() }?.let { put("itemId", it) }
+        // Written only when a tier was applied, so an older file keeps saying
+        // what it said and a hand-typed line never pretends to a tier price.
+        line.tierFromQuantity?.let { put("tierFromQuantity", it) }
+        line.appliedTierPrice?.let { put("appliedTierPrice", it) }
+        // Written only when the line carries attributes, so a line without them
+        // stays exactly as it was.
+        if (line.lineAttributes.isNotEmpty()) {
+            put(
+                "lineAttributes",
+                JSONArray().apply {
+                    line.lineAttributes.forEach { attr ->
+                        put(
+                            JSONObject().apply {
+                                put("key", attr.key)
+                                put("value", attr.value)
+                            },
+                        )
+                    }
+                },
+            )
+        }
         // Written only when a cost was frozen, so a document issued before
         // costing existed keeps saying what it said and a service never
         // pretends to have a cost of zero.
@@ -97,6 +118,35 @@ object InvoiceJson {
                 .let { if (it.isNaN() || it.isInfinite() || it < 0.0) null else it }
         } else {
             null
+        },
+        // Absent on older files and on lines where no tier matched.
+        tierFromQuantity = if (obj.has("tierFromQuantity") && !obj.isNull("tierFromQuantity")) {
+            obj.optInt("tierFromQuantity", 0).takeIf { it > 0 }
+        } else {
+            null
+        },
+        // Absent on older files and on lines where no tier matched.
+        appliedTierPrice = if (obj.has("appliedTierPrice") && !obj.isNull("appliedTierPrice")) {
+            obj.optDouble("appliedTierPrice", 0.0)
+                .let { if (it.isNaN() || it.isInfinite() || it < 0.0) null else it }
+        } else {
+            null
+        },
+        // Absent on older files and on lines without attributes.
+        lineAttributes = if (obj.has("lineAttributes") && !obj.isNull("lineAttributes")) {
+            val array = obj.optJSONArray("lineAttributes")
+            if (array == null) emptyList() else {
+                (0 until array.length()).mapNotNull { index ->
+                    array.optJSONObject(index)?.let { attr ->
+                        ItemAttribute(
+                            key = attr.optString("key", ""),
+                            value = attr.optString("value", ""),
+                        )
+                    }
+                }
+            }
+        } else {
+            emptyList()
         },
     )
 

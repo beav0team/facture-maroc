@@ -9,7 +9,7 @@ answering from memory.
 | Version | **0.10.0** (versionCode 16) — 0.11.0 en préparation, non publiée |
 | Last commit | Phase B2 — bons de réception, coûts et marge (commits locaux) |
 | Branch | `master` (Phase A/B local commits; no tag/release for 0.11.0 yet) |
-| Tests | **474 JVM**, **18 instrumented** |
+| Tests | **487 JVM**, **18 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -45,7 +45,10 @@ correction keeps the cost already known. The valuation method is a setting
 (weighted average by default, FIFO, or none) and only affects future movements.
 A line freezes the article's cost when the document is issued, the margin is
 reported per document, per article and per month, and a below-cost sale raises a
-non-blocking warning. **B3 (catalogue and pricing) is next.**
+non-blocking warning. B3 has landed: quantity price tiers on each article
+(applied when the line is picked, frozen on the line), free key/value attributes
+printed beside the line, and both carried through JSON and the line editor.
+**B4 (stock view and reports) is next.**
 
 **RAS TVA stays out** — settled in `docs/decisions.md`: the user asked to
 continue without it, so no field is invented. Revisit only on request.
@@ -95,8 +98,8 @@ continue without it, so no field is invented. Revisit only on request.
 | Purchases / stock-in | **Exists** | numbered goods receipts (`BR-yyyyMMdd-0001`), supplier picker or free text, article lines with quantity and unit cost; a receipt writes PURCHASE movements and updates the cached quantity and purchase price; deleting reverses the movements |
 | Cost layers / average / FIFO | **Exists** | `StockEntry.unitCost`; `StockCost` replays the ledger in order: weighted average (CMP, default), FIFO layers, or none; Settings "Valorisation du stock"; switching affects future movements only |
 | Margin | **Exists** | cost frozen on each issued line (`InvoiceLine.unitCostHt`); margin per document, per article and per month (credit notes subtracted), lines without cost excluded and counted; below-cost warning |
-| Price tiers | **Missing** | |
-| Attributes | **Missing** | |
+| Price tiers | **Exists** | per article: "from this quantity, at this HT price"; the picker freezes the tier price and threshold on the line (`appliedTierPrice`, `tierFromQuantity`); whole quantities only, decimals use the base price; edited in the article form |
+| Attributes | **Exists** | free key/value (Référence, Marque, Modèle, Dimensions, Lot / série…), edited in the article form, copied onto every line and printed after the unit (`Réf: E-100`) |
 | Photos | **Out** | deferred by decision |
 
 ---

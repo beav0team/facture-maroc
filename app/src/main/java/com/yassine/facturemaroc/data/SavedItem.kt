@@ -96,6 +96,24 @@ data class SavedItem(
      * have silently turned a label into an id.
      */
     val id: String = "",
+    /**
+     * Quantity price tiers, from cheapest to most expensive quantity.
+     *
+     * Absent (empty) means the single [price] always applies. When tiers exist,
+     * [tierPrice] picks the greatest tier whose `fromQuantity` does not exceed
+     * the line's quantity; decimal quantities fall back to [price] because a
+     * tier boundary only makes sense on whole articles.
+     */
+    val priceTiers: List<PriceTier> = emptyList(),
+    /**
+     * Free key/value attributes, carried onto every invoice line this article
+     * produces.
+     *
+     * Keys are neutral suggestions (Référence, Marque, Modèle, Dimensions, Lot
+     * / série…); the shop may add any key/value pair. Nothing is industry
+     * specific.
+     */
+    val attributes: List<ItemAttribute> = emptyList(),
 ) {
     /** Whether this is a countable thing rather than a service. */
     val tracksStock: Boolean get() = stock != null
@@ -123,6 +141,25 @@ data class SavedItem(
         if (purchasePrice > 0.0) salePriceExcludingVat - purchasePrice else null
 
     /**
+     * The unit price for [quantity] units, honouring the quantity price tiers.
+     *
+     * Only whole quantities take part: selling by the metre means 2,5 m has no
+     * tier boundary to cross, so the base [price] stands. Returns the greatest
+     * tier whose `fromQuantity` does not exceed [quantity], or [price] when no
+     * tier matches.
+     */
+    fun tierPrice(quantity: Double): Double {
+        // Decimal quantities fall back to the base price: a tier boundary only
+        // makes sense on whole articles.
+        if (quantity != quantity.toInt().toDouble()) return price
+        val qty = quantity.toInt()
+        return priceTiers
+            .filter { it.fromQuantity <= qty }
+            .maxByOrNull { it.fromQuantity }
+            ?.unitPriceHt ?: price
+    }
+
+    /**
      * The saved item as an invoice line.
      *
      * The label goes in the line's description with the price copied into the
@@ -133,11 +170,26 @@ data class SavedItem(
     fun toLine(quantity: Double = 1.0): InvoiceLine = InvoiceLine(
         description = label.trim(),
         quantity = quantity,
-        unitPrice = price,
+        unitPrice = tierPrice(quantity),
         unit = unit,
+        // Freeze the tier price when a tier matches: the document keeps what the
+        // shelf offered at the moment the line was written, even if the shop
+        // later edits the tiers or raises the base price.
+        tierFromQuantity = matchingTier(quantity)?.fromQuantity,
+        appliedTierPrice = matchingTier(quantity)?.unitPriceHt,
         // The link back to the shelf. A blank id (a test, or a catalogue entry
         // that somehow skipped the store) leaves it null so the line is still a
         // valid document; the label fallback in StockMovement handles it.
         itemId = id.takeIf { it.isNotBlank() },
+        lineAttributes = attributes,
     )
+
+    /** The tier that applies at [quantity], or null when none matches. */
+    private fun matchingTier(quantity: Double): PriceTier? {
+        if (quantity != quantity.toInt().toDouble()) return null
+        val qty = quantity.toInt()
+        return priceTiers
+            .filter { it.fromQuantity <= qty }
+            .maxByOrNull { it.fromQuantity }
+    }
 }

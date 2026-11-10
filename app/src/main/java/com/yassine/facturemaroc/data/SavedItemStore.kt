@@ -425,6 +425,40 @@ class SavedItemStore(
         put("purchasePrice", purchasePrice)
         if (stock != null) put("stock", stock)
         if (reorderThreshold != null) put("reorderThreshold", reorderThreshold)
+        // Price tiers: written as an array of {fromQuantity, unitPriceHt}.
+        // Absent on older files, which means the single price applies.
+        if (priceTiers.isNotEmpty()) {
+            put(
+                "priceTiers",
+                JSONArray().apply {
+                    priceTiers.forEach { tier ->
+                        put(
+                            JSONObject().apply {
+                                put("fromQuantity", tier.fromQuantity)
+                                put("unitPriceHt", tier.unitPriceHt)
+                            },
+                        )
+                    }
+                },
+            )
+        }
+        // Attributes: written as an array of {key, value}. Absent on older
+        // files, which means no attributes.
+        if (attributes.isNotEmpty()) {
+            put(
+                "attributes",
+                JSONArray().apply {
+                    attributes.forEach { attr ->
+                        put(
+                            JSONObject().apply {
+                                put("key", attr.key)
+                                put("value", attr.value)
+                            },
+                        )
+                    }
+                },
+            )
+        }
     }
 
     private fun JSONObject.toItem() = SavedItem(
@@ -445,6 +479,39 @@ class SavedItemStore(
             optInt("reorderThreshold", 0).coerceAtLeast(0)
         } else {
             null
+        },
+        // Price tiers: absent on older files means the single price applies.
+        priceTiers = if (has("priceTiers") && !isNull("priceTiers")) {
+            val array = optJSONArray("priceTiers")
+            if (array == null) emptyList() else {
+                (0 until array.length()).mapNotNull { index ->
+                    array.optJSONObject(index)?.let { tier ->
+                        PriceTier(
+                            fromQuantity = tier.optInt("fromQuantity", 0),
+                            unitPriceHt = tier.optDouble("unitPriceHt", 0.0)
+                                .let { if (it.isNaN() || it.isInfinite()) 0.0 else it },
+                        )
+                    }
+                }
+            }
+        } else {
+            emptyList()
+        },
+        // Attributes: absent on older files means none.
+        attributes = if (has("attributes") && !isNull("attributes")) {
+            val array = optJSONArray("attributes")
+            if (array == null) emptyList() else {
+                (0 until array.length()).mapNotNull { index ->
+                    array.optJSONObject(index)?.let { attr ->
+                        ItemAttribute(
+                            key = attr.optString("key", ""),
+                            value = attr.optString("value", ""),
+                        )
+                    }
+                }
+            }
+        } else {
+            emptyList()
         },
     ).takeIf {
         // An item with no price is not an item: it would sit on the list unable

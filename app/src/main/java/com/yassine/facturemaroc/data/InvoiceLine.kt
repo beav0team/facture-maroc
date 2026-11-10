@@ -87,6 +87,28 @@ data class InvoiceLine(
      * and counted as "sans coût" rather than valued at a guessed zero.
      */
     val unitCostHt: Double? = null,
+    /**
+     * The quantity threshold of the price tier that was applied, frozen when
+     * the line is made. Null when no tier matched.
+     *
+     * Printed beside the unit price so the customer can see why the price is
+     * what it is: `9,00 DH l'unité · dès 10`.
+     */
+    val tierFromQuantity: Int? = null,
+    /**
+     * The tier's unit price, frozen at issue. The shop can still override it
+     * on the line editor; what matters is that the document keeps what the
+     * shelf offered at the moment the line was written.
+     */
+    val appliedTierPrice: Double? = null,
+    /**
+     * The article's attributes, copied onto this line so the document is
+     * self-contained: `Câble électrique · m · Réf: E-100`.
+     *
+     * Printed each time the same attribute appears on several lines — lines
+     * are not resolved back to the catalogue at print time.
+     */
+    val lineAttributes: List<ItemAttribute> = emptyList(),
 ) {
     val total: Double get() {
         val gross = quantity * unitPrice
@@ -99,12 +121,20 @@ data class InvoiceLine(
         }
     }
 
-    /** The line as it is printed: `Main-d'œuvre · heure · −10% · TVA exonérée`. */
+    /** The line as it is printed: `Câble électrique · m · Réf: E-100 · −10% · TVA exonérée`. */
     val lineLabel: String
         get() = buildList {
             if (description.isNotBlank()) add(description.trim())
             val unitText = unit.trim()
             if (unitText.isNotEmpty()) add(unitText)
+            lineAttributes.forEach { attr ->
+                if (attr.key.isNotBlank() && attr.value.isNotBlank()) {
+                    add("${attr.key}: ${attr.value}")
+                }
+            }
+            // The tier threshold is printed so the customer sees why the price
+            // is what it is: `9,00 DH l'unité · dès 10`.
+            tierFromQuantity?.let { add("dès $it") }
             if (lineDiscountPercent > 0) add("−$lineDiscountPercent%")
             if (lineDiscountFixed > 0.0) add("−${moneyText(lineDiscountFixed)} DH")
             if (taxExempt) add("TVA exonérée")
