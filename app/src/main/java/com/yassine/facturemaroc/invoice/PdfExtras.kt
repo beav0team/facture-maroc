@@ -8,6 +8,9 @@ import android.graphics.RectF
 import android.text.Layout
 import android.text.TextPaint
 import com.yassine.facturemaroc.data.InvoiceData
+import com.yassine.facturemaroc.data.InvoiceDesign
+import com.yassine.facturemaroc.data.PaymentQrText
+import com.yassine.facturemaroc.data.ShopSettings
 
 /**
  * The free-text notes and the signature, drawn the same way on every layout.
@@ -144,15 +147,42 @@ object PdfExtras {
         return y + height + if (drawCaption) CAPTION_H + 4f else 0f
     }
 
+    /** The QR square, in points, when the design asks for one. */
+    private const val QR_SIZE = 58f
+
+    /** Whether this document prints a payment block at all. */
+    fun paymentBlockShown(data: InvoiceData, shop: ShopSettings?, design: InvoiceDesign?): Boolean {
+        val bank = shop != null && shop.hasBankDetails
+        val qr = design != null && design.showPaymentQr && shop != null &&
+            PaymentQrText.of(data, shop) != null
+        return bank || qr ||
+            data.paymentState != com.yassine.facturemaroc.data.PaymentState.UNPAID ||
+            data.dueDatePrinted != null ||
+            data.deposit > 0.0
+    }
+
+    /** The bank lines, in the order a customer reads them; empty when none. */
+    private fun bankLines(shop: ShopSettings): List<String> = buildList {
+        if (shop.bankName.isNotBlank()) add("Banque : ${shop.bankName.trim()}")
+        if (shop.bankRib.isNotBlank()) add("RIB : ${shop.bankRib.trim()}")
+        if (shop.bankHolder.isNotBlank()) add("Titulaire : ${shop.bankHolder.trim()}")
+    }
+
     /**
-     * Height of the payment block; 0 when nothing was received or the design
-     * hides it. The caller reserves this before the page is broken.
+     * Height of the payment block; 0 when nothing was received and nothing else
+     * makes it print. The caller reserves this before the page is broken.
      */
-    fun paymentHeight(data: InvoiceData, label: TextPaint, body: TextPaint): Float {
+    fun paymentHeight(
+        data: InvoiceData,
+        shop: ShopSettings? = null,
+        design: InvoiceDesign? = null,
+        label: TextPaint,
+        body: TextPaint,
+    ): Float {
+        if (!paymentBlockShown(data, shop, design)) return 0f
         val due = data.dueDatePrinted != null
         val state = data.paymentState
         val deposit = data.deposit > 0.0
-        if (state == com.yassine.facturemaroc.data.PaymentState.UNPAID && !due && !deposit) return 0f
         val note = data.payment?.note?.trim().orEmpty()
         val paidLines = when (state) {
             com.yassine.facturemaroc.data.PaymentState.UNPAID -> if (deposit) 1 else 0
@@ -162,7 +192,15 @@ object PdfExtras {
         // A settled document still shows the deposit line and the zero balance.
         val depositLines = if (deposit) 1 else 0
         val lines = paidLines + depositLines + if (due) 1 else 0
-        return lines * (body.textSize + 4f) + if (note.isNotEmpty()) label.textSize + 4f else 0f
+        var h = lines * (body.textSize + 4f) +
+            if (note.isNotEmpty()) label.textSize + 4f else 0f
+        if (shop != null) {
+            h += bankLines(shop).size * (body.textSize + 4f)
+            val qr = design != null && design.showPaymentQr &&
+                PaymentQrText.of(data, shop) != null
+            if (qr) h += QR_SIZE + 6f
+        }
+        return h
     }
 
     /**
@@ -176,6 +214,8 @@ object PdfExtras {
     fun drawPayment(
         canvas: Canvas,
         data: InvoiceData,
+        shop: ShopSettings? = null,
+        design: InvoiceDesign? = null,
         x: Float,
         y: Float,
         width: Float,
@@ -183,12 +223,7 @@ object PdfExtras {
         body: TextPaint,
         bold: TextPaint,
     ): Float {
-        if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.UNPAID &&
-            data.dueDatePrinted == null &&
-            data.deposit <= 0.0
-        ) {
-            return y
-        }
+        if (!paymentBlockShown(data, shop, design)) return y
         var cursor = y
         val date = data.payment?.paidAt?.trim().orEmpty()
         // What actually came in, when the shop recorded a different method
@@ -221,7 +256,6 @@ object PdfExtras {
                 )
                 cursor += bold.textSize + 4f
             }
-            return cursor
         }
 
         if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.PAID) {
@@ -241,7 +275,7 @@ object PdfExtras {
 
             PdfText.draw(canvas, line, x, cursor, bold, width.toInt(), maxLines = 1)
             cursor += bold.textSize + 4f
-        } else {
+        } else if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.PARTIAL) {
             val head = if (date.isEmpty()) "Payé" else "Payé le $date"
             val paid = buildString {
                 append(head)
@@ -262,6 +296,32 @@ object PdfExtras {
         if (note.isNotEmpty()) {
             PdfText.draw(canvas, "Réf. $note", x, cursor, label, width.toInt(), maxLines = 1)
             cursor += label.textSize + 4f
+        }
+
+        // Bank details whenever the shop filled them: an unpaid invoice with no
+        // deadline is still the document a customer needs the RIB for.
+        if (shop != null) {
+            bankLines(shop).forEach { line ->
+                PdfText.draw(canvas, line, x, cursor, body, width.toInt(), maxLines = 2)
+                cursor += body.textSize + 4f
+            }
+            val payload = if (design != null && design.showPaymentQr) {
+                PaymentQrText.of(data, shop)
+            } else {
+                null
+            }
+            if (payload != null) {
+                PaymentQr.bitmap(payload)?.let { image ->
+                    val left = x + (width - QR_SIZE).coerceAtLeast(0f) / 2f
+                    canvas.drawBitmap(
+                        image,
+                        null,
+                        RectF(left, cursor, left + QR_SIZE, cursor + QR_SIZE),
+                        Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG),
+                    )
+                    cursor += QR_SIZE + 6f
+                }
+            }
         }
         return cursor
     }

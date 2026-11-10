@@ -301,4 +301,18 @@ class InvoiceArchiveTest {
         val verification = archive.verify()
         assertTrue(verification.message, verification.ok)
     }
+
+    @Test
+    fun `a record whose PDF is kept says so, and one with only XML does not`() {
+        // The history shows "PDF dans l'archive" per document. An XML entry is
+        // not a PDF, and claiming one is archived when the shop only exported
+        // the XML would be a promise the archive cannot keep.
+        archive.record(data, xmlFor(data.number))
+        assertFalse(archive.hasPdf(data.number))
+
+        archive.recordPdf(data, byteArrayOf(0x25, 0x50, 0x44, 0x46))
+        assertTrue(archive.hasPdf(data.number))
+        assertEquals(setOf(data.number), archive.pdfNumbers())
+        assertFalse(archive.hasPdf("F-20261029-9999"))
+    }
 }

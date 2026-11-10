@@ -125,7 +125,7 @@ class ModerneRenderer : PdfRenderer {
             firstY = y + HEAD_H,
             resumeY = A4.RESUME_Y,
             bottom = A4.BOTTOM,
-            tailHeight = tailHeight(data, design, words, contentW),
+            tailHeight = tailHeight(data, shop, design, words, contentW),
         )
 
         var headTop = y
@@ -221,7 +221,7 @@ class ModerneRenderer : PdfRenderer {
 
         if (design.showPaymentStatus) {
             ty = PdfExtras.drawPayment(
-                canvas, data, margin, ty,
+                canvas, data, shop, design, margin, ty,
                 (contentW - 160).coerceAtLeast(120).toFloat(), label, body, bodyBold,
             ) + 4f
         }
@@ -267,6 +267,7 @@ class ModerneRenderer : PdfRenderer {
 
     private fun tailHeight(
         data: InvoiceData,
+        shop: ShopSettings,
         design: InvoiceDesign,
         words: TextPaint,
         contentW: Int,
@@ -276,7 +277,7 @@ class ModerneRenderer : PdfRenderer {
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += PdfText.height(data.amountInWords, words, contentW, 4) + 10f
         val notePaint = PdfText.paint(10f, 0)
-        if (design.showPaymentStatus) h += 4f + PdfExtras.paymentHeight(data, notePaint, notePaint)
+        if (design.showPaymentStatus) h += 4f + PdfExtras.paymentHeight(data, shop, design, notePaint, notePaint)
         h += PdfExtras.notesHeight(data, notePaint, notePaint, (contentW - 160).coerceAtLeast(120))
         h += PdfExtras.signatureHeight(data)
         if (design.showPaymentMethod && data.showPaymentMethod) h += 14f

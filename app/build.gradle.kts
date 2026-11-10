@@ -82,6 +82,10 @@ dependencies {
     implementation("androidx.camera:camera-view:1.4.1")
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
+    // QR generation for the payment line on a PDF. Pure Java, about half a
+    // megabyte, and the same code already arrives transitively with ML Kit.
+    implementation("com.google.zxing:core:3.4.1")
+
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
 

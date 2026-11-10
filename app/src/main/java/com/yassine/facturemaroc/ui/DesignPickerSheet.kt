@@ -206,6 +206,13 @@ fun DesignPickerSheet(
                 onCheckedChange = { onSelect(design.copy(showPaymentStatus = it)) },
             )
             SwitchRow(
+                title = "QR de paiement",
+                subtitle = "Un code à scanner avec les coordonnées de virement et le montant dû. " +
+                    "Nécessite un RIB dans les paramètres du magasin.",
+                checked = design.showPaymentQr,
+                onCheckedChange = { onSelect(design.copy(showPaymentQr = it)) },
+            )
+            SwitchRow(
                 title = "Pied de page",
                 subtitle = "Un mot de remerciement en bas du document.",
                 checked = design.showFooter,

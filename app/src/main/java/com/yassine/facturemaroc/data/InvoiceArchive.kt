@@ -248,6 +248,25 @@ class InvoiceArchive(root: File) {
     }
 
     /**
+     * The document numbers whose PDF really sits in the archive.
+     *
+     * An entry is not enough: the ledger can name a file that is no longer
+     * there, and the history screen must not claim a PDF is archived when
+     * opening it would find nothing. A missing file is exactly what
+     * [verify] reports.
+     */
+    fun pdfNumbers(): Set<String> = synchronized(lock) {
+        runCatching { readLedger() }.getOrNull().orEmpty()
+            .filter { File(documents, "${it.contentSha256}.pdf").isFile }
+            .map { it.number }
+            .toSet()
+    }
+
+    /** Whether [number] has an archived PDF on this device. */
+    fun hasPdf(number: String): Boolean =
+        number.isNotBlank() && number in pdfNumbers()
+
+    /**
      * Files [xml] under its own hash and links it into the chain.
      *
      * Returns the entry, or `null` when nothing was recorded. It never throws:

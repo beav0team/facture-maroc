@@ -885,8 +885,14 @@ fun HomeScreen(
     }
 
     detailRecord?.let { record ->
+        // Read once per opening rather than on every recomposition: the ledger
+        // is a file, and the row only answers "is this PDF really kept?".
+        val pdfArchived = remember(record.data.number) {
+            runCatching { viewModel.archive.hasPdf(record.data.number) }.getOrDefault(false)
+        }
         InvoiceDetailSheet(
             record = record,
+            pdfArchived = pdfArchived,
             onDismiss = { detailRecord = null },
             onShare = {
                 detailRecord = null
@@ -2783,6 +2789,7 @@ private fun ArticlesSummaryPreview() {
 @Composable
 private fun InvoiceDetailSheet(
     record: InvoiceRecord,
+    pdfArchived: Boolean,
     onDismiss: () -> Unit,
     onShare: () -> Unit,
     onExportXml: () -> Unit,
@@ -2831,6 +2838,10 @@ private fun InvoiceDetailSheet(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(Modifier.height(12.dp))
             DetailRow("Articles", "${record.data.lines.size}")
+            // A small row, not a badge on every card: whether the PDF that was
+            // handed out is still kept, which is a question the archive screen
+            // answers in bulk and this one answers for this document.
+            DetailRow("PDF dans l'archive", if (pdfArchived) "Oui" else "Non")
             // The same rows the document prints, in the same order: the paper
             // calls the figure before the discount "Total HT", so a screen that
             // showed the net one under that name gave two different HT totals

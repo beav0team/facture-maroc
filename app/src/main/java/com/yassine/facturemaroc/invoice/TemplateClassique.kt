@@ -149,7 +149,7 @@ class ClassiqueRenderer : PdfRenderer {
             firstY = y + HEAD_H,
             resumeY = A4.RESUME_Y,
             bottom = A4.BOTTOM,
-            tailHeight = tailHeight(data, design, words, contentW),
+            tailHeight = tailHeight(data, shop, design, words, contentW),
         )
 
         var tableTop = y
@@ -251,7 +251,7 @@ class ClassiqueRenderer : PdfRenderer {
         var tailY = ty
         if (design.showPaymentStatus) {
             tailY = PdfExtras.drawPayment(
-                canvas, data, margin, tailY + 6f,
+                canvas, data, shop, design, margin, tailY + 6f,
                 (contentW - 160).coerceAtLeast(120).toFloat(), label, body, bodyBold,
             )
         }
@@ -276,6 +276,7 @@ class ClassiqueRenderer : PdfRenderer {
     /** How much paper the totals and everything under them need after the last row. */
     private fun tailHeight(
         data: InvoiceData,
+        shop: ShopSettings,
         design: InvoiceDesign,
         words: TextPaint,
         contentW: Int,
@@ -285,7 +286,7 @@ class ClassiqueRenderer : PdfRenderer {
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += 8f + PdfText.height(data.amountInWords, words, contentW, 4)
         val notePaint = PdfText.paint(9f, 0)
-        if (design.showPaymentStatus) h += 6f + PdfExtras.paymentHeight(data, notePaint, notePaint)
+        if (design.showPaymentStatus) h += 6f + PdfExtras.paymentHeight(data, shop, design, notePaint, notePaint)
         h += 8f + PdfExtras.notesHeight(data, notePaint, notePaint, (contentW - 160).coerceAtLeast(120))
         h += PdfExtras.signatureHeight(data)
         return h

@@ -80,7 +80,7 @@ object ReceiptPdf {
         return try {
         val printShop = with(InvoicePdf) { data.printedShop(context, shop) }
         val dir = File(context.cacheDir, "invoices").apply { mkdirs() }
-        val file = File(dir, "recu_${data.number}.pdf")
+        val file = File(dir, PdfFileName.sanitise("recu_${data.number}"))
 
         file.outputStream().use { out ->
             val doc = PdfDocument()

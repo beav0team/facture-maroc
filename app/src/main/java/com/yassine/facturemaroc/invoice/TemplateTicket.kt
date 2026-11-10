@@ -10,6 +10,7 @@ import android.text.Layout
 import android.text.TextPaint
 import com.yassine.facturemaroc.data.InvoiceData
 import com.yassine.facturemaroc.data.InvoiceDesign
+import com.yassine.facturemaroc.data.PaymentQrText
 import com.yassine.facturemaroc.data.ShopSettings
 import com.yassine.facturemaroc.data.quantityText
 
@@ -199,6 +200,31 @@ class TicketRenderer : PdfRenderer {
         data.dueDatePrinted?.let { due ->
             PdfText.draw(canvas, "Échéance : $due", margin, y, small, contentW, maxLines = 1)
             y += 9f
+        }
+        if (shop.hasBankDetails) {
+            listOfNotNull(
+                shop.bankName.trim().takeIf { it.isNotEmpty() }?.let { "Banque : $it" },
+                shop.bankRib.trim().takeIf { it.isNotEmpty() }?.let { "RIB : $it" },
+                shop.bankHolder.trim().takeIf { it.isNotEmpty() }?.let { "Titulaire : $it" },
+            ).forEach { line ->
+                PdfText.draw(canvas, line, margin, y, small, contentW, maxLines = 2)
+                y += PdfText.height(line, small, contentW, 2) + 2f
+            }
+        }
+        if (design.showPaymentQr) {
+            PaymentQrText.of(data, shop)?.let { payload ->
+                PaymentQr.bitmap(payload)?.let { image ->
+                    val size = 56f
+                    val left = margin + (contentW - size) / 2f
+                    canvas.drawBitmap(
+                        image,
+                        null,
+                        android.graphics.RectF(left, y, left + size, y + size),
+                        Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG),
+                    )
+                    y += size + 4f
+                }
+            }
         }
 
         if (design.showAmountWords) {

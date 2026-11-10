@@ -141,7 +141,7 @@ class MarocRenderer : PdfRenderer {
             firstY = y + HEAD_H,
             resumeY = A4.RESUME_Y,
             bottom = A4.BOTTOM,
-            tailHeight = tailHeight(data, design, words, contentW),
+            tailHeight = tailHeight(data, shop, design, words, contentW),
         )
 
         var tableTop = y
@@ -251,7 +251,7 @@ class MarocRenderer : PdfRenderer {
         var sigY = ty
         if (design.showPaymentStatus) {
             ty = PdfExtras.drawPayment(
-                canvas, data, margin, ty + 6f,
+                canvas, data, shop, design, margin, ty + 6f,
                 (contentW - 210).coerceAtLeast(140).toFloat(), label, body, bodyBold,
             )
         }
@@ -307,6 +307,7 @@ class MarocRenderer : PdfRenderer {
 
     private fun tailHeight(
         data: InvoiceData,
+        shop: ShopSettings,
         design: InvoiceDesign,
         words: TextPaint,
         contentW: Int,
@@ -317,7 +318,7 @@ class MarocRenderer : PdfRenderer {
             h += 12f + PdfText.height(data.amountInWords, words, contentW, 3)
         }
         val notePaint = PdfText.paint(9f, 0)
-        if (design.showPaymentStatus) h += 6f + PdfExtras.paymentHeight(data, notePaint, notePaint)
+        if (design.showPaymentStatus) h += 6f + PdfExtras.paymentHeight(data, shop, design, notePaint, notePaint)
         h += 10f + PdfExtras.notesHeight(data, notePaint, notePaint, (contentW - 210).coerceAtLeast(140))
         // The signature box is part of the tail: a page that ends just above it
         // would push the stamp onto the next sheet with the totals behind.

@@ -78,7 +78,16 @@ object InvoicePdf {
         val width = if (template.isRoll) TicketRenderer.WIDTH.toInt() else PAGE_W
 
         val dir = java.io.File(context.cacheDir, "invoices").apply { mkdirs() }
-        val file = java.io.File(dir, "facture_${data.number}.pdf")
+        val file = java.io.File(
+            dir,
+            PdfFileName.name(
+                pattern = shop.pdfFileNamePattern,
+                number = data.number,
+                client = data.client.name,
+                date = data.date,
+                type = data.documentType.label.lowercase(),
+            ),
+        )
         var pages = 0
         file.outputStream().use { out ->
             val doc = PdfDocument()

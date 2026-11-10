@@ -116,7 +116,7 @@ object StatementPdf {
         if (statement.isEmpty) return null
         return try {
             val dir = File(context.cacheDir, "invoices").apply { mkdirs() }
-            val file = File(dir, "releve_${slug(statement.clientName)}.pdf")
+            val file = File(dir, PdfFileName.sanitise("releve_${slug(statement.clientName)}"))
             val pages = statement.lines.chunked(ROWS_PER_PAGE)
 
             file.outputStream().use { out ->

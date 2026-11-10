@@ -51,6 +51,13 @@ data class InvoiceDesign(
     val showPaymentMethod: Boolean = true,
     /** Whether a received payment and the balance are printed on the document. */
     val showPaymentStatus: Boolean = true,
+    /**
+     * Whether a payment QR is drawn with the bank details.
+     *
+     * Off by default: a code is an instruction to pay by transfer, and a shop
+     * that takes cash should not have one appear because it filled a RIB.
+     */
+    val showPaymentQr: Boolean = false,
     val showFooter: Boolean = true,
 ) {
     /**
@@ -115,6 +122,7 @@ class InvoiceDesignStore(context: Context) {
             showLegalIdentifiers = prefs.getBoolean("showLegalIdentifiers", true),
             showPaymentMethod = prefs.getBoolean("showPaymentMethod", true),
             showPaymentStatus = prefs.getBoolean("showPaymentStatus", true),
+            showPaymentQr = prefs.getBoolean("showPaymentQr", false),
             showFooter = prefs.getBoolean("showFooter", true),
         )
     }
@@ -147,6 +155,7 @@ class InvoiceDesignStore(context: Context) {
                 .putBoolean("showLegalIdentifiers", design.showLegalIdentifiers)
                 .putBoolean("showPaymentMethod", design.showPaymentMethod)
                 .putBoolean("showPaymentStatus", design.showPaymentStatus)
+                .putBoolean("showPaymentQr", design.showPaymentQr)
                 .putBoolean("showFooter", design.showFooter)
                 .apply()
         }
