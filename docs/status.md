@@ -10,7 +10,7 @@ answering from memory.
 | Aperçu | **0.12.0-beta.1** (versionCode 19) — GitHub, pré-version, non parcourue sur appareil |
 | Last commit | Audit du 2026-11-10 : paiements, stockage, catalogue, rapports, avoirs, sauvegarde Android |
 | Branch | `master` (tag `v0.11.1` à poser après le build R8) |
-| Tests | **575 JVM**, **20 instrumented** |
+| Tests | **597 JVM**, **20 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -53,6 +53,17 @@ gèle, les 577 tests JVM passent et le rendu PDF est inchangé.
 - Formulaire d'article en pleine page (`ItemEditorScreen`) : en-tête, contenu
   défilant, et « Annuler / Enregistrer » dans une barre fixe — une boîte de
   dialogue coupait le formulaire au milieu à 360 dp.
+- **Clients** : deux icônes d'appel et de message WhatsApp (ACTION_DIAL et
+  `wa.me`, aucune permission), la carte dit le reste dû ou le retard au lieu
+  d'un nombre de documents, filtres « Doit de l'argent / En retard » avec
+  compte, tri par nom, solde ou date.
+- **Articles** : un seul modèle de navigation — la carte des dossiers avec
+  « Tous » et « Sans dossier », puis une liste de lignes avec fil d'Ariane ;
+  la recherche couvre toujours tout le catalogue et le dit ; scan d'un
+  code-barres pour remplir la recherche ; le tri n'offre que les ordres dont
+  le champ est visible ; la quantité vient du journal de stock
+  (`StockLedger.balances()`), plus du cache ; « marge inconnue » au lieu d'une
+  ligne absente.
 - Paramètres : index de cinq groupes avec recherche insensible aux accents
   (Boutique, Facturation, Catalogue et stock, Données, Diagnostic), valeur
   courante affichée sous chaque groupe (« TVA 20 % », « Version … »), retour =

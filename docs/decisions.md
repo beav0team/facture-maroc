@@ -184,6 +184,15 @@ amount, an "Avoir" badge, no deadline and is never late.
 
 ---
 
+### 2026-11-11 — Appeler et écrire depuis une fiche, sans permission
+Les icônes d'appel et de WhatsApp utilisent `ACTION_DIAL` et un lien
+`https://wa.me/…`. `ACTION_CALL` aurait exigé `CALL_PHONE` et une autorisation à
+l'installation pour un geste que le composeur fait aussi bien ; `wa.me` remet le
+numéro à WhatsApp ou au navigateur, qui possèdent le réseau. **L'application
+garde zéro permission réseau** : elle ne charge aucune donnée, et le lien n'est
+ouvert que si le magasin touche l'icône. Le numéro est normalisé
+(`06 12 34 56 78` → `+212612345678`) et un numéro étranger garde son pays.
+
 ## Open
 
 1. **Auto-entrepreneur number** — print it on documents?

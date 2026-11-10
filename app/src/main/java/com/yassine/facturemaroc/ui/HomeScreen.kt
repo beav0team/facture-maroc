@@ -763,7 +763,13 @@ fun HomeScreen(
                     purchases = purchases,
                     reorderCount = items.count { it.needsReorder },
                     onReorder = {
+                        // One door: the Stock card lands on the same filter the
+                        // « À commander » chip drives, and on the list rather
+                        // than the shelf map, so the low articles are what is on
+                        // screen.
                         reorderOnly = true
+                        showAllArticles = true
+                        inFolder = null
                         tabIndex = HomeTab.ARTICLES.ordinal
                         query = ""
                     },

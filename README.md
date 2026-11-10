@@ -197,7 +197,7 @@ wrapper Gradle fourni.
 
 ```bash
 export JAVA_HOME="$HOME/.local/jdk"      # ou votre JDK 21
-./gradlew testDebugUnitTest             # 577 tests JVM
+./gradlew testDebugUnitTest             # 597 tests JVM
 ./gradlew assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew bundleRelease                 # app/build/outputs/bundle/release/app-release.aab
 ./gradlew assembleRelease               # app/build/outputs/apk/release/app-release.apk
@@ -215,7 +215,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 
 ## Tests
 
-**577 tests JVM**, plus vingt tests instrumentés :
+**597 tests JVM**, plus vingt tests instrumentés :
 
 | Suite | Ce qu’elle protège |
 |---|---|
