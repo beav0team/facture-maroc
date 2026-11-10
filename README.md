@@ -7,6 +7,10 @@ patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
 Version **0.10.0** (versionCode 16) · Android 8.0+ (minSdk 26) · Français.
 
+État du produit : [`docs/status.md`](docs/status.md) · Décisions :
+[`docs/decisions.md`](docs/decisions.md) · Checklist de version :
+[`docs/release-checklist.md`](docs/release-checklist.md).
+
 <img src="play_store/screenshots/01-factures.png" width="260" alt="Écran Factures">
 
 ## Ce que fait l’application
@@ -307,8 +311,8 @@ Le compte Play Console est vérifié depuis le 30 octobre 2026. L’AAB signé s
 construit avec `./gradlew :app:bundleRelease`
 (`app/build/outputs/bundle/release/app-release.aab`) ; il cible l’API 36, le
 minimum exigé par Google pour toute nouvelle application depuis le
-31 août 2026. Il reste à saisir l’adresse e-mail de contact (obligatoire et
-vérifiée par Google) dans Play Console.
+31 août 2026. Vérifier que l’adresse e-mail de contact (obligatoire et vérifiée
+par Google) est bien saisie dans Play Console.
 
 ## Historique
 
