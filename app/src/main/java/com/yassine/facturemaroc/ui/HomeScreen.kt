@@ -141,6 +141,8 @@ import com.yassine.facturemaroc.data.XmlExportOutcome
 import com.yassine.facturemaroc.data.billedInMonth
 import com.yassine.facturemaroc.data.billedTotalInMonth
 import com.yassine.facturemaroc.data.creditedInMonth
+import com.yassine.facturemaroc.data.vatCollectedInMonth
+import com.yassine.facturemaroc.data.vatByRateInMonth
 import com.yassine.facturemaroc.data.filterArticles
 import com.yassine.facturemaroc.data.filterToReorder
 import com.yassine.facturemaroc.data.labelTaken
@@ -1444,6 +1446,16 @@ private fun MonthSummary(records: List<InvoiceRecord>) {
     val margin = remember(records, monthStamp) {
         MarginReport.forMonth(records, monthStamp)
     }
+    // What the shop owes the tax office for the month: the same figure the
+    // documents print, added up and net of the credit notes.
+    val vatCollected = remember(records, monthStamp) {
+        records.vatCollectedInMonth(monthStamp)
+    }
+    // The same figure broken down by rate, so a mixed-activity month shows both
+    // taxes instead of one number nobody can reconcile with the paper.
+    val vatByRate = remember(records, monthStamp) {
+        records.vatByRateInMonth(monthStamp)
+    }
 
     Card(
         shape = MaterialTheme.shapes.large,
@@ -1497,6 +1509,31 @@ private fun MonthSummary(records: List<InvoiceRecord>) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                 )
+            }
+            // The tax the month collected, net of its credit notes. A shop reads
+            // this figure when it sets money aside, and hiding it under a detail
+            // screen is exactly when it gets forgotten.
+            if (vatCollected != 0.0) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "TVA collectée : ${vatCollected.asDirhams()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                )
+                if (vatByRate.size > 1) {
+                    Text(
+                        vatByRate.joinToString(" · ") { recap ->
+                            val rate = if (recap.rate == Math.floor(recap.rate)) {
+                                recap.rate.toInt().toString()
+                            } else {
+                                recap.rate.toString()
+                            }
+                            "TVA $rate % ${recap.amount.asDirhams()}"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
+                    )
+                }
             }
             // The month's margin, under what was billed: a shop that sold a lot
             // and earned nothing needs to see both numbers together. Lines whose

@@ -165,6 +165,38 @@ object Backup {
                             // stays readable by an older build of the app.
                             item.stock?.let { put("stock", it) }
                             item.reorderThreshold?.let { put("reorderThreshold", it) }
+                            // Same key the store writes, so a restored catalogue
+                            // keeps its quantity prices and its attributes.
+                            if (item.priceTiers.isNotEmpty()) {
+                                put(
+                                    "priceTiers",
+                                    JSONArray().apply {
+                                        item.priceTiers.forEach { tier ->
+                                            put(
+                                                JSONObject().apply {
+                                                    put("fromQuantity", tier.fromQuantity)
+                                                    put("unitPriceHt", tier.unitPriceHt)
+                                                },
+                                            )
+                                        }
+                                    },
+                                )
+                            }
+                            if (item.attributes.isNotEmpty()) {
+                                put(
+                                    "attributes",
+                                    JSONArray().apply {
+                                        item.attributes.forEach { attr ->
+                                            put(
+                                                JSONObject().apply {
+                                                    put("key", attr.key)
+                                                    put("value", attr.value)
+                                                },
+                                            )
+                                        }
+                                    },
+                                )
+                            }
                         },
                     )
                 }

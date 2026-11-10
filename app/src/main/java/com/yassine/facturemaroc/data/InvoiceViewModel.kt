@@ -955,6 +955,20 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * a cancelled or failed save leaves the draft exactly as it was and does
      * not leave a hole in the invoice sequence.
      */
+    /**
+     * Writes the shop's documents as a spreadsheet for its accountant.
+     *
+     * The file is built from the same issued records the list shows, so a
+     * document the shop can read is a document the accountant gets: no draft
+     * and no deleted row can slip in through a second query.
+     */
+    suspend fun exportAccountant(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        val csv = runCatching {
+            AccountantExport.documentsCsv(invoices.invoices.value)
+        }.getOrElse { return@withContext false }
+        writeText(uri, csv)
+    }
+
     suspend fun exportDraftXml(uri: Uri): XmlExportOutcome = withContext(Dispatchers.IO) {
         if (_lines.value.isEmpty()) return@withContext XmlExportOutcome.NothingToExport
         saveClient()

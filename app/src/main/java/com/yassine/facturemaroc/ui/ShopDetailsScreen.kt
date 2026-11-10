@@ -88,6 +88,7 @@ import com.yassine.facturemaroc.data.Backup
 import com.yassine.facturemaroc.data.BackupData
 import com.yassine.facturemaroc.data.BackupExportOutcome
 import com.yassine.facturemaroc.data.BackupReadOutcome
+import com.yassine.facturemaroc.data.AccountantExport
 import com.yassine.facturemaroc.data.SnapshotStore
 import com.yassine.facturemaroc.data.AutoBackup
 import com.yassine.facturemaroc.data.StockDrift
@@ -255,6 +256,25 @@ fun ShopDetailsScreen(
                     is BackupReadOutcome.Ready -> pendingRestore = outcome.backup
                     is BackupReadOutcome.Failed -> snackbar.showSnackbar(outcome.message)
                 }
+            }
+        }
+    }
+
+    // A CSV for the accountant: semicolons and French decimals, so it opens in
+    // Excel without an import dialog.
+    val exportAccountant = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/csv"),
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                val written = viewModel.exportAccountant(uri)
+                snackbar.showSnackbar(
+                    if (written) {
+                        "Export comptable écrit."
+                    } else {
+                        "L'export comptable n'a pas pu être écrit."
+                    },
+                )
             }
         }
     }
@@ -842,6 +862,21 @@ fun ShopDetailsScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text("Exporter une sauvegarde")
+                    }
+                    OutlinedButton(
+                        onClick = { exportAccountant.launch(AccountantExport.fileName()) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        Icon(
+                            Icons.Filled.FileDownload,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Exporter pour le comptable (CSV)")
                     }
                     OutlinedButton(
                         onClick = {

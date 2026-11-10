@@ -47,6 +47,52 @@ fun List<InvoiceRecord>.billedTotalInMonth(monthStamp: String): Double {
     return Math.round((billed - credited) * 100.0) / 100.0
 }
 
+/**
+ * TVA collected in the month, net of credit notes.
+ *
+ * Read from each document's own [InvoiceData.vatAmount], never recomputed from
+ * the totals: a document printed one figure to the customer, and the report has
+ * to agree with the paper even when a centime landed on an arrondi.
+ */
+fun List<InvoiceRecord>.vatCollectedInMonth(monthStamp: String): Double {
+    val billed = billedInMonth(monthStamp).sumOf { it.data.vatAmount }
+    val credited = creditedInMonth(monthStamp).sumOf { it.data.vatAmount }
+    return Math.round((billed - credited) * 100.0) / 100.0
+}
+
+/**
+ * The month's VAT per rate, base and tax, net of credit notes.
+ *
+ * This is the table an accountant asks for: the total alone does not say whether
+ * the tax is 20 % on sales or 10 % on services. Rates are kept even when a rate
+ * nets to zero, so a month of two 10 % sales and one 10 % credit still shows the
+ * 10 % line instead of pretending the rate was never used.
+ */
+fun List<InvoiceRecord>.vatByRateInMonth(monthStamp: String): List<VatRecap> {
+    val totals = LinkedHashMap<Double, DoubleArray>() // rate -> [base, amount]
+    fun add(records: List<InvoiceRecord>, sign: Double) {
+        records.forEach { record ->
+            record.data.vatBreakdown.forEach { recap ->
+                if (recap.rate <= 0.0) return@forEach
+                val row = totals.getOrPut(recap.rate) { DoubleArray(2) }
+                row[0] += sign * recap.base
+                row[1] += sign * recap.amount
+            }
+        }
+    }
+    add(billedInMonth(monthStamp), 1.0)
+    add(creditedInMonth(monthStamp), -1.0)
+    return totals.entries
+        .map { (rate, row) ->
+            VatRecap(
+                rate = rate,
+                base = Math.round(row[0] * 100.0) / 100.0,
+                amount = Math.round(row[1] * 100.0) / 100.0,
+            )
+        }
+        .sortedByDescending { it.rate }
+}
+
 private val BILLED_DOCUMENTS = setOf(
     DocumentType.FACTURE,
     DocumentType.TICKET,

@@ -9,7 +9,7 @@ answering from memory.
 | Version | **0.10.0** (versionCode 16) — 0.11.0 en préparation, non publiée |
 | Last commit | Phase B2 — bons de réception, coûts et marge (commits locaux) |
 | Branch | `master` (Phase A/B local commits; no tag/release for 0.11.0 yet) |
-| Tests | **487 JVM**, **18 instrumented** |
+| Tests | **496 JVM**, **18 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -48,7 +48,11 @@ reported per document, per article and per month, and a below-cost sale raises a
 non-blocking warning. B3 has landed: quantity price tiers on each article
 (applied when the line is picked, frozen on the line), free key/value attributes
 printed beside the line, and both carried through JSON and the line editor.
-**B4 (stock view and reports) is next.**
+B4 has landed: the month card shows VAT collected (net of credit notes) with a
+per-rate line, the article summary keeps the stock value and the reorder count,
+and Settings exports the issued documents as a CSV the accountant can open
+(semicolons, French decimals, one row per document, drafts excluded).
+**C1 (hardening) is next** — then A5/R8/0.11.0 and C2.
 
 **RAS TVA stays out** — settled in `docs/decisions.md`: the user asked to
 continue without it, so no field is invented. Revisit only on request.
@@ -83,7 +87,8 @@ continue without it, so no field is invented. Revisit only on request.
 | UBL 2.1 export | **Exists** | invoice + credit note, discount, prepaid; no DGI profile |
 | Archive | **Exists** | hash chain for XML **and** PDF; verification screen in Settings; each record's detail sheet says whether its PDF is really archived |
 | Backups | **Exists** | JSON export, automatic daily copies, restore |
-| Reports | **Partial** | monthly billed net of credit notes only |
+| Reports | **Exists** | month: billed net of credit notes, **VAT collected with a per-rate line**, margin (revenue/cost/lines without cost); stock value and "à commander" in the article summary |
+| Accountant export | **Exists** | CSV from Settings: one row per issued document (date, number, type, client, ICE, HT, VAT, TTC, paid, due, status), semicolons and French decimals, drafts excluded |
 
 ### Inventory
 
