@@ -131,6 +131,30 @@ class SavedItemStoreTest {
     }
 
     @Test
+    fun `the whole catalogue's costs come from one pass and agree with one article`() {
+        val ledger = StockLedger(File(temp.root, StockLedger.FILE))
+        ledger.append(StockEntry("a", delta = 10, StockReason.PURCHASE, unitCost = 30.0))
+        ledger.append(StockEntry("b", delta = 5, StockReason.PURCHASE, unitCost = 70.0))
+        val store = SavedItemStore(catalogue(), ledger)
+
+        val costs = store.unitCosts(CostMethod.CMP)
+
+        assertEquals(30.0, costs.getValue("a"), 0.001)
+        assertEquals(70.0, costs.getValue("b"), 0.001)
+        // The bulk map and the single-article read must not be two answers.
+        assertEquals(store.unitCostOf("a", CostMethod.CMP)!!, costs.getValue("a"), 0.001)
+    }
+
+    @Test
+    fun `no valuation means no costs at all`() {
+        val ledger = StockLedger(File(temp.root, StockLedger.FILE))
+        ledger.append(StockEntry("a", delta = 10, StockReason.PURCHASE, unitCost = 30.0))
+        val store = SavedItemStore(catalogue(), ledger)
+
+        assertTrue(store.unitCosts(CostMethod.NONE).isEmpty())
+    }
+
+    @Test
     fun `a write that fails is reported and does not change the screen`() {
         val errors = mutableListOf<String>()
         val store = open(errors)

@@ -300,6 +300,23 @@ class SavedItemStore(
     fun unitCostOf(itemId: String, method: CostMethod): Double? =
         StockCost.unitCost(ledger.entriesChronological(itemId), method)
 
+    /**
+     * Every article's unit cost under [method], from a single pass over the
+     * ledger.
+     *
+     * The catalogue card and the issue path both need the whole shelf at once.
+     * Calling [unitCostOf] in a loop reads the file once per article, so a shop
+     * with two hundred articles pays two hundred scans to draw one screen.
+     */
+    fun unitCosts(method: CostMethod): Map<String, Double> =
+        if (method == CostMethod.NONE) {
+            emptyMap()
+        } else {
+            ledger.byItemChronological().mapNotNull { (itemId, history) ->
+                StockCost.unitCost(history, method)?.let { itemId to it }
+            }.toMap()
+        }
+
     /** The catalogue as a receipt reads it. */
     override fun catalogue(): List<SavedItem> = _items.value
 

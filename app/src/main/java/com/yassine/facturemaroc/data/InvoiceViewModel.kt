@@ -681,11 +681,14 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * it — opening a saved document and sharing it again must not revalue it.
      */
     private fun issueLines(): List<InvoiceLine> {
-        val method = _shop.value.costMethod
+        // One pass over the ledger for every line being issued: the document is
+        // the moment this is read, and a second article on the page must not
+        // mean a second scan of the whole history.
+        val costs = savedItems.unitCosts(_shop.value.costMethod)
         return _lines.value.map { line ->
             if (line.unitCostHt != null) return@map line
             val id = line.itemId?.takeIf { it.isNotBlank() } ?: return@map line
-            val cost = savedItems.unitCostOf(id, method) ?: return@map line
+            val cost = costs[id] ?: return@map line
             line.copy(unitCostHt = cost)
         }
     }
@@ -693,6 +696,10 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     /** What one unit of [itemId] is worth under the shop's chosen method. */
     fun unitCostOf(itemId: String): Double? =
         savedItems.unitCostOf(itemId, _shop.value.costMethod)
+
+    /** Every article's cost at once, for the screens that draw the catalogue. */
+    fun unitCosts(): Map<String, Double> =
+        savedItems.unitCosts(_shop.value.costMethod)
 
     /** The number the next goods receipt will carry. */
     fun nextPurchaseNumber(): String = purchases.nextNumber()

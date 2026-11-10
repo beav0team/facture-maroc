@@ -420,14 +420,20 @@ class BackupTest {
         val outcome = Backup.read(ByteArrayInputStream(tooBig))
 
         assertTrue(outcome is BackupReadOutcome.Failed)
-        assertTrue((outcome as BackupReadOutcome.Failed).message.contains("8 Mo"))
+        // The message names the cap the code enforces, so raising the constant
+        // cannot leave a number in French that no longer matches it.
+        assertTrue(
+            (outcome as BackupReadOutcome.Failed).message.contains(
+                "${Backup.MAX_BYTES / (1024 * 1024)} Mo",
+            ),
+        )
     }
 
     @Test
     fun `a logo that would push the file over the cap is left out`() {
         // The picker allows a 4 MiB logo, which Base64 turns into 5.6 MB. With a
         // few hundred documents carrying real descriptions, the file crosses the
-        // 8 MB the importer accepts — a backup that exists and can never be
+        // cap the importer accepts — a backup that exists and can never be
         // restored. Everything the shop cannot retype survives without it.
         val huge = ByteArray(4 * 1024 * 1024) { 0x42 }
         val fat = InvoiceRecord(
@@ -436,7 +442,7 @@ class BackupTest {
                 number = "F-FAT",
                 date = "21/10/2026",
                 client = InvoiceClient(name = "Client"),
-                lines = listOf(InvoiceLine("L".repeat(20_000), quantity = 1.0, unitPrice = 100.0)),
+                lines = listOf(InvoiceLine("L".repeat(80_000), quantity = 1.0, unitPrice = 100.0)),
             ),
             status = InvoiceStatus.ISSUED,
             createdAt = 0,
@@ -462,7 +468,7 @@ class BackupTest {
 
     @Test
     fun `a backup the app could not restore is refused instead of written`() {
-        // 60 documents of ~200 kB of remarks: over the cap even without a logo.
+        // 100 documents of ~200 kB of remarks: over the cap even without a logo.
         val fat = InvoiceRecord(
             id = "fat",
             data = InvoiceData(
@@ -476,7 +482,7 @@ class BackupTest {
             updatedAt = 0,
         )
 
-        val error = runCatching { export(logo = null, invoices = List(60) { fat }) }.exceptionOrNull()
+        val error = runCatching { export(logo = null, invoices = List(100) { fat }) }.exceptionOrNull()
 
         assertTrue(error is Backup.TooLargeException)
     }

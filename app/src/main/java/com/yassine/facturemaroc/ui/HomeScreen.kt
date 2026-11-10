@@ -329,8 +329,11 @@ fun HomeScreen(
      * a receipt yet has.
      */
     val unitCosts = remember(items, purchases, shop.costMethod) {
+        // One pass for the whole list: the ledger is read once, not once per
+        // card, and the purchase price fills in where no history carries a cost.
+        val known = viewModel.unitCosts()
         items.associate { item ->
-            item.id to (viewModel.unitCostOf(item.id) ?: item.purchasePrice.takeIf { it > 0.0 })
+            item.id to (known[item.id] ?: item.purchasePrice.takeIf { it > 0.0 })
         }
     }
     val marginOf: (SavedItem) -> MarginHint? = remember(unitCosts, shop) {

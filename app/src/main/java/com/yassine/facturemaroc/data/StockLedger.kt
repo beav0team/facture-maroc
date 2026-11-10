@@ -69,6 +69,17 @@ class StockLedger(private val file: File) {
     fun entriesChronological(itemId: String): List<StockEntry> =
         entries.filter { it.itemId == itemId }
 
+    /**
+     * Every article's history in one pass, each in the order it happened.
+     *
+     * What a screen that needs a cost for the whole catalogue must call: asking
+     * [entriesChronological] once per article walks the entire file once per
+     * article, which on a busy shelf is a scan per card and a second scan per
+     * line at issue time.
+     */
+    fun byItemChronological(): Map<String, List<StockEntry>> =
+        entries.groupBy { it.itemId }
+
     /** The quantity one article should have, or 0 when it has no history. */
     fun balance(itemId: String): Int =
         entries.sumOf { if (it.itemId == itemId) it.delta else 0 }

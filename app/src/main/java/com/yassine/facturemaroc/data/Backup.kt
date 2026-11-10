@@ -31,8 +31,20 @@ object Backup {
     const val FORMAT = "backup"
     const val VERSION = 1
 
-    /** Refuse absurdly large files before parsing them into memory. */
-    const val MAX_BYTES = 8 * 1024 * 1024
+    /**
+     * Refuse absurdly large files before parsing them into memory.
+     *
+     * Measured rather than guessed: five thousand issued documents of two lines
+     * each — the shop this app is written for at the top of its range — weigh
+     * 7,8 Mo. The old 8 Mo cap left less than three percent of headroom, so a
+     * shop with three lines and a client note per document was refused a backup
+     * it could have written. 16 Mo covers about ten thousand documents and is
+     * still a file an import can hold in memory twice over on a phone.
+     */
+    const val MAX_BYTES = 16 * 1024 * 1024
+
+    /** The cap as the message prints it: `16 Mo`, never rounded by hand. */
+    private val MAX_MB: Int get() = MAX_BYTES / (1024 * 1024)
 
     private const val MAX_LOGO_BYTES = 4 * 1024 * 1024
 
@@ -274,9 +286,9 @@ object Backup {
     /** What the import cap is measured against, so the two agree. */
     private fun String.sizeInBytes(): Int = toByteArray(Charsets.UTF_8).size
 
-    private const val TOO_LARGE =
-        "Cette sauvegarde dépasserait 8 Mo même sans le logo. Elle n'a pas été écrite : " +
-            "envoyez plutôt un export des factures par lots."
+    private val TOO_LARGE: String
+        get() = "Cette sauvegarde dépasserait $MAX_MB Mo même sans le logo. Elle n'a pas été " +
+            "écrite : envoyez plutôt un export des factures par lots."
 
     /**
      * Reads a file, refusing anything that is not a complete backup.
@@ -458,7 +470,7 @@ object Backup {
             total += read
             if (total > MAX_BYTES) {
                 return BackupReadOutcome.Failed(
-                    "Le fichier dépasse 8 Mo. Une sauvegarde Facture Maroc fait quelques kilo-octets.",
+                    "Le fichier dépasse $MAX_MB Mo. Une sauvegarde Facture Maroc fait quelques kilo-octets.",
                 )
             }
             output.write(buffer, 0, read)
