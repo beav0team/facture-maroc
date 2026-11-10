@@ -122,6 +122,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yassine.facturemaroc.data.ClientStatements
+import com.yassine.facturemaroc.data.DocumentStatus
 import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.canBeCredited
 import com.yassine.facturemaroc.data.InvoiceClient
@@ -1689,10 +1690,17 @@ private fun InvoiceCard(
                 )
             }
             Spacer(Modifier.width(8.dp))
-            Column(horizontalAlignment = Alignment.End) {
+            // The amount gets a hard ceiling so a six-figure invoice cannot eat
+            // the client's name, which is the only thing on this row a shop
+            // reads at a glance. The status is one line under it, never a stack
+            // of pills: three pills wrapped inside their own shape at 360 dp.
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.widthIn(max = 132.dp),
+            ) {
                 Text(
                     if (credit) "−${record.data.total.asDirhams()}" else record.data.total.asDirhams(),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.numerals,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     color = if (credit) {
@@ -1701,47 +1709,15 @@ private fun InvoiceCard(
                         MaterialTheme.colorScheme.onSurface
                     },
                 )
-                Spacer(Modifier.height(4.dp))
-                StatusPill(
-                    text = if (credit) "Avoir" else record.status.label,
-                    container = if (draft) {
-                        MaterialTheme.colorScheme.tertiaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.secondaryContainer
-                    },
-                    content = if (draft) {
-                        MaterialTheme.colorScheme.onTertiaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSecondaryContainer
-                    },
-                )
-                if (!draft && record.data.isOverdue()) {
-                    Spacer(Modifier.height(4.dp))
-                    StatusPill(
-                        text = "En retard",
-                        container = MaterialTheme.colorScheme.errorContainer,
-                        content = MaterialTheme.colorScheme.onErrorContainer,
-                    )
-                }
-                if (!draft && !credit && record.data.paymentState != PaymentState.UNPAID) {
-                    Spacer(Modifier.height(4.dp))
-                    val settled = record.data.paymentState == PaymentState.PAID
-                    StatusPill(
-                        text = if (settled) {
-                            "Payée"
-                        } else {
-                            "${record.data.balanceDue.asDirhams()} dû"
-                        },
-                        container = if (settled) {
-                            MaterialTheme.colorScheme.tertiaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.errorContainer
-                        },
-                        content = if (settled) {
-                            MaterialTheme.colorScheme.onTertiaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onErrorContainer
-                        },
+                val status = DocumentStatus.of(record)
+                if (status.text.isNotEmpty()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        status.text,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = status.tone.color(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }

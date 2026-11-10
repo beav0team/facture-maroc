@@ -29,9 +29,32 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.yassine.facturemaroc.data.StatusTone
 import com.yassine.facturemaroc.invoice.InvoicePdf
 
-/** A small coloured label: "Brouillon", "Émise". */@Composable
+/**
+ * The colour a status line carries.
+ *
+ * Colour means payment state and nothing else: a late invoice is the only red
+ * in the list, money still owed is amber, and settled is the shop's teal. This
+ * is why the old green "Émise" pill was removed — it looked like "paid".
+ */
+@Composable
+fun StatusTone.color(): Color = when (this) {
+    StatusTone.NEUTRAL -> MaterialTheme.colorScheme.onSurfaceVariant
+    StatusTone.DUE -> MaterialTheme.colorScheme.tertiary
+    StatusTone.OVERDUE -> MaterialTheme.colorScheme.error
+    StatusTone.PAID -> MaterialTheme.colorScheme.secondary
+    StatusTone.DRAFT -> MaterialTheme.colorScheme.onSurfaceVariant
+}
+
+/**
+ * A small coloured label: "Brouillon", "Émise".
+ *
+ * Kept for the places that still need a badge (settings, stock); the document
+ * row no longer uses it — see [StatusTone.color] and `DocumentStatus`.
+ */
+@Composable
 fun StatusPill(
     text: String,
     container: Color,
