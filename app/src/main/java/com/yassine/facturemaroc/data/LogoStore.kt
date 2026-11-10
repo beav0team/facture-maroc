@@ -41,9 +41,20 @@ object LogoStore {
         }.getOrNull()
     }
 
-    /** Reads the logo for [hash], or null when it is absent or unreadable. */
+    /**
+     * A hash this store will accept as a file name.
+     *
+     * The hash is read back from a backup file, so it is data a stranger could
+     * have written. It has to be exactly what [sha256Hex] produces — 64 lowercase
+     * hex characters — or `../../databases/shop` becomes a path and the app reads
+     * a file it was never given.
+     */
+    fun isHash(text: String): Boolean =
+        text.length == 64 && text.all { it in '0'..'9' || it in 'a'..'f' }
+
+    /** Reads the logo for [hash], or null when it is absent or not a real hash. */
     fun read(context: Context, hash: String): ByteArray? {
-        if (hash.isBlank()) return null
+        if (!isHash(hash)) return null
         val file = File(dir(context), "$hash.png")
         if (!file.isFile) return null
         return runCatching { file.readBytes() }.getOrNull()?.takeIf { it.isNotEmpty() }

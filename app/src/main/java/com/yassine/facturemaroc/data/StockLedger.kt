@@ -31,7 +31,26 @@ data class StockDrift(
  */
 class StockLedger(private val file: File) {
 
+    /** Positions (1-based) of interior lines that could not be parsed. */
+    private val droppedLines = mutableListOf<Int>()
+
+    /** Whether the file ended in a half-written line, which is normal. */
+    private var tornTail = false
+
     private val entries: MutableList<StockEntry> = read()
+
+    /**
+     * Lines the history could not read, as 1-based positions.
+     *
+     * Empty on a healthy file. A non-empty list is a hole in the history: the
+     * balance is computed from what survived, so the shelf reads lower than it
+     * really is. The app used to drop such a line without a word, which is how a
+     * repair could quietly lower a stock count.
+     */
+    val unreadableLines: List<Int> get() = droppedLines.toList()
+
+    /** Whether the last line was torn, the one thing a dying phone explains. */
+    val lastLineWasTorn: Boolean get() = tornTail
 
     /** Every entry, oldest first, as it was appended. */
     fun all(): List<StockEntry> = entries.toList()
@@ -154,13 +173,36 @@ class StockLedger(private val file: File) {
 
     private fun read(): MutableList<StockEntry> {
         if (!file.isFile) return mutableListOf()
-        val text = runCatching { file.readText() }.getOrElse { return mutableListOf() }
-        return text.lineSequence()
-            .mapNotNull(StockEntry::parse)
-            .toMutableList()
+        val text = runCatching { file.readText() }.getOrElse {
+            android.util.Log.e(TAG, "the ledger could not be read", it)
+            return mutableListOf()
+        }
+        val lines = text.lineSequence().filter { it.isNotBlank() }.toList()
+        val parsed = mutableListOf<StockEntry>()
+        lines.forEachIndexed { index, line ->
+            val entry = StockEntry.parse(line)
+            if (entry != null) {
+                parsed += entry
+                return@forEachIndexed
+            }
+            // Only the last line can be torn: it was being appended when the
+            // process stopped, so the movement it describes never finished and
+            // dropping it loses nothing. Any other unreadable line is a hole in
+            // the history and is reported rather than skipped in silence.
+            if (index == lines.lastIndex) {
+                tornTail = true
+                android.util.Log.w(TAG, "dropped a torn last ledger line")
+            } else {
+                droppedLines += index + 1
+                android.util.Log.e(TAG, "unreadable ledger line ${index + 1}")
+            }
+        }
+        return parsed
     }
 
     companion object {
+        private const val TAG = "StockLedger"
+
         /** The one ledger file in `filesDir`. */
         const val FILE = "stock_ledger.jsonl"
     }

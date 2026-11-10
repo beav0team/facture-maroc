@@ -29,16 +29,34 @@ import java.util.UUID
  * product whose stock is not counted, which is exactly what it was.
  */
 class SavedItemStore(
-    context: Context,
+    private val file: File,
     /**
      * The movement history, injected so the repair check can share the same
      * instance the store writes through. A second reader on the same file would
      * show a stale balance the moment a sale was recorded.
      */
-    val ledger: StockLedger = StockLedger(File(context.filesDir, StockLedger.FILE)),
+    val ledger: StockLedger,
+    /**
+     * Told when a write fails, so the screens can say so.
+     *
+     * A catalogue that could not be written used to look exactly like one that
+     * was: the list was updated in memory, the file kept its old contents, and
+     * the next launch silently brought the old list back.
+     */
+    private val onWriteError: (String) -> Unit = {},
 ) : ItemShelf {
 
-    private val file = File(context.filesDir, FILE)
+    /** Opens the store in [context]'s private folder. */
+    constructor(context: Context) : this(
+        File(context.filesDir, FILE),
+        StockLedger(File(context.filesDir, StockLedger.FILE)),
+    )
+
+    /** Opens the store in [context]'s folder, sharing an existing [ledger]. */
+    constructor(context: Context, ledger: StockLedger) : this(
+        File(context.filesDir, FILE),
+        ledger,
+    )
     private val _items = MutableStateFlow<List<SavedItem>>(emptyList())
     val items: StateFlow<List<SavedItem>> = _items.asStateFlow()
 
@@ -286,7 +304,9 @@ class SavedItemStore(
     override fun catalogue(): List<SavedItem> = _items.value
 
     /** Writes the catalogue back after a receipt moved a quantity. */
-    override fun writeCatalogue(items: List<SavedItem>) = persist(items, _folders.value)
+    override fun writeCatalogue(items: List<SavedItem>) {
+        persist(items, _folders.value)
+    }
 
     /**
      * Writes an opening entry for every quantity that predates the ledger.
@@ -365,12 +385,26 @@ class SavedItemStore(
                 val array = JSONArray(text)
                 val items = (0 until array.length())
                     .mapNotNull { index -> array.optJSONObject(index)?.toItem() }
+                if (items.size < array.length()) {
+                    android.util.Log.w(
+                        TAG,
+                        "${array.length() - items.size} article(s) of the catalogue could not be read",
+                    )
+                    quarantine()
+                }
                 Content(sorted(items), cleanFolders(emptyList(), items))
             } else {
                 val root = JSONObject(text)
                 val itemsArray = root.optJSONArray("items") ?: JSONArray()
                 val items = (0 until itemsArray.length())
                     .mapNotNull { index -> itemsArray.optJSONObject(index)?.toItem() }
+                if (items.size < itemsArray.length()) {
+                    android.util.Log.w(
+                        TAG,
+                        "${itemsArray.length() - items.size} article(s) of the catalogue could not be read",
+                    )
+                    quarantine()
+                }
                 val foldersArray = root.optJSONArray("folders") ?: JSONArray()
                 val folders = (0 until foldersArray.length())
                     .mapNotNull { index ->
@@ -378,30 +412,67 @@ class SavedItemStore(
                     }
                 Content(sorted(items), cleanFolders(folders, items))
             }
-        }.getOrElse { Content(emptyList(), emptyList()) }
+        }.getOrElse {
+            android.util.Log.w(TAG, "the catalogue would not parse", it)
+            // Without a copy, the next save overwrites the only file the shop
+            // has with an empty one — which is how a corrupted catalogue used to
+            // become an empty catalogue for good.
+            quarantine()
+            Content(emptyList(), emptyList())
+        }
     }
 
-    private fun persist(items: List<SavedItem>, folders: List<String>) {
+    /**
+     * Keeps a copy of a catalogue that would not parse, before anything can
+     * overwrite it.
+     *
+     * Same rule as the invoice history: the copy is written once, under a name
+     * the shop can find, and the live file is left alone until a save replaces
+     * it. Copying on every launch would fill the phone with the same broken
+     * file.
+     */
+    private fun quarantine() {
+        runCatching {
+            val copy = File(file.parentFile, "$FILE-corrompu.json")
+            if (copy.isFile) {
+                android.util.Log.w(TAG, "an unreadable catalogue is already kept as ${copy.name}")
+                return
+            }
+            file.copyTo(copy, overwrite = false)
+            android.util.Log.w(TAG, "kept the unreadable catalogue as ${copy.name}")
+        }.onFailure {
+            android.util.Log.w(TAG, "could not keep a copy of the unreadable catalogue", it)
+        }
+    }
+
+    /**
+     * Writes the catalogue, then publishes it.
+     *
+     * The order matters: the screens read [_items], so updating it before the
+     * file is on disk is a promise the store has not kept. A failed write now
+     * leaves the previous list on screen and reports itself, instead of showing
+     * an article that will be gone after the next launch.
+     */
+    private fun persist(items: List<SavedItem>, folders: List<String>): Boolean {
         // An id is assigned at the door and never re-rolled: a blank one would
         // mean a rename could adopt the identity of another article.
         val identified = items.map { item ->
             if (item.id.isBlank()) item.copy(id = UUID.randomUUID().toString()) else item
         }
         val cleanItems = sorted(identified)
-        _items.value = cleanItems
-        _folders.value = cleanFolders(folders, cleanItems)
+        val cleanFolders = cleanFolders(folders, cleanItems)
         val payload = JSONObject().apply {
             put("version", 3)
             put(
                 "folders",
-                JSONArray().apply { _folders.value.forEach { put(it) } },
+                JSONArray().apply { cleanFolders.forEach { put(it) } },
             )
             put(
                 "items",
                 JSONArray().apply { cleanItems.forEach { put(it.toJson()) } },
             )
         }
-        runCatching {
+        val written = runCatching {
             val temp = File(file.parentFile, "$FILE.tmp")
             temp.writeText(payload.toString())
             // The rename is the atomic step: it is what makes a half-written file
@@ -410,7 +481,16 @@ class SavedItemStore(
                 file.writeText(payload.toString())
                 temp.delete()
             }
+        }.onFailure {
+            android.util.Log.e(TAG, "could not write the catalogue", it)
+        }.isSuccess
+        if (!written) {
+            onWriteError("Le catalogue n'a pas pu être enregistré. Vérifiez l'espace libre.")
+            return false
         }
+        _items.value = cleanItems
+        _folders.value = cleanFolders
+        return true
     }
 
     private fun SavedItem.toJson() = JSONObject().apply {
@@ -525,7 +605,9 @@ class SavedItemStore(
     )
 
     companion object {
-        private const val FILE = "saved_items.json"
+        const val FILE = "saved_items.json"
+
+        private const val TAG = "SavedItemStore"
 
         /**
          * What separates a folder from its parent inside a stored path.

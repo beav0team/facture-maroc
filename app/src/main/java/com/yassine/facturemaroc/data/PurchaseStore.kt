@@ -31,12 +31,22 @@ class PurchaseStore(
     private val file: File,
     private val ledger: StockLedger,
     private val shelf: ItemShelf,
+    /**
+     * Told when a write fails, so a receipt that could not be saved is reported
+     * instead of looking saved until the next launch.
+     */
+    private val onWriteError: (String) -> Unit = {},
 ) {
 
-    constructor(context: Context, savedItems: SavedItemStore) : this(
+    constructor(
+        context: Context,
+        savedItems: SavedItemStore,
+        onWriteError: (String) -> Unit = {},
+    ) : this(
         File(context.filesDir, FILE),
         savedItems.ledger,
         savedItems,
+        onWriteError,
     )
 
     private val _purchases = MutableStateFlow(read())
@@ -104,12 +114,11 @@ class PurchaseStore(
         persist(purchases)
     }
 
-    private fun persist(list: List<Purchase>) {
+    private fun persist(list: List<Purchase>): Boolean {
         val clean = list
             .filter { it.lines.isNotEmpty() && it.number.isNotBlank() }
             .distinctBy { it.id }
             .sortedByDescending { it.createdAt }
-        _purchases.value = clean
         val payload = JSONObject().apply {
             put("version", 1)
             put(
@@ -117,14 +126,22 @@ class PurchaseStore(
                 JSONArray().apply { clean.forEach { put(it.toJson()) } },
             )
         }
-        runCatching {
+        val written = runCatching {
             val temp = File(file.parentFile, "${file.name}.tmp")
             temp.writeText(payload.toString())
             if (!temp.renameTo(file)) {
                 file.writeText(payload.toString())
                 temp.delete()
             }
+        }.onFailure {
+            android.util.Log.e(TAG, "could not write the receipts", it)
+        }.isSuccess
+        if (!written) {
+            onWriteError("Les réceptions n'ont pas pu être enregistrées. Vérifiez l'espace libre.")
+            return false
         }
+        _purchases.value = clean
+        return true
     }
 
     private fun read(): List<Purchase> {
@@ -139,6 +156,8 @@ class PurchaseStore(
     }
 
     companion object {
+        private const val TAG = "PurchaseStore"
+
         const val FILE = "purchases.json"
     }
 }
