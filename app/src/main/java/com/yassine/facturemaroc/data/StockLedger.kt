@@ -40,6 +40,16 @@ class StockLedger(private val file: File) {
     fun entriesFor(itemId: String): List<StockEntry> =
         entries.asReversed().filter { it.itemId == itemId }
 
+    /**
+     * One article's history in the order it happened.
+     *
+     * The order the costing methods replay in: a sale consumes what was on the
+     * shelf before it, so reading the file backwards would value every delivery
+     * after it had already been sold.
+     */
+    fun entriesChronological(itemId: String): List<StockEntry> =
+        entries.filter { it.itemId == itemId }
+
     /** The quantity one article should have, or 0 when it has no history. */
     fun balance(itemId: String): Int =
         entries.sumOf { if (it.itemId == itemId) it.delta else 0 }
@@ -111,12 +121,36 @@ class StockLedger(private val file: File) {
         items.forEach { item ->
             val stock = item.stock ?: return@forEach
             if (item.id.isBlank() || item.id in known || stock == 0) return@forEach
-            if (append(StockEntry(item.id, stock, StockReason.ADJUSTMENT, note = "Stock initial"))) {
+            // The purchase price the shop already typed is the opening cost: an
+            // article that predates the ledger has no delivery to average, and
+            // starting at zero would report a margin of 100 % until the next
+            // purchase corrected it.
+            if (
+                append(
+                    StockEntry(
+                        item.id,
+                        stock,
+                        StockReason.ADJUSTMENT,
+                        note = "Stock initial",
+                        unitCost = item.purchasePrice.coerceAtLeast(0.0),
+                    ),
+                )
+            ) {
                 written++
             }
         }
         return written
     }
+
+    /**
+     * The most recent inbound cost for [itemId], or null when none is known.
+     *
+     * Used by a manual quantity correction: the shop is changing how many are
+     * on the shelf, not what they cost, so the correction carries the last cost
+     * the ledger knows instead of resetting the average to zero.
+     */
+    fun lastCost(itemId: String): Double? =
+        entries.lastOrNull { it.itemId == itemId && it.delta > 0 && it.unitCost > 0.0 }?.unitCost
 
     private fun read(): MutableList<StockEntry> {
         if (!file.isFile) return mutableListOf()

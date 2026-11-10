@@ -159,4 +159,42 @@ class InvoiceValidationTest {
         assertTrue(issues.none { it.code == ValidationCode.MISSING_ICE })
         assertTrue(issues.none { it.code == ValidationCode.INVALID_ICE })
     }
+
+    @Test
+    fun `a line sold below its frozen cost is named but never blocked`() {
+        val data = invoice(
+            lines = listOf(
+                InvoiceLine(
+                    description = "Chaise en rotin",
+                    quantity = 1.0,
+                    unitPrice = 80.0,
+                    unitCostHt = 100.0,
+                ),
+            ),
+        )
+
+        val issues = validate(data)
+        val below = issues.single { it.code == ValidationCode.PRICE_BELOW_COST }
+
+        assertEquals(Severity.WARNING, below.severity)
+        assertTrue(below.message.contains("Chaise en rotin"))
+        // A loss leader is a decision: the document still leaves the phone.
+        assertTrue(issues.none { it.severity == Severity.BLOCKING })
+    }
+
+    @Test
+    fun `a line at or above its cost is not flagged`() {
+        val atCost = invoice(
+            lines = listOf(InvoiceLine("Chaise", 1.0, 100.0, unitCostHt = 100.0)),
+        )
+        val above = invoice(
+            lines = listOf(InvoiceLine("Chaise", 1.0, 150.0, unitCostHt = 100.0)),
+        )
+        val unknown = invoice(lines = listOf(InvoiceLine("Chaise", 1.0, 10.0, unitCostHt = null)))
+
+        assertTrue(validate(atCost).none { it.code == ValidationCode.PRICE_BELOW_COST })
+        assertTrue(validate(above).none { it.code == ValidationCode.PRICE_BELOW_COST })
+        // An unknown cost says nothing about the price.
+        assertTrue(validate(unknown).none { it.code == ValidationCode.PRICE_BELOW_COST })
+    }
 }

@@ -122,6 +122,23 @@ class InvoiceJsonTest {
     }
 
     @Test
+    fun `a frozen cost survives the round trip and an old line has none`() {
+        val data = full.copy(
+            lines = listOf(
+                InvoiceLine("Chaise", 2.0, 300.0, itemId = "chair", unitCostHt = 150.0),
+                InvoiceLine("Main-d'œuvre", 1.0, 100.0),
+            ),
+        )
+
+        val restored = InvoiceJson.dataFromJson(InvoiceJson.dataToJson(data))
+
+        assertEquals(150.0, restored.lines[0].unitCostHt!!, 0.0)
+        assertNull(restored.lines[1].unitCostHt)
+        // Absent key, not zero: a document written before costing existed.
+        assertTrue(!InvoiceJson.lineToJson(InvoiceLine("Main-d'œuvre", 1.0, 100.0)).has("unitCostHt"))
+    }
+
+    @Test
     fun `a record saved before the inventory reads as having moved nothing`() {
         // The file written by the previous build has no "stockApplied" key. If
         // that read back as true, deleting an old invoice would add stock to a

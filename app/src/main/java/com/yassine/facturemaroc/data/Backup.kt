@@ -64,6 +64,8 @@ object Backup {
         resetAnnually: Boolean = false,
         /** The append-only stock history, so a new phone keeps the "why". */
         stockEntries: List<StockEntry> = emptyList(),
+        /** The goods receipts, so a restored phone keeps its purchase record. */
+        purchases: List<Purchase> = emptyList(),
         exportedAt: Long = System.currentTimeMillis(),
     ): String = JSONObject().apply {
         put("app", APP)
@@ -139,6 +141,13 @@ object Backup {
             "stockLedger",
             JSONArray().apply { stockEntries.forEach { put(it.toJson()) } },
         )
+        // The receipts behind those movements. Absent from older backups,
+        // which restore as "no purchase history yet" — the ledger still
+        // carries what each delivery did to the shelf.
+        put(
+            "purchases",
+            JSONArray().apply { purchases.forEach { put(it.toJson()) } },
+        )
         put(
             "items",
             JSONArray().apply {
@@ -190,6 +199,7 @@ object Backup {
         prefixes: Map<String, String> = emptyMap(),
         resetAnnually: Boolean = false,
         stockEntries: List<StockEntry> = emptyList(),
+        purchases: List<Purchase> = emptyList(),
         exportedAt: Long = System.currentTimeMillis(),
     ): Built {
         fun render(withLogo: ByteArray?, withLogos: Map<String, ByteArray> = logos) = build(
@@ -205,6 +215,7 @@ object Backup {
             prefixes = prefixes,
             resetAnnually = resetAnnually,
             stockEntries = stockEntries,
+            purchases = purchases,
             exportedAt = exportedAt,
         )
 
@@ -338,6 +349,7 @@ object Backup {
         // movements nobody made.
         val stockEntries = root.optJSONArray("stockLedger")
             .mapObjects { StockEntry.parse(it.toString()) }
+        val purchases = root.optJSONArray("purchases").mapObjects(Purchase::fromJson)
         val invoices = root.optJSONArray("invoices").mapObjects(InvoiceJson::recordFromJson)
 
         return BackupData(
@@ -365,6 +377,7 @@ object Backup {
             prefixes = prefixes,
             resetAnnually = resetAnnually,
             stockEntries = stockEntries,
+            purchases = purchases,
             exportedAt = root.optLong("exportedAt", 0L),
         )
     }
@@ -448,6 +461,7 @@ object Backup {
         put("showItemUnit", shop.showItemUnit)
         put("showItemStock", shop.showItemStock)
         put("showItemFolder", shop.showItemFolder)
+        put("costMethod", shop.costMethod.id)
     }
 
     private fun shopFromJson(obj: JSONObject): ShopSettings = ShopSettings(
@@ -468,6 +482,7 @@ object Backup {
         showItemUnit = obj.optBoolean("showItemUnit", true),
         showItemStock = obj.optBoolean("showItemStock", true),
         showItemFolder = obj.optBoolean("showItemFolder", true),
+        costMethod = CostMethod.fromId(obj.optString("costMethod", CostMethod.DEFAULT.id)),
     )
 }
 
@@ -495,6 +510,8 @@ data class BackupData(
     val resetAnnually: Boolean = false,
     /** The stock movements the backup carried; empty for a backup written before the ledger. */
     val stockEntries: List<StockEntry> = emptyList(),
+    /** The goods receipts; empty for a backup written before purchases existed. */
+    val purchases: List<Purchase> = emptyList(),
     val exportedAt: Long,
 )
 

@@ -36,7 +36,7 @@ class SavedItemStore(
      * show a stale balance the moment a sale was recorded.
      */
     val ledger: StockLedger = StockLedger(File(context.filesDir, StockLedger.FILE)),
-) {
+) : ItemShelf {
 
     private val file = File(context.filesDir, FILE)
     private val _items = MutableStateFlow<List<SavedItem>>(emptyList())
@@ -98,6 +98,14 @@ class SavedItemStore(
                     delta = delta,
                     reason = StockReason.ADJUSTMENT,
                     note = if (previous == null) "Stock initial" else "Correction manuelle",
+                    // Changing how many are on the shelf is not changing what
+                    // they cost: the correction carries the price the shop just
+                    // typed, or the last cost the ledger knows, instead of
+                    // resetting the average to zero and reporting a margin of
+                    // 100 % afterwards.
+                    unitCost = saved.purchasePrice.takeIf { it > 0.0 }
+                        ?: ledger.lastCost(id)
+                        ?: 0.0,
                 ),
             )
         }
@@ -261,6 +269,24 @@ class SavedItemStore(
 
     /** One article's movements, newest first, for its history screen. */
     fun entriesFor(itemId: String): List<StockEntry> = ledger.entriesFor(itemId)
+
+    /**
+     * What one unit of [itemId] is worth under [method], or null when unknown.
+     *
+     * Read from the ledger, not from the article's purchase price: the price
+     * says what the last delivery cost, while the cost says what the shelf is
+     * worth after every delivery and sale that came before it. An issued line
+     * freezes this number, so a later purchase can never rewrite an old
+     * invoice's margin.
+     */
+    fun unitCostOf(itemId: String, method: CostMethod): Double? =
+        StockCost.unitCost(ledger.entriesChronological(itemId), method)
+
+    /** The catalogue as a receipt reads it. */
+    override fun catalogue(): List<SavedItem> = _items.value
+
+    /** Writes the catalogue back after a receipt moved a quantity. */
+    override fun writeCatalogue(items: List<SavedItem>) = persist(items, _folders.value)
 
     /**
      * Writes an opening entry for every quantity that predates the ledger.

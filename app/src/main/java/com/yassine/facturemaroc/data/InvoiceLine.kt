@@ -76,6 +76,17 @@ data class InvoiceLine(
      * the only link — see `StockMovement`.
      */
     val itemId: String? = null,
+    /**
+     * What one unit of this line cost the shop, frozen when the document is
+     * issued, or null when the cost was not known.
+     *
+     * Frozen on purpose: a shop that buys the same article cheaper next month
+     * must not watch last month's invoice become more profitable. Null is the
+     * honest answer for a service, a line typed by hand, and every document
+     * issued before costing existed — those lines are excluded from the margin
+     * and counted as "sans coût" rather than valued at a guessed zero.
+     */
+    val unitCostHt: Double? = null,
 ) {
     val total: Double get() {
         val gross = quantity * unitPrice

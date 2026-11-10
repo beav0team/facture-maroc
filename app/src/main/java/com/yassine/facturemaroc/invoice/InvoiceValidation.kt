@@ -2,6 +2,7 @@ package com.yassine.facturemaroc.invoice
 
 import com.yassine.facturemaroc.data.InvoiceData
 import com.yassine.facturemaroc.data.PaymentDue
+import com.yassine.facturemaroc.data.moneyText
 
 /**
  * What would make this document wrong, stated before it is sent.
@@ -28,6 +29,7 @@ enum class ValidationCode {
     DUE_DATE_BEFORE_ISSUE,
     INVALID_DEPOSIT,
     DEPOSIT_ABOVE_TOTAL,
+    PRICE_BELOW_COST,
 }
 
 /** Whether an issue stops the document leaving the phone. */
@@ -108,6 +110,22 @@ object InvoiceValidation {
                     ValidationIssue(
                         ValidationCode.INVALID_LINE_VAT_RATE,
                         "Ligne $position : le taux de TVA doit être compris entre 0 et 100 %.",
+                    ),
+                )
+            }
+            // Selling below what the article cost is a decision, not a mistake
+            // — a clearance, a loss leader, a price typed from memory — so it
+            // warns and lets the document through. Only a line whose cost was
+            // frozen can be judged: an unknown cost says nothing about price.
+            val cost = line.unitCostHt
+            if (cost != null && cost > 0.0 && line.unitPrice < cost) {
+                val name = line.description.trim().ifBlank { "ligne $position" }
+                add(
+                    ValidationIssue(
+                        ValidationCode.PRICE_BELOW_COST,
+                        "« $name » est vendu ${moneyText(line.unitPrice)} DH HT, " +
+                            "sous son coût de ${moneyText(cost)} DH.",
+                        severity = Severity.WARNING,
                     ),
                 )
             }

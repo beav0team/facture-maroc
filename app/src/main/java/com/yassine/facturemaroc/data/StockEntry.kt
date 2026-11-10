@@ -45,6 +45,14 @@ enum class StockReason(val id: String, val label: String) {
  * [reference] is the document number ("F-20261110-0001"), the stocktake label,
  * or empty for a correction. [at] is epoch milliseconds, kept raw so the history
  * can be sorted and the file stays readable; the screen formats it in French.
+ *
+ * [unitCost] is what one unit cost, HT, on an inbound movement. `0.0` means
+ * "not known" — every line written before costing existed, a correction typed
+ * without a price, and a movement that carries no cost at all — and it is
+ * written only when it has a value, so an old file stays byte-for-byte what it
+ * was. Outbound entries keep the cost they were written with; the costing
+ * methods derive the value of a sale from what came in, never from a guess on
+ * the way out.
  */
 data class StockEntry(
     val itemId: String,
@@ -53,6 +61,7 @@ data class StockEntry(
     val reference: String = "",
     val note: String = "",
     val at: Long = System.currentTimeMillis(),
+    val unitCost: Double = 0.0,
 ) {
     /** The line as it is written in the JSONL file, one per line. */
     fun toJson(): JSONObject = JSONObject().apply {
@@ -62,6 +71,7 @@ data class StockEntry(
         put("reference", reference)
         put("note", note)
         put("at", at)
+        if (unitCost > 0.0) put("unitCost", unitCost)
     }
 
     /** A missing reason is not guessed from the sign: it reads as a correction. */
@@ -91,6 +101,10 @@ data class StockEntry(
                     reference = obj.optString("reference", ""),
                     note = obj.optString("note", ""),
                     at = obj.optLong("at", 0L),
+                    // Absent from every line written before costing existed,
+                    // which reads as "unknown", not as "free".
+                    unitCost = obj.optDouble("unitCost", 0.0)
+                        .let { if (it.isNaN() || it.isInfinite() || it < 0.0) 0.0 else it },
                 )
             }.getOrNull()
         }

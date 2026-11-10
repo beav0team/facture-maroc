@@ -40,6 +40,14 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     val invoices = InvoiceStore(application)
 
     /**
+     * The goods receipts, and the stock movements they cause.
+     *
+     * Built on the same catalogue instance the rest of the app edits: a receipt
+     * written through a second store would move a shelf nobody is looking at.
+     */
+    val purchases = PurchaseStore(application, savedItems)
+
+    /**
      * The tamper-evident copy of every exported document.
      *
      * Separate from [invoices], which is the app's own history and changes when
@@ -641,11 +649,43 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * The number is consumed here rather than when the screen opened, so a
      * number is only ever spent on a document that was really produced.
      */
+    /**
+     * The draft's lines with a cost frozen on each article line.
+     *
+     * Called only when a document is really issued, never for a preview or a
+     * saved draft: the cost is a fact about the day of the sale, and freezing
+     * it while the shop is still typing would let an article added as a test
+     * keep a cost it never sold at. A line that already carries a cost keeps
+     * it — opening a saved document and sharing it again must not revalue it.
+     */
+    private fun issueLines(): List<InvoiceLine> {
+        val method = _shop.value.costMethod
+        return _lines.value.map { line ->
+            if (line.unitCostHt != null) return@map line
+            val id = line.itemId?.takeIf { it.isNotBlank() } ?: return@map line
+            val cost = savedItems.unitCostOf(id, method) ?: return@map line
+            line.copy(unitCostHt = cost)
+        }
+    }
+
+    /** What one unit of [itemId] is worth under the shop's chosen method. */
+    fun unitCostOf(itemId: String): Double? =
+        savedItems.unitCostOf(itemId, _shop.value.costMethod)
+
+    /** The number the next goods receipt will carry. */
+    fun nextPurchaseNumber(): String = purchases.nextNumber()
+
+    /** Receives a goods receipt: ledger, cache and file, or nothing at all. */
+    fun recordPurchase(purchase: Purchase): PurchaseOutcome = purchases.add(purchase)
+
+    /** Deletes a receipt and reverses the stock it brought in. */
+    fun deletePurchase(purchase: Purchase): Boolean = purchases.delete(purchase)
+
     fun buildData(): InvoiceData = InvoiceData(
         number = InvoiceNumber.consume(getApplication<Application>(), _documentType.value),
         date = InvoicePdf.today(),
         client = _client.value,
-        lines = _lines.value,
+        lines = issueLines(),
         discountPercent = _discountPercent.value,
         discountFixed = _discountFixed.value,
         vatPercent = _shop.value.vatPercent,
@@ -1021,6 +1061,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             // The history travels with the quantities: a restored phone that
             // kept only the numbers could not answer "why?" or repair itself.
             stockEntries = savedItems.ledger.all(),
+            purchases = purchases.all(),
         )
     }
 
@@ -1142,6 +1183,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             clients.replaceAll(backup.clients)
             savedItems.replaceAll(backup.items, backup.folders)
             savedItems.restoreLedger(backup.stockEntries)
+            purchases.replaceAll(backup.purchases)
             invoices.replaceAll(backup.invoices)
             // A backup written before ids existed restores a catalogue and a
             // history that only share labels; link them now rather than on the

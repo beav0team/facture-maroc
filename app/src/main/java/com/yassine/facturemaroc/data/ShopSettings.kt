@@ -75,6 +75,15 @@ data class ShopSettings(
     val showItemUnit: Boolean = true,
     val showItemStock: Boolean = true,
     val showItemFolder: Boolean = true,
+    /**
+     * How stock is valued and how a sale's cost is derived.
+     *
+     * A setting, not a per-document choice: the shop values its shelf one way,
+     * and a document that used a different method from the one on the next line
+     * would make the two margins incomparable. Changing it affects future
+     * movements only — an issued line carries the cost frozen on it.
+     */
+    val costMethod: CostMethod = CostMethod.DEFAULT,
 ) {
     /** Legal ID fields that are non-empty, joined for printing. */
     val legalIdentifierList: List<String>

@@ -68,6 +68,10 @@ object InvoiceJson {
         // Absent on a line typed by hand and on every line written before ids
         // existed, so those files stay byte-for-byte what they were.
         line.itemId?.takeIf { it.isNotBlank() }?.let { put("itemId", it) }
+        // Written only when a cost was frozen, so a document issued before
+        // costing existed keeps saying what it said and a service never
+        // pretends to have a cost of zero.
+        line.unitCostHt?.let { put("unitCostHt", it) }
     }
 
     fun lineFromJson(obj: JSONObject): InvoiceLine = InvoiceLine(
@@ -86,6 +90,14 @@ object InvoiceJson {
         vatPercent = obj.optDouble("vatPercent", Double.NaN).let { if (it.isNaN()) null else it.coerceAtLeast(0.0) },
         ttcPrice = obj.optDouble("ttcPrice", Double.NaN).let { if (it.isNaN()) null else it },
         itemId = obj.optString("itemId", "").trim().takeIf { it.isNotEmpty() },
+        // Absent from every line written before costing existed, and from a
+        // line whose cost was unknown at issue.
+        unitCostHt = if (obj.has("unitCostHt") && !obj.isNull("unitCostHt")) {
+            obj.optDouble("unitCostHt", 0.0)
+                .let { if (it.isNaN() || it.isInfinite() || it < 0.0) null else it }
+        } else {
+            null
+        },
     )
 
     fun dataToJson(data: InvoiceData): JSONObject = JSONObject().apply {

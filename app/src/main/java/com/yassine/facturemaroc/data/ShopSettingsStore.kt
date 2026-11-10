@@ -55,6 +55,9 @@ class ShopSettingsStore(private val context: Context) {
             showItemUnit = prefs.getBoolean("showItemUnit", true),
             showItemStock = prefs.getBoolean("showItemStock", true),
             showItemFolder = prefs.getBoolean("showItemFolder", true),
+            // Absent from an install that predates costing: weighted average is
+            // the default, and no file has to be migrated.
+            costMethod = CostMethod.fromId(prefs.getString("costMethod", CostMethod.DEFAULT.id)),
         )
     }
 
@@ -87,6 +90,7 @@ class ShopSettingsStore(private val context: Context) {
                 putBoolean("showItemUnit", settings.showItemUnit)
                 putBoolean("showItemStock", settings.showItemStock)
                 putBoolean("showItemFolder", settings.showItemFolder)
+                putString("costMethod", settings.costMethod.id)
                 apply()
             }
         }
