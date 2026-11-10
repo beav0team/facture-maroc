@@ -61,10 +61,13 @@ object StatementPdf {
     private const val W_TOTAL = 72
     private const val COL_PAID = 332f
     private const val W_PAID = 70
+    // The balance column stops short of the late marker: right-aligned figures
+    // ran straight into "En retard" and the two read as one string
+    // ("2 400,00 DHEn retard") on a sheet a customer is meant to trust.
     private const val COL_BALANCE = 402f
-    private const val W_BALANCE = 86
-    private const val COL_LATE = 488f
-    private const val W_LATE = 75
+    private const val W_BALANCE = 76
+    private const val COL_LATE = 490f
+    private const val W_LATE = 73
 
     private const val LATE_COLOR = 0xFFB3261E.toInt()
 
@@ -252,9 +255,9 @@ object StatementPdf {
             PdfText.draw(
                 canvas, line.dueDate.orEmpty(), COL_DUE, rowY, cell, W_DUE, maxLines = 1,
             )
-            rightAlign(canvas, PdfText.money(if (line.isCredit) -line.total else line.total), COL_TOTAL, rowY, cell, W_TOTAL)
+            rightAlign(canvas, signed(line.total), COL_TOTAL, rowY, cell, W_TOTAL)
             rightAlign(canvas, PdfText.money(line.paid), COL_PAID, rowY, cell, W_PAID)
-            rightAlign(canvas, PdfText.money(line.balance), COL_BALANCE, rowY, cell, W_BALANCE)
+            rightAlign(canvas, signed(line.balance), COL_BALANCE, rowY, cell, W_BALANCE)
             if (line.isLate) {
                 PdfText.draw(canvas, "En retard", COL_LATE, rowY + 1f, latePaint, W_LATE, maxLines = 1)
             }
@@ -275,7 +278,7 @@ object StatementPdf {
             totalsRow(canvas, "Total facturé", PdfText.money(statement.billed), y, body, body)
             y += 16f
             val avoirs = if (statement.credited > 0.0) -statement.credited else 0.0
-            totalsRow(canvas, "Avoirs", PdfText.money(avoirs), y, body, body)
+            totalsRow(canvas, "Avoirs", signed(avoirs), y, body, body)
             y += 16f
             totalsRow(canvas, "Total payé", PdfText.money(statement.paid), y, body, body)
             y += 16f
@@ -288,7 +291,7 @@ object StatementPdf {
             )
             y += 6f
             val big = PdfText.paint(11f, accent, bold = true)
-            totalsRow(canvas, "Solde dû", PdfText.money(statement.balance), y, big, big)
+            totalsRow(canvas, "Solde dû", signed(statement.balance), y, big, big)
             y += 18f
             if (statement.balance < 0.0) {
                 PdfText.draw(
@@ -324,6 +327,16 @@ object StatementPdf {
         PdfText.draw(canvas, label, right - 220f, y, labelPaint, 120, maxLines = 1)
         rightAlign(canvas, value, right - 100f, y, valuePaint, 100)
     }
+
+    /**
+     * A figure that may be negative, with a real minus sign.
+     *
+     * `PdfText.money` formats with the platform's minus, which is a hyphen and
+     * reads as a dash next to the amounts; the rest of the app writes "−" and a
+     * statement is read beside an invoice.
+     */
+    private fun signed(value: Double): String =
+        if (value < 0.0) "−" + PdfText.money(-value) else PdfText.money(value)
 
     /** Draws [text] ending at the right edge of a [width]-wide column. */
     private fun rightAlign(
