@@ -62,6 +62,8 @@ object Backup {
         /** Only the prefixes the shop customised; absent keys mean the default. */
         prefixes: Map<String, String> = emptyMap(),
         resetAnnually: Boolean = false,
+        /** The append-only stock history, so a new phone keeps the "why". */
+        stockEntries: List<StockEntry> = emptyList(),
         exportedAt: Long = System.currentTimeMillis(),
     ): String = JSONObject().apply {
         put("app", APP)
@@ -130,6 +132,13 @@ object Backup {
             "folders",
             JSONArray().apply { folders.forEach { put(it) } },
         )
+        // One object per movement, in the same shape as the JSONL file: a
+        // restored phone must explain a quantity, not merely show it. Absent
+        // from older backups, which restore as "no history yet".
+        put(
+            "stockLedger",
+            JSONArray().apply { stockEntries.forEach { put(it.toJson()) } },
+        )
         put(
             "items",
             JSONArray().apply {
@@ -180,6 +189,7 @@ object Backup {
         logos: Map<String, ByteArray> = emptyMap(),
         prefixes: Map<String, String> = emptyMap(),
         resetAnnually: Boolean = false,
+        stockEntries: List<StockEntry> = emptyList(),
         exportedAt: Long = System.currentTimeMillis(),
     ): Built {
         fun render(withLogo: ByteArray?, withLogos: Map<String, ByteArray> = logos) = build(
@@ -194,6 +204,7 @@ object Backup {
             logos = withLogos,
             prefixes = prefixes,
             resetAnnually = resetAnnually,
+            stockEntries = stockEntries,
             exportedAt = exportedAt,
         )
 
@@ -322,6 +333,11 @@ object Backup {
                 },
             )
         }.filter { it.label.isNotBlank() && it.price > 0.0 }
+        // An older backup has no ledger. Empty is the honest answer: the
+        // restore will seed it from the item quantities rather than invent
+        // movements nobody made.
+        val stockEntries = root.optJSONArray("stockLedger")
+            .mapObjects { StockEntry.parse(it.toString()) }
         val invoices = root.optJSONArray("invoices").mapObjects(InvoiceJson::recordFromJson)
 
         return BackupData(
@@ -348,6 +364,7 @@ object Backup {
             logos = logos,
             prefixes = prefixes,
             resetAnnually = resetAnnually,
+            stockEntries = stockEntries,
             exportedAt = root.optLong("exportedAt", 0L),
         )
     }
@@ -476,6 +493,8 @@ data class BackupData(
     val prefixes: Map<String, String> = emptyMap(),
     /** Whether number sequences restart every January. */
     val resetAnnually: Boolean = false,
+    /** The stock movements the backup carried; empty for a backup written before the ledger. */
+    val stockEntries: List<StockEntry> = emptyList(),
     val exportedAt: Long,
 )
 

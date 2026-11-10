@@ -65,9 +65,8 @@ class SavedItemStore(
             label = item.label.trim(),
             folder = item.folder.trim(),
         )
-        val key = clean.label.lowercase()
         val existing = _items.value.toMutableList()
-        val index = existing.indexOfFirst { it.label.trim().lowercase() == key }
+        val index = indexOfIdentity(existing, clean)
         val previous = existing.getOrNull(index)
         // Identity belongs to the row, not to the form that edited it. A blank
         // id means "I do not know which article this is", which is exactly what
@@ -452,6 +451,28 @@ class SavedItemStore(
 
         /** The folder's own name, without the path that leads to it. */
         fun nameOf(path: String): String = path.substringAfterLast(SEPARATOR)
+
+        /**
+         * Where [item] belongs in [items]: by id first, then by label.
+         *
+         * Id first is what makes a rename keep its history. The screen sends the
+         * edited article with the id it already had and the new label; matching
+         * on the label alone would add a second row and leave the shelf, the
+         * movements and the reorder threshold on a ghost.
+         *
+         * A blank id falls back to the old label rule, which is how an article
+         * saved by a screen that did not know about ids still replaces itself
+         * instead of duplicating.
+         */
+        fun indexOfIdentity(items: List<SavedItem>, item: SavedItem): Int {
+            val id = item.id.trim()
+            if (id.isNotEmpty()) {
+                val byId = items.indexOfFirst { it.id == id }
+                if (byId >= 0) return byId
+            }
+            val label = item.label.trim().lowercase()
+            return items.indexOfFirst { it.label.trim().lowercase() == label }
+        }
 
         /** [name] placed inside [parent]. */
         fun join(parent: String, name: String): String =

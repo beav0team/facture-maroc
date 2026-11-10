@@ -348,6 +348,62 @@ class BackupTest {
     }
 
     @Test
+    fun `article ids, thresholds, line links and the ledger survive the round trip`() {
+        val linkedItems = listOf(
+            SavedItem(
+                label = "Chaise",
+                price = 100.0,
+                stock = 3,
+                reorderThreshold = 2,
+                id = "chair",
+            ),
+        )
+        val linkedRecord = InvoiceRecord(
+            id = "record-linked",
+            data = InvoiceData(
+                number = "F-2",
+                date = "10/11/2026",
+                client = InvoiceClient(name = "Client"),
+                lines = listOf(
+                    InvoiceLine("Chaise", 1.0, 100.0, itemId = "chair"),
+                ),
+            ),
+            status = InvoiceStatus.ISSUED,
+            createdAt = 3L,
+            updatedAt = 4L,
+        )
+        val ledger = listOf(
+            StockEntry("chair", 4, StockReason.ADJUSTMENT, note = "Stock initial", at = 10L),
+            StockEntry("chair", -1, StockReason.INVOICE, reference = "F-2", at = 20L),
+        )
+        val json = Backup.build(
+            shop = shop,
+            design = design,
+            logo = null,
+            clients = clients,
+            items = linkedItems,
+            invoices = listOf(linkedRecord),
+            counters = counters,
+            stockEntries = ledger,
+            exportedAt = 1_234L,
+        )
+
+        val restored = Backup.parse(json)
+
+        assertEquals(linkedItems, restored.items)
+        assertEquals("chair", restored.invoices.single().data.lines.single().itemId)
+        assertEquals(2, restored.items.single().reorderThreshold)
+        assertEquals(ledger, restored.stockEntries)
+    }
+
+    @Test
+    fun `an older backup without a ledger restores an empty history`() {
+        val json = mutated { remove("stockLedger") }
+
+        assertTrue(Backup.parse(json).stockEntries.isEmpty())
+    }
+
+    @Test
     fun `a backup read from a stream is the same as one read from a string`() {
         val outcome = Backup.read(ByteArrayInputStream(fullBackup().toByteArray()))
 

@@ -30,4 +30,43 @@ class SavedItemTest {
         assertEquals("Frais de dossier", line.description)
         assertEquals("Frais de dossier", line.lineLabel)
     }
+
+    @Test
+    fun `a line carries the id of the article it came from`() {
+        val line = SavedItem(label = "Chaise", price = 100.0, id = "chair").toLine()
+
+        assertEquals("chair", line.itemId)
+    }
+
+    @Test
+    fun `a rename is found by id before its new label`() {
+        val items = listOf(
+            SavedItem(label = "Chaise", price = 100.0, id = "chair"),
+            SavedItem(label = "Coussin", price = 50.0, id = "cushion"),
+        )
+
+        val renamed = SavedItem(label = "Chaise en rotin", price = 100.0, id = "chair")
+
+        assertEquals(0, SavedItemStore.indexOfIdentity(items, renamed))
+    }
+
+    @Test
+    fun `an article with no id still replaces the one with its label`() {
+        val items = listOf(SavedItem(label = "Chaise", price = 100.0, id = "chair"))
+
+        assertEquals(
+            0,
+            SavedItemStore.indexOfIdentity(items, SavedItem(label = "  chaise ", price = 120.0)),
+        )
+    }
+
+    @Test
+    fun `an unknown article is appended, not mistaken for another`() {
+        val items = listOf(SavedItem(label = "Chaise", price = 100.0, id = "chair"))
+
+        assertEquals(
+            -1,
+            SavedItemStore.indexOfIdentity(items, SavedItem(label = "Table", price = 10.0, id = "table")),
+        )
+    }
 }

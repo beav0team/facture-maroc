@@ -904,10 +904,12 @@ fun HomeScreen(
                         )
                     }
                 } else {
-                    if (previous != null && !previous.label.equals(updated.label, ignoreCase = true)) {
-                        viewModel.savedItems.delete(previous)
-                    }
-                    viewModel.savedItems.save(updated)
+                    // The id travels with the edit, so a rename keeps its
+                    // shelf, its ledger entries and its threshold instead of
+                    // becoming a new article under the new name.
+                    viewModel.savedItems.save(
+                        if (previous != null) updated.copy(id = previous.id) else updated,
+                    )
                     itemEditorOpen = false
                 }
             },

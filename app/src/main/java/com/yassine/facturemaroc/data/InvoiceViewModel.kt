@@ -1018,6 +1018,9 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             logos = snapshotLogos,
             prefixes = NumberingStore(app).overrides(),
             resetAnnually = NumberingStore(app).resetAnnually(),
+            // The history travels with the quantities: a restored phone that
+            // kept only the numbers could not answer "why?" or repair itself.
+            stockEntries = savedItems.ledger.all(),
         )
     }
 
@@ -1138,7 +1141,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             InvoiceDesignStore.write(app, backup.design)
             clients.replaceAll(backup.clients)
             savedItems.replaceAll(backup.items, backup.folders)
-            savedItems.restoreLedger(emptyList())
+            savedItems.restoreLedger(backup.stockEntries)
             invoices.replaceAll(backup.invoices)
             // A backup written before ids existed restores a catalogue and a
             // history that only share labels; link them now rather than on the
@@ -1240,6 +1243,22 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     /** One article's filled movements, newest first. */
     fun stockEntries(itemId: String): List<StockEntry> = savedItems.entriesFor(itemId)
+
+    /**
+     * The articles whose shown quantity disagrees with the ledger.
+     *
+     * Read-only by design: Settings shows this list and offers a repair, but the
+     * repair only runs when the shop presses it. A check that quietly corrected
+     * what it found would hide the bug that produced the drift.
+     */
+    suspend fun stockDrift(): List<StockDrift> = withContext(Dispatchers.IO) {
+        savedItems.stockDrift()
+    }
+
+    /** Recomputes every cached quantity from the ledger; returns how many moved. */
+    suspend fun repairStockCache(): Int = withContext(Dispatchers.IO) {
+        savedItems.rebuildStockCache().size
+    }
 
     /**
      * Saves a physical count and returns how many shelves it corrected.

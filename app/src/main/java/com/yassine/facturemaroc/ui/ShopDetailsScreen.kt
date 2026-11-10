@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.AlertDialog
@@ -88,6 +89,7 @@ import com.yassine.facturemaroc.data.BackupExportOutcome
 import com.yassine.facturemaroc.data.BackupReadOutcome
 import com.yassine.facturemaroc.data.SnapshotStore
 import com.yassine.facturemaroc.data.AutoBackup
+import com.yassine.facturemaroc.data.StockDrift
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
@@ -196,6 +198,10 @@ fun ShopDetailsScreen(
     LaunchedEffect(Unit) { autoSnapshots = viewModel.autoBackupSnapshots() }
     var restoring by remember { mutableStateOf(false) }
     var archiveReport by remember { mutableStateOf<String?>(null) }
+    // The stock check: `null` until the shop asks, then the list of articles
+    // whose cache disagrees with the ledger. Kept as a list rather than a
+    // message so the repair button exists only when there is something to fix.
+    var stockDrift by remember { mutableStateOf<List<StockDrift>?>(null) }
     // The number the sequence really holds, read from the counter that consumes
     // it. Settings used to keep its own copy of this, which nothing ever wrote
     // back, so the field read 1 on every visit.
@@ -948,6 +954,102 @@ fun ShopDetailsScreen(
                         Icon(Icons.Filled.Verified, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Vérifier l'archive")
+                    }
+                }
+            }
+
+            item(key = "stock") {
+                SettingsSection(
+                    title = "Stock et journal",
+                    subtitle = "Chaque mouvement est conservé ; la quantité affichée se recalcule.",
+                ) {
+                    Text(
+                        "Les ventes, avoirs, achats et inventaires sont écrits dans un " +
+                            "journal, et la quantité affichée n'en est qu'un raccourci. " +
+                            "La vérification compare le raccourci au journal : elle ne " +
+                            "corrige rien toute seule, elle montre les articles qui " +
+                            "divergent.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    stockDrift?.let { drift ->
+                        if (drift.isEmpty()) {
+                            Text(
+                                "Aucun écart : les quantités affichées correspondent au journal.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        } else {
+                            Text(
+                                if (drift.size == 1) {
+                                    "1 article diverge du journal :"
+                                } else {
+                                    "${drift.size} articles divergent du journal :"
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                            // Five is enough to recognise the problem; the count
+                            // above says how many there really are.
+                            drift.take(5).forEach { row ->
+                                Text(
+                                    "${row.item.label} : affiché ${row.cached}, " +
+                                        "journal ${row.ledger}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            if (drift.size > 5) {
+                                Text(
+                                    "et ${drift.size - 5} autre(s)…",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                stockDrift = viewModel.stockDrift()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        Icon(
+                            Icons.Filled.Inventory2,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Vérifier le stock")
+                    }
+                    if ((stockDrift?.size ?: 0) > 0) {
+                        OutlinedButton(
+                            onClick = {
+                                scope.launch {
+                                    val repaired = viewModel.repairStockCache()
+                                    stockDrift = emptyList()
+                                    snackbar.showSnackbar(
+                                        if (repaired == 1) {
+                                            "1 quantité recalculée depuis le journal."
+                                        } else {
+                                            "$repaired quantités recalculées depuis le journal."
+                                        },
+                                    )
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.medium,
+                        ) {
+                            Text("Recalculer depuis le journal")
+                        }
                     }
                 }
             }

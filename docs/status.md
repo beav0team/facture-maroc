@@ -9,7 +9,7 @@ answering from memory.
 | Version | **0.10.0** (versionCode 16) — 0.11.0 en préparation, non publiée |
 | Last commit | Phase A4 — règlement structuré, clause de retard, banque/QR, modèles et docs (3 commits locaux) |
 | Branch | `master` (Phase A local commits; no tag/release for 0.11.0 yet) |
-| Tests | **405 JVM**, **18 instrumented** |
+| Tests | **442 JVM**, **18 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -30,11 +30,15 @@ structured payment terms with presets, the model late-payment clause, bank
 details and QR on the six templates, a configurable PDF file name and the
 archive state on each record's detail sheet. Listing and README are refreshed.
 
-**Next task — RAS TVA.** Decide and implement withholding at source
-(75 %/100 % by some clients): the open question in `docs/decisions.md` is
-whether a document only *notes* the withheld amount or records it and
-recalculates the balance. Until that is settled, do not invent a field: the
-statement and the payment tracking must keep agreeing on what is really owed.
+**Phase B1 has landed** (inventory foundation): stable item ids with a one-shot
+migration, an append-only stock ledger with a per-item history screen, the
+stocktake (physical count, motivated difference, summary), a reorder threshold
+with a "à commander" filter, a Settings drift check that shows but never
+silently repairs, and the ledger inside the JSON backup. **B2 (purchases and
+costing) is next.**
+
+**RAS TVA stays out** — settled in `docs/decisions.md`: the user asked to
+continue without it, so no field is invented. Revisit only on request.
 
 ## Feature status
 
@@ -74,10 +78,10 @@ statement and the payment tracking must keep agreeing on what is really owed.
 |---|---|---|
 | Item fields | **Exists** | label, price, unit, folder, purchase price, barcode, stock |
 | Stock deduction | **Exists** | on issue, restore on credit note/deletion |
-| Stock ledger / history | **Missing** | quantity is overwritten with no trace |
-| Stable item ID | **Missing** | items are keyed by label |
-| Reorder threshold | **Missing** | |
-| Stocktake | **Missing** | |
+| Stock ledger / history | **Exists** | append-only JSONL ledger (`StockEntry`: invoice, avoir, achat, inventaire, ajustement + document reference), per-item history screen, cache recomputable and a Settings drift check that reports before it repairs |
+| Stable item ID | **Exists** | UUID per article, `InvoiceLine.itemId`; one-shot migration binds old lines by label, renames keep the history |
+| Reorder threshold | **Exists** | per item, "à commander" filter and count in the stock view |
+| Stocktake | **Exists** | counted vs expected per item, motivated difference written as a STOCKTAKE entry, summary with the difference value |
 | Purchases / stock-in | **Missing** | |
 | Cost layers / average / FIFO | **Missing** | only a static purchase price |
 | Margin | **Partial** | unit margin shown in the item editor |
