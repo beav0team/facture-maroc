@@ -1238,9 +1238,36 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         setPayment(id, PaymentInfo(paidAmount = record.data.total, paidAt = date))
     }
 
+    /** One article's filled movements, newest first. */
+    fun stockEntries(itemId: String): List<StockEntry> = savedItems.entriesFor(itemId)
+
+    /**
+     * Saves a physical count and returns how many shelves it corrected.
+     *
+     * The expected quantity is read from the ledger, not from the cached field:
+     * the count is the moment the shop can prove what is really there, and
+     * counting against a number that has already drifted would turn the drift
+     * into an accepted fact. A blank reason is refused by the caller; the sheet
+     * will not close without one, because a correction nobody can explain is a
+     * correction nobody can trust.
+     */
+    fun recordStocktake(counts: Map<String, Int>, reason: String): Int {
+        val rows = Stocktake.rows(savedItems.items.value, counts) { item ->
+            savedItems.ledger.balance(item.id)
+        }
+        val entries = Stocktake.entries(
+            rows = rows,
+            reason = reason,
+            reference = "Inventaire du ${InvoicePdf.today()}",
+        )
+        return savedItems.recordStocktake(
+            entries = entries,
+            counted = rows.filter { it.difference != 0 }.associate { it.itemId to it.counted },
+        )
+    }
+
     /** Saves an issued record as a new draft, keeping the original untouched. */
-    fun duplicateRecord(record: InvoiceRecord) {
-        loadRecord(
+    fun duplicateRecord(record: InvoiceRecord) {        loadRecord(
             record.copy(
                 id = UUID.randomUUID().toString(),
                 status = InvoiceStatus.DRAFT,

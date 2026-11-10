@@ -299,6 +299,32 @@ class SavedItemStore(
         if (entries.isEmpty()) ledger.seed(_items.value)
     }
 
+    /**
+     * Writes a validated stocktake: the differences into the ledger, the counted
+     * numbers into the cache.
+     *
+     * The counted quantity is written as-is rather than as `expected + delta`,
+     * because it is what the shop physically saw. The two agree by construction —
+     * [Stocktake.entries] derives the delta from the same rows — but writing the
+     * physical number keeps a rounding bug from silently becoming a new shelf
+     * quantity.
+     *
+     * Returns the number of articles corrected.
+     */
+    fun recordStocktake(entries: List<StockEntry>, counted: Map<String, Int>): Int {
+        if (entries.isEmpty()) return 0
+        val written = ledger.appendAll(entries)
+        if (written == 0) return 0
+        persist(
+            _items.value.map { item ->
+                val count = counted[item.id]
+                if (item.stock == null || count == null) item else item.copy(stock = count)
+            },
+            _folders.value,
+        )
+        return written
+    }
+
     private fun sorted(list: List<SavedItem>): List<SavedItem> =
         list.sortedBy { it.label.trim().lowercase() }
 

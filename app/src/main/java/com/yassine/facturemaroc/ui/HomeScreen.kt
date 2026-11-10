@@ -41,6 +41,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CreateNewFolder
@@ -199,6 +200,8 @@ fun HomeScreen(
     var editingItem by remember { mutableStateOf<SavedItem?>(null) }
     /* The article whose stock history is open, if any. */
     var historyItem by remember { mutableStateOf<SavedItem?>(null) }
+    /* The physical count sheet, opened from the Articles tab. */
+    var stocktakeOpen by remember { mutableStateOf(false) }
     /*
      * Where the Articles tab is filtering.
      *
@@ -475,6 +478,11 @@ fun HomeScreen(
                             },
                         ) {
                             Icon(Icons.Filled.Folder, contentDescription = "Dossiers")
+                        }
+                    }
+                    if (tab == HomeTab.ARTICLES && ItemField.STOCK in itemFields) {
+                        IconButton(onClick = { stocktakeOpen = true }) {
+                            Icon(Icons.Filled.Checklist, contentDescription = "Inventaire")
                         }
                     }
                     IconButton(onClick = onOpenSettings) {
@@ -894,11 +902,34 @@ fun HomeScreen(
     historyItem?.let { item ->
         // Read once per opening: the ledger is a file, and the row is a record
         // of what already happened, not a live counter.
-        val entries = remember(item.id) { viewModel.savedItems.entriesFor(item.id) }
+        val entries = remember(item.id) { viewModel.stockEntries(item.id) }
         StockHistoryDialog(
             item = item,
             entries = entries,
             onDismiss = { historyItem = null },
+        )
+    }
+
+    if (stocktakeOpen) {
+        StocktakeDialog(
+            items = items,
+            // The ledger, not the cached field: a count must not inherit a
+            // drift nobody has looked at yet.
+            expectedOf = { item -> viewModel.savedItems.ledger.balance(item.id) },
+            onDismiss = { stocktakeOpen = false },
+            onConfirm = { counts, reason ->
+                val corrected = viewModel.recordStocktake(counts, reason)
+                stocktakeOpen = false
+                scope.launch {
+                    snackbar.showSnackbar(
+                        if (corrected == 0) {
+                            "Inventaire terminé : aucun écart."
+                        } else {
+                            "Inventaire enregistré : $corrected écart${if (corrected > 1) "s" else ""} corrigé${if (corrected > 1) "s" else ""}."
+                        },
+                    )
+                }
+            },
         )
     }
 
