@@ -76,14 +76,52 @@ When it is on, each counter stores the year it was last taken, so a restore or
 a cancelled share cannot restart the sequence in the middle of a year. Numbers
 stay `PREFIX-yyyyMMdd-0000`.
 
+### 2026-11-10 — Payment terms: presets plus the shop's own words
+Conditions de règlement offer four presets (comptant, 30 jours, 60 jours, fin de
+mois) that fill the printed note, and the note stays editable. The stored value
+is the preset, so the app can tell a cash sale from a deferred one without
+parsing prose. A preset never replaces hand-typed text without asking: the
+dialog offers "Remplacer" or "Garder mon texte", and a hand-edited sentence is
+stored as free text. Legacy documents are read unchanged and their preset is
+derived from the note.
+
+### 2026-11-10 — Late clause: a model, never presented as legal advice
+The late-payment clause is a Settings field, shipped with one short French model
+clause that names no rate and no amount. Settings says to have it checked by the
+accountant. It prints under the totals only on a document that is not paid at
+the counter and only when the shop filled it; a cleared field prints nothing.
+The clause is copied onto the document, so a reprint says what the customer
+read.
+
+### 2026-11-10 — Payment QR: plain text, the shop's own account
+The QR is a design setting, off by default, drawn only when a RIB exists. It
+encodes plain text — bank, RIB, account holder, amount due, document number —
+and never a URL or a payment-page link. A link would be a payment instruction
+the app invented; the shop owns the account and the code must say only what the
+shop typed.
+
+### 2026-11-10 — PDF names: one pattern, one sanitiser
+The exported invoice follows a Settings pattern (default `facture_{number}`,
+with `{client}`, `{date}` and `{type}`). Every name goes through one sanitiser
+and always ends in `.pdf`; the receipt and the statement use the same rules.
+Anything a file system, mail client or USB stick refuses becomes `_`, a leading
+dot goes away, and a pattern that leaves nothing usable falls back to the
+default rather than to a file called `.pdf`.
+
+### 2026-11-10 — Archive state is per document, not per card
+The detail sheet says whether the PDF of that document is really kept. It reads
+the ledger and checks that the `.pdf` file exists, so "Oui" means the archive
+can produce the document, not merely that an entry mentions it. Deliberately a
+small row, not a badge on every history card: the archive screen remains the
+place that verifies the whole chain.
+
 ---
 
 ## Open
 
 1. **Arabic / bilingual** — pending accountant confirmation.
 2. **RAS TVA** — note only, or withheld amount with recalculated balance?
-3. **Payment terms** — presets (cash / 30 / 60 days) or free text?
-4. **Deposit** — should the final invoice deduct a referenced acompte
+3. **Deposit** — should the final invoice deduct a referenced acompte
    automatically?
-5. **Auto-entrepreneur number** — print it on documents?
-6. **1.0 release** — Play only, or Play + GitHub release?
+4. **Auto-entrepreneur number** — print it on documents?
+5. **1.0 release** — Play only, or Play + GitHub release?

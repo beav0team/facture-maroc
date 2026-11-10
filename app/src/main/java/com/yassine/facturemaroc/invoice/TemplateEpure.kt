@@ -194,7 +194,7 @@ class EpureRenderer : PdfRenderer {
         }
 
         // ---- totals: labels in capitals, one accent rule, one big figure
-        val box = PdfTotals.box(right, valueWidth = 150f)
+        val box = PdfTotals.box(right, valueWidth = 140f)
         var ty = lastRowEnd + 26f
         PdfTotals.row(canvas, box, "Total HT", PdfText.money(data.subtotal), ty, label, cellRight)
         ty += 16f
@@ -208,13 +208,17 @@ class EpureRenderer : PdfRenderer {
             ty += 16f
         }
         if (data.surcharge > 0.0) {
+            // The shop's own label, unspaced and measured: the spaced caps used
+            // by the fixed rows turned "Emballage renforcé" into two lines that
+            // the next row then printed over.
+            val surchargeLabel = data.surchargeLabel.ifBlank { "Livraison" }
             PdfTotals.row(
                 canvas, box,
-                data.surchargeLabel.ifBlank { "Livraison" },
+                surchargeLabel,
                 PdfText.money(data.surcharge),
-                ty, label, cellRight,
+                ty, cell, cellRight,
             )
-            ty += 16f
+            ty += maxOf(16f, PdfText.height(surchargeLabel, cell, box.labelWidth, 2) + 2f)
         }
         val vatRows = data.vatPrintRows
         if (vatRows.isEmpty()) {
@@ -279,6 +283,9 @@ class EpureRenderer : PdfRenderer {
     ): Float {
         val rows = 1 + data.vatRowCount + (if (data.showsDiscount) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         var h = 26f + 16f * rows + 18f + 12f + 32f
+        // The surcharge row carries the shop's own label, which can wrap to a
+        // second line; the fixed sixteen points per row would then be short.
+        if (data.surcharge > 0.0) h += 10f
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += 8f + PdfText.height(data.amountInWords, words, contentW, 4)
         val notePaint = PdfText.paint(9.5f, 0)

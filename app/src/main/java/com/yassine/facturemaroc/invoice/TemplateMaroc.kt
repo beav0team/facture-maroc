@@ -202,7 +202,9 @@ class MarocRenderer : PdfRenderer {
         }
 
         // ---- totals, boxed on the right
-        val box = PdfTotals.box(right)
+        // Eight points of inset: the panel reaches the paper margin, and a
+        // figure right-aligned to the same edge sat on the panel's border.
+        val box = PdfTotals.box(right - 8f)
         var ty = lastRowEnd + 18f
         val boxTop = ty - 8f
         PdfTotals.row(canvas, box, "Total HT", PdfText.money(data.subtotal), ty, body, cellRight)

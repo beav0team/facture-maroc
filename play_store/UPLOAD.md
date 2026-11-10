@@ -9,12 +9,13 @@ et les réponses aux formulaires.
 | Élément | Valeur |
 |---|---|
 | Paquet | `com.yassine.facturemaroc` |
-| Version | `0.8.2` (`versionCode` 14) |
+| Version | `0.10.0` (`versionCode` 16) — la 0.11.0 est en préparation, non publiée |
 | Cible | API 36, minimum API 26 |
 | Permissions | `CAMERA` seule, facultative |
+| Modèles de document | 6 (Classique, Moderne, Facture Maroc, Épuré, Bandeau, Ticket 80 mm) |
 | Fichier | `app/build/outputs/bundle/release/app-release.aab` |
-| Taille | 15 334 423 octets |
-| SHA-256 | `26eaa220fc3d06e1fb45e7aa8b24754095b77c0c3ffcf929a718bc1c1f67cdbe` |
+| Taille | à relever sur l'AAB de la 0.10.0/0.11.0 (les valeurs ci-dessous décrivaient la 0.8.2) |
+| SHA-256 | à relever sur le même fichier avant téléversement |
 | Signature | clé de `~/.android/tyre-inventory.jks` (alias `inventory`) |
 
 L'AAB se reconstruit avec `./gradlew :app:bundleRelease`. **Ne jamais téléverser
@@ -67,12 +68,11 @@ La réponse « aucune donnée collectée » n'est exacte que depuis la 0.7.2 : M
 ajoutait `INTERNET` par son propre manifeste pour téléverser ses journaux. C'est
 retiré, et `CAMERA` est la seule permission de l'AAB.
 
-La 0.8.2 ne change aucune de ces réponses : elle remplace seulement les exemples
-affichés dans l’application (une chaise en rotin au lieu de pneus, dans les
-écrans vides, les brouillons et les dossiers de stock). Aucun accès réseau n’a
-été ajouté et `CAMERA` reste la seule permission. Le fichier est celui qui porte
-le SHA-256 ci-dessus — le vérifier avant de le téléverser évite d’envoyer par
-erreur un AAB plus ancien.
+La 0.10.0 et la 0.11.0 en préparation ne changent aucune de ces réponses : elles
+ajoutent des documents, des modèles et des réglages d'impression, jamais un accès
+réseau. `CAMERA` reste la seule permission. Relever la taille et le SHA-256 sur
+l'AAB réellement produit avant de le téléverser : les anciennes valeurs
+correspondaient à la 0.8.2.
 
 ## 5. Signature
 

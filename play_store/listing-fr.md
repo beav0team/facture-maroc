@@ -17,7 +17,7 @@ depuis le 30 octobre 2026 ; seule l’adresse e-mail de contact reste à saisir.
 ## Description complète
 
 ```
-Facture Maroc est l’application de facturation conçue pour les commerçants, artisans et prestataires marocains. Créez une facture, un devis, un bon de commande ou un ticket en quelques gestes, puis partagez un PDF propre et professionnel.
+Facture Maroc est l’application de facturation conçue pour les commerçants, artisans et prestataires marocains. Créez une facture, un devis, un bon de commande, un reçu ou un relevé client en quelques gestes, puis partagez un PDF propre et professionnel.
 
 TOUT AU MÊME ENDROIT
 • Trois onglets : Factures, Clients, Articles.
@@ -26,24 +26,36 @@ TOUT AU MÊME ENDROIT
 • Un catalogue d’articles et de services : liste complète, dossiers en filtre, champs de la fiche au choix.
 
 DES DOCUMENTS PROPRES
-• Facture, devis, bon de commande et ticket 80 mm.
-• Quatre modèles PDF : Classique, Moderne, Facture Maroc et Ticket.
-• Remise générale ou par ligne, TVA configurable (20 % par défaut), exonération de TVA par ligne.
+• Dix types : facture, devis, bon de commande, ticket 80 mm, avoir, proforma, acompte, régularisation, facture simplifiée, facture à l’export.
+• Six modèles PDF : Classique, Moderne, Facture Maroc, Épuré, Bandeau et Ticket 80 mm.
+• TVA par ligne (20 %, 10 %, exonérée) avec récapitulatif par taux sur le document.
+• Remise générale en pourcentage ou en dirhams, remise par ligne, livraison ou surcharge en montant ou en pourcentage.
+• Quantités décimales : mètres, kilos, heures — sans zéro inutile.
 • Montant total écrit en toutes lettres, en français.
-• Votre logo sur chaque document.
+• Numérotation par type de document, préfixe réglable et remise à zéro annuelle facultative.
+
+PAIEMENTS ET SUIVI
+• Échéance de paiement (comptant, 30 jours, 60 jours, fin de mois ou date libre).
+• Conditions de règlement en un tap, texte libre conservé.
+• Encaissements partiels : montant, date, moyen et référence, avec « Reste à payer ».
+• Reçus A5 pour chaque paiement et relevé de compte par client, en PDF.
+• Acompte déjà versé déduit du reste, sans toucher à la TVA.
+• Coordonnées bancaires (banque, RIB, titulaire) et QR de paiement facultatif.
+• Vue « Facture acquittée », avoir en un geste et devis converti en facture.
 
 VOS DONNÉES RESTENT CHEZ VOUS
 • L’application fonctionne entièrement hors ligne.
 • Aucun accès à vos données : ni Internet, ni stockage, ni contacts, ni localisation.
 • Sauvegarde et restauration locales : un fichier que vous gardez où vous voulez.
 • Export XML pour vos archives ou votre comptable.
+• Archive vérifiable des PDF et XML réellement remis.
 
 POURQUOI FACTURE MAROC
 • Pensée pour le marché marocain : dirham, TVA, mentions légales, français.
 • Rapide : une facture se crée sans formation et sans connexion.
 • Sobre : une interface claire, sans tableaux de bord inutiles.
 
-Facture Maroc ne remplace pas un logiciel de comptabilité certifié. Faites valider les mentions obligatoires de vos documents par votre comptable.
+Facture Maroc ne remplace pas un logiciel de comptabilité certifié. Faites valider les mentions obligatoires de vos documents par votre comptable, y compris la clause de retard de paiement proposée comme modèle. L’export XML est du UBL 2.1 standard : aucune conformité DGI ni facturation électronique n’est revendiquée.
 
 Une question, une idée ? Ouvrez un ticket sur github.com/beav0team/facture-maroc/issues.
 ```

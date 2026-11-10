@@ -198,7 +198,7 @@ object PdfExtras {
             h += bankLines(shop).size * (body.textSize + 4f)
             val qr = design != null && design.showPaymentQr &&
                 PaymentQrText.of(data, shop) != null
-            if (qr) h += QR_SIZE + 6f
+            if (qr) h += QR_SIZE + 10f
         }
         return h
     }
@@ -312,14 +312,16 @@ object PdfExtras {
             }
             if (payload != null) {
                 PaymentQr.bitmap(payload)?.let { image ->
-                    val left = x + (width - QR_SIZE).coerceAtLeast(0f) / 2f
+                    // Left-aligned with the bank lines: a code centred in a
+                    // wide block floats away from the account it belongs to.
+                    val top = cursor + 4f
                     canvas.drawBitmap(
                         image,
                         null,
-                        RectF(left, cursor, left + QR_SIZE, cursor + QR_SIZE),
+                        RectF(x, top, x + QR_SIZE, top + QR_SIZE),
                         Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG),
                     )
-                    cursor += QR_SIZE + 6f
+                    cursor = top + QR_SIZE + 6f
                 }
             }
         }

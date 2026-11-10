@@ -58,9 +58,14 @@ Dans le constructeur de document :
   client sur le document, et le carnet des fournisseurs le propose. Un bon de
   commande sans fournisseur n’affiche pas de destinataire inventé.
 - Lignes prises dans le catalogue ou **tapées à la main**, quantité et prix
-  modifiables, remise par ligne et remise générale.
-- **TVA configurable** (20 % par défaut), **exonération par ligne** et **mode
-  auto-entrepreneur** (TVA non applicable sur tous les documents du magasin).
+  modifiables, remise par ligne et remise générale. La quantité accepte les
+  **décimales** : 2,5 m, 1,5 kg, 0,75 heure s'impriment sans zéro inutile, et le
+  stock reste compté en articles entiers (la quantité est arrondie, à l'unité,
+  au moment de la déduction).
+- **TVA par ligne** : 20 %, 10 %, 0 % ou exonérée, avec le **récapitulatif par
+  taux** sur les six modèles et un sous-total par taux dans l'export UBL.
+  **Exonération par ligne** et **mode auto-entrepreneur** (TVA non applicable sur
+  tous les documents du magasin).
 - **Prix HT ou TTC au choix** : le commerce décide s'il tape ses prix hors taxe
   (« TVA en sus ») ou taxe comprise (« TVA incluse »). La facture montre toujours
   HT + TVA, comme l'exige un document ; un prix tapé TTC est divisé une seule
@@ -77,8 +82,9 @@ Dans le constructeur de document :
   de couleur en haut et en bas) et **Ticket** (rouleau 80 mm).
 - L’écran **Modèle de document** montre les six rendus réels, laisse choisir la
   **couleur d’accent** (huit teintes) et règle ce qui s’imprime : logo,
-  identifiants légaux, montant en lettres, mode de règlement, pied de page.
-  Chaque interrupteur change l’aperçu et le document.
+  identifiants légaux, montant en lettres, mode de règlement, état du paiement,
+  **QR de paiement** et pied de page. Chaque interrupteur change l’aperçu et le
+  document.
 - Logo du commerce, **téléphone et e-mail**, coordonnées et mentions légales sur
   chaque document.
 - **Note au client, conditions de règlement et remerciement** : chaque bloc ne
@@ -93,12 +99,40 @@ Dans le constructeur de document :
   facture déjà remise. Un brouillon, lui, suit les réglages du jour jusqu'à son
   émission. Le logo est stocké **une fois** par contenu (`files/logo-snapshots/`),
   le document ne garde que son empreinte.
-- **Surcharge ou livraison** : un montant fixe avec son libellé, ajouté après la
-  remise et avant la TVA. À zéro, la ligne disparaît des totaux.
+- **Surcharge ou livraison** : un montant fixe ou un **pourcentage** du total
+  remisé, avec son libellé, ajouté après la remise et avant la TVA. À zéro, la
+  ligne disparaît des totaux.
+- **Numérotation** : chaque type a sa séquence, son **préfixe réglable** (lettres,
+  chiffres, `-`, `_`) et une **remise à zéro annuelle facultative**, éteinte par
+  défaut. Le compteur de factures reste modifiable ; un document qui n'est pas
+  parti rend son numéro.
+- **Conditions de règlement** : comptant, 30 jours, 60 jours, fin de mois ou
+  texte libre. Une présélection remplit la note — elle demande confirmation
+  avant de remplacer un texte saisi à la main. La **clause de retard de
+  paiement**, réglée une fois dans les paramètres, s'imprime sous les totaux
+  seulement sur un document non comptant, et seulement si le magasin l'a
+  remplie. Livrée comme **modèle** en français, à faire vérifier par le
+  comptable.
 - **Paiements** : depuis l'historique, « Encaisser… » enregistre un montant, une
-  date et une référence. Le document affiche alors « Payé … / Reste à payer … »,
-  ou « Facture acquittée le … » une fois soldé. L'état (impayée, partielle,
-  payée) est calculé, jamais saisi ; un duplicata repart à zéro.
+  date, un moyen et une référence. Le document affiche alors « Payé … / Reste à
+  payer … », ou « Facture acquittée le … » une fois soldé. L'état (impayée,
+  partielle, payée) est calculé, jamais saisi ; un duplicata repart à zéro.
+- **Reçus et relevés** : chaque paiement peut produire un **reçu A5** (somme
+  reçue, moyen, référence, total payé et reste) ; la fiche client produit un
+  **relevé de compte A4** (facturé, avoirs, payé, solde, échéances en retard).
+- **Acompte déjà versé** : un montant et le numéro du document d'acompte sont
+  déduits du **reste à payer**, jamais de la base de TVA ; le reçu et le relevé
+  portent la même déduction.
+- **Coordonnées bancaires et QR** : banque, RIB (24 chiffres, averti sans être
+  bloqué) et titulaire s'impriment avec le bloc de paiement. Un **QR de paiement**
+  facultatif, éteint par défaut, encode une ligne de paiement en texte clair
+  (banque, RIB, montant dû, numéro) — jamais un lien.
+- **Nom du fichier PDF** réglable (`facture_{number}` par défaut), assaini pour
+  tous les systèmes de fichiers et toujours terminé par `.pdf` ; le reçu et le
+  relevé passent par les mêmes règles.
+- **Archive** : chaque PDF partagé et chaque XML exporté sont recopiés et
+  enchaînés par empreinte. La fiche d'un document dit si son PDF y est
+  réellement conservé, et l'écran Paramètres vérifie toute la chaîne.
 
 Les documents sont générés en PDF dans le cache de l’application, puis remis au
 sélecteur Android. Android ne dit pas si ce sélecteur a été utilisé ou refermé :
@@ -150,7 +184,7 @@ wrapper Gradle fourni.
 
 ```bash
 export JAVA_HOME="$HOME/.local/jdk"      # ou votre JDK 21
-./gradlew testDebugUnitTest             # 260 tests JVM
+./gradlew testDebugUnitTest             # 405 tests JVM
 ./gradlew assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew bundleRelease                 # app/build/outputs/bundle/release/app-release.aab
 ./gradlew assembleRelease               # app/build/outputs/apk/release/app-release.apk
@@ -168,7 +202,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 
 ## Tests
 
-**260 tests JVM**, plus quinze tests instrumentés :
+**405 tests JVM**, plus dix-huit tests instrumentés :
 
 | Suite | Ce qu’elle protège |
 |---|---|
@@ -194,6 +228,12 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 | `ItemFieldsTest` | Champs d'article activables : défauts, chaque interrupteur, filtre de dossier et sous-dossiers |
 | `BarcodeTest` | Ce qui est gardé d'un code lu : ni saut de ligne, ni zéros perdus |
 | `InvoiceSummaryTest` | Le total du mois exclut devis, bons de commande et brouillons |
+| `PaymentTermsTest` | Présélections de règlement, document comptant, clause de retard jamais imprimée sur un comptant |
+| `PaymentQrTextTest` | Le QR porte banque, RIB, montant et numéro — du texte, jamais une URL |
+| `PdfFileNameTest` | Nom de PDF assaini, extension forcée, modèle vide encore utilisable |
+| `DepositTest` | L'acompte réduit le reste à payer sans toucher à la TVA |
+| `ClientStatementTest` | Relevé : facturé, avoirs, payé, solde, échéances en retard |
+| `QuantityTest` | Quantités décimales : saisie, arrondi du stock, impression sans zéro |
 
 Les captures Play utilisent un jeu de démonstration (« Atelier Atlas »), jamais
 les données d’un client réel.
@@ -201,7 +241,7 @@ les données d’un client réel.
 ### Tests sur l’appareil
 
 ```bash
-./gradlew connectedDebugAndroidTest   # 7 tests instrumentés
+./gradlew connectedDebugAndroidTest   # 18 tests instrumentés
 ```
 
 `InvoicePdfPagesTest` compte les feuilles d’un vrai PDF avec le lecteur
@@ -286,8 +326,8 @@ base de données, aucun appel réseau.
 - Ce n’est **pas un logiciel de comptabilité certifié**. Les mentions
   obligatoires (ICE, IF, RC, patente, CNSS, TVA) doivent être validées par le
   comptable du commerce.
-- Le suivi couvre les **paiements reçus par document**, pas le crédit client
-  (relevés, relances) ni les rapports : choix de périmètre de cette version.
+- Le suivi couvre les **paiements reçus par document** et le **relevé de compte
+  par client** ; les relances automatiques ne sont pas encore écrites.
 - Pas encore de synchronisation cloud ni de connexion Google. Une sauvegarde
   cloud facultative viendra plus tard, dans une version séparée, avec sa propre
   mise à jour de la politique de confidentialité.
@@ -316,6 +356,14 @@ par Google) est bien saisie dans Play Console.
 
 ## Historique
 
+- **0.11.0 (en préparation)** — conformité et finition : TVA par ligne et
+  récapitulatif par taux, remise en dirhams, surcharge en pourcentage, échéance
+  de paiement, encaissements partiels, reçus et relevés, avoir en un geste,
+  devis converti, acompte déduit, documents émis non supprimables, numérotation
+  par type avec préfixe et remise à zéro annuelle, quantités décimales,
+  conditions de règlement présélectionnées, clause de retard de paiement,
+  coordonnées bancaires et QR facultatif, nom de PDF réglable et visibilité de
+  l'archive sur chaque fiche.
 - **0.10.0** — paiements encaissés (partiels), surcharge de livraison, logo
   stocké une fois par contenu, PDF partagés dans l'archive vérifiable.
 - **0.8.2** — exemples génériques. Les écrans vides, les brouillons, les
