@@ -20,17 +20,16 @@
 <meta name="twitter:title" content="Facture Maroc hors ligne — vos factures, même sans réseau">
 <meta name="twitter:description" content="Dix documents avec vos mentions légales, le montant en toutes lettres, le stock qui suit. Aucune permission réseau.">
 <meta name="twitter:image" content="https://factureapp.ma/assets/img/apercu-1024.jpg">
-<meta name="theme-color" content="#1D4ED8">
-<meta name="theme-color" content="#0D131F" media="(prefers-color-scheme: dark)">
-<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#1E3FD2">
+<meta name="color-scheme" content="light">
 <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/img/icone-180.png">
 <link rel="manifest" href="manifest.json">
-<link rel="preload" href="assets/fonts/robotoflex-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" as="image"
       imagesrcset="assets/img/factures-260.webp 260w, assets/img/factures-400.webp 400w"
-      imagesizes="(max-width: 760px) 172px, 190px">
-<link rel="stylesheet" href="assets/css/tokens.css">
+      imagesizes="(max-width: 720px) 132px, (max-width: 1080px) 152px, 198px">
 <link rel="stylesheet" href="assets/css/site.css">
 <script type="application/ld+json">
 {
@@ -45,7 +44,7 @@
       "applicationSubCategory": "Facturation et gestion de stock",
       "operatingSystem": "Android 8.0 ou plus récent",
       "inLanguage": "fr",
-      "softwareVersion": "0.12.0-beta.2",
+      "softwareVersion": "0.11.1",
       "description": "Facturation hors ligne pour les commerces marocains : factures, devis, bons de commande, tickets, avoirs, proformas, acomptes, régularisations, factures simplifiées et factures à l’export, avec ICE, IF, RC, patente, CNSS, TVA et montants en toutes lettres.",
       "url": "https://factureapp.ma/",
       "image": "https://factureapp.ma/assets/img/apercu-1024.jpg",
@@ -86,33 +85,8 @@
 
 <a class="saut" href="#contenu">Aller au contenu</a>
 
-<svg class="sprite" aria-hidden="true" focusable="false">
-<symbol id="i-facture" viewBox="0 -960 960 960"><path d="M240-80q-50 0-85-35t-35-85v-80q0-17 11.5-28.5T160-320h80v-536q0-7 6-9.5t11 2.5l29 29q6 6 14 6t14-6l32-32q6-6 14-6t14 6l32 32q6 6 14 6t14-6l32-32q6-6 14-6t14 6l32 32q6 6 14 6t14-6l32-32q6-6 14-6t14 6l32 32q6 6 14 6t14-6l32-32q6-6 14-6t14 6l32 32q6 6 14 6t14-6l29-29q5-5 11-2.5t6 9.5v656q0 50-35 85t-85 35H240Zm480-80q17 0 28.5-11.5T760-200v-560H320v440h320q17 0 28.5 11.5T680-280v80q0 17 11.5 28.5T720-160ZM400-680h160q17 0 28.5 11.5T600-640q0 17-11.5 28.5T560-600H400q-17 0-28.5-11.5T360-640q0-17 11.5-28.5T400-680Zm0 120h160q17 0 28.5 11.5T600-520q0 17-11.5 28.5T560-480H400q-17 0-28.5-11.5T360-520q0-17 11.5-28.5T400-560Zm280-40q-17 0-28.5-11.5T640-640q0-17 11.5-28.5T680-680q17 0 28.5 11.5T720-640q0 17-11.5 28.5T680-600Zm0 120q-17 0-28.5-11.5T640-520q0-17 11.5-28.5T680-560q17 0 28.5 11.5T720-520q0 17-11.5 28.5T680-480ZM240-160h360v-80H200v40q0 17 11.5 28.5T240-160Zm-40 0v-80 80Z"/></symbol>
-<symbol id="i-clients" viewBox="0 -960 960 960"><path d="M40-272q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v32q0 33-23.5 56.5T600-160H120q-33 0-56.5-23.5T40-240v-32Zm800 112H738q11-18 16.5-38.5T760-240v-40q0-44-24.5-84.5T666-434q51 6 96 20.5t84 35.5q36 20 55 44.5t19 53.5v40q0 33-23.5 56.5T840-160ZM360-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm400-160q0 66-47 113t-113 47q-11 0-28-2.5t-28-5.5q27-32 41.5-71t14.5-81q0-42-14.5-81T544-792q14-5 28-6.5t28-1.5q66 0 113 47t47 113ZM120-240h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0 320Zm0-400Z"/></symbol>
-<symbol id="i-articles" viewBox="0 -960 960 960"><path d="M200-80q-33 0-56.5-23.5T120-160v-451q-18-11-29-28.5T80-680v-120q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v120q0 23-11 40.5T840-611v451q0 33-23.5 56.5T760-80H200Zm0-520v440h560v-440H200Zm-40-80h640v-120H160v120Zm240 280h160q17 0 28.5-11.5T600-440q0-17-11.5-28.5T560-480H400q-17 0-28.5 11.5T360-440q0 17 11.5 28.5T400-400Zm80 20Z"/></symbol>
-<symbol id="i-achats" viewBox="0 -960 960 960"><path d="M440-720h-80q-17 0-28.5-11.5T320-760q0-17 11.5-28.5T360-800h80v-80q0-17 11.5-28.5T480-920q17 0 28.5 11.5T520-880v80h80q17 0 28.5 11.5T640-760q0 17-11.5 28.5T600-720h-80v80q0 17-11.5 28.5T480-600q-17 0-28.5-11.5T440-640v-80ZM280-80q-33 0-56.5-23.5T200-160q0-33 23.5-56.5T280-240q33 0 56.5 23.5T360-160q0 33-23.5 56.5T280-80Zm400 0q-33 0-56.5-23.5T600-160q0-33 23.5-56.5T680-240q33 0 56.5 23.5T760-160q0 33-23.5 56.5T680-80ZM120-800H80q-17 0-28.5-11.5T40-840q0-17 11.5-28.5T80-880h66q11 0 21 6t15 17l159 337h280l145-260q5-10 14-15t20-5q23 0 34.5 19.5t.5 39.5L692-482q-11 20-29.5 31T622-440H324l-44 80h440q17 0 28.5 11.5T760-320q0 17-11.5 28.5T720-280H280q-45 0-68.5-39t-1.5-79l54-98-144-304Z"/></symbol>
-<symbol id="i-inventaire" viewBox="0 -960 960 960"><path d="m221-313 142-142q12-12 28-11.5t28 12.5q11 12 11 28t-11 28L250-228q-12 12-28 12t-28-12l-86-86q-11-11-11-28t11-28q11-11 28-11t28 11l57 57Zm0-320 142-142q12-12 28-11.5t28 12.5q11 12 11 28t-11 28L250-548q-12 12-28 12t-28-12l-86-86q-11-11-11-28t11-28q11-11 28-11t28 11l57 57Zm339 353q-17 0-28.5-11.5T520-320q0-17 11.5-28.5T560-360h280q17 0 28.5 11.5T880-320q0 17-11.5 28.5T840-280H560Zm0-320q-17 0-28.5-11.5T520-640q0-17 11.5-28.5T560-680h280q17 0 28.5 11.5T880-640q0 17-11.5 28.5T840-600H560Z"/></symbol>
-<symbol id="i-journal" viewBox="0 -960 960 960"><path d="M480-120q-126 0-223-76.5T131-392q-4-15 6-27.5t27-14.5q16-2 29 6t18 24q24 90 99 147t170 57q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h70q17 0 28.5 11.5T360-600q0 17-11.5 28.5T320-560H160q-17 0-28.5-11.5T120-600v-160q0-17 11.5-28.5T160-800q17 0 28.5 11.5T200-760v54q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm40-376 100 100q11 11 11 28t-11 28q-11 11-28 11t-28-11L452-452q-6-6-9-13.5t-3-15.5v-159q0-17 11.5-28.5T480-680q17 0 28.5 11.5T520-640v144Z"/></symbol>
-<symbol id="i-hors-ligne" viewBox="0 -960 960 960"><path d="M260-160q-92 0-156-64T40-380q0-77 47.5-137T210-594q3-8 6-15.5t6-16.5L84-764q-11-11-11-28t11-28q11-11 28-11t28 11l680 680q11 11 11.5 27.5T820-84q-11 11-27.5 11.5T764-83l-78-77H260Zm0-80h346L284-562q-2 11-3 21t-1 21h-20q-58 0-99 41t-41 99q0 58 41 99t99 41Zm185-161Zm419 191-58-56q17-14 25.5-32.5T840-340q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-27 0-52 6.5T380-693l-58-58q35-24 74.5-36.5T480-800q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 39-15 72.5T864-210ZM593-479Z"/></symbol>
-<symbol id="i-verrou" viewBox="0 -960 960 960"><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80ZM240-160v-400 400Z"/></symbol>
-<symbol id="i-telephone" viewBox="0 -960 960 960"><path d="M280-40q-33 0-56.5-23.5T200-120v-720q0-33 23.5-56.5T280-920h400q33 0 56.5 23.5T760-840v720q0 33-23.5 56.5T680-40H280Zm0-120v40h400v-40H280Zm0-80h400v-480H280v480Zm0-560h400v-40H280v40Zm0 0v-40 40Zm0 640v40-40Z"/></symbol>
-<symbol id="i-document" viewBox="0 -960 960 960"><path d="M360-240h240q17 0 28.5-11.5T640-280q0-17-11.5-28.5T600-320H360q-17 0-28.5 11.5T320-280q0 17 11.5 28.5T360-240Zm0-160h240q17 0 28.5-11.5T640-440q0-17-11.5-28.5T600-480H360q-17 0-28.5 11.5T320-440q0 17 11.5 28.5T360-400ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h287q16 0 30.5 6t25.5 17l194 194q11 11 17 25.5t6 30.5v447q0 33-23.5 56.5T720-80H240Zm280-560v-160H240v640h480v-440H560q-17 0-28.5-11.5T520-640ZM240-800v200-200 640-640Z"/></symbol>
-<symbol id="i-pdf" viewBox="0 -960 960 960"><path d="M400-540h40q17 0 28.5-11.5T480-580v-40q0-17-11.5-28.5T440-660h-60q-8 0-14 6t-6 14v160q0 8 6 14t14 6q8 0 14-6t6-14v-60Zm0-40v-40h40v40h-40Zm200 120q17 0 28.5-11.5T640-500v-120q0-17-11.5-28.5T600-660h-60q-8 0-14 6t-6 14v160q0 8 6 14t14 6h60Zm-40-40v-120h40v120h-40Zm160-40h20q8 0 14-6t6-14q0-8-6-14t-14-6h-20v-40h20q8 0 14-6t6-14q0-8-6-14t-14-6h-40q-8 0-14 6t-6 14v160q0 8 6 14t14 6q8 0 14-6t6-14v-60ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-520q0-17 11.5-28.5T120-720q17 0 28.5 11.5T160-680v520h520q17 0 28.5 11.5T720-120q0 17-11.5 28.5T680-80H160Zm160-720v480-480Z"/></symbol>
-<symbol id="i-mentions" viewBox="0 -960 960 960"><path d="m438-452-58-57q-11-11-27.5-11T324-508q-11 11-11 28t11 28l86 86q12 12 28 12t28-12l170-170q12-12 11.5-28T636-592q-12-12-28.5-12.5T579-593L438-452ZM326-90l-58-98-110-24q-15-3-24-15.5t-7-27.5l11-113-75-86q-10-11-10-26t10-26l75-86-11-113q-2-15 7-27.5t24-15.5l110-24 58-98q8-13 22-17.5t28 1.5l104 44 104-44q14-6 28-1.5t22 17.5l58 98 110 24q15 3 24 15.5t7 27.5l-11 113 75 86q10 11 10 26t-10 26l-75 86 11 113q2 15-7 27.5T802-212l-110 24-58 98q-8 13-22 17.5T584-74l-104-44-104 44q-14 6-28 1.5T326-90Zm52-72 102-44 104 44 56-96 110-26-10-112 74-84-74-86 10-112-110-24-58-96-102 44-104-44-56 96-110 24 10 112-74 86 74 84-10 114 110 24 58 96Zm102-318Z"/></symbol>
-<symbol id="i-coche" viewBox="0 -960 960 960"><path d="m424-408-86-86q-11-11-28-11t-28 11q-11 11-11 28t11 28l114 114q12 12 28 12t28-12l226-226q11-11 11-28t-11-28q-11-11-28-11t-28 11L424-408Zm56 328q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></symbol>
-<symbol id="i-fleche" viewBox="0 -960 960 960"><path d="M647-440H200q-17 0-28.5-11.5T160-480q0-17 11.5-28.5T200-520h447L451-716q-12-12-11.5-28t12.5-28q12-11 28-11.5t28 11.5l264 264q6 6 8.5 13t2.5 15q0 8-2.5 15t-8.5 13L508-188q-11 11-27.5 11T452-188q-12-12-12-28.5t12-28.5l195-195Z"/></symbol>
-<symbol id="i-plus" viewBox="0 -960 960 960"><path d="M480-362q-8 0-15-2.5t-13-8.5L268-557q-11-11-11-28t11-28q11-11 28-11t28 11l156 156 156-156q11-11 28-11t28 11q11 11 11 28t-11 28L508-373q-6 6-13 8.5t-15 2.5Z"/></symbol>
-<symbol id="i-sans-reseau" viewBox="0 -960 960 960"><path d="M762-84 414-434q-31 7-59.5 19T301-386q-21 14-46.5 14.5T212-389q-18-18-16.5-43.5T217-473q23-17 48.5-31t52.5-26l-90-90q-26 14-50.5 29.5T130-557q-20 16-45.5 16T42-559q-18-18-17-43t21-41q22-18 45-34.5t49-30.5l-56-56q-11-11-11-28t11-28q11-11 28-11t28 11l679 679q12 12 12 28.5T819-84q-12 11-28.5 11.5T762-84Zm-282-36q-42 0-71-29.5T380-220q0-42 29-71t71-29q42 0 71 29t29 71q0 41-29 70.5T480-120Zm273-275q-16 16-37.5 15.5T678-396l-10-10-10-10-96-96q-13-13-5-27t28-9q45 11 85.5 31t75.5 47q18 14 20.5 36.5T753-395Zm165-164q-17 18-42 18.5T831-556q-72-59-161.5-91.5T480-680q-21 0-40.5 1.5T400-674q-25 4-45-10.5T331-724q-4-25 11-45t40-24q24-4 48.5-5.5T480-800q125 0 235.5 41.5T914-644q20 17 21 42t-17 43Z"/></symbol>
-<symbol id="i-sauvegarde" viewBox="0 -960 960 960"><path d="m440-446-36 35q-11 11-27.5 11T348-412q-11-11-11-28t11-28l104-104q12-12 28-12t28 12l104 104q11 11 11.5 27.5T612-412q-11 11-27.5 11.5T556-411l-36-35v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h60q17 0 28.5 11.5T360-200q0 17-11.5 28.5T320-160h-60q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206Zm40 6Z"/></symbol>
-<symbol id="i-export" viewBox="0 -960 960 960"><path d="M360-120q-33 0-56.5-23.5T280-200v-400q0-33 23.5-56.5T360-680h400q33 0 56.5 23.5T840-600v400q0 33-23.5 56.5T760-120H360Zm40-400h320q17 0 28.5-11.5T760-560q0-17-11.5-28.5T720-600H400q-17 0-28.5 11.5T360-560q0 17 11.5 28.5T400-520Zm120 160h80v-80h-80v80Zm0 160h80v-80h-80v80ZM360-360h80v-80h-40q-17 0-28.5 11.5T360-400v40Zm320 0h80v-40q0-17-11.5-28.5T720-440h-40v80Zm-240 80h-80v40q0 17 11.5 28.5T400-200h40v-80Zm240 0v80h40q17 0 28.5-11.5T760-240v-40h-80ZM120-760q0-33 23.5-56.5T200-840h440q17 0 28.5 11.5T680-800q0 17-11.5 28.5T640-760H200v440q0 17-11.5 28.5T160-280q-17 0-28.5-11.5T120-320v-440Z"/></symbol>
-<symbol id="i-boutique" viewBox="0 -960 960 960"><path d="M201-120q-33 0-56.5-23.5T121-200v-318q-23-21-35.5-54t-.5-72l42-136q8-26 28.5-43t47.5-17h556q27 0 47 16.5t29 43.5l42 136q12 39-.5 71T841-518v318q0 33-23.5 56.5T761-120H201Zm368-440q27 0 41-18.5t11-41.5l-22-140h-78v148q0 21 14 36.5t34 15.5Zm-180 0q23 0 37.5-15.5T441-612v-148h-78l-22 140q-4 24 10.5 42t37.5 18Zm-178 0q18 0 31.5-13t16.5-33l22-154h-78l-40 134q-6 20 6.5 43t41.5 23Zm540 0q29 0 42-23t6-43l-42-134h-76l22 154q3 20 16.5 33t31.5 13ZM201-200h560v-282q-5 2-6.5 2H751q-27 0-47.5-9T663-518q-18 18-41 28t-49 10q-27 0-50.5-10T481-518q-17 18-39.5 28T393-480q-29 0-52.5-10T299-518q-21 21-41.5 29.5T211-480h-4.5q-2.5 0-5.5-2v282Zm560 0H201h560Z"/></symbol>
-</svg>
-
 <header class="barre">
-  <a class="marque" href="./">
-    <img src="assets/img/icone-180.png" width="32" height="32" alt="">
-    Facture Maroc
-  </a>
+  <a class="marque" href="./"><span aria-hidden="true"></span>Facture Maroc</a>
   <nav aria-label="Sections">
     <a href="#fonctionnalites">Fonctionnalités</a>
     <a href="#documents">Documents</a>
@@ -124,21 +98,20 @@
 
 <main id="contenu">
 
-  <section class="heros contenu">
+  <section class="heros">
     <div class="argument">
-      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-hors-ligne"/></svg>Facturation hors ligne</p>
       <h1>Vos factures, même sans réseau.</h1>
-      <p class="chapeau chapeau--heros">Facture, devis, bon de commande, ticket, avoir. Dix
-        documents avec vos mentions légales, le montant écrit en toutes lettres, et
-        votre stock qui suit. Tout reste sur votre téléphone.</p>
+      <p class="chapeau">Facture, devis, bon de commande, ticket, avoir. Dix documents
+        avec vos mentions légales, le montant écrit en toutes lettres, et votre
+        stock qui suit. Tout reste sur votre téléphone.</p>
       <div class="actions">
         <a class="bouton bouton--plein" href="test.html">Devenir testeur</a>
-        <a class="bouton bouton--tonal" href="#captures">Voir les captures</a>
+        <a class="bouton bouton--contour" href="#captures">Voir les captures</a>
       </div>
       <ul class="reperes">
-        <li class="puce puce--assorti">Bientôt sur Google Play</li>
-        <li class="puce">Android 8 et plus</li>
-        <li class="puce">Aucune connexion demandée</li>
+        <li><b>Bientôt</b> sur Google Play</li>
+        <li>Android 8 et plus</li>
+        <li>Aucune connexion demandée</li>
       </ul>
     </div>
 
@@ -198,15 +171,19 @@
 
         <p class="lettres">Arrêtée la présente facture à la somme de : deux mille
           trois cent quatre dirhams.</p>
+
+        <svg class="dechirure" viewBox="0 0 600 10" preserveAspectRatio="none" aria-hidden="true">
+          <path fill="#FFFFFF" d="M0,0 L600,0 L588,10 L576,0 L564,10 L552,0 L540,10 L528,0 L516,10 L504,0 L492,10 L480,0 L468,10 L456,0 L444,10 L432,0 L420,10 L408,0 L396,10 L384,0 L372,10 L360,0 L348,10 L336,0 L324,10 L312,0 L300,10 L288,0 L276,10 L264,0 L252,10 L240,0 L228,10 L216,0 L204,10 L192,0 L180,10 L168,0 L156,10 L144,0 L132,10 L120,0 L108,10 L96,0 L84,10 L72,0 L60,10 L48,0 L36,10 L24,0 L12,10 L0,0 Z"/>
+        </svg>
       </article>
 
       <div class="telephone">
         <div class="ecran">
           <img src="assets/img/factures-400.webp"
                srcset="assets/img/factures-260.webp 260w, assets/img/factures-400.webp 400w"
-               sizes="(max-width: 760px) 172px, 190px"
-               width="400" height="747" fetchpriority="high" decoding="async"
-               alt="Écran Factures de l’application : reste à encaisser, documents en retard et brouillons">
+               sizes="(max-width: 720px) 132px, (max-width: 1080px) 152px, 198px"
+               width="400" height="751" fetchpriority="high" decoding="async"
+               alt="Liste des factures dans l’application : total du mois, brouillons et documents émis">
         </div>
       </div>
     </div>
@@ -214,47 +191,36 @@
 
   <section class="section" id="fonctionnalites">
     <div class="contenu">
-      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-facture"/></svg>Les quatre onglets</p>
-      <h2>Quatre onglets, pas de détour.</h2>
+      <h2>Trois onglets, pas de détour.</h2>
       <p class="presentation">Tout ce qu’il faut pour établir un document, et rien de
-        plus. Les écrans suivent l’ordre du travail : la facture, le client, l’article,
-        puis le stock qui en découle.</p>
+        plus. Les écrans suivent l’ordre du travail : la facture, le client, l’article.</p>
 
-      <div class="grille">
-        <article class="carte">
-          <div class="carte__icone"><svg class="ico" aria-hidden="true"><use href="#i-facture"/></svg></div>
-          <h3>Factures</h3>
-          <p>Ce qui reste à encaisser, ce qui est en retard, le facturé du mois. Brouillons
-            et documents émis, recherche par client, numéro ou date, duplication et export
-            XML.</p>
-        </article>
-        <article class="carte carte--accent">
-          <div class="carte__icone"><svg class="ico" aria-hidden="true"><use href="#i-clients"/></svg></div>
-          <h3>Clients</h3>
-          <p>Un carnet d’adresses avec ICE, IF, RC, patente, CNSS, téléphone et e-mail ;
-            chaque fiche montre l’identité complète, le solde dû et les documents. Les
-            fournisseurs ont les mêmes champs.</p>
-        </article>
-        <article class="carte">
-          <div class="carte__icone"><svg class="ico" aria-hidden="true"><use href="#i-articles"/></svg></div>
-          <h3>Articles</h3>
-          <p>Votre catalogue : quantité en stock, prix d’achat, prix de vente et code-barres,
-            tapé ou scanné. Les dossiers s’imbriquent — les coussins se rangent sous
-            Textile — et chaque commerce choisit les champs de sa fiche article.</p>
-        </article>
-        <article class="carte carte--accent">
-          <div class="carte__icone"><svg class="ico" aria-hidden="true"><use href="#i-inventaire"/></svg></div>
-          <h3>Stock</h3>
-          <p>Réceptions, inventaire et journal du stock, réunis dans leur propre onglet :
-            chaque entrée et chaque sortie, avec le document qui l’a causée.</p>
-        </article>
-      </div>
+      <dl class="fiches">
+        <div>
+          <dt>Factures</dt>
+          <dd>Brouillons et documents émis, total facturé du mois, recherche par
+            client, numéro ou date, duplication, suppression et export XML.</dd>
+        </div>
+        <div>
+          <dt>Clients</dt>
+          <dd>Un carnet d’adresses avec ICE, IF, RC, patente, CNSS, téléphone et
+            e-mail ; le client se remplit sur la facture en un tap. Les fournisseurs
+            ont les mêmes champs, et c’est le fournisseur qui remplit un bon
+            de commande.</dd>
+        </div>
+        <div>
+          <dt>Articles</dt>
+          <dd>Votre catalogue : quantité en stock, prix d’achat, prix de vente et
+            code-barres, tapé ou scanné avec l’appareil photo. Les dossiers
+            s’imbriquent — les coussins se rangent sous Textile — et chaque
+            commerce choisit les champs que sa fiche article demande.</dd>
+        </div>
+      </dl>
     </div>
   </section>
 
   <section class="section" id="documents">
     <div class="contenu">
-      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-document"/></svg>Dix numérotations séparées</p>
       <h2>Dix documents, chacun son numéro.</h2>
       <p class="presentation">Une facture ne partage pas sa séquence avec un devis.
         Les avoirs et les régularisations rappellent le document qu’ils annulent ou
@@ -265,23 +231,22 @@
         d’une facture au Maroc</a>.</p>
 
       <ul class="documents">
-        <li><b>F-</b><span>Facture</span></li>
-        <li><b>D-</b><span>Devis</span></li>
-        <li><b>BC-</b><span>Bon de commande</span></li>
-        <li><b>T-</b><span>Ticket 80 mm</span></li>
-        <li><b>A-</b><span>Avoir</span></li>
-        <li><b>PF-</b><span>Proforma</span></li>
-        <li><b>AC-</b><span>Facture d’acompte</span></li>
-        <li><b>REG-</b><span>Facture de régularisation</span></li>
-        <li><b>FS-</b><span>Facture simplifiée</span></li>
-        <li><b>E-</b><span>Facture à l’export</span></li>
+        <li><span>Facture</span><b>F-</b></li>
+        <li><span>Devis</span><b>D-</b></li>
+        <li><span>Bon de commande</span><b>BC-</b></li>
+        <li><span>Ticket 80 mm</span><b>T-</b></li>
+        <li><span>Avoir</span><b>A-</b></li>
+        <li><span>Proforma</span><b>PF-</b></li>
+        <li><span>Facture d’acompte</span><b>AC-</b></li>
+        <li><span>Facture de régularisation</span><b>REG-</b></li>
+        <li><span>Facture simplifiée</span><b>FS-</b></li>
+        <li><span>Facture à l’export</span><b>E-</b></li>
       </ul>
     </div>
   </section>
 
   <section class="section" id="modeles">
     <div class="contenu">
-      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-pdf"/></svg>Quatre modèles imprimables</p>
       <h2>Quatre modèles, du classique au ticket.</h2>
       <p class="presentation">Le document se règle sur le papier : logo, TVA,
         remise générale ou par ligne, prix hors taxe ou toutes taxes comprises, et
@@ -311,62 +276,45 @@
 
   <section class="section" id="captures">
     <div class="contenu">
-      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-telephone"/></svg>Sur le téléphone</p>
       <h2>Ce que vous avez sous les yeux.</h2>
       <p class="presentation">Quatre écrans, ceux du quotidien : la liste des
-        documents, le constructeur, la fiche client et le stock.</p>
+        documents, le constructeur, les clients, le catalogue.</p>
 
       <ul class="captures">
         <li>
           <figure>
-            <div class="cadre">
-              <img src="assets/img/factures-560.webp"
-                   srcset="assets/img/factures-560.webp 560w, assets/img/factures-1040.webp 1040w"
-                   sizes="(max-width: 560px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1045"
-                   loading="lazy" decoding="async"
-                   alt="Écran Factures : reste à encaisser, dont le montant en retard, brouillons et documents émis">
-            </div>
-            <figcaption><strong>Factures</strong>Ce qui reste à encaisser, ce qui est
-              en retard, et le facturé du mois.</figcaption>
+            <img src="assets/img/factures-560.webp"
+                 srcset="assets/img/factures-560.webp 560w, assets/img/factures-1040.webp 1040w"
+                 sizes="(max-width: 520px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1051"
+                 loading="lazy" decoding="async" alt="Écran Factures : total du mois, brouillons, documents émis">
+            <figcaption>Factures — ce qui est parti, ce qui reste en brouillon.</figcaption>
           </figure>
         </li>
         <li>
           <figure>
-            <div class="cadre">
-              <img src="assets/img/constructeur-560.webp"
-                   srcset="assets/img/constructeur-560.webp 560w, assets/img/constructeur-1040.webp 1040w"
-                   sizes="(max-width: 560px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1045"
-                   loading="lazy" decoding="async"
-                   alt="Constructeur d’un devis : les dix types de documents, le client et les lignes avec leur quantité">
-            </div>
-            <figcaption><strong>Constructeur</strong>Le type, le client, les lignes,
-              le total TVA comprise.</figcaption>
+            <img src="assets/img/constructeur-560.webp"
+                 srcset="assets/img/constructeur-560.webp 560w, assets/img/constructeur-1040.webp 1040w"
+                 sizes="(max-width: 520px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1051"
+                 loading="lazy" decoding="async" alt="Écran de construction d’un document : type, client, lignes, remise, TVA">
+            <figcaption>Constructeur — le type, le client, les lignes, la remise.</figcaption>
           </figure>
         </li>
         <li>
           <figure>
-            <div class="cadre">
-              <img src="assets/img/clients-560.webp"
-                   srcset="assets/img/clients-560.webp 560w, assets/img/clients-1040.webp 1040w"
-                   sizes="(max-width: 560px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1045"
-                   loading="lazy" decoding="async"
-                   alt="Fiche client : adresse, ICE, IF, RC, solde dû et documents du client">
-            </div>
-            <figcaption><strong>Clients</strong>La fiche client : identifiants
-              légaux, solde dû et documents.</figcaption>
+            <img src="assets/img/clients-560.webp"
+                 srcset="assets/img/clients-560.webp 560w, assets/img/clients-1040.webp 1040w"
+                 sizes="(max-width: 520px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1051"
+                 loading="lazy" decoding="async" alt="Écran Clients : carnet avec ICE, IF, RC et coordonnées">
+            <figcaption>Clients — le carnet, avec leurs identifiants légaux.</figcaption>
           </figure>
         </li>
         <li>
           <figure>
-            <div class="cadre">
-              <img src="assets/img/stock-560.webp"
-                   srcset="assets/img/stock-560.webp 560w, assets/img/stock-1040.webp 1040w"
-                   sizes="(max-width: 560px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1045"
-                   loading="lazy" decoding="async"
-                   alt="Onglet Stock : articles suivis, alerte de réapprovisionnement, réceptions, inventaire et journal">
-            </div>
-            <figcaption><strong>Stock</strong>Réceptions, inventaire et journal,
-              avec l’article à recommander.</figcaption>
+            <img src="assets/img/articles-560.webp"
+                 srcset="assets/img/articles-560.webp 560w, assets/img/articles-1040.webp 1040w"
+                 sizes="(max-width: 520px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1051"
+                 loading="lazy" decoding="async" alt="Écran Articles : catalogue, stock, prix d’achat et de vente">
+            <figcaption>Articles — le stock, les prix, les dossiers.</figcaption>
           </figure>
         </li>
       </ul>
@@ -375,7 +323,6 @@
 
   <section class="section" id="stock">
     <div class="contenu">
-      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-achats"/></svg>Un stock qui se tient tout seul</p>
       <h2>Le stock suit le document.</h2>
       <div class="duo">
         <div>
@@ -398,21 +345,23 @@
   </section>
 
   <section class="bandeau" id="donnees">
+    <svg class="bord-dechire" viewBox="0 0 600 10" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <path fill="#F6F8FE" d="M0,0 L600,0 L588,10 L576,0 L564,10 L552,0 L540,10 L528,0 L516,10 L504,0 L492,10 L480,0 L468,10 L456,0 L444,10 L432,0 L420,10 L408,0 L396,10 L384,0 L372,10 L360,0 L348,10 L336,0 L324,10 L312,0 L300,10 L288,0 L276,10 L264,0 L252,10 L240,0 L228,10 L216,0 L204,10 L192,0 L180,10 L168,0 L156,10 L144,0 L132,10 L120,0 L108,10 L96,0 L84,10 L72,0 L60,10 L48,0 L36,10 L24,0 L12,10 L0,0 Z"/>
+    </svg>
     <div class="contenu">
-      <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-verrou"/></svg>Confidentialité par construction</p>
       <h2>Vos données restent chez vous.</h2>
       <p class="presentation">L’application n’a pas le droit d’aller sur Internet.
         Ce n’est pas une promesse commerciale, c’est une permission qui n’est pas
         déclarée dans le système Android.</p>
 
       <ul class="regles">
-        <li><b><svg class="ico ico--petit" aria-hidden="true"><use href="#i-verrou"/></svg>Aucun compte</b>Ni inscription, ni abonnement, ni publicité. On
+        <li><b>Aucun compte</b>Ni inscription, ni abonnement, ni publicité. On
           installe, on remplit ses coordonnées une fois, on facture.</li>
-        <li><b><svg class="ico ico--petit" aria-hidden="true"><use href="#i-sans-reseau"/></svg>Hors ligne, pour de vrai</b>Tout est dans le téléphone : les
+        <li><b>Hors ligne, pour de vrai</b>Tout est dans le téléphone : les
           documents, les clients, le catalogue, les numéros déjà utilisés.</li>
-        <li><b><svg class="ico ico--petit" aria-hidden="true"><use href="#i-sauvegarde"/></svg>Une sauvegarde à vous</b>Un fichier que vous enregistrez où vous
+        <li><b>Une sauvegarde à vous</b>Un fichier que vous enregistrez où vous
           voulez, et que vous restaurez sur un autre appareil.</li>
-        <li><b><svg class="ico ico--petit" aria-hidden="true"><use href="#i-export"/></svg>Un export pour le comptable</b>XML (UBL 2.1) — les factures
+        <li><b>Un export pour le comptable</b>XML (UBL 2.1) — les factures
           partent dans son logiciel, pas dans un nuage.</li>
       </ul>
     </div>
@@ -421,9 +370,9 @@
   <section class="section" id="questions">
     <div class="contenu faq">
       <div class="faq-tete">
-        <p class="surtitre"><svg class="ico ico--petit" aria-hidden="true"><use href="#i-document"/></svg>Questions fréquentes</p>
-        <h2>Ce qu’on me demande avant d’installer.</h2>
-        <p class="presentation">Si votre question n’y est pas, écrivez à
+        <h2>Questions fréquentes.</h2>
+        <p class="presentation">Ce qu’on me demande avant d’installer
+          l’application. Si votre question n’y est pas, écrivez à
           <a href="mailto:contact%40factureapp.ma">contact&#64;factureapp.ma</a>.</p>
       </div>
 
@@ -460,13 +409,6 @@
             sans passer par le catalogue.</p>
         </details>
         <details>
-          <summary>Le stock se met-il à jour tout seul ?</summary>
-          <p>Oui. Émettre une facture, un ticket, une facture simplifiée ou un
-            export retire les quantités vendues, un avoir les remet, et une
-            réception les ajoute. L’onglet Stock garde le journal de chaque
-            mouvement avec le document qui l’a causé.</p>
-        </details>
-        <details>
           <summary>Sur quels téléphones ?</summary>
           <p>Android 8.0 et plus récent. L’appareil photo n’est utilisé que pour
             scanner un code-barres, et seulement si vous le demandez.</p>
@@ -491,8 +433,7 @@
           sans e-mail à écrire.</p>
       </div>
       <div class="actions">
-        <a class="bouton bouton--plein" href="test.html">Voir comment installer
-          <svg class="ico ico--petit" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        <a class="bouton bouton--nuit" href="test.html">Voir comment installer</a>
       </div>
     </div>
   </section>
@@ -502,10 +443,7 @@
 <footer class="pied">
   <div class="contenu">
     <div>
-      <a class="marque" href="./">
-        <img src="assets/img/icone-180.png" width="32" height="32" alt="">
-        Facture Maroc
-      </a>
+      <a class="marque" href="./"><span aria-hidden="true"></span>Facture Maroc</a>
       <p style="margin:12px 0 0;max-width:34ch">Facturation hors ligne pour les
         commerces marocains. Gratuite, sans compte, sans connexion.</p>
     </div>
@@ -529,7 +467,7 @@
         <li><a href="https://github.com/beav0team/facture-maroc">Code source</a></li>
       </ul>
     </div>
-    <p class="mentions">Version 0.12.0-beta.2 · Android 8.0 et plus · Français — © 2026
+    <p class="mentions">Version 0.11.1 · Android 8.0 et plus · Français — © 2026
       Facture Maroc. Les captures montrent une base de démonstration.</p>
   </div>
 </footer>

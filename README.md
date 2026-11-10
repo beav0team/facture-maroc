@@ -176,17 +176,8 @@ Trois pages éditoriales s’y ajoutent : [`docs/a-propos.html`](docs/a-propos.h
 et aligne la version affichée sur `app/build.gradle.kts` ;
 `docs/scripts/site-check.sh` refuse une page sans titre unique, sans description,
 sans canonical, sans `<h1>`, une image sans dimensions, un lien local mort ou un
-budget de polices dépassé.
-
-Le site reprend le thème Material 3 de l’application — rôles de couleur, échelle
-de surfaces, formes et typographie — copié une fois dans
-`docs/assets/css/tokens.css` depuis `ui/Theme.kt`, afin que la page et les
-captures ne puissent pas diverger. Material 3 Expressive passe par le CSS
-(formes arrondies, boutons pleins, mouvements), pas par `@material/web`, qui est
-en maintenance : le site reste HTML et CSS seuls. Le mode sombre suit
-`prefers-color-scheme`, les icônes sont des SVG Material Symbols en ligne, et
-l’unique police est Roboto Flex, sous-ensemblée par `docs/scripts/fonts.sh`
-(1,8 Mo → 44 Ko).
+budget de polices dépassé. Les polices sont sous-ensemblées par
+`docs/scripts/fonts.sh` (75 Ko → 35 Ko pour Bricolage, 45 → 31 pour Plex Sans).
 
 L’installation de la version de test est expliquée pas à pas sur
 [`docs/test.html`](docs/test.html) : rejoindre le groupe

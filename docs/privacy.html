@@ -6,67 +6,105 @@
 <title>Politique de confidentialité — Facture Maroc hors ligne</title>
 <meta name="description" content="Facture Maroc ne collecte aucune donnée : pas de compte, pas de serveur, pas de permission réseau. Ce que l’application lit sur le téléphone et ce qu’elle en fait.">
 <link rel="canonical" href="https://factureapp.ma/privacy.html">
-<meta name="theme-color" content="#1D4ED8">
-<meta name="theme-color" content="#0D131F" media="(prefers-color-scheme: dark)">
-<meta name="color-scheme" content="light dark">
-<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
-<link rel="apple-touch-icon" href="assets/img/icone-180.png">
-<link rel="manifest" href="manifest.json">
-<link rel="preload" href="assets/fonts/robotoflex-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/tokens.css">
-<link rel="stylesheet" href="assets/css/site.css">
+<meta name="theme-color" content="#1E3FD2">
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #eef2fb;
+    color: #172033;
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  header {
+    background: linear-gradient(135deg, #12337e, #1d4ed8);
+    color: #fff;
+    padding: 42px 24px 36px;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; }
+  header .kicker {
+    margin: 0 0 10px;
+    color: #ffd93b;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  header h1 { margin: 0 0 8px; font-size: 34px; line-height: 1.2; }
+  header p { margin: 0; color: #dce6ff; }
+  main { padding: 26px 24px 56px; }
+  article {
+    background: #fff;
+    border-radius: 18px;
+    padding: 30px 32px 34px;
+    box-shadow: 0 10px 30px rgba(18, 51, 126, 0.08);
+  }
+  h2 {
+    margin: 30px 0 8px;
+    font-size: 20px;
+    color: #12337e;
+  }
+  h2:first-child { margin-top: 0; }
+  p, li { color: #29344a; }
+  ul { padding-left: 22px; }
+  li { margin: 5px 0; }
+  .summary {
+    background: #f3f6ff;
+    border: 1px solid #dbe4ff;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 0 0 8px;
+  }
+  .summary strong { color: #12337e; }
+  a { color: #1d4ed8; }
+  code {
+    background: #eef2fb;
+    border-radius: 5px;
+    padding: 1px 5px;
+    font-size: 14px;
+  }
+  footer {
+    margin-top: 26px;
+    color: #5b6579;
+    font-size: 14px;
+  }
+  @media (max-width: 560px) {
+    header { padding: 32px 18px 28px; }
+    header h1 { font-size: 27px; }
+    main { padding: 18px 14px 40px; }
+    article { padding: 22px 18px 26px; border-radius: 14px; }
+  }
+</style>
 </head>
 <body>
-
-<a class="saut" href="#contenu">Aller au contenu</a>
-
-<svg class="sprite" aria-hidden="true" focusable="false">
-<symbol id="i-verrou" viewBox="0 -960 960 960"><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80ZM240-160v-400 400Z"/></symbol>
-<symbol id="i-hors-ligne" viewBox="0 -960 960 960"><path d="M260-160q-92 0-156-64T40-380q0-77 47.5-137T210-594q3-8 6-15.5t6-16.5L84-764q-11-11-11-28t11-28q11-11 28-11t28 11l680 680q11 11 11.5 27.5T820-84q-11 11-27.5 11.5T764-83l-78-77H260Zm0-80h346L284-562q-2 11-3 21t-1 21h-20q-58 0-99 41t-41 99q0 58 41 99t99 41Zm185-161Zm419 191-58-56q17-14 25.5-32.5T840-340q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-27 0-52 6.5T380-693l-58-58q35-24 74.5-36.5T480-800q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 39-15 72.5T864-210ZM593-479Z"/></symbol>
-<symbol id="i-sauvegarde" viewBox="0 -960 960 960"><path d="m440-446-36 35q-11 11-27.5 11T348-412q-11-11-11-28t11-28l104-104q12-12 28-12t28 12l104 104q11 11 11.5 27.5T612-412q-11 11-27.5 11.5T556-411l-36-35v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h60q17 0 28.5 11.5T360-200q0 17-11.5 28.5T320-160h-60q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206Zm40 6Z"/></symbol>
-<symbol id="i-telephone" viewBox="0 -960 960 960"><path d="M280-40q-33 0-56.5-23.5T200-120v-720q0-33 23.5-56.5T280-920h400q33 0 56.5 23.5T760-840v720q0 33-23.5 56.5T680-40H280Zm0-120v40h400v-40H280Zm0-80h400v-480H280v480Zm0-560h400v-40H280v40Zm0 0v-40 40Zm0 640v40-40Z"/></symbol>
-<symbol id="i-export" viewBox="0 -960 960 960"><path d="M360-120q-33 0-56.5-23.5T280-200v-400q0-33 23.5-56.5T360-680h400q33 0 56.5 23.5T840-600v400q0 33-23.5 56.5T760-120H360Zm40-400h320q17 0 28.5-11.5T760-560q0-17-11.5-28.5T720-600H400q-17 0-28.5 11.5T360-560q0 17 11.5 28.5T400-520Zm120 160h80v-80h-80v80Zm0 160h80v-80h-80v80ZM360-360h80v-80h-40q-17 0-28.5 11.5T360-400v40Zm320 0h80v-40q0-17-11.5-28.5T720-440h-40v80Zm-240 80h-80v40q0 17 11.5 28.5T400-200h40v-80Zm240 0v80h40q17 0 28.5-11.5T760-240v-40h-80ZM120-760q0-33 23.5-56.5T200-840h440q17 0 28.5 11.5T680-800q0 17-11.5 28.5T640-760H200v440q0 17-11.5 28.5T160-280q-17 0-28.5-11.5T120-320v-440Z"/></symbol>
-</svg>
-
-<header class="barre">
-  <a class="marque" href="./">
-    <img src="assets/img/icone-180.png" width="32" height="32" alt="">
-    Facture Maroc
-  </a>
-  <nav aria-label="Sections">
-    <a href="./#fonctionnalites">Fonctionnalités</a>
-    <a href="./#questions">Questions</a>
-  </nav>
-  <a class="bouton bouton--contour bouton--petit" href="./">Retour au site</a>
+<header>
+  <div class="wrap">
+    <p class="kicker">Facture Maroc</p>
+    <h1>Politique de confidentialité</h1>
+    <p>Dernière mise à jour : 21 octobre 2026</p>
+  </div>
 </header>
 
-<main id="contenu">
-  <article class="doc">
-
-    <nav class="fil" aria-label="Fil d’Ariane">
-      <ol>
-        <li><a href="./">Accueil</a></li>
-        <li>Confidentialité</li>
-      </ol>
-    </nav>
-
-    <h1>Politique de confidentialité</h1>
-    <p class="maj">Dernière mise à jour : 21 octobre 2026</p>
-
-    <div class="enbref">
-      <p><strong>En une phrase :</strong> Facture Maroc fonctionne entièrement sur
-        votre téléphone. L’application ne collecte aucune donnée, ne demande
-        aucun accès à vos données et n’envoie rien sur Internet.</p>
+<main class="wrap">
+  <article>
+    <div class="summary">
+      <strong>En une phrase :</strong> Facture Maroc fonctionne entièrement sur
+      votre téléphone. L’application ne collecte aucune donnée, ne demande
+      aucun accès à vos données et n’envoie rien sur Internet.
     </div>
 
     <h2>1. Qui édite l’application</h2>
-    <p>Facture Maroc est éditée par <strong>Beav0team</strong>. Pour toute
+    <p>
+      Facture Maroc est éditée par <strong>Beav0team</strong>. Pour toute
       question relative à cette politique ou à vos données, écrivez à
-      <a href="mailto:contact%40factureapp.ma">contact&#64;factureapp.ma</a>.</p>
+      <a href="mailto:contact%40factureapp.ma">contact&#64;factureapp.ma</a>.
+    </p>
 
     <h2>2. Données enregistrées sur votre téléphone</h2>
-    <p>Pour produire vos documents, l’application enregistre localement, dans
-      l’espace privé de l’application :</p>
+    <p>
+      Pour produire vos documents, l’application enregistre localement, dans
+      l’espace privé de l’application :
+    </p>
     <ul>
       <li>les informations de votre commerce : nom, adresse, ICE, IF, RC, patente, CNSS, taux de TVA et logo ;</li>
       <li>les coordonnées de vos clients et leurs mentions légales ;</li>
@@ -74,10 +112,12 @@
       <li>vos factures, devis, bons de commande, tickets et brouillons ;</li>
       <li>vos préférences d’affichage et les compteurs de numérotation.</li>
     </ul>
-    <p>Ces données ne quittent pas l’appareil, sauf lorsque vous choisissez
+    <p>
+      Ces données ne quittent pas l’appareil, sauf lorsque vous choisissez
       vous-même de partager un PDF, d’exporter un XML ou de créer une sauvegarde.
       L’application n’a pas accès à Internet : elle ne peut donc pas les
-      transmettre à un serveur.</p>
+      transmettre à un serveur.
+    </p>
 
     <h2>3. Aucune collecte, aucun compte, aucune publicité</h2>
     <ul>
@@ -88,90 +128,83 @@
     </ul>
 
     <h2>4. Partages et exports que vous déclenchez</h2>
-    <p>Un PDF n’est remis à une autre application que lorsque vous appuyez sur
+    <p>
+      Un PDF n’est remis à une autre application que lorsque vous appuyez sur
       « Partager ». Android affiche alors le sélecteur : vous choisissez
       vous-même l’application ou le service de destination. Une sauvegarde ou un
       XML n’est écrit que lorsque vous choisissez un emplacement dans le
       sélecteur de fichiers du système. Ces applications et services appliquent
-      leur propre politique de confidentialité.</p>
-    <p>Les fichiers de sauvegarde contiennent l’ensemble de vos données
+      leur propre politique de confidentialité.
+    </p>
+    <p>
+      Les fichiers de sauvegarde contiennent l’ensemble de vos données
       (y compris vos clients et vos documents). Ils ne sont
       <strong>pas chiffrés</strong> par l’application : conservez-les dans un
-      endroit sûr et supprimez-les lorsque vous n’en avez plus besoin.</p>
+      endroit sûr et supprimez-les lorsque vous n’en avez plus besoin.
+    </p>
 
     <h2>5. Sauvegarde automatique d’Android</h2>
-    <p>L’application <strong>désactive</strong> la sauvegarde automatique
+    <p>
+      L’application <strong>désactive</strong> la sauvegarde automatique
       d’Android : vos factures, vos articles et vos clients ne sont copiés ni
       dans votre compte Google, ni vers un autre téléphone lors d’un transfert
       d’appareil à appareil. Les règles de l’application
       (<code>data-extraction-rules</code>) excluent toutes les données, y
-      compris quand la sauvegarde est activée dans les réglages du téléphone.</p>
-    <p>Pour changer de téléphone, utilisez la sauvegarde de l’application
+      compris quand la sauvegarde est activée dans les réglages du téléphone.
+    </p>
+    <p>
+      Pour changer de téléphone, utilisez la sauvegarde de l’application
       elle-même (<em>Paramètres → Sauvegarde</em>) : vous choisissez le fichier,
-      vous l’enregistrez où vous voulez, et vous êtes seul à le détenir.</p>
+      vous l’enregistrez où vous voulez, et vous êtes seul à le détenir.
+    </p>
 
     <h2>6. Durée de conservation et suppression</h2>
-    <p>Vos données restent sur votre téléphone tant que l’application est
+    <p>
+      Vos données restent sur votre téléphone tant que l’application est
       installée. Vous pouvez les effacer à tout moment en vidant les données de
       l’application dans les réglages Android, ou en la désinstallant. Les
       fichiers que vous avez exportés (PDF, XML, sauvegardes) sont sous votre
       contrôle : supprimez-les depuis l’application ou le service où vous les
-      avez enregistrés.</p>
+      avez enregistrés.
+    </p>
 
     <h2>7. Sécurité</h2>
-    <p>Les données sont protégées par le bac à sable Android : les autres
+    <p>
+      Les données sont protégées par le bac à sable Android : les autres
       applications ne peuvent pas lire l’espace privé de Facture Maroc.
       Protégez votre téléphone par un code ou une empreinte, et gardez vos
-      sauvegardes dans un emplacement de confiance.</p>
+      sauvegardes dans un emplacement de confiance.
+    </p>
 
     <h2>8. Enfants</h2>
-    <p>Facture Maroc est un outil professionnel destiné aux commerçants et aux
+    <p>
+      Facture Maroc est un outil professionnel destiné aux commerçants et aux
       indépendants. Il ne s’adresse pas aux enfants et ne collecte aucune
-      donnée les concernant.</p>
+      donnée les concernant.
+    </p>
 
     <h2>9. Modifications de cette politique</h2>
-    <p>Si une version future ajoute une fonctionnalité en ligne (par exemple une
+    <p>
+      Si une version future ajoute une fonctionnalité en ligne (par exemple une
       sauvegarde cloud facultative), cette politique sera mise à jour avant sa
       publication et la nouvelle version sera clairement annoncée. La date en
-      haut de cette page indique la dernière révision.</p>
+      haut de cette page indique la dernière révision.
+    </p>
 
     <h2>10. Hébergement de cette page</h2>
-    <p>Cette page est publiée avec GitHub Pages. La consulter depuis un
+    <p>
+      Cette page est publiée avec GitHub Pages. La consulter depuis un
       navigateur transmet à GitHub les informations techniques habituelles
       (adresse IP, type de navigateur), selon la
       <a href="https://docs.github.com/fr/site-policy/privacy-policies/github-general-privacy-statement">politique de confidentialité de GitHub</a>.
-      L’application elle-même n’établit aucune connexion avec GitHub.</p>
+      L’application elle-même n’établit aucune connexion avec GitHub.
+    </p>
 
-    <p class="signature">Facture Maroc — 9 novembre 2026.
-      <a href="./">Retour au site</a></p>
-
+    <footer>
+      Facture Maroc — version 0.11.1 — 9 novembre 2026.
+      <a href="./">Retour au site</a>
+    </footer>
   </article>
 </main>
-
-<footer class="pied">
-  <div class="contenu">
-    <div>
-      <a class="marque" href="./">
-        <img src="assets/img/icone-180.png" width="32" height="32" alt="">
-        Facture Maroc
-      </a>
-      <p style="margin:12px 0 0;max-width:34ch">Facturation hors ligne pour les
-        commerces marocains. Gratuite, sans compte, sans connexion.</p>
-    </div>
-    <div>
-      <h3>Informations</h3>
-      <ul>
-        <li><a href="./">Retour au site</a></li>
-        <li><a href="a-propos.html">À propos</a></li>
-        <li><a href="contact.html">Contact</a></li>
-        <li><a href="mentions-obligatoires-facture-maroc.html">Mentions obligatoires d’une facture</a></li>
-        <li><a href="https://github.com/beav0team/facture-maroc">Code source</a></li>
-      </ul>
-    </div>
-    <p class="mentions">Version 0.12.0-beta.2 · Android 8.0 et plus · Français — © 2026
-      Facture Maroc.</p>
-  </div>
-</footer>
-
 </body>
 </html>

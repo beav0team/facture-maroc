@@ -83,8 +83,7 @@ def main() -> int:
 
     for path in sorted(DOCS.glob("*.html")):
         text = path.read_text(encoding="utf-8")
-        new = re.sub(r"Version \d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?",
-                     f"Version {ver}", text)
+        new = re.sub(r"Version \d+\.\d+\.\d+", f"Version {ver}", text)
         new = re.sub(r'"softwareVersion":\s*"[^"]+"',
                      f'"softwareVersion": "{ver}"', new)
         if new != text:
