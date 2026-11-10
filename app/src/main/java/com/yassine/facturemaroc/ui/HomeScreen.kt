@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
@@ -128,6 +129,7 @@ import com.yassine.facturemaroc.data.InvoiceRecord
 import com.yassine.facturemaroc.data.PaymentDue
 import com.yassine.facturemaroc.data.PaymentInfo
 import com.yassine.facturemaroc.data.PaymentState
+import com.yassine.facturemaroc.data.PaymentReminder
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.ItemField
 import com.yassine.facturemaroc.data.MarginReport
@@ -1077,7 +1079,16 @@ fun HomeScreen(
         InvoiceDetailSheet(
             record = record,
             pdfArchived = pdfArchived,
+            reminderAvailable = PaymentReminder.available(record),
             onDismiss = { detailRecord = null },
+            onReminder = {
+                detailRecord = null
+                if (!viewModel.shareReminder(record)) {
+                    scope.launch {
+                        snackbar.showSnackbar("Rien à relancer sur ce document.")
+                    }
+                }
+            },
             onShare = {
                 detailRecord = null
                 scope.launch {
@@ -3143,7 +3154,9 @@ private fun ArticlesSummaryPreview() {
 private fun InvoiceDetailSheet(
     record: InvoiceRecord,
     pdfArchived: Boolean,
+    reminderAvailable: Boolean,
     onDismiss: () -> Unit,
+    onReminder: () -> Unit,
     onShare: () -> Unit,
     onExportXml: () -> Unit,
     onDuplicate: () -> Unit,
@@ -3246,6 +3259,22 @@ private fun InvoiceDetailSheet(
                 DetailRow("Reste à payer", record.data.balanceDue.asDirhams())
             }
             Spacer(Modifier.height(18.dp))
+            if (reminderAvailable) {
+                OutlinedButton(
+                    onClick = onReminder,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Icon(
+                        Icons.Filled.Notifications,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Rappel de paiement")
+                }
+                Spacer(Modifier.height(8.dp))
+            }
             Button(
                 onClick = onShare,
                 modifier = Modifier.fillMaxWidth(),

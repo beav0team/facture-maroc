@@ -2,6 +2,7 @@ package com.yassine.facturemaroc.data
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
@@ -890,6 +891,28 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 ?.let { archive.recordPdf(record.data, it) }
         }
         outcome
+    }
+
+    /**
+     * Hands the payment reminder text to whatever messaging app the shop uses.
+     *
+     * Text, not a PDF: a reminder is read in a notification, and making the shop
+     * retype the amount is how a wrong number reaches a customer. Returns false
+     * when there is nothing to chase, so the screen can say so rather than open
+     * an empty chooser.
+     */
+    fun shareReminder(record: InvoiceRecord): Boolean {
+        val text = PaymentReminder.text(record, _shop.value) ?: return false
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        val chooser = Intent.createChooser(send, "Rappel de paiement")
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return runCatching {
+            getApplication<Application>().startActivity(chooser)
+            true
+        }.getOrDefault(false)
     }
 
     /**

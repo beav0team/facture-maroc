@@ -9,7 +9,7 @@ answering from memory.
 | Version | **0.10.0** (versionCode 16) — 0.11.0 en préparation, non publiée |
 | Last commit | Phase B2 — bons de réception, coûts et marge (commits locaux) |
 | Branch | `master` (Phase A/B local commits; no tag/release for 0.11.0 yet) |
-| Tests | **496 JVM**, **18 instrumented** |
+| Tests | **503 JVM**, **18 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -20,9 +20,10 @@ answering from memory.
 A1 (VAT and compliance engine) has landed on top of 0.10.0 and is **not
 released**: per-line VAT, recap by rate on every template, UBL per rate, ICE
 validation, detail sheet rows, fixed-amount discounts (global and per line) and
-a percentage surcharge. A1 is complete. A2 (payments lifecycle) is in
-progress: the payment deadline, the method per payment, the A5 receipt and the
-client statement have landed; RAS and the reminder text remain. A3 has landed:
+a percentage surcharge. A1 is complete. A2 (payments lifecycle) is complete:
+the payment deadline, the method per payment, the A5 receipt, the client
+statement and the shareable payment reminder have landed; RAS TVA is
+deliberately out. A3 has landed:
 issued documents are no longer deletable, credit notes and quote conversion are
 one tap, deposit deduction, configurable numbering (prefix per type, annual
 reset) and decimal quantities. A4 (legal and print finish) has landed:
@@ -70,6 +71,7 @@ continue without it, so no field is invented. Revisit only on request.
 | Surcharge | **Exists** | fixed amount or percentage of the discounted total, taxed at the document rate |
 | VAT | **Exists** | per line since A1: 20/10/0/exempt, legacy 7/14 readable; recap by rate on the 6 templates; one UBL `TaxSubtotal` per rate |
 | Payment tracking | **Exists** | amount, date, reference, **method per payment**, partial/paid, badge, PDF block, UBL prepaid |
+| Payment reminder | **Exists** | shareable French text (SMS/WhatsApp) for an unpaid or partial document: amount still owed, deadline or "dépassée", shop name and phone; nothing for a paid document, draft, quote or avoir |
 | Receipt PDF | **Exists** | A5 receipt for any recorded payment: sum in words, method, reference, invoice/settled/balance |
 | Due date / overdue | **Exists** | deadline (comptant/30/60 or a typed date), printed on the 6 templates, overdue pill and detail row; validity date stays for quotes |
 | Payment terms | **Exists** | presets (comptant, 30, 60 jours, fin de mois) filling an editable note; a preset warns before replacing hand-typed text |
