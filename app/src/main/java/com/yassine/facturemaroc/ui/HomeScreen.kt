@@ -66,6 +66,7 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -129,7 +130,10 @@ import com.yassine.facturemaroc.data.PaymentInfo
 import com.yassine.facturemaroc.data.PaymentState
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.ItemField
+import com.yassine.facturemaroc.data.MarginReport
 import com.yassine.facturemaroc.data.PartyRole
+import com.yassine.facturemaroc.data.Purchase
+import com.yassine.facturemaroc.data.PurchaseOutcome
 import com.yassine.facturemaroc.data.SavedItem
 import com.yassine.facturemaroc.data.SavedItemStore
 import com.yassine.facturemaroc.data.StockMovement
@@ -180,6 +184,7 @@ fun HomeScreen(
     val clients by viewModel.clients.clients.collectAsStateWithLifecycle()
     val items by viewModel.savedItems.items.collectAsStateWithLifecycle()
     val folders by viewModel.savedItems.folders.collectAsStateWithLifecycle()
+    val purchases by viewModel.purchases.purchases.collectAsStateWithLifecycle()
     val shop by viewModel.shop.collectAsStateWithLifecycle()
 
     var tabIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -203,6 +208,9 @@ fun HomeScreen(
     var historyItem by remember { mutableStateOf<SavedItem?>(null) }
     /* The physical count sheet, opened from the Articles tab. */
     var stocktakeOpen by remember { mutableStateOf(false) }
+    /* The goods receipts list, and the receipt being written. */
+    var purchasesOpen by remember { mutableStateOf(false) }
+    var purchaseEditorOpen by remember { mutableStateOf(false) }
     /*
      * Where the Articles tab is filtering.
      *
@@ -296,6 +304,41 @@ fun HomeScreen(
     val articleFolder = inFolder
     val managingFolders = tab == HomeTab.ARTICLES && foldersOpen
     val itemFields = visibleItemFields(shop)
+    /*
+     * What one unit of each article is worth, read once per catalogue change.
+     *
+     * The card shows the margin under the price only when a cost is really
+     * known. It comes from the ledger under the shop's chosen method, with the
+     * article's purchase price as the fallback for a shelf whose history has
+     * never carried a price — which is exactly what a shop that has not entered
+     * a receipt yet has.
+     */
+    val unitCosts = remember(items, purchases, shop.costMethod) {
+        items.associate { item ->
+            item.id to (viewModel.unitCostOf(item.id) ?: item.purchasePrice.takeIf { it > 0.0 })
+        }
+    }
+    val marginOf: (SavedItem) -> MarginHint? = remember(unitCosts, shop) {
+        { item ->
+            val cost = unitCosts[item.id] ?: 0.0
+            // A cost of zero is not a cost: it is "nobody typed one".
+            if (cost <= 0.0) {
+                null
+            } else {
+                val saleHt = if (shop.pricesIncludeVat && !shop.vatNotApplicable && shop.vatPercent > 0.0) {
+                    item.price / (1.0 + shop.vatPercent / 100.0)
+                } else {
+                    item.price
+                }
+                val margin = saleHt - cost
+                val percent = if (saleHt > 0.0) Math.round(margin / saleHt * 100.0).toInt() else 0
+                MarginHint(
+                    text = "Marge ${margin.asDirhams()} · $percent %",
+                    negative = margin < 0.0,
+                )
+            }
+        }
+    }
     /*
      * The filter the list really applies. A folder can disappear while it is
      * the active filter (deleted from the folder screen, or its field switched
@@ -489,6 +532,9 @@ fun HomeScreen(
                         }
                     }
                     if (tab == HomeTab.ARTICLES && ItemField.STOCK in itemFields) {
+                        IconButton(onClick = { purchasesOpen = true }) {
+                            Icon(Icons.Filled.ShoppingCart, contentDescription = "Achats")
+                        }
                         IconButton(onClick = { stocktakeOpen = true }) {
                             Icon(Icons.Filled.Checklist, contentDescription = "Inventaire")
                         }
@@ -725,6 +771,7 @@ fun HomeScreen(
                                     onDelete = onDeleteItem,
                                     onMove = { movingItem = it },
                                     onHistory = { historyItem = it },
+                                    marginOf = marginOf,
                                 )
                             }
 
@@ -750,6 +797,7 @@ fun HomeScreen(
                                 onDelete = onDeleteItem,
                                 onMove = { movingItem = it },
                                 onHistory = { historyItem = it },
+                                marginOf = marginOf,
                             )
 
                             else -> ArticlesFoldersGrid(
@@ -786,6 +834,7 @@ fun HomeScreen(
                             onDelete = onDeleteItem,
                             onMove = { movingItem = it },
                             onHistory = { historyItem = it },
+                            marginOf = marginOf,
                         )
                     } else {
                         Column(Modifier.fillMaxSize()) {
@@ -830,6 +879,7 @@ fun HomeScreen(
                                     onDelete = onDeleteItem,
                                     onMove = { movingItem = it },
                                     onHistory = { historyItem = it },
+                                    marginOf = marginOf,
                                 )
                             }
                             ArticlesSummary(items = articleList, fields = itemFields)
@@ -945,6 +995,72 @@ fun HomeScreen(
                             "Inventaire enregistré : $corrected écart${if (corrected > 1) "s" else ""} corrigé${if (corrected > 1) "s" else ""}."
                         },
                     )
+                }
+            },
+        )
+    }
+
+    if (purchasesOpen) {
+        PurchasesDialog(
+            purchases = purchases,
+            onDismiss = { purchasesOpen = false },
+            onNew = {
+                purchasesOpen = false
+                purchaseEditorOpen = true
+            },
+            onDelete = { purchase ->
+                val removed = viewModel.deletePurchase(purchase)
+                scope.launch {
+                    snackbar.showSnackbar(
+                        if (removed) {
+                            "Bon ${purchase.number} supprimé : le stock a été rendu."
+                        } else {
+                            "Le bon ${purchase.number} n'a pas pu être supprimé."
+                        },
+                    )
+                }
+            },
+        )
+    }
+
+    if (purchaseEditorOpen) {
+        PurchaseEditorDialog(
+            number = viewModel.nextPurchaseNumber(),
+            // Only the articles the shop counts: a service has no shelf, and
+            // offering it would let a receipt write stock to nothing.
+            items = items,
+            suppliers = clients.filter { it.role == PartyRole.SUPPLIER },
+            onDismiss = { purchaseEditorOpen = false },
+            onSave = { purchase ->
+                when (val outcome = viewModel.recordPurchase(purchase)) {
+                    is PurchaseOutcome.Saved -> {
+                        purchaseEditorOpen = false
+                        scope.launch {
+                            snackbar.showSnackbar(
+                                "Réception ${purchase.number} enregistrée : " +
+                                    "${purchase.unitCount} unité" +
+                                    (if (purchase.unitCount > 1) "s" else "") +
+                                    " ajoutée" +
+                                    (if (purchase.unitCount > 1) "s" else "") +
+                                    " au stock.",
+                            )
+                        }
+                    }
+
+                    is PurchaseOutcome.UnknownItem -> scope.launch {
+                        snackbar.showSnackbar(
+                            "« ${outcome.label} » n'existe plus dans vos articles. " +
+                                "Retirez-le du bon ou recréez l'article.",
+                        )
+                    }
+
+                    is PurchaseOutcome.Invalid -> scope.launch {
+                        snackbar.showSnackbar(outcome.message)
+                    }
+
+                    PurchaseOutcome.WriteFailed -> scope.launch {
+                        snackbar.showSnackbar("La réception n'a pas pu être enregistrée.")
+                    }
                 }
             },
         )
@@ -1204,6 +1320,15 @@ private fun SearchField(
     )
 }
 
+/**
+ * The margin line under an article's price.
+ *
+ * [negative] is carried separately rather than read off the text: a margin of
+ * "−12 DH · −8 %" is the number the shop must act on, and formatting it as an
+ * error colour is a decision for the row, not for the arithmetic.
+ */
+private data class MarginHint(val text: String, val negative: Boolean)
+
 @Composable
 private fun InvoicesTab(
     records: List<InvoiceRecord>,
@@ -1316,6 +1441,9 @@ private fun MonthSummary(records: List<InvoiceRecord>) {
     val total = remember(records, monthStamp) {
         records.billedTotalInMonth(monthStamp)
     }
+    val margin = remember(records, monthStamp) {
+        MarginReport.forMonth(records, monthStamp)
+    }
 
     Card(
         shape = MaterialTheme.shapes.large,
@@ -1369,6 +1497,46 @@ private fun MonthSummary(records: List<InvoiceRecord>) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                 )
+            }
+            // The month's margin, under what was billed: a shop that sold a lot
+            // and earned nothing needs to see both numbers together. Lines whose
+            // cost is unknown are named instead of being counted as free goods.
+            if (margin.linesWithCost > 0) {
+                Spacer(Modifier.height(10.dp))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.24f),
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Marge du mois",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f),
+                )
+                Text(
+                    buildString {
+                        append(margin.margin.asDirhams())
+                        margin.marginPercent?.let { append(" · ${Math.round(it).toInt()} %") }
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+                Text(
+                    "CA HT ${margin.revenueHt.asDirhams()} · coût ${margin.cost.asDirhams()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                )
+                if (margin.linesWithoutCost > 0) {
+                    Text(
+                        if (margin.linesWithoutCost == 1) {
+                            "1 ligne sans coût connu, exclue du calcul."
+                        } else {
+                            "${margin.linesWithoutCost} lignes sans coût connu, exclues du calcul."
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
+                    )
+                }
             }
         }
     }
@@ -2076,6 +2244,8 @@ private fun FolderContents(
     onMove: (SavedItem) -> Unit,
     /** Opening one article's stock history; nothing for a service. */
     onHistory: (SavedItem) -> Unit = {},
+    /** The margin line under the price, when a cost is known. */
+    marginOf: (SavedItem) -> MarginHint? = { null },
     /** The "Tous les articles" view: same grid, but nothing is a sub-folder. */
     allArticles: Boolean = false,
     /**
@@ -2144,6 +2314,7 @@ private fun FolderContents(
                 onDelete = { onDelete(item) },
                 onMove = { onMove(item) },
                 onHistory = { onHistory(item) },
+                marginOf = marginOf,
             )
         }
     }
@@ -2556,6 +2727,8 @@ private fun ArticlesList(
     onMove: (SavedItem) -> Unit,
     /** Opening one article's stock history. */
     onHistory: (SavedItem) -> Unit = {},
+    /** The margin line under the price, when a cost is known. */
+    marginOf: (SavedItem) -> MarginHint? = { null },
 ) {
     if (items.isEmpty()) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
@@ -2582,6 +2755,7 @@ private fun ArticlesList(
                 onDelete = { onDelete(item) },
                 onMove = { onMove(item) },
                 onHistory = { onHistory(item) },
+                marginOf = marginOf,
             )
         }
     }
@@ -2624,6 +2798,8 @@ private fun ItemCard(
     fields: Set<ItemField> = ItemField.entries.toSet(),
     /** False inside a folder, where repeating its name on every row is noise. */
     showFolder: Boolean = true,
+    /** The margin line under the price, when a cost is known. */
+    marginOf: (SavedItem) -> MarginHint? = { null },
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val subtitle = listOf(
@@ -2762,6 +2938,24 @@ private fun ItemCard(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 )
+                // The margin is only shown when the shop kept the purchase
+                // price on the card and a cost is really known: an invented
+                // margin is worse than none.
+                if (ItemField.PURCHASE_PRICE in fields) {
+                    marginOf(item)?.let { hint ->
+                        Text(
+                            hint.text,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (hint.negative) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
                 // A quantity is the difference between a catalogue and an
                 // inventory, so it earns a line of its own rather than being
                 // buried in the subtitle with the folder name. It disappears

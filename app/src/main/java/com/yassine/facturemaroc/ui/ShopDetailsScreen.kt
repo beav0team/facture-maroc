@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yassine.facturemaroc.data.InvoiceDesignStore
 import com.yassine.facturemaroc.data.InvoiceViewModel
+import com.yassine.facturemaroc.data.CostMethod
 import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceNumber
 import com.yassine.facturemaroc.data.NumberingStore
@@ -157,6 +158,7 @@ fun ShopDetailsScreen(
     var showItemFolder by remember(settings.showItemFolder) {
         mutableStateOf(settings.showItemFolder)
     }
+    var costMethod by remember(settings.costMethod) { mutableStateOf(settings.costMethod) }
     var logoVersion by remember { mutableIntStateOf(0) }
 
     val snackbar = remember { SnackbarHostState() }
@@ -303,6 +305,7 @@ fun ShopDetailsScreen(
                 showItemUnit = showItemUnit,
                 showItemStock = showItemStock,
                 showItemFolder = showItemFolder,
+                costMethod = costMethod,
             ),
         )
         // Only when the shop really asked for a different number. Rewinding on
@@ -781,6 +784,34 @@ fun ShopDetailsScreen(
                             "Articles et le chemin sous la désignation.",
                         checked = showItemFolder,
                         onCheckedChange = { showItemFolder = it },
+                    )
+                }
+            }
+
+            item(key = "valuation") {
+                SettingsSection(
+                    title = "Valorisation du stock",
+                    subtitle = "Comment l'application calcule ce que vaut un article sur l'étagère.",
+                ) {
+                    Text(
+                        "Le choix ne modifie que les mouvements à venir : un document " +
+                            "déjà émis garde le coût figé sur chacune de ses lignes, " +
+                            "et changer de méthode ne réécrit jamais une facture.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    CostMethod.entries.forEach { method ->
+                        ChoiceChip(
+                            label = method.label,
+                            selected = costMethod == method,
+                            onClick = { costMethod = method },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    Text(
+                        costMethod.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
