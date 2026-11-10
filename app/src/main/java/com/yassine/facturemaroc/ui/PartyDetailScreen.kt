@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -36,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +50,7 @@ import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceRecord
 import com.yassine.facturemaroc.data.Money
+import com.yassine.facturemaroc.data.PartyContact
 import com.yassine.facturemaroc.data.PartyRole
 import com.yassine.facturemaroc.data.Purchase
 
@@ -73,7 +77,10 @@ fun PartyDetailScreen(
     onNewDocument: () -> Unit,
     /** Client only, and only when there is something to state. */
     onStatement: (() -> Unit)? = null,
+    /** What to say when the phone has no dialler or WhatsApp is absent. */
+    onNotify: (String) -> Unit = {},
 ) {
+    val context = LocalContext.current
     val isClient = client.role == PartyRole.CLIENT
     val statement: ClientStatement = remember(records, client.name, isClient) {
         if (isClient) ClientStatements.forClient(records, client.name) else ClientStatement(client.name, emptyList())
@@ -111,6 +118,29 @@ fun PartyDetailScreen(
                     )
                 },
                 actions = {
+                    if (PartyContact.hasNumber(client.phone)) {
+                        IconButton(
+                            onClick = {
+                                if (!PartyActions.dial(context, client.phone)) {
+                                    onNotify("Aucune application pour appeler sur cet appareil.")
+                                }
+                            },
+                        ) {
+                            Icon(Icons.Filled.Call, contentDescription = "Appeler ${client.name}")
+                        }
+                        IconButton(
+                            onClick = {
+                                if (!PartyActions.whatsApp(context, client.phone)) {
+                                    onNotify("WhatsApp n'est pas installé sur cet appareil.")
+                                }
+                            },
+                        ) {
+                            Icon(
+                                Icons.Filled.Chat,
+                                contentDescription = "Message WhatsApp à ${client.name}",
+                            )
+                        }
+                    }
                     if (onStatement != null) {
                         IconButton(onClick = onStatement) {
                             Icon(Icons.Filled.Description, contentDescription = "Relevé")

@@ -41,6 +41,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Checklist
@@ -118,6 +120,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.heading
@@ -145,12 +148,18 @@ import com.yassine.facturemaroc.data.PaymentReminder
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.ItemField
 import com.yassine.facturemaroc.data.MarginReport
+import com.yassine.facturemaroc.data.Money
 import com.yassine.facturemaroc.data.ArticleSort
+import com.yassine.facturemaroc.data.PartyContact
+import com.yassine.facturemaroc.data.PartyFilter
 import com.yassine.facturemaroc.data.PartyRole
+import com.yassine.facturemaroc.data.PartySort
+import com.yassine.facturemaroc.data.PartySummary
 import com.yassine.facturemaroc.data.Purchase
 import com.yassine.facturemaroc.data.PurchaseOutcome
 import com.yassine.facturemaroc.data.SavedItem
 import com.yassine.facturemaroc.data.SavedItemStore
+import com.yassine.facturemaroc.data.StatusTone
 import com.yassine.facturemaroc.data.StockMovement
 import com.yassine.facturemaroc.data.XmlExportOutcome
 import com.yassine.facturemaroc.data.billedInMonth
@@ -161,7 +170,11 @@ import com.yassine.facturemaroc.data.vatByRateInMonth
 import com.yassine.facturemaroc.data.filterArticles
 import com.yassine.facturemaroc.data.filterToReorder
 import com.yassine.facturemaroc.data.labelTaken
+import com.yassine.facturemaroc.data.filterParties
 import com.yassine.facturemaroc.data.nameTaken
+import com.yassine.facturemaroc.data.partyKey
+import com.yassine.facturemaroc.data.partySummaries
+import com.yassine.facturemaroc.data.sortParties
 import com.yassine.facturemaroc.data.outstanding
 import com.yassine.facturemaroc.data.sortArticles
 import com.yassine.facturemaroc.data.summarizeArticles
@@ -819,6 +832,7 @@ fun HomeScreen(
                         }
                     },
                     onDelete = { deleteClient = it },
+                    onNotify = { message -> scope.launch { snackbar.showSnackbar(message) } },
                 )
 
                 HomeTab.ARTICLES -> {
@@ -940,9 +954,12 @@ fun HomeScreen(
                     } else {
                         Column(Modifier.fillMaxSize()) {
                             if (items.isNotEmpty()) {
-                                ArticleSortRow(
-                                    sort = articleSort,
-                                    onSort = { articleSortIndex = it.ordinal },
+                                SortRow(
+                                    label = articleSort.label,
+                                    options = ArticleSort.entries.map { it.label },
+                                    selected = articleSortIndex,
+                                    onSelect = { articleSortIndex = it },
+                                    modifier = Modifier.padding(horizontal = 12.dp),
                                 )
                             }
                             if (ItemField.FOLDER in itemFields || ItemField.STOCK in itemFields) {
@@ -1172,6 +1189,7 @@ fun HomeScreen(
                 partyDetail = null
                 if (party.role == PartyRole.CLIENT) onNewInvoice(party) else onNewOrder(party)
             },
+            onNotify = { message -> scope.launch { snackbar.showSnackbar(message) } },
             onStatement = if (
                 party.role == PartyRole.CLIENT &&
                 ClientStatements.hasStatement(records, party.name)
@@ -2073,32 +2091,80 @@ private fun ClientsTab(
     onOrder: (InvoiceClient) -> Unit,
     onStatement: (InvoiceClient) -> Unit,
     onDelete: (InvoiceClient) -> Unit,
+    /** What to say when a phone has no dialler or WhatsApp is not installed. */
+    onNotify: (String) -> Unit,
 ) {
     val noun = role.label.lowercase()
     val saved = remember(clients, role) { clients.filter { it.role == role } }
 
-    val filtered = remember(saved, query) {
+    /*
+     * What each party is worth, in one pass.
+     *
+     * Computed here and not inside the items loop: a balance rebuilt per row per
+     * recomposition would walk every invoice again for every keystroke in the
+     * search field.
+     */
+    val summaries = remember(records, clients, purchases) {
+        records.partySummaries(clients, purchases)
+    }
+
+    val matches = remember(saved, query) {
         val q = query.trim().lowercase()
         if (q.isBlank()) saved else saved.filter {
             listOf(it.name, it.phone, it.email, it.ice).any { field -> field.lowercase().contains(q) }
         }
     }
 
-    if (filtered.isEmpty()) {
+    /*
+     * Two questions, two controls.
+     *
+     * The directory answers "who is in my book" in alphabetical order and "who
+     * owes me money" by balance. Both were reachable only by scrolling before.
+     * A supplier has no balance and cannot be late, so he is offered neither.
+     */
+    var sortIndex by rememberSaveable { mutableIntStateOf(0) }
+    var filterIndex by rememberSaveable { mutableIntStateOf(0) }
+    val sorts = if (role == PartyRole.CLIENT) {
+        listOf(PartySort.NAME, PartySort.BALANCE, PartySort.RECENT)
+    } else {
+        listOf(PartySort.NAME, PartySort.RECENT)
+    }
+    val sort = sorts.getOrElse(sortIndex) { PartySort.NAME }
+    val filters = if (role == PartyRole.CLIENT) PartyFilter.entries.toList() else emptyList()
+    val filter = filters.getOrElse(filterIndex) { PartyFilter.ALL }
+    val filtersActive = filter != PartyFilter.ALL
+
+    val visible = remember(matches, summaries, sort, filter, role) {
+        sortParties(filterParties(matches, summaries, filter, role), summaries, sort)
+    }
+    // The numbers written on the chips: how many would remain if tapped, from
+    // what the search already kept.
+    val owesCount = remember(matches, summaries, role) {
+        if (role == PartyRole.CLIENT) {
+            filterParties(matches, summaries, PartyFilter.OWES, role).size
+        } else {
+            0
+        }
+    }
+    val lateCount = remember(matches, summaries, role) {
+        if (role == PartyRole.CLIENT) {
+            filterParties(matches, summaries, PartyFilter.LATE, role).size
+        } else {
+            0
+        }
+    }
+
+    if (saved.isEmpty()) {
         EmptyState(
             icon = Icons.Filled.People,
-            title = if (saved.isEmpty()) "Aucun $noun enregistré" else "Aucun résultat",
-            message = if (saved.isEmpty()) {
-                when (role) {
-                    PartyRole.CLIENT ->
-                        "Enregistrez vos clients une fois. Sur chaque facture, leur nom, ICE et adresse " +
-                            "se remplissent sans les retaper."
-                    PartyRole.SUPPLIER ->
-                        "Enregistrez vos fournisseurs une fois. Un bon de commande reprend leur nom, " +
-                            "ICE et adresse sans les retaper."
-                }
-            } else {
-                "Essayez un autre nom, un téléphone ou un ICE."
+            title = "Aucun $noun enregistré",
+            message = when (role) {
+                PartyRole.CLIENT ->
+                    "Enregistrez vos clients une fois. Sur chaque facture, leur nom, ICE et adresse " +
+                        "se remplissent sans les retaper."
+                PartyRole.SUPPLIER ->
+                    "Enregistrez vos fournisseurs une fois. Un bon de commande reprend leur nom, " +
+                        "ICE et adresse sans les retaper."
             },
         )
         return
@@ -2112,35 +2178,54 @@ private fun ClientsTab(
         item(key = "count") {
             SectionHeading(
                 if (role == PartyRole.CLIENT) "Clients enregistrés" else "Fournisseurs enregistrés",
-                trailing = "${filtered.size}",
+                trailing = "${visible.size}",
             )
         }
-        items(filtered, key = { "${role.id}-${it.name.lowercase()}" }) { client ->
+
+        item(key = "toolbar") {
+            Column {
+                if (filters.isNotEmpty()) {
+                    ChoiceChipsRow(
+                        options = filters.map { it.label },
+                        selected = filterIndex,
+                        onSelect = { filterIndex = it },
+                        counts = listOf(matches.size, owesCount, lateCount),
+                    )
+                    Spacer(Modifier.height(4.dp))
+                }
+                SortRow(
+                    label = sort.label,
+                    options = sorts.map { it.label },
+                    selected = sortIndex,
+                    onSelect = { sortIndex = it },
+                )
+            }
+        }
+
+        if (visible.isEmpty()) {
+            item(key = "empty-filter") {
+                Text(
+                    if (filtersActive) {
+                        "Aucun $noun ne correspond à ce filtre."
+                    } else {
+                        "Aucun résultat pour « ${query.trim()} »."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
+                )
+            }
+        }
+
+        items(visible, key = { "${role.id}-${it.name.lowercase()}" }) { client ->
+            val summary = summaries[partyKey(role, client.name)] ?: PartySummary()
             ClientCard(
                 client = client,
-                // Receipts count: a supplier with three deliveries and no bon
-                // de commande used to read "0 document".
-                documentCount = records.count { record ->
-                    !record.isDraft && when (role) {
-                        PartyRole.CLIENT ->
-                            record.data.documentType != DocumentType.BON_DE_COMMANDE &&
-                                record.data.client.name.equals(client.name, ignoreCase = true)
-                        PartyRole.SUPPLIER ->
-                            record.data.documentType == DocumentType.BON_DE_COMMANDE &&
-                                record.data.supplier?.name
-                                    ?.equals(client.name, ignoreCase = true) == true
-                    }
-                } + if (role == PartyRole.SUPPLIER) {
-                    purchases.count { it.supplierName.trim().equals(client.name.trim(), ignoreCase = true) }
-                } else {
-                    0
-                },
+                summary = summary,
+                onNotify = onNotify,
                 onClick = { onOpen(client) },
                 onEdit = { onEdit(client) },
                 onDocument = { if (role == PartyRole.CLIENT) onInvoice(client) else onOrder(client) },
-                // A statement is a client document. It is only offered when
-                // there is something to state: a client with a single devis
-                // would get a button that produces nothing.
                 onStatement = if (
                     role == PartyRole.CLIENT &&
                     ClientStatements.hasStatement(records, client.name)
@@ -2155,10 +2240,20 @@ private fun ClientsTab(
     }
 }
 
+/**
+ * One party in the directory, saying what the shop would otherwise open the
+ * page to find out.
+ *
+ * The « N documents » line counted rows and answered nothing. It is now the
+ * money: what is owed, how much of it is late, or — for a supplier — what was
+ * bought. The phone icons only exist when there is a number to dial, because a
+ * button that opens nothing is a lie the shop learns to distrust.
+ */
 @Composable
 private fun ClientCard(
     client: InvoiceClient,
-    documentCount: Int,
+    summary: PartySummary,
+    onNotify: (String) -> Unit,
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onDocument: () -> Unit,
@@ -2166,6 +2261,7 @@ private fun ClientCard(
     onDelete: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val initials = remember(client.name) {
         client.name.trim().split(Regex("\\s+"))
             .filter { it.isNotBlank() }
@@ -2173,6 +2269,8 @@ private fun ClientCard(
             .joinToString("") { it.first().uppercase() }
             .ifBlank { "?" }
     }
+    val status = remember(client, summary) { partyStatus(client, summary) }
+    val callable = remember(client.phone) { PartyContact.hasNumber(client.phone) }
 
     Card(
         onClick = onClick,
@@ -2223,13 +2321,49 @@ private fun ClientCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+                if (status != null) {
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        status.first,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = status.second.color(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
-            if (documentCount > 0) {
-                Text(
-                    if (documentCount == 1) "1 document" else "$documentCount documents",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            if (callable) {
+                IconButton(
+                    onClick = {
+                        if (!PartyActions.dial(context, client.phone)) {
+                            onNotify("Aucune application pour appeler sur cet appareil.")
+                        }
+                    },
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    Icon(
+                        Icons.Filled.Call,
+                        contentDescription = "Appeler ${client.name}",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        if (!PartyActions.whatsApp(context, client.phone)) {
+                            onNotify("WhatsApp n'est pas installé sur cet appareil.")
+                        }
+                    },
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    Icon(
+                        Icons.Filled.Chat,
+                        contentDescription = "Message WhatsApp à ${client.name}",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
             Box {
                 IconButton(onClick = { menuOpen = true }) {
@@ -2294,6 +2428,31 @@ private fun ClientCard(
         }
     }
 }
+
+/**
+ * The one line under a party's name.
+ *
+ * Same vocabulary as the invoice list: red means late, amber means money to
+ * collect, muted means there is nothing to do. A supplier never shows a balance
+ * — the app has no supplier ledger, and inventing one would print a number
+ * nobody could reconcile.
+ */
+private fun partyStatus(client: InvoiceClient, summary: PartySummary): Pair<String, StatusTone>? =
+    if (client.role == PartyRole.SUPPLIER) {
+        if (summary.documents == 0) {
+            "Aucune réception" to StatusTone.NEUTRAL
+        } else {
+            val receipts = if (summary.receipts == 1) "1 réception" else "${summary.receipts} réceptions"
+            "${Money.dirhams(summary.purchasedHt)} d'achats · $receipts" to StatusTone.NEUTRAL
+        }
+    } else {
+        when {
+            summary.isLate -> "${Money.dirhams(summary.overdue)} en retard" to StatusTone.OVERDUE
+            summary.owes -> "${Money.dirhams(summary.due)} dû" to StatusTone.DUE
+            summary.documents == 0 -> "Aucune facture" to StatusTone.NEUTRAL
+            else -> "À jour" to StatusTone.PAID
+        }
+    }
 
 /**
  * The line under the Articles title: what is on this level, not below it.
@@ -3016,66 +3175,6 @@ private fun StockHubRow(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-    }
-}
-
-/**
- * The catalogue's order, as one control.
- *
- * A dropdown rather than four chips on the row: the chips underneath already
- * carry the folders, and a second row of filters above them would push the
- * first article off a 360 dp screen. The current order is written on the
- * control, so the shop can see why the list is in this order.
- */
-@Composable
-private fun ArticleSortRow(
-    sort: ArticleSort,
-    onSort: (ArticleSort) -> Unit,
-) {
-    var open by remember { mutableStateOf(false) }
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.small)
-                .clickable { open = true }
-                .padding(horizontal = 4.dp, vertical = 6.dp),
-        ) {
-            Icon(
-                Icons.Filled.SwapVert,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(16.dp),
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                "Trier : ${sort.label}",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            ArticleSort.entries.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option.label) },
-                    leadingIcon = {
-                        if (option == sort) {
-                            Icon(Icons.Filled.Check, contentDescription = null)
-                        } else {
-                            Spacer(Modifier.size(24.dp))
-                        }
-                    },
-                    onClick = {
-                        open = false
-                        onSort(option)
-                    },
-                )
-            }
         }
     }
 }
