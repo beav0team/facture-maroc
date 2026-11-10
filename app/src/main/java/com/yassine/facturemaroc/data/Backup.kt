@@ -374,6 +374,21 @@ object Backup {
                 } else {
                     null
                 },
+                // Same keys the store writes, so a backup keeps the quantity
+                // prices and the attributes of every article.
+                priceTiers = obj.optJSONArray("priceTiers")?.mapObjects { tier ->
+                    PriceTier(
+                        fromQuantity = tier.optInt("fromQuantity", 0),
+                        unitPriceHt = tier.optDouble("unitPriceHt", 0.0)
+                            .let { if (it.isNaN() || it.isInfinite()) 0.0 else it },
+                    )
+                }.orEmpty(),
+                attributes = obj.optJSONArray("attributes")?.mapObjects { attr ->
+                    ItemAttribute(
+                        key = attr.optString("key", ""),
+                        value = attr.optString("value", ""),
+                    )
+                }.orEmpty(),
             )
         }.filter { it.label.isNotBlank() && it.price > 0.0 }
         // An older backup has no ledger. Empty is the honest answer: the
