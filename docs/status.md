@@ -6,7 +6,7 @@ answering from memory.
 
 | | |
 |---|---|
-| Version | **0.11.0** (versionCode 17) — 19 corrections d'audit sur `master`, release 0.11.1 en préparation |
+| Version | **0.11.1** (versionCode 18) — 19 corrections d'audit |
 | Last commit | Audit du 2026-11-10 : paiements, stockage, catalogue, rapports, avoirs, sauvegarde Android |
 | Branch | `master` (tag `v0.11.1` à poser après le build R8) |
 | Tests | **547 JVM**, **20 instrumented** |
@@ -172,7 +172,7 @@ continue without it, so no field is invented. Revisit only on request.
 | Production gate | **12 opted-in testers for 14 continuous days** — not reached yet |
 | Listing assets | `play_store/` (icon, feature graphic, 4 screenshots, `listing-fr.md`, `UPLOAD.md`) |
 | Known stale items | screenshots predate 0.11.0 (refresh from Waydroid); Play contact e-mail still to enter in the console |
-| Open checks | **16 KB verified** on the 0.11.0 release APK (`zipalign -P 16` passes, ELF `LOAD` align `0x4000`); AAB 15.7 MB built |
+| Open checks | **16 KB verified** on the 0.11.1 release APK (`zipalign -P 16` passes, ELF `LOAD` align `0x4000`); AAB 15 734 173 octets, SHA-256 dans `UPLOAD.md` |
 
 ---
 

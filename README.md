@@ -5,7 +5,7 @@ Factures, devis, bons de commande, tickets, avoirs, proformas, acomptes,
 régularisations, factures simplifiées et factures à l'export — avec ICE, IF, RC,
 patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
-Version **0.11.0** (versionCode 17) · Android 8.0+ (minSdk 26) · Français.
+Version **0.11.1** (versionCode 18) · Android 8.0+ (minSdk 26) · Français.
 
 État du produit : [`docs/status.md`](docs/status.md) · Décisions :
 [`docs/decisions.md`](docs/decisions.md) · Checklist de version :
@@ -357,6 +357,19 @@ minimum exigé par Google pour toute nouvelle application depuis le
 par Google) est bien saisie dans Play Console.
 
 ## Historique
+
+- **0.11.1** — corrections de l'audit du 10 novembre : un document garde
+  l'historique de ses encaissements (un reçu par paiement, dialogue prérempli
+  avec le reste à payer) et seuls facture, ticket, simplifiée et export sont
+  encaissables ; les paliers de prix suivent la base de la boutique (TTC ou HT)
+  et ne sont plus divisés deux fois ; un catalogue ou un registre illisible est
+  mis de côté au lieu d'être écrasé, un hash de logo doit être un vrai hash, et
+  une écriture qui échoue est signalée ; le relevé compte l'acompte une seule
+  fois, l'avoir ne le recopie plus, le CSV comptable écrit les avoirs en négatif
+  avec le statut « Avoir » et la marge tient compte de la remise générale ;
+  un avoir s'affiche en négatif, sans échéance et jamais en retard ; les coûts
+  du catalogue sont lus en une passe ; le plafond de sauvegarde passe à 16 Mo
+  et la sauvegarde Android est désactivée — rien ne quitte le téléphone.
 
 - **0.11.0** — facturation complète et stock : TVA par ligne et
   récapitulatif par taux, remise en dirhams, surcharge en pourcentage, échéance
