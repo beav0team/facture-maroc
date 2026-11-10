@@ -230,6 +230,22 @@ commercial: **no network permission at all**. The package stays
 `com.yassine.facturemaroc`, distinct from DATRON's, so the two cannot be
 confused at install time.
 
+### 2026-11-11 — The site is the app's Material 3 theme, written as CSS tokens
+The public site used to carry its own design (Bricolage Grotesque, IBM Plex,
+hairline rules, torn-paper edges). It now reads the application's theme: every
+colour role, the tonal surface ladder, the shape scale and the type scale come
+from `app/src/main/java/com/yassine/facturemaroc/ui/Theme.kt`, copied once into
+`docs/assets/css/tokens.css`. A site that advertises the product cannot look
+like a different product, and the screenshots on it are the app itself.
+Material 3 Expressive is expressed in the CSS (cookie-shaped cards, pill
+buttons, state layers, emphasized easing) rather than by adopting
+`@material/web`: that project is in maintenance mode pending new maintainers,
+and using it would put JavaScript and a vendored bundle on a site whose promise
+is HTML, CSS and no external request. Dark mode is `DarkScheme` behind
+`prefers-color-scheme`, not a second palette invented for the web. Icons are
+inline Material Symbols SVGs — no icon font, no extra request. The single font
+is Roboto Flex, subset to French by `docs/scripts/fonts.sh` (1.8 MB → 44 KB).
+
 ### 2026-11-10 — The site publishes three editorial pages
 `a-propos`, `contact`, and a guide on the mandatory fields of a Moroccan
 invoice. Reasoning: a search engine and a language model both need an entity

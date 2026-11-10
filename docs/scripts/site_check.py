@@ -42,7 +42,11 @@ def check_local_links(page: pathlib.Path, text: str) -> None:
         if value.startswith(("http://", "https://", "mailto:", "#", "data:")):
             continue
         target = value.split("#", 1)[0].split("?", 1)[0]
-        if target and not (DOCS / target).exists():
+        # Une page servie à n'importe quelle profondeur (404.html) référence
+        # ses ressources depuis la racine du site : /assets/… est un chemin
+        # absolu, pas un fichier à côté de la page.
+        resolved = DOCS / target.lstrip("/") if target.startswith("/") else DOCS / target
+        if target and not resolved.exists():
             err(page.name, f"{attr} cassé : {value}")
 
 
