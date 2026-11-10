@@ -6,10 +6,10 @@ answering from memory.
 
 | | |
 |---|---|
-| Version | **0.11.0** (versionCode 17) — release en préparation |
-| Last commit | Phase A/B/C — facturation complète, stock, rapports, rappel de paiement |
-| Branch | `master` (tag `v0.11.0` à poser après le build R8) |
-| Tests | **510 JVM**, **20 instrumented** |
+| Version | **0.11.0** (versionCode 17) — 19 corrections d'audit sur `master`, release 0.11.1 en préparation |
+| Last commit | Audit du 2026-11-10 : paiements, stockage, catalogue, rapports, avoirs, sauvegarde Android |
+| Branch | `master` (tag `v0.11.1` à poser après le build R8) |
+| Tests | **547 JVM**, **20 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -57,6 +57,38 @@ and Settings exports the issued documents as a CSV the accountant can open
 the receipt and the statement, the total invariants (HT + TVA = TTC, recap =
 tax, lines = subtotal), version 0.11.0 and the R8 release. C1 (hardening) and
 C2 (Play) follow.
+
+## Audit corrections — 2026-11-10
+
+Nineteen defects found by reading the code are fixed on `master`, each with the
+test that would have caught it. Grouped by what they broke:
+
+- **Paiements** — un document garde l'historique de ses encaissements au lieu
+  d'un montant unique ; le reçu peut être établi par paiement ; le dialogue
+  propose le reste à payer ; seuls facture, ticket, simplifiée et export
+  peuvent être encaissés (plus de paiement sur devis, proforma, bon de commande
+  ni avoir).
+- **Stockage** — un catalogue illisible est copié en `-corrompu.json` avant
+  tout enregistrement ; une ligne de registre illisible au milieu est signalée
+  au lieu d'être ignorée (seule la dernière ligne peut être déchirée) ; un hash
+  de logo doit faire 64 caractères hexadécimaux ; une écriture qui échoue n'est
+  plus annoncée comme réussie (snackbar, l'écran ne bouge pas).
+- **Catalogue** — les paliers de prix suivent la base de la boutique (TTC ou
+  HT) et ne sont plus divisés deux fois ; `addLine` ne fusionne plus deux
+  lignes qui diffèrent par la remise fixe ou l'article ; « dès N » disparaît
+  quand la quantité repasse sous le seuil.
+- **Rapports** — le solde du relevé additionne les documents (un acompte n'est
+  plus réclamé deux fois) ; un avoir ne recopie plus l'acompte de la facture ;
+  le CSV comptable écrit les avoirs en négatif avec le statut « Avoir » ; la
+  remise au niveau du document entre dans la marge, répartie sur les lignes.
+- **Avoirs** — un avoir s'affiche en négatif avec une pastille « Avoir », n'a
+  pas d'échéance et n'est jamais « en retard ».
+- **Échelle** — les coûts du catalogue sont lus en une passe sur le registre au
+  lieu d'une par article ; le plafond de sauvegarde passe de 8 à 16 Mo
+  (5 000 documents mesurés à 7,8 Mo).
+- **Confidentialité** — la sauvegarde Android est désactivée et
+  `data_extraction_rules.xml` exclut toutes les données du cloud et du
+  transfert d'appareil à appareil.
 
 **RAS TVA stays out** — settled in `docs/decisions.md`: the user asked to
 continue without it, so no field is invented. Revisit only on request.

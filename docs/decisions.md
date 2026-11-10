@@ -142,6 +142,41 @@ can produce the document, not merely that an entry mentions it. Deliberately a
 small row, not a badge on every history card: the archive screen remains the
 place that verifies the whole chain.
 
+### 2026-11-10 — Payments are a history, not a figure
+A document keeps the list of the payments it received, not one overwritten
+amount: a customer who pays 400 today and the rest next month leaves two
+entries, each with its own date, method and note, and each receiptable on its
+own. `paidAmount` is the sum, clamped to what is left to pay, and the old single
+`payment` object is read back as a one-entry history so every document already
+issued opens with its money intact.
+
+### 2026-11-10 — Only a document that asks for money can be paid
+Facture, ticket, simplifiée and export. A devis is a price offered, a bon de
+commande is money going out, a proforma has no accounting value, an avoir gives
+money back, and an acompte is paid when issued. Recording a receipt against any
+of them turns a quote into a sale that never happened.
+
+### 2026-11-10 — Tier prices follow the article's basis
+`PriceTier` is priced like `SavedItem.price`: TTC when the shop quotes TTC. The
+field used to be named and labelled HT while the number went onto the line as a
+shop-basis figure, so a TTC shop typing 100 charged 100 TTC instead of the 120
+it meant. The old `unitPriceHt` key is still read; the label follows the shop's
+setting.
+
+### 2026-11-10 — Android backup is off
+`allowBackup="false"` and a `data-extraction-rules` file excluding every domain
+from cloud backup and from device transfer. The app promises it is offline and
+that the shop's documents do not leave the phone; a platform backup running in
+the background contradicted that without ever appearing on screen. Moving to a
+new phone goes through the application's own backup file, which the shop makes
+and keeps.
+
+### 2026-11-10 — A credit note is written as a negative sale
+In the accountant CSV the avoir carries negative HT, VAT, TTC and balance, and
+the status "Avoir". Positive, it added itself to the year's turnover and its
+"reste" read as money the client still owed. On screen it shows a negative
+amount, an "Avoir" badge, no deadline and is never late.
+
 ---
 
 ## Open
