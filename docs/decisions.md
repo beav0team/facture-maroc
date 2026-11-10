@@ -12,9 +12,14 @@ The app targets Moroccan businesses and Moroccan rules. No multi-currency, no
 Peppol, no XRechnung, no Factur-X. UBL 2.1 is exported as a generic archive
 format; no DGI compliance is claimed while the official profile is unpublished.
 
-### 2026-10 — French UI only (for now)
-French is the application and document language. Arabic is not required by any
-text found; it remains an open commercial choice.
+### 2026-10 — French UI only (settled 2026-11-10)
+French is the application and document language. **Closed on 2026-11-10: French
+only, permanently.** Arabic and RTL are out of scope, not deferred. The reason is
+the cost of the three things Arabic would drag in — shaping in `PdfText`, a
+left/right audit of 3 400 lines of Compose, and an embedded Arabic font in an
+offline app — against a market where the shopkeeper reads French invoices. Play
+stays `fr-FR`. The 870 French strings hardcoded in Kotlin stay hardcoded: with
+one language, a string table would only add a lookup.
 
 ### 2026-11-10 — Issued documents keep a shop snapshot
 Issuing stores the printed shop fields and a logo hash on the document. Changing
@@ -181,8 +186,18 @@ amount, an "Avoir" badge, no deadline and is never late.
 
 ## Open
 
-1. **Arabic / bilingual** — pending accountant confirmation.
-2. **Auto-entrepreneur number** — print it on documents?
+1. **Auto-entrepreneur number** — print it on documents?
+
+## Known limitations
+
+### 2026-11-10 — Clients and suppliers are matched by name
+There is no `partyId`. A statement, a supplier's history and the "has this client
+bought before?" check all compare trimmed names, case-insensitively. Renaming a
+client therefore detaches their history: the invoices keep the old spelling and
+the new name starts a new account. Accepted for 0.11 because a rename is rare and
+an invented id would need a migration of every stored document to be worth
+anything. Fixed before 1.0 by writing `partyId` on issuance **and** keeping the
+name fallback for every document already issued.
 
 ## Closed since the roadmap was written
 

@@ -9,9 +9,53 @@ answering from memory.
 | Version | **0.11.1** (versionCode 18) — 19 corrections d'audit |
 | Last commit | Audit du 2026-11-10 : paiements, stockage, catalogue, rapports, avoirs, sauvegarde Android |
 | Branch | `master` (tag `v0.11.1` à poser après le build R8) |
-| Tests | **547 JVM**, **20 instrumented** |
+| Tests | **575 JVM**, **20 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
+
+---
+
+## In progress — refonte de l'interface (2026-11-10)
+
+Travail sur `master`, non publié : la 0.11.1 reste la version livrée.
+
+**Fait**
+
+- `ui/Theme.kt` : échelle de surfaces M3 complète (jusqu'à
+  `surfaceContainerHighest`, `inverse*`, `scrim`), rôles typographiques
+  manquants, et un rôle `Typography.numerals` en chiffres tabulaires.
+- `data/Money.kt` : un seul formateur d'argent (virgule, deux décimales,
+  espace fine insécable). `asDirhams`, `moneyText`, `PdfText.money`,
+  `PaymentReminder` et `PaymentQrText` y délèguent ; l'écran et le PDF
+  impriment enfin le même nombre.
+- Liste des documents : une seule ligne de statut (`data/DocumentStatus.kt`)
+  au lieu de trois pastilles, montant plafonné à 132 dp pour que le nom du
+  client garde sa place, couleur = état de paiement uniquement.
+- Accueil : la carte d'en-tête dit « Reste à encaisser » (reste dû + retard),
+  le facturé du mois passe en ligne secondaire (`List.outstanding()`).
+- Articles : tri nom / prix / stock / marge, icône qui distingue prestation,
+  produit et article épuisé, balayage sans recomposition par image
+  (`graphicsLayer` + `mutableFloatStateOf`, une animation par geste, retour
+  haptique).
+- **Onglet Stock** (4ᵉ onglet) : réceptions, inventaire et journal du stock
+  sortent de la barre d'outils des Articles et des Paramètres.
+- Paramètres : index de cinq groupes avec recherche (Boutique, Facturation,
+  Catalogue et stock, Données, Diagnostic), retour = un cran en arrière.
+  « Diagnostic » est séparé parce que recalculer le stock est une réparation,
+  pas une préférence.
+
+**Reste**
+
+- Fiche client **et fournisseur** (`PartyDetailScreen`) : aujourd'hui la carte
+  ouvre l'éditeur, sans historique ni solde ; le compteur de documents d'un
+  fournisseur ignore les bons de réception.
+- Fiche article (prix, marge, stock, paliers, documents qui l'ont vendu).
+- Éditeur d'article en pleine page au lieu d'une boîte de dialogue.
+- Suppression d'article annulable (snackbar) au lieu d'un effacement immédiat.
+- La carte d'index des Paramètres ne montre pas encore la valeur courante de
+  chaque groupe (« TVA 20 % », « Prochaine facture F-… »).
+- Bump du Compose BOM (2024.12.01 → version Expressive), isolé dans son propre
+  commit après la revue de la 0.11.1.
 
 ---
 
@@ -173,6 +217,7 @@ continue without it, so no field is invented. Revisit only on request.
 | Listing assets | `play_store/` (icon, feature graphic, 4 screenshots, `listing-fr.md`, `UPLOAD.md`) |
 | Known stale items | screenshots predate 0.11.0 (refresh from Waydroid); Play contact e-mail still to enter in the console |
 | Open checks | **16 KB verified** on the 0.11.1 release APK (`zipalign -P 16` passes, ELF `LOAD` align `0x4000`); AAB 15 734 173 octets, SHA-256 dans `UPLOAD.md` |
+| For 0.12 | Play signale « native code, no debug symbols » sur la 0.11.1 (avertissement non bloquant). Ajouter `ndk { debugSymbolLevel = "SYMBOL_TABLE" }` au buildType `release`, puis joindre `app/build/outputs/native-debug-symbols/release/native-debug-symbols.zip` à la release |
 
 ---
 

@@ -30,10 +30,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.AlertDialog
@@ -64,6 +66,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,6 +104,80 @@ import java.util.Locale
 private const val MAX_LOGO_BYTES = 4 * 1024 * 1024
 
 /**
+ * The five things a shopkeeper changes, and nothing else.
+ *
+ * Paramètres used to be one 1 400-line scroll of thirteen sections, with the
+ * stock repair tools at the same level as the TVA rate. The groups are the
+ * shop's own words, not the code's: what the shop is, how it bills, what it
+ * sells, what it protects, and what it repairs. The last group is separate on
+ * purpose — "recalculer le stock" is a repair, and putting it a scroll below
+ * the TVA rate is how a shop presses it thinking it is a display option.
+ */
+private enum class SettingsGroup(
+    val label: String,
+    val summary: String,
+    /** Everything a search can match, in plain French, accents optional. */
+    val keywords: String,
+) {
+    SHOP(
+        "Boutique",
+        "Identité, mentions légales, banque",
+        "nom adresse téléphone email logo ice if rc patente cnss banque rib compte",
+    ),
+    INVOICING(
+        "Facturation",
+        "TVA, numérotation, conditions de règlement",
+        "tva taux remise prix ht ttc conditions règlement retard pénalité " +
+            "numérotation préfixe compteur annuel prochain numéro facture devis",
+    ),
+    CATALOGUE(
+        "Catalogue et stock",
+        "Champs de la fiche article, valorisation",
+        "articles code barres prix achat unité stock dossier champs valorisation " +
+            "coût moyen fifo seuil",
+    ),
+    DATA(
+        "Données",
+        "Sauvegardes, archive, export comptable",
+        "sauvegarde restauration archive export comptable csv json copies automatiques",
+    ),
+    DIAGNOSTIC(
+        "Diagnostic",
+        "Journal du stock, réparations",
+        "journal vérifier recalculer réparer écart version licence",
+    ),
+    ;
+
+    /** Whether [query] looks like it is asking for this group. */
+    fun matches(query: String): Boolean {
+        val wanted = query.normalise()
+        if (wanted.isEmpty()) return true
+        return (label + " " + summary + " " + keywords).normalise().contains(wanted)
+    }
+}
+
+/** Lowercase, accents folded: "tva" finds "TVA", "reglement" finds "règlement". */
+private fun String.normalise(): String =
+    java.text.Normalizer.normalize(trim().lowercase(), java.text.Normalizer.Form.NFD)
+        .replace(Regex("\\p{Mn}+"), "")
+
+/** Where each section lives, so the index and the scroll cannot disagree. */
+private val SETTINGS_GROUP_OF_KEY: Map<String, SettingsGroup> = mapOf(
+    "logo" to SettingsGroup.SHOP,
+    "identity" to SettingsGroup.SHOP,
+    "legal" to SettingsGroup.SHOP,
+    "payment" to SettingsGroup.SHOP,
+    "vat" to SettingsGroup.INVOICING,
+    "numbering" to SettingsGroup.INVOICING,
+    "articles" to SettingsGroup.CATALOGUE,
+    "valuation" to SettingsGroup.CATALOGUE,
+    "backup" to SettingsGroup.DATA,
+    "auto-backup" to SettingsGroup.DATA,
+    "archive" to SettingsGroup.DATA,
+    "stock" to SettingsGroup.DIAGNOSTIC,
+)
+
+/**
  * The shop's own details: what appears at the top of every document.
  *
  * These fields are edited once and printed forever, so the screen is arranged
@@ -116,6 +193,11 @@ fun ShopDetailsScreen(
     onBack: () -> Unit,
 ) {
     val settings by viewModel.shop.collectAsStateWithLifecycle()
+
+    /* `-1` is the index; otherwise the ordinal of the open group. */
+    var openGroupIndex by rememberSaveable { mutableIntStateOf(-1) }
+    var settingsQuery by rememberSaveable { mutableStateOf("") }
+    val openGroup = SettingsGroup.entries.getOrNull(openGroupIndex)
 
     var name by remember(settings.name) { mutableStateOf(settings.name) }
     var address by remember(settings.address) { mutableStateOf(settings.address) }
@@ -351,13 +433,19 @@ fun ShopDetailsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(
+                        onClick = {
+                            // Back means "one step up": out of a group first,
+                            // out of Paramètres only from the index.
+                            if (openGroup != null) openGroupIndex = -1 else onBack()
+                        },
+                    ) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Retour")
                     }
                 },
                 title = {
                     Text(
-                        "Paramètres du magasin",
+                        openGroup?.label ?: "Paramètres du magasin",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.semantics { heading() },
@@ -393,6 +481,49 @@ fun ShopDetailsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            if (openGroup == null) {
+                item(key = "settings-search") {
+                    OutlinedTextField(
+                        value = settingsQuery,
+                        onValueChange = { settingsQuery = it },
+                        label = { Text("Rechercher un réglage") },
+                        singleLine = true,
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                item(key = "settings-index") {
+                    val groups = SettingsGroup.entries.filter { it.matches(settingsQuery) }
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            "Cinq groupes. Deux gestes au plus pour atteindre n'importe quel réglage.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 4.dp),
+                        )
+                        groups.forEach { group ->
+                            SettingsIndexRow(
+                                group = group,
+                                onClick = {
+                                    settingsQuery = ""
+                                    openGroupIndex = group.ordinal
+                                },
+                            )
+                        }
+                        if (groups.isEmpty()) {
+                            Text(
+                                "Aucun réglage ne correspond à « ${settingsQuery.trim()} ».",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 4.dp),
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (openGroup == SettingsGroup.SHOP) {
+    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
             item(key = "logo") {
                 Card(
                     shape = MaterialTheme.shapes.medium,
@@ -475,7 +606,10 @@ fun ShopDetailsScreen(
                     }
                 }
             }
+            }
 
+            if (openGroup == SettingsGroup.SHOP) {
+    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
             item(key = "identity") {
                 SettingsSection(
                     title = "Identité",
@@ -523,7 +657,10 @@ fun ShopDetailsScreen(
                     }
                 }
             }
+            }
 
+            if (openGroup == SettingsGroup.SHOP) {
+    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
             item(key = "legal") {
                 SettingsSection(
                     title = "Informations légales",
@@ -570,7 +707,10 @@ fun ShopDetailsScreen(
                     )
                 }
             }
+            }
 
+            if (openGroup == SettingsGroup.SHOP) {
+    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
             item(key = "payment") {
                 SettingsSection(
                     title = "Paiement et banque",
@@ -661,7 +801,10 @@ fun ShopDetailsScreen(
                     )
                 }
             }
+            }
 
+            if (openGroup == SettingsGroup.INVOICING) {
+    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
             item(key = "vat") {
                 SettingsSection(
                     title = "TVA",
@@ -757,7 +900,10 @@ fun ShopDetailsScreen(
                     )
                 }
             }
+            }
 
+            if (openGroup == SettingsGroup.CATALOGUE) {
+    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
             item(key = "articles") {
                 SettingsSection(
                     title = "Articles",
@@ -807,7 +953,10 @@ fun ShopDetailsScreen(
                     )
                 }
             }
+            }
 
+            if (openGroup == SettingsGroup.CATALOGUE) {
+    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
             item(key = "valuation") {
                 SettingsSection(
                     title = "Valorisation du stock",
@@ -835,7 +984,10 @@ fun ShopDetailsScreen(
                     )
                 }
             }
+            }
 
+            if (openGroup == SettingsGroup.DATA) {
+    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
             item(key = "backup") {
                 SettingsSection(
                     title = "Sauvegarde",
@@ -903,7 +1055,10 @@ fun ShopDetailsScreen(
                     }
                 }
             }
+            }
 
+            if (openGroup == SettingsGroup.DATA) {
+    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
             item(key = "auto-backup") {
                 SettingsSection(
                     title = "Sauvegarde automatique",
@@ -981,7 +1136,10 @@ fun ShopDetailsScreen(
                     }
                 }
             }
+            }
 
+            if (openGroup == SettingsGroup.DATA) {
+    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
             item(key = "archive") {
                 SettingsSection(
                     title = "Archive des documents",
@@ -1023,7 +1181,10 @@ fun ShopDetailsScreen(
                     }
                 }
             }
+            }
 
+            if (openGroup == SettingsGroup.DIAGNOSTIC) {
+    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
             item(key = "stock") {
                 SettingsSection(
                     title = "Stock et journal",
@@ -1119,7 +1280,10 @@ fun ShopDetailsScreen(
                     }
                 }
             }
+            }
 
+            if (openGroup == SettingsGroup.INVOICING) {
+    // indentation left as it was: the block is unchanged, only its group decides whether it is drawn.
             item(key = "numbering") {
                 Surface(
                     shape = MaterialTheme.shapes.medium,
@@ -1230,6 +1394,7 @@ fun ShopDetailsScreen(
                         }
                     }
                 }
+            }
             }
 
             item(key = "bottom-space") { Spacer(Modifier.height(8.dp)) }
@@ -1362,6 +1527,47 @@ private fun FieldSwitch(
                 description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/**
+ * One group in the index: what it is called, what it holds, and a way in.
+ *
+ * The summary is the shop's own words, not the code's: "Identité, mentions
+ * légales, banque" tells a shopkeeper what is behind the row without opening
+ * it, which is the whole point of splitting thirteen sections into five.
+ */
+@Composable
+private fun SettingsIndexRow(
+    group: SettingsGroup,
+    onClick: () -> Unit,
+) {
+    Card(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(group.label, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    group.summary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
