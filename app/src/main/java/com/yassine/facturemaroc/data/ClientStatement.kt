@@ -52,11 +52,17 @@ data class ClientStatement(
     val paid: Double get() = money(lines.filterNot { it.isCredit }.sumOf { it.paid })
 
     /**
-     * What is still owed. Never negative in the shop's mind: a client in credit
-     * shows a negative figure, which is exactly the case the shop must see
-     * rather than a zero that hides the avoir.
+     * What is still owed: the sum of what every document still asks for.
+     *
+     * Not `billed - credited - paid`, which reads the same only when no document
+     * carries a deposit. A final invoice already deducts the acompte received on
+     * its own document — that acompte is not on the statement, since an acompte
+     * is not a debt — so totalling the documents is the only figure that agrees
+     * with the line above it and with the paper the customer holds. Never
+     * floored at zero: a client in credit must show it rather than a zero that
+     * hides the avoir.
      */
-    val balance: Double get() = money(billed - credited - paid)
+    val balance: Double get() = money(lines.sumOf { it.balance })
 
     /** Nothing to state: the caller must not print an empty page. */
     val isEmpty: Boolean get() = lines.isEmpty()
@@ -93,7 +99,11 @@ object ClientStatements {
                 val data = record.data
                 val credit = data.documentType == DocumentType.AVOIR
                 val total = money(data.total)
-                val paid = if (credit) 0.0 else money(data.paidAmount)
+                // The deposit was money the client really paid, on its own
+                // document. Counting it here is what keeps "facturé − payé"
+                // equal to the balance printed under it.
+                val deposit = if (credit) 0.0 else money(data.deposit)
+                val paid = if (credit) 0.0 else money(data.paidAmount + deposit)
                 StatementLine(
                     number = data.number,
                     date = data.date,

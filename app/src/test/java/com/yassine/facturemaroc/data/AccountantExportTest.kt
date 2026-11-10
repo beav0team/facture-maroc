@@ -94,6 +94,36 @@ class AccountantExportTest {
     }
 
     @Test
+    fun `a credit note is written as a negative sale`() {
+        val csv = AccountantExport.documentsCsv(
+            listOf(record("1"), record("2", type = DocumentType.AVOIR)),
+        )
+
+        val credit = csv.trim().lines()[2].split(";")
+
+        // 100 HT + 20 % = 120 TTC, reversed. Positive, it added itself to the
+        // year's turnover and its "reste" read as money the client still owed.
+        assertEquals("-100,00", credit[5])
+        assertEquals("-20,00", credit[6])
+        assertEquals("-120,00", credit[7])
+        assertEquals("0,00", credit[8])
+        assertEquals("-120,00", credit[9])
+        assertEquals("Avoir", credit[10])
+    }
+
+    @Test
+    fun `the TTC column sums to the net when an avoir is present`() {
+        val csv = AccountantExport.documentsCsv(
+            listOf(record("1"), record("2", type = DocumentType.AVOIR)),
+        )
+
+        val ttc = csv.trim().lines().drop(1)
+            .sumOf { it.split(";")[7].replace(',', '.').toDouble() }
+
+        assertEquals(0.0, ttc, 0.001)
+    }
+
+    @Test
     fun `the file name is dated and ends in csv`() {
         val name = AccountantExport.fileName()
 

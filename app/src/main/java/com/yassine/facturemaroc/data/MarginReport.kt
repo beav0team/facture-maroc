@@ -3,11 +3,12 @@ package com.yassine.facturemaroc.data
 /**
  * What a period, a document or an article earned once the goods are paid for.
  *
- * [revenueHt] is the sum of the line totals — after each line's own discount,
- * before the document-level discount, because that is what [InvoiceLine.total]
- * means and one source of truth for amounts is the rule. [cost] is the sum of
- * `quantity × unitCostHt` over the lines whose cost is known; a line with no
- * frozen cost contributes nothing to either side and is counted in
+ * [revenueHt] is the sum of the line totals after both discounts: each line's
+ * own, and the document-level one spread over the lines in proportion to what
+ * they are worth (see [InvoiceData.keepFactor]). Leaving the document discount
+ * out used to report a margin on money the shop never collected. [cost] is the
+ * sum of `quantity × unitCostHt` over the lines whose cost is known; a line with
+ * no frozen cost contributes nothing to either side and is counted in
  * [linesWithoutCost], so a margin can never be quietly inflated by treating an
  * unknown cost as zero.
  */
@@ -71,8 +72,13 @@ data class ItemMargin(
 object MarginReport {
 
     /** One document's margin, drafts included: the caller decides. */
-    fun forDocument(data: InvoiceData): MarginTotals =
-        data.lines.fold(MarginTotals.ZERO) { sum, line -> sum + forLine(line) }
+    fun forDocument(data: InvoiceData): MarginTotals {
+        // The document discount is a discount on every line, so it has to be
+        // carried into the revenue; a fixed -200 DH is not attributable to one
+        // article, which is why it is spread rather than subtracted once.
+        val keep = data.keepFactor
+        return data.lines.fold(MarginTotals.ZERO) { sum, line -> sum + forLine(line, keep) }
+    }
 
     /** An issued document's margin; null for a draft that billed nothing. */
     fun forRecord(record: InvoiceRecord): MarginTotals? =
@@ -106,11 +112,12 @@ object MarginReport {
     fun byItem(records: List<InvoiceRecord>): List<ItemMargin> {
         val rows = LinkedHashMap<String, ItemMargin>()
         records.filterNot { it.isDraft }.forEach { record ->
+            val keep = record.data.keepFactor
             record.data.lines.forEach { line ->
                 val key = line.itemId?.takeIf { it.isNotBlank() }
                     ?: "label:${line.description.trim().lowercase()}"
                 val current = rows[key]
-                val add = forLine(line)
+                val add = forLine(line, keep)
                 rows[key] = ItemMargin(
                     itemId = line.itemId.orEmpty(),
                     label = current?.label ?: line.description.trim(),
@@ -121,22 +128,32 @@ object MarginReport {
         return rows.values.sortedByDescending { it.totals.revenueHt }
     }
 
-    /** The margin of one issued line, used by [byItem] and by a single article. */
-    fun forLine(line: InvoiceLine): MarginTotals {
+    /**
+     * The margin of one issued line, used by [byItem] and by a single article.
+     *
+     * [keep] is the document's share still standing after its discount; it only
+     * touches the revenue, since the cost of the goods does not drop because the
+     * shop gave a rebate.
+     */
+    fun forLine(line: InvoiceLine, keep: Double = 1.0): MarginTotals {
         val cost = line.unitCostHt
+        val revenue = line.total * keep
         return if (cost == null) {
-            MarginTotals(line.total, 0.0, linesWithCost = 0, linesWithoutCost = 1)
+            MarginTotals(revenue, 0.0, linesWithCost = 0, linesWithoutCost = 1)
         } else {
-            MarginTotals(line.total, line.quantity * cost, linesWithCost = 1)
+            MarginTotals(revenue, line.quantity * cost, linesWithCost = 1)
         }
     }
 
     /** Everything billed for one article, over [records]. */
     fun forItem(records: List<InvoiceRecord>, itemId: String): MarginTotals =
         records.filterNot { it.isDraft }
-            .flatMap { it.data.lines }
-            .filter { it.itemId == itemId }
-            .fold(MarginTotals.ZERO) { sum, line -> sum + forLine(line) }
+            .fold(MarginTotals.ZERO) { sum, record ->
+                val keep = record.data.keepFactor
+                record.data.lines
+                    .filter { it.itemId == itemId }
+                    .fold(sum) { lineSum, line -> lineSum + forLine(line, keep) }
+            }
 
     private fun round(value: Double): Double =
         if (value.isNaN() || value.isInfinite()) 0.0 else Math.round(value * 100.0) / 100.0

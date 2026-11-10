@@ -27,6 +27,7 @@ class ClientStatementTest {
         name: String = "Société BTP Nord",
         total: Double = 100.0,
         paid: Double = 0.0,
+        deposit: Double = 0.0,
         date: String = "01/11/2026",
         dueDate: String? = null,
         status: InvoiceStatus = InvoiceStatus.ISSUED,
@@ -41,6 +42,7 @@ class ClientStatementTest {
             lines = listOf(InvoiceLine("Ligne", 1.0, total, vatPercent = 0.0)),
             documentType = type,
             dueDate = dueDate,
+            depositAmount = deposit,
             payments = if (paid > 0.0) listOf(PaymentInfo(paidAmount = paid)) else emptyList(),
         ),
         status = status,
@@ -142,6 +144,41 @@ class ClientStatementTest {
         val line = statement.lines.single()
         assertEquals(1_200.0, line.paid, 0.001)
         assertEquals(0.0, line.balance, 0.001)
+        assertEquals(0.0, statement.balance, 0.001)
+    }
+
+    @Test
+    fun `a deposit already paid is not owed again`() {
+        // The acompte was received on its own document and already deducted from
+        // this invoice: the statement must not ask for it a second time, which is
+        // exactly what totalling the documents does and subtracting the paid
+        // column alone did not.
+        val statement = ClientStatements.forClient(
+            listOf(record("facture", total = 2_000.0, deposit = 500.0)),
+            "Société BTP Nord",
+        )
+
+        val line = statement.lines.single()
+        assertEquals(500.0, line.paid, 0.001)
+        assertEquals(1_500.0, line.balance, 0.001)
+        assertEquals(1_500.0, statement.balance, 0.001)
+        // The four figures the page prints have to add up, or the shop reads a
+        // balance it cannot explain to the customer holding the paper.
+        assertEquals(
+            statement.billed - statement.credited - statement.paid,
+            statement.balance,
+            0.001,
+        )
+    }
+
+    @Test
+    fun `a deposit and a payment together settle the invoice`() {
+        val statement = ClientStatements.forClient(
+            listOf(record("facture", total = 2_000.0, deposit = 500.0, paid = 1_500.0)),
+            "Société BTP Nord",
+        )
+
+        assertEquals(2_000.0, statement.paid, 0.001)
         assertEquals(0.0, statement.balance, 0.001)
     }
 

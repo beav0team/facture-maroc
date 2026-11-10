@@ -81,24 +81,38 @@ object AccountantExport {
         }
     }
 
+    /**
+     * The status a credit note carries.
+     *
+     * Not [PaymentState]'s "Impayée": nothing is owed to the shop on an avoir,
+     * and an accountant filtering for what has been paid must not find it.
+     */
+    private const val CREDIT_STATUS = "Avoir"
+
     /** `comptable-2026-11-10.csv`, unambiguously dated and safe as a file name. */
     fun fileName(date: Date = Date()): String =
         "comptable-${SimpleDateFormat("yyyy-MM-dd", Locale.US).format(date)}.csv"
 
     private fun row(record: InvoiceRecord): List<String> {
         val data = record.data
+        // A credit note is a negative sale, and the file has to say so: written
+        // positive, any spreadsheet summing the column added the avoir to the
+        // year's turnover, and its "reste" read as money the client still owes —
+        // the opposite of what the document does.
+        val credit = data.documentType == DocumentType.AVOIR
+        fun signed(value: Double): String = money(if (credit) -value else value)
         return listOf(
             data.date,
             data.number,
             data.documentType.label,
             data.client.name,
             data.client.ice,
-            money(data.totalExcludingVat),
-            money(data.vatAmount),
-            money(data.total),
-            money(data.paidAmount),
-            money(data.balanceDue),
-            data.paymentState.label,
+            signed(data.totalExcludingVat),
+            signed(data.vatAmount),
+            signed(data.total),
+            money(if (credit) 0.0 else data.paidAmount),
+            signed(data.balanceDue),
+            if (credit) CREDIT_STATUS else data.paymentState.label,
         )
     }
 

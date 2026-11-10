@@ -148,6 +148,17 @@ data class InvoiceData(
             exactSubtotal * discountPercent.coerceIn(0, 100) / 100.0
         }
 
+    /**
+     * What one dirham of the lines is still worth after the document discount.
+     *
+     * The discount is spread over the lines in proportion to what each is worth,
+     * which is how the VAT bases are built. The margin has to read it the same
+     * way: a 10 % discount on the document is 10 % off every line, not a figure
+     * only the total knows about. 1.0 when there is nothing to discount.
+     */
+    val keepFactor: Double
+        get() = if (exactSubtotal <= 0.0) 1.0 else (exactSubtotal - exactDiscount) / exactSubtotal
+
     /** Total HT: what the goods come to before TVA. */
     val totalExcludingVat: Double
         get() = money(subtotal - discountAmount)
@@ -218,11 +229,7 @@ data class InvoiceData(
         // rate is worth, so an exempt line cannot reduce the tax a taxed line
         // owes. Computed from the amount, because a fixed discount has no
         // percentage to apply.
-        val keep = if (exactSubtotal <= 0.0) {
-            1.0
-        } else {
-            (exactSubtotal - exactDiscount) / exactSubtotal
-        }
+        val keep = keepFactor
         val nets = LinkedHashMap<Double, Double>()
         lines.forEach { line ->
             val rate = rateOf(line)

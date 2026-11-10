@@ -10,9 +10,9 @@ package com.yassine.facturemaroc.data
  * checks first.
  *
  * What is dropped is everything that belongs to the money that actually moved:
- * the payment (it stays on the invoice), the deadline (a credit is not chased)
- * and the quote's validity date. The invoice number is kept as the reference so
- * the two documents name each other.
+ * the payments (they stay on the invoice), the deposit already invoiced against
+ * it, the deadline (a credit is not chased) and the quote's validity date. The
+ * invoice number is kept as the reference so the two documents name each other.
  */
 object CreditNote {
 
@@ -24,6 +24,11 @@ object CreditNote {
                 documentType = DocumentType.AVOIR,
                 referenceNumber = record.data.number,
                 payments = emptyList(),
+                // The deposit was paid on its own document; carrying it here
+                // would deduct it a second time and print a total the customer
+                // never received as a credit.
+                depositAmount = 0.0,
+                depositReference = "",
                 dueDate = null,
                 validityDate = null,
             ),

@@ -19,6 +19,7 @@ class CreditNoteTest {
     private fun invoice(
         type: DocumentType = DocumentType.FACTURE,
         payment: PaymentInfo? = PaymentInfo(paidAmount = 240.0, paidAt = "12/11/2026"),
+        deposit: Double = 0.0,
     ) = InvoiceRecord(
         id = "r1",
         data = InvoiceData(
@@ -33,6 +34,8 @@ class CreditNoteTest {
             dueDate = "10/12/2026",
             validityDate = "30/11/2026",
             documentType = type,
+            depositAmount = deposit,
+            depositReference = if (deposit > 0.0) "AC-20261101-0001" else "",
             payments = listOfNotNull(payment),
         ),
         status = InvoiceStatus.ISSUED,
@@ -66,6 +69,19 @@ class CreditNoteTest {
         assertTrue(avoir.data.payments.isEmpty())
         assertNull(avoir.data.dueDate)
         assertNull(avoir.data.validityDate)
+    }
+
+    @Test
+    fun `the avoir does not carry the deposit paid on the invoice`() {
+        val source = invoice(deposit = 500.0)
+        val avoir = CreditNote.from(source)!!
+
+        // The deposit was received once, on its own document. Keeping it here
+        // would deduct it from the credit too and print a total the customer
+        // never got back.
+        assertEquals(0.0, avoir.data.depositAmount, 0.0)
+        assertEquals("", avoir.data.depositReference)
+        assertEquals(avoir.data.total, avoir.data.balanceDue, 0.001)
     }
 
     @Test

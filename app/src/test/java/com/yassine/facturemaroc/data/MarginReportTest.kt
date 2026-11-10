@@ -34,6 +34,8 @@ class MarginReportTest {
         number: String = "F-20261110-0001",
         date: String = "10/11/2026",
         type: DocumentType = DocumentType.FACTURE,
+        discountPercent: Int = 0,
+        discountFixed: Double = 0.0,
     ) = InvoiceData(
         number = number,
         date = date,
@@ -41,6 +43,8 @@ class MarginReportTest {
         lines = lines,
         vatPercent = 20.0,
         documentType = type,
+        discountPercent = discountPercent,
+        discountFixed = discountFixed,
     )
 
     private fun record(
@@ -111,6 +115,66 @@ class MarginReportTest {
         // The arithmetic still yields a margin; the screen is what says the
         // number rests on a line whose cost is unknown.
         assertEquals(100.0, totals.shareWithoutCost, 0.001)
+    }
+
+    @Test
+    fun `a document discount comes off the margin`() {
+        // 10 % off the document is 10 % off what the two lines sold for, and the
+        // goods still cost what they cost: reporting 400 of revenue here was
+        // reporting money the shop never collected.
+        val document = data(
+            listOf(
+                line(quantity = 1.0, unitPrice = 250.0, cost = 100.0),
+                line(quantity = 1.0, unitPrice = 150.0, cost = 100.0),
+            ),
+            discountPercent = 10,
+        )
+
+        val totals = MarginReport.forDocument(document)
+
+        assertEquals(360.0, totals.revenueHt, 0.001)
+        assertEquals(200.0, totals.cost, 0.001)
+        assertEquals(160.0, totals.margin, 0.001)
+    }
+
+    @Test
+    fun `a fixed discount is spread over the lines, not taken off one`() {
+        // A -100 DH document discount has no article to belong to; the margin
+        // spreads it in proportion, so neither line reports a windfall.
+        val document = data(
+            listOf(
+                line(quantity = 1.0, unitPrice = 300.0, cost = 100.0),
+                line(quantity = 1.0, unitPrice = 100.0, cost = 50.0),
+            ),
+            discountFixed = 100.0,
+        )
+
+        val totals = MarginReport.forDocument(document)
+
+        assertEquals(300.0, totals.revenueHt, 0.001)
+        assertEquals(150.0, totals.cost, 0.001)
+        assertEquals(150.0, totals.margin, 0.001)
+    }
+
+    @Test
+    fun `the per-article report applies the document discount too`() {
+        val records = listOf(
+            record(
+                data(
+                    listOf(
+                        line(description = "Chaise", unitPrice = 200.0, cost = 80.0),
+                        line(description = "Table", unitPrice = 200.0, cost = 120.0),
+                    ),
+                    discountPercent = 25,
+                ),
+            ),
+        )
+
+        val rows = MarginReport.byItem(records)
+
+        // 400 - 25 % = 300, split in proportion: 150 each on a base of 200.
+        assertEquals(150.0, rows.first { it.label == "Chaise" }.totals.revenueHt, 0.001)
+        assertEquals(150.0, rows.first { it.label == "Table" }.totals.revenueHt, 0.001)
     }
 
     @Test
