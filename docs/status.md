@@ -39,6 +39,9 @@ Travail sur `master`, non publié : la 0.11.1 reste la version livrée.
   haptique).
 - **Onglet Stock** (4ᵉ onglet) : réceptions, inventaire et journal du stock
   sortent de la barre d'outils des Articles et des Paramètres.
+- Fiche client **et fournisseur** (`PartyDetailScreen`) : identité, chiffres
+  (solde dû et relevé pour un client, achats HT et nombre de réceptions pour un
+  fournisseur), documents, et deux actions — Modifier, Nouveau document.
 - Paramètres : index de cinq groupes avec recherche (Boutique, Facturation,
   Catalogue et stock, Données, Diagnostic), retour = un cran en arrière.
   « Diagnostic » est séparé parce que recalculer le stock est une réparation,
@@ -46,9 +49,6 @@ Travail sur `master`, non publié : la 0.11.1 reste la version livrée.
 
 **Reste**
 
-- Fiche client **et fournisseur** (`PartyDetailScreen`) : aujourd'hui la carte
-  ouvre l'éditeur, sans historique ni solde ; le compteur de documents d'un
-  fournisseur ignore les bons de réception.
 - Fiche article (prix, marge, stock, paliers, documents qui l'ont vendu).
 - Éditeur d'article en pleine page au lieu d'une boîte de dialogue.
 - Suppression d'article annulable (snackbar) au lieu d'un effacement immédiat.

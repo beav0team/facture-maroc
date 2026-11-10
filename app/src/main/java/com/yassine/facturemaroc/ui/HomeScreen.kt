@@ -227,6 +227,8 @@ fun HomeScreen(
     val partyRole = PartyRole.entries[partyRoleIndex]
 
     var clientEditorOpen by remember { mutableStateOf(false) }
+    /* The party whose page is open (client or supplier), if any. */
+    var partyDetail by remember { mutableStateOf<InvoiceClient?>(null) }
     var editingClient by remember { mutableStateOf<InvoiceClient?>(null) }
     var itemEditorOpen by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<SavedItem?>(null) }
@@ -768,12 +770,14 @@ fun HomeScreen(
                 HomeTab.CLIENTS -> ClientsTab(
                     clients = clients,
                     records = records,
+                    purchases = purchases,
                     query = query,
                     role = partyRole,
                     onEdit = {
                         editingClient = it
                         clientEditorOpen = true
                     },
+                    onOpen = { partyDetail = it },
                     onInvoice = { onNewInvoice(it) },
                     onOrder = { onNewOrder(it) },
                     onStatement = { client ->
@@ -1089,6 +1093,37 @@ fun HomeScreen(
                         },
                     )
                 }
+            },
+        )
+    }
+
+    partyDetail?.let { party ->
+        PartyDetailScreen(
+            client = party,
+            records = records,
+            purchases = purchases,
+            onClose = { partyDetail = null },
+            onEdit = {
+                partyDetail = null
+                editingClient = party
+                clientEditorOpen = true
+            },
+            onNewDocument = {
+                partyDetail = null
+                if (party.role == PartyRole.CLIENT) onNewInvoice(party) else onNewOrder(party)
+            },
+            onStatement = if (
+                party.role == PartyRole.CLIENT &&
+                ClientStatements.hasStatement(records, party.name)
+            ) {
+                {
+                    scope.launch {
+                        val outcome = viewModel.shareStatement(party.name, records)
+                        snackbar.showSnackbar(outcome.shareMessage())
+                    }
+                }
+            } else {
+                null
             },
         )
     }
@@ -1979,9 +2014,13 @@ private fun InvoiceCard(
 private fun ClientsTab(
     clients: List<InvoiceClient>,
     records: List<InvoiceRecord>,
+    /** Goods receipts, counted on a supplier's card: a delivery is a document too. */
+    purchases: List<Purchase>,
     query: String,
     role: PartyRole,
     onEdit: (InvoiceClient) -> Unit,
+    /** Opens the party's page: header, figures, documents. */
+    onOpen: (InvoiceClient) -> Unit,
     onInvoice: (InvoiceClient) -> Unit,
     onOrder: (InvoiceClient) -> Unit,
     onStatement: (InvoiceClient) -> Unit,
@@ -2031,6 +2070,8 @@ private fun ClientsTab(
         items(filtered, key = { "${role.id}-${it.name.lowercase()}" }) { client ->
             ClientCard(
                 client = client,
+                // Receipts count: a supplier with three deliveries and no bon
+                // de commande used to read "0 document".
                 documentCount = records.count { record ->
                     !record.isDraft && when (role) {
                         PartyRole.CLIENT ->
@@ -2041,8 +2082,13 @@ private fun ClientsTab(
                                 record.data.supplier?.name
                                     ?.equals(client.name, ignoreCase = true) == true
                     }
+                } + if (role == PartyRole.SUPPLIER) {
+                    purchases.count { it.supplierName.trim().equals(client.name.trim(), ignoreCase = true) }
+                } else {
+                    0
                 },
-                onClick = { onEdit(client) },
+                onClick = { onOpen(client) },
+                onEdit = { onEdit(client) },
                 onDocument = { if (role == PartyRole.CLIENT) onInvoice(client) else onOrder(client) },
                 // A statement is a client document. It is only offered when
                 // there is something to state: a client with a single devis
@@ -2066,6 +2112,7 @@ private fun ClientCard(
     client: InvoiceClient,
     documentCount: Int,
     onClick: () -> Unit,
+    onEdit: () -> Unit,
     onDocument: () -> Unit,
     onStatement: (() -> Unit)?,
     onDelete: () -> Unit,
@@ -2176,7 +2223,7 @@ private fun ClientCard(
                         leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
                         onClick = {
                             menuOpen = false
-                            onClick()
+                            onEdit()
                         },
                     )
                     HorizontalDivider()
