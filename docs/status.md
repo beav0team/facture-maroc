@@ -6,7 +6,8 @@ answering from memory.
 
 | | |
 |---|---|
-| Version | **0.11.1** (versionCode 18) — 19 corrections d'audit |
+| Version Play | **0.11.1** (versionCode 18) — 19 corrections d'audit |
+| Aperçu | **0.12.0-beta.1** (versionCode 19) — GitHub, pré-version, non parcourue sur appareil |
 | Last commit | Audit du 2026-11-10 : paiements, stockage, catalogue, rapports, avoirs, sauvegarde Android |
 | Branch | `master` (tag `v0.11.1` à poser après le build R8) |
 | Tests | **575 JVM**, **20 instrumented** |
@@ -17,7 +18,10 @@ answering from memory.
 
 ## In progress — refonte de l'interface (2026-11-10)
 
-Travail sur `master`, non publié : la 0.11.1 reste la version livrée.
+Publié en **pré-version GitHub** `v0.12.0-beta.1` (APK R8 + AAB + mapping) ;
+la 0.11.1 reste la version Play et le téléchargement « Latest ». L'aperçu n'a
+pas été parcouru sur un appareil : l'émulateur de la machine de développement
+gèle, les 577 tests JVM passent et le rendu PDF est inchangé.
 
 **Fait**
 
