@@ -28,7 +28,15 @@ import java.util.UUID
  * read as "everything in Sans dossier", and a version 2 item is read as a
  * product whose stock is not counted, which is exactly what it was.
  */
-class SavedItemStore(context: Context) {
+class SavedItemStore(
+    context: Context,
+    /**
+     * The movement history, injected so the repair check can share the same
+     * instance the store writes through. A second reader on the same file would
+     * show a stale balance the moment a sale was recorded.
+     */
+    val ledger: StockLedger = StockLedger(File(context.filesDir, StockLedger.FILE)),
+) {
 
     private val file = File(context.filesDir, FILE)
     private val _items = MutableStateFlow<List<SavedItem>>(emptyList())
@@ -60,16 +68,40 @@ class SavedItemStore(context: Context) {
         val key = clean.label.lowercase()
         val existing = _items.value.toMutableList()
         val index = existing.indexOfFirst { it.label.trim().lowercase() == key }
+        val previous = existing.getOrNull(index)
+        // Identity belongs to the row, not to the form that edited it. A blank
+        // id means "I do not know which article this is", which is exactly what
+        // a screen built from an old item looks like, and the row it matched
+        // keeps its id. A brand-new row takes the id it was handed or gets one.
+        val id = previous?.id?.takeIf { it.isNotBlank() }
+            ?: clean.id.takeIf { it.isNotBlank() }
+            ?: UUID.randomUUID().toString()
+        val saved = clean.copy(id = id)
         if (index >= 0) {
-            // Identity belongs to the row, not to the form that edited it. A
-            // blank id means "I do not know which article this is", which is
-            // exactly what a screen built from an old item looks like, and the
-            // row it matched keeps its id.
-            existing[index] = clean.copy(id = existing[index].id)
+            existing[index] = saved
         } else {
-            existing.add(clean)
+            existing.add(saved)
         }
         persist(existing, _folders.value)
+        // Editing the quantity in the form is a movement like any other. Writing
+        // it only into the cache would make the next repair "correct" a number
+        // the shop typed on purpose, so it is written into history as well.
+        val delta = when {
+            previous == null -> saved.stock ?: 0
+            previous.stock == null -> saved.stock ?: 0
+            saved.stock == null -> 0
+            else -> saved.stock - previous.stock
+        }
+        if (delta != 0) {
+            ledger.append(
+                StockEntry(
+                    itemId = id,
+                    delta = delta,
+                    reason = StockReason.ADJUSTMENT,
+                    note = if (previous == null) "Stock initial" else "Correction manuelle",
+                ),
+            )
+        }
     }
 
     fun delete(item: SavedItem) {
@@ -198,15 +230,73 @@ class SavedItemStore(context: Context) {
      * saved — a half-written invoice is not a sale. [reversing] puts the
      * quantities back, which is what deleting an issued document does.
      *
+     * Every movement is appended to [ledger] before the cached quantity is
+     * rewritten, and each entry carries the document number: the shelf can now
+     * answer "why does it say three?" instead of merely saying three.
+     *
      * Everything is computed by [StockMovement] before this touches a file: if
      * the arithmetic is wrong, a test says so, and no screen can be the only
      * place the rule lives.
      */
     fun applyStockMovement(data: InvoiceData, reversing: Boolean = false): List<SavedItem> {
-        val moved = StockMovement.changed(_items.value, data, reversing)
-        if (moved.isEmpty()) return emptyList()
+        val moves = StockMovement.moves(_items.value, data, reversing)
+        if (moves.isEmpty()) return emptyList()
+        moves.forEach { move ->
+            ledger.append(
+                StockEntry(
+                    itemId = move.item.id,
+                    delta = move.units,
+                    // The sign, not the document type, says what happened: a
+                    // reversal of a facture is a credit and a reversal of an
+                    // avoir is a sale, and the history should say so.
+                    reason = if (move.units > 0) StockReason.CREDIT else StockReason.INVOICE,
+                    reference = data.number,
+                ),
+            )
+        }
         persist(StockMovement.apply(_items.value, data, reversing), _folders.value)
-        return moved
+        return moves.map { move ->
+            move.item.copy(stock = (move.item.stock ?: 0) + move.units)
+        }
+    }
+
+    /** One article's movements, newest first, for its history screen. */
+    fun entriesFor(itemId: String): List<StockEntry> = ledger.entriesFor(itemId)
+
+    /**
+     * Writes an opening entry for every quantity that predates the ledger.
+     *
+     * Called once at startup, after ids exist. Without it a repair would read
+     * "no history" as "nothing on the shelf" and empty the catalogue.
+     */
+    fun seedLedger(): Int = ledger.seed(_items.value)
+
+    /** Where the cached quantities and the ledger disagree; read-only. */
+    fun stockDrift(): List<StockDrift> = ledger.drift(_items.value)
+
+    /**
+     * Rewrites every cached quantity from the ledger and returns what changed.
+     *
+     * Only ever called after the shop has seen [stockDrift]: a repair that ran
+     * by itself would hide the very disagreement that shows a bug exists.
+     */
+    fun rebuildStockCache(): List<StockDrift> {
+        val drift = ledger.drift(_items.value)
+        if (drift.isEmpty()) return emptyList()
+        persist(ledger.rebuild(_items.value), _folders.value)
+        return drift
+    }
+
+    /**
+     * Installs a ledger from a backup.
+     *
+     * A backup written before the ledger existed has none, so the restored
+     * articles' quantities become opening entries: they are real, they were
+     * typed by the shop, and a repair must keep them.
+     */
+    fun restoreLedger(entries: List<StockEntry>) {
+        ledger.replaceAll(entries)
+        if (entries.isEmpty()) ledger.seed(_items.value)
     }
 
     private fun sorted(list: List<SavedItem>): List<SavedItem> =

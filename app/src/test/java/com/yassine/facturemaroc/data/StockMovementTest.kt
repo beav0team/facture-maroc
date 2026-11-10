@@ -161,4 +161,41 @@ class StockMovementTest {
 
         assertEquals(listOf("Chaise"), moved.map { it.label })
     }
+
+    @Test
+    fun `a line linked by id moves the shelf after the article was renamed`() {
+        val item = SavedItem(
+            label = "Chaise en rotin 2026",
+            price = 100.0,
+            stock = 5,
+            id = "chair",
+        )
+        val renamedLine = InvoiceLine(
+            description = "Chaise", // what the customer read, before the rename
+            quantity = 2.0,
+            unitPrice = 100.0,
+            itemId = "chair",
+        )
+
+        val after = StockMovement.apply(listOf(item), invoice(renamedLine))
+
+        assertEquals(3, after.single().stock)
+    }
+
+    @Test
+    fun `an id pointing at a deleted article does not fall back to a same-named one`() {
+        val item = SavedItem(label = "Chaise", price = 100.0, stock = 5, id = "new-chair")
+        val oldLine = InvoiceLine(
+            description = "Chaise",
+            quantity = 2.0,
+            unitPrice = 100.0,
+            itemId = "deleted-chair",
+        )
+
+        val after = StockMovement.apply(listOf(item), invoice(oldLine))
+
+        // Linking by a stale id to another article would sell from the wrong
+        // shelf; the line is allowed to move nothing instead.
+        assertEquals(5, after.single().stock)
+    }
 }

@@ -160,6 +160,9 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         // links whatever the backup could not know about.
         val migrated = savedItems.migrateIdentities(invoices.invoices.value)
         if (migrated !== invoices.invoices.value) invoices.replaceAll(migrated)
+        // Quantities typed before the ledger existed become its opening lines,
+        // so a later repair recomputes them instead of emptying the shelves.
+        savedItems.seedLedger()
         refreshInvoice()
     }
 
@@ -1135,7 +1138,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             InvoiceDesignStore.write(app, backup.design)
             clients.replaceAll(backup.clients)
             savedItems.replaceAll(backup.items, backup.folders)
+            savedItems.restoreLedger(emptyList())
             invoices.replaceAll(backup.invoices)
+            // A backup written before ids existed restores a catalogue and a
+            // history that only share labels; link them now rather than on the
+            // next launch, so the first sale after a restore moves the shelf.
+            val migrated = savedItems.migrateIdentities(invoices.invoices.value)
+            if (migrated !== invoices.invoices.value) invoices.replaceAll(migrated)
             InvoiceNumber.writeCounters(app, backup.counters)
             NumberingStore(app).writeAll(backup.prefixes, backup.resetAnnually)
             _shop.value = backup.shop
