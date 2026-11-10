@@ -24,6 +24,11 @@ a percentage surcharge. A1 is complete. A2 (payments lifecycle) is in
 progress: the payment deadline, the method per payment and the A5 receipt have
 landed; the client statement, RAS and the reminder text remain.
 
+**Next task — client statement.** Aggregates per client (billed / paid / due,
+credit notes subtracted, drafts excluded) shown on the client card, plus a
+printable A4 statement PDF listing each document with its balance. Design it
+next to `ReceiptPdf` and reuse `PaymentDue` for the late column.
+
 ## Feature status
 
 ### Invoicing
