@@ -151,9 +151,11 @@ envoyée.
 - Aucun compte, aucune publicité, aucun traceur, aucun serveur.
 - Les données restent dans l’espace privé de l’application.
 - Les PDF, XML et sauvegardes ne sortent que sur une action de l’utilisateur.
-- La sauvegarde automatique d’Android, si elle est activée sur le téléphone,
-  peut copier les données dans le compte Google de l’utilisateur ; c’est le
-  système Android qui la gère, pas l’application.
+- La sauvegarde automatique d’Android est **désactivée** par l’application :
+  ni factures, ni articles, ni clients ne partent dans le compte Google ni dans
+  un transfert d’appareil à appareil. Pour changer de téléphone, on passe par
+  le fichier de sauvegarde de l’application (Paramètres → Sauvegarde), qu’on
+  voit et qu’on garde.
 
 Politique complète : [`docs/privacy.html`](docs/privacy.html) — publiée sur
 GitHub Pages à l’adresse

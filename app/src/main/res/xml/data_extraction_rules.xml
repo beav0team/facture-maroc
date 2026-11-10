@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Nothing leaves the phone automatically.
+
+    Android 12 (API 31) stopped reading android:fullBackupContent and asked for
+    this file instead. Without it the app silently fell back to the platform
+    default, which copied the shop's invoices, catalogue and clients to the
+    user's Google account with no exclusion and no way for the app to say
+    otherwise — the opposite of what the store listing and the privacy page
+    promise.
+
+    Every domain is excluded from both the cloud backup and the device-to-device
+    transfer. Moving to a new phone goes through the application's own backup
+    file (Paramètres → Sauvegarde), which the shop makes, sees and keeps. That
+    copy is deliberate, where the platform one was invisible.
+
+    Kept explicit even though android:allowBackup is false: the platform flag is
+    one line somebody can flip, and the sentence about what is private should not
+    depend on them remembering this file exists.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+    </device-transfer>
+</data-extraction-rules>
