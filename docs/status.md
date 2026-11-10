@@ -7,7 +7,7 @@ answering from memory.
 | | |
 |---|---|
 | Version | **0.10.0** (versionCode 16) |
-| Last commit | `9207328` — client statement, credit notes subtracted, A4 PDF |
+| Last commit | `cbff215` — client statement, credit notes subtracted, A4 PDF |
 | Branch | `master` (pushed; no tag/release for 0.10.0 yet) |
 | Tests | **328 JVM**, **18 instrumented** |
 | Last audit | 2026-11-10 |
