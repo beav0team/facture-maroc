@@ -1620,6 +1620,9 @@ private fun InvoiceCard(
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val draft = record.isDraft
+    // A credit note is money the shop gave back: shown like a sale, it reads as
+    // one more invoice in the list and its total as turnover.
+    val credit = record.data.isCredit
 
     Card(
         onClick = onClick,
@@ -1685,14 +1688,19 @@ private fun InvoiceCard(
             Spacer(Modifier.width(8.dp))
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    record.data.total.asDirhams(),
+                    if (credit) "−${record.data.total.asDirhams()}" else record.data.total.asDirhams(),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
+                    color = if (credit) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
                 )
                 Spacer(Modifier.height(4.dp))
                 StatusPill(
-                    text = record.status.label,
+                    text = if (credit) "Avoir" else record.status.label,
                     container = if (draft) {
                         MaterialTheme.colorScheme.tertiaryContainer
                     } else {
@@ -1704,9 +1712,7 @@ private fun InvoiceCard(
                         MaterialTheme.colorScheme.onSecondaryContainer
                     },
                 )
-                if (!draft &&
-                    PaymentDue.isOverdue(record.data.dueDate, record.data.paymentState)
-                ) {
+                if (!draft && record.data.isOverdue()) {
                     Spacer(Modifier.height(4.dp))
                     StatusPill(
                         text = "En retard",
@@ -1714,7 +1720,7 @@ private fun InvoiceCard(
                         content = MaterialTheme.colorScheme.onErrorContainer,
                     )
                 }
-                if (!draft && record.data.paymentState != PaymentState.UNPAID) {
+                if (!draft && !credit && record.data.paymentState != PaymentState.UNPAID) {
                     Spacer(Modifier.height(4.dp))
                     val settled = record.data.paymentState == PaymentState.PAID
                     StatusPill(

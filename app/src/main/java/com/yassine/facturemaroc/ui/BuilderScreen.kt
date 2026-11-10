@@ -432,6 +432,7 @@ fun BuilderScreen(
                     pricesIncludeVat = shop.pricesIncludeVat,
                     showPayment = invoice.showPaymentMethod,
                     isDevis = invoice.isDevis,
+                    isCredit = invoice.isCredit,
                     validityDate = invoice.validityDate,
                     dueDate = invoice.dueDate,
                     depositAmount = invoice.depositAmount,
@@ -1193,6 +1194,7 @@ private fun OptionsCard(
     pricesIncludeVat: Boolean,
     showPayment: Boolean,
     isDevis: Boolean,
+    isCredit: Boolean,
     validityDate: String?,
     dueDate: String?,
     depositAmount: Double,
@@ -1247,9 +1249,11 @@ private fun OptionsCard(
                     value = validityDate ?: "Non précisée",
                     onClick = onValidity,
                 )
-            } else {
-                // A quote has a validity date; everything else that asks for
-                // money has a deadline instead.
+            } else if (!isCredit) {
+                // An avoir gives money back: a deadline on it would be a date
+                // the shop could be chased on for its own credit. A quote has a
+                // validity date; everything else that asks for money has a
+                // deadline instead.
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 OptionRow(
                     icon = Icons.Filled.Event,

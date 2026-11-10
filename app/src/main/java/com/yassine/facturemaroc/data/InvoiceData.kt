@@ -207,8 +207,27 @@ data class InvoiceData(
             return if (taxedRates.size == 1) taxedRates.first() else vatPercent.coerceAtLeast(0.0)
         }
 
+    /**
+     * Whether this document gives money back rather than asking for it.
+     *
+     * A credit note reverses a sale. It has no deadline, nothing to pay and
+     * nothing to chase: printing a due date on it, or calling it late, would
+     * chase a customer for money the shop owes them.
+     */
+    val isCredit: Boolean get() = documentType == DocumentType.AVOIR
+
     /** The deadline as the page prints it, or null when none is stated. */
-    val dueDatePrinted: String? get() = dueDate?.trim()?.takeIf { it.isNotEmpty() }
+    val dueDatePrinted: String?
+        get() = if (isCredit) null else dueDate?.trim()?.takeIf { it.isNotEmpty() }
+
+    /**
+     * Whether this document is late, as every screen and export asks it.
+     *
+     * One place decides, so the history, the statement and the reminder cannot
+     * disagree: an avoir is never late.
+     */
+    fun isOverdue(today: java.util.Date = java.util.Date()): Boolean =
+        !isCredit && PaymentDue.isOverdue(dueDate, paymentState, today)
 
     /** Whether this document carries a reference to another invoice. */
     val showReferenceField: Boolean get() = documentType.isReferenceDocument

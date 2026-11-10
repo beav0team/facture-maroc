@@ -415,6 +415,9 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _documentType.value = type
         if (type != DocumentType.DEVIS) _validityDate.value = null
         if (type != DocumentType.BON_DE_COMMANDE) _supplier.value = null
+        // A credit note owes nothing, so a deadline left over from the invoice
+        // it reverses would only make it look late.
+        if (type == DocumentType.AVOIR) _dueDate.value = null
         refreshInvoice()
     }
 
@@ -424,7 +427,10 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun setDueDate(date: String?) {
-        _dueDate.value = date
+        // Refused rather than stored and ignored further down: a deadline that
+        // exists in the draft but never prints is a setting the shop cannot see
+        // it has, and the next screen would have to know not to trust it.
+        _dueDate.value = if (_documentType.value == DocumentType.AVOIR) null else date
         refreshInvoice()
     }
 

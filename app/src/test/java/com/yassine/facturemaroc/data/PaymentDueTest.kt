@@ -21,9 +21,14 @@ class PaymentDueTest {
     private fun day(text: String): Date =
         SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE).parse(text)!!
 
-    private fun invoice(dueDate: String?, paid: Double = 0.0) = InvoiceData(
+    private fun invoice(
+        dueDate: String?,
+        paid: Double = 0.0,
+        type: DocumentType = DocumentType.FACTURE,
+    ) = InvoiceData(
         number = "F-20261110-0001",
         date = "10/11/2026",
+        documentType = type,
         client = InvoiceClient("Client"),
         lines = listOf(InvoiceLine("Prestation", 1.0, 100.0)),
         dueDate = dueDate,
@@ -60,6 +65,20 @@ class PaymentDueTest {
 
         assertNull(data.dueDatePrinted)
         assertFalse(PaymentDue.isOverdue(data.dueDate, data.paymentState, day("01/01/2030")))
+    }
+
+    @Test
+    fun `a credit note is never late, whatever date it carries`() {
+        // The deadline belongs to the invoice it reverses. Kept on the avoir,
+        // it made the history pill and the statement chase the customer for
+        // money the shop owes them.
+        val credit = invoice("01/01/2026", type = DocumentType.AVOIR)
+
+        assertFalse(credit.isOverdue(day("15/11/2026")))
+        assertNull(credit.dueDatePrinted)
+        // The same date on a facture is late, which is what makes this a rule
+        // about the document rather than about the deadline.
+        assertTrue(invoice("01/01/2026").isOverdue(day("15/11/2026")))
     }
 
     @Test
