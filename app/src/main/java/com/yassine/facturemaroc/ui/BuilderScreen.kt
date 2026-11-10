@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Draw
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.MoreVert
@@ -145,6 +146,7 @@ fun BuilderScreen(
     var showDesignPicker by remember { mutableStateOf(false) }
     var showDiscountDialog by remember { mutableStateOf(false) }
     var showValidityDialog by remember { mutableStateOf(false) }
+    var showDueDateDialog by remember { mutableStateOf(false) }
     var showSignatureDialog by remember { mutableStateOf(false) }
     var showSurchargeDialog by remember { mutableStateOf(false) }
     var editingNote by remember { mutableStateOf<NoteKind?>(null) }
@@ -427,6 +429,7 @@ fun BuilderScreen(
                     showPayment = invoice.showPaymentMethod,
                     isDevis = invoice.isDevis,
                     validityDate = invoice.validityDate,
+                    dueDate = invoice.dueDate,
                     discountFixed = invoice.discountFixed,
                     surchargeLabel = invoice.surchargeLabel,
                     surchargeAmount = invoice.surcharge,
@@ -435,6 +438,7 @@ fun BuilderScreen(
                     onSurcharge = { showSurchargeDialog = true },
                     onPayment = viewModel::setPaymentMethod,
                     onValidity = { showValidityDialog = true },
+                    onDueDate = { showDueDateDialog = true },
                     onOpenSettings = {
                         viewModel.saveDraftNow()
                         onOpenSettings()
@@ -569,6 +573,17 @@ fun BuilderScreen(
                 showDiscountDialog = false
             },
             onDismiss = { showDiscountDialog = false },
+        )
+    }
+
+    if (showDueDateDialog) {
+        DueDateDialog(
+            initial = invoice.dueDate,
+            onConfirm = {
+                viewModel.setDueDate(it)
+                showDueDateDialog = false
+            },
+            onDismiss = { showDueDateDialog = false },
         )
     }
 
@@ -1140,6 +1155,7 @@ private fun OptionsCard(
     showPayment: Boolean,
     isDevis: Boolean,
     validityDate: String?,
+    dueDate: String?,
     surchargeLabel: String,
     surchargeAmount: Double,
     surchargePercent: Double,
@@ -1147,6 +1163,7 @@ private fun OptionsCard(
     onSurcharge: () -> Unit,
     onPayment: (PaymentMethod) -> Unit,
     onValidity: () -> Unit,
+    onDueDate: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     Card(
@@ -1187,6 +1204,16 @@ private fun OptionsCard(
                     label = "Valable jusqu'au",
                     value = validityDate ?: "Non précisée",
                     onClick = onValidity,
+                )
+            } else {
+                // A quote has a validity date; everything else that asks for
+                // money has a deadline instead.
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                OptionRow(
+                    icon = Icons.Filled.Event,
+                    label = "Échéance",
+                    value = dueDate ?: "À réception",
+                    onClick = onDueDate,
                 )
             }
 

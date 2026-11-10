@@ -27,6 +27,15 @@ data class InvoiceData(
     val documentType: DocumentType = DocumentType.FACTURE,
     /** Required for Devis — the date until which the quote is valid. */
     val validityDate: String? = null,
+    /**
+     * The day the money is due, `dd/MM/yyyy`.
+     *
+     * Moroccan invoices are usually paid "comptant" or at 30/60 days, and a
+     * customer who has the deadline on the paper queries it far less often.
+     * Null on a cash sale with no deadline stated, and on every document
+     * written before this field existed.
+     */
+    val dueDate: String? = null,
     /** For Bon de commande — the supplier instead of a client. */
     val supplier: InvoiceClient? = null,
     /** For avoir / régularisation / acompte — the invoice this relates to. */
@@ -155,6 +164,9 @@ data class InvoiceData(
             val taxedRates = lines.map { rateOf(it) }.filter { it > 0.0 }.distinct()
             return if (taxedRates.size == 1) taxedRates.first() else vatPercent.coerceAtLeast(0.0)
         }
+
+    /** The deadline as the page prints it, or null when none is stated. */
+    val dueDatePrinted: String? get() = dueDate?.trim()?.takeIf { it.isNotEmpty() }
 
     /** Whether this document carries a reference to another invoice. */
     val showReferenceField: Boolean get() = documentType.isReferenceDocument

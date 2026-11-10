@@ -9,7 +9,7 @@ answering from memory.
 | Version | **0.10.0** (versionCode 16) |
 | Last commit | `3a4dc3a` — payments, surcharge, logo store, PDF archive |
 | Branch | `master` (pushed; no tag/release for 0.10.0 yet) |
-| Tests | **301 JVM**, **16 instrumented** |
+| Tests | **310 JVM**, **16 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -20,7 +20,9 @@ answering from memory.
 A1 (VAT and compliance engine) has landed on top of 0.10.0 and is **not
 released**: per-line VAT, recap by rate on every template, UBL per rate, ICE
 validation, detail sheet rows, fixed-amount discounts (global and per line) and
-a percentage surcharge. A1 is complete; A2 (payments lifecycle) is next.
+a percentage surcharge. A1 is complete. A2 (payments lifecycle) is in
+progress: the payment deadline has landed; payment method per payment, receipt,
+client statement, RAS and the reminder text remain.
 
 ## Feature status
 
@@ -36,7 +38,7 @@ a percentage surcharge. A1 is complete; A2 (payments lifecycle) is next.
 | VAT | **Exists** | per line since A1: 20/10/0/exempt, legacy 7/14 readable; recap by rate on the 6 templates; one UBL `TaxSubtotal` per rate |
 | Payment tracking | **Exists** | amount, date, reference, partial/paid, badge, PDF block, UBL prepaid |
 | Receipt PDF | **Missing** | |
-| Due date / overdue | **Missing** | only quotes have a validity date |
+| Due date / overdue | **Exists** | deadline (comptant/30/60 or a typed date), printed on the 6 templates, overdue pill and detail row; validity date stays for quotes |
 | Client statement | **Missing** | client card shows document count only |
 | Quote → invoice | **Missing** | duplication keeps the same document type |
 | Invoice → credit note | **Missing** | credit notes are built manually |

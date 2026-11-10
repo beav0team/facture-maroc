@@ -1134,6 +1134,93 @@ fun PercentDialog(
     )
 }
 
+/**
+ * Sets the day the money is due.
+ *
+ * Moroccan shops quote "comptant", "30 jours" or "60 jours", so those get a
+ * chip each; a typed date covers the rest. The field is validated here rather
+ * than on the invoice, because a deadline that cannot be parsed is a deadline
+ * nobody will honour.
+ */
+@Composable
+fun DueDateDialog(
+    initial: String?,
+    onConfirm: (String?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val formatter = remember { SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE) }
+    fun daysFromNow(days: Int): String =
+        formatter.format(Date(System.currentTimeMillis() + days * 86_400_000L))
+
+    var text by remember(initial) { mutableStateOf(initial.orEmpty()) }
+    val parsed = text.trim().let { value ->
+        if (value.isEmpty()) null else runCatching { formatter.parse(value) }.getOrNull()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Échéance de paiement") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        "Comptant" to 0,
+                        "30 jours" to 30,
+                        "60 jours" to 60,
+                    ).forEach { (label, days) ->
+                        ChoiceChip(
+                            label = label,
+                            selected = text.trim() == daysFromNow(days),
+                            onClick = { text = daysFromNow(days) },
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { input ->
+                        text = input.filter { it.isDigit() || it == '/' }.take(10)
+                    },
+                    label = { Text("Date (jj/mm/aaaa)") },
+                    placeholder = { Text(daysFromNow(30)) },
+                    singleLine = true,
+                    isError = text.isNotBlank() && parsed == null,
+                    supportingText = {
+                        Text(
+                            if (text.isNotBlank() && parsed == null) {
+                                "Date incomplète ou impossible."
+                            } else {
+                                "Imprimée sur le document et signalée en retard une fois passée."
+                            },
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done,
+                    ),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(text.trim().ifEmpty { null }) },
+                enabled = text.isBlank() || parsed != null,
+                shape = MaterialTheme.shapes.small,
+            ) {
+                Text("Appliquer")
+            }
+        },
+        dismissButton = {
+            Row {
+                if (!initial.isNullOrBlank()) {
+                    TextButton(onClick = { onConfirm(null) }) { Text("Retirer") }
+                }
+                TextButton(onClick = onDismiss) { Text("Annuler") }
+            }
+        },
+    )
+}
+
 /** Picks the date until which a quote stays valid. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

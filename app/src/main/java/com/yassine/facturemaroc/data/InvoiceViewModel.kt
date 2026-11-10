@@ -68,6 +68,10 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     private val _validityDate = MutableStateFlow<String?>(null)
     val validityDate: StateFlow<String?> = _validityDate.asStateFlow()
 
+    /** The day the money is due; null when no deadline is stated. */
+    private val _dueDate = MutableStateFlow<String?>(null)
+    val dueDate: StateFlow<String?> = _dueDate.asStateFlow()
+
     private val _referenceNumber = MutableStateFlow("")
     val referenceNumber: StateFlow<String> = _referenceNumber.asStateFlow()
 
@@ -153,6 +157,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         paymentMethod = _paymentMethod.value,
         documentType = _documentType.value,
         validityDate = _validityDate.value,
+        dueDate = _dueDate.value,
         supplier = _supplier.value,
         referenceNumber = _referenceNumber.value,
         incoterm = _incoterm.value,
@@ -369,6 +374,11 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         refreshInvoice()
     }
 
+    fun setDueDate(date: String?) {
+        _dueDate.value = date
+        refreshInvoice()
+    }
+
     fun setSupplier(supplier: InvoiceClient?) {
         _supplier.value = supplier
         refreshInvoice()
@@ -488,6 +498,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _paymentMethod.value = data.paymentMethod
         _documentType.value = data.documentType
         _validityDate.value = data.validityDate
+        _dueDate.value = data.dueDate
         _referenceNumber.value = data.referenceNumber
         _incoterm.value = data.incoterm
         _supplier.value = data.supplier
@@ -511,6 +522,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _paymentMethod.value = PaymentMethod.CASH
         _documentType.value = DocumentType.FACTURE
         _validityDate.value = null
+        _dueDate.value = null
         _referenceNumber.value = ""
         _incoterm.value = ""
         _supplier.value = null
@@ -587,6 +599,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         paymentMethod = _paymentMethod.value,
         documentType = _documentType.value,
         validityDate = _validityDate.value,
+        dueDate = _dueDate.value,
         supplier = _supplier.value,
         referenceNumber = _referenceNumber.value,
         incoterm = _incoterm.value,

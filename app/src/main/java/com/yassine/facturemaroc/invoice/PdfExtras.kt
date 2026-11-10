@@ -134,9 +134,16 @@ object PdfExtras {
      * hides it. The caller reserves this before the page is broken.
      */
     fun paymentHeight(data: InvoiceData, label: TextPaint, body: TextPaint): Float {
-        if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.UNPAID) return 0f
+        val due = data.dueDatePrinted != null
+        val state = data.paymentState
+        if (state == com.yassine.facturemaroc.data.PaymentState.UNPAID && !due) return 0f
         val note = data.payment?.note?.trim().orEmpty()
-        val lines = if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.PAID) 1 else 2
+        val paidLines = when (state) {
+            com.yassine.facturemaroc.data.PaymentState.UNPAID -> 0
+            com.yassine.facturemaroc.data.PaymentState.PAID -> 1
+            else -> 2
+        }
+        val lines = paidLines + if (due) 1 else 0
         return lines * (body.textSize + 4f) + if (note.isNotEmpty()) label.textSize + 4f else 0f
     }
 
@@ -158,9 +165,21 @@ object PdfExtras {
         body: TextPaint,
         bold: TextPaint,
     ): Float {
-        if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.UNPAID) return y
+        if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.UNPAID &&
+            data.dueDatePrinted == null
+        ) {
+            return y
+        }
         var cursor = y
         val date = data.payment?.paidAt?.trim().orEmpty()
+
+        // Printed whether or not money came in: an unpaid document that names
+        // its deadline is the one a customer is most likely to check.
+        data.dueDatePrinted?.let { due ->
+            PdfText.draw(canvas, "Échéance : $due", x, cursor, body, width.toInt(), maxLines = 1)
+            cursor += body.textSize + 4f
+        }
+        if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.UNPAID) return cursor
 
         if (data.paymentState == com.yassine.facturemaroc.data.PaymentState.PAID) {
             val settled = if (data.documentType == com.yassine.facturemaroc.data.DocumentType.FACTURE) {

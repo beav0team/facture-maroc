@@ -1,6 +1,7 @@
 package com.yassine.facturemaroc.invoice
 
 import com.yassine.facturemaroc.data.InvoiceData
+import com.yassine.facturemaroc.data.PaymentDue
 
 /**
  * What would make this document wrong, stated before it is sent.
@@ -23,6 +24,8 @@ enum class ValidationCode {
     INVALID_LINE_VAT_RATE,
     INVALID_ICE,
     MISSING_ICE,
+    INVALID_DUE_DATE,
+    DUE_DATE_BEFORE_ISSUE,
 }
 
 /** Whether an issue stops the document leaving the phone. */
@@ -115,6 +118,32 @@ object InvoiceValidation {
                     "La remise générale doit être comprise entre 0 et 100 %.",
                 ),
             )
+        }
+
+        data.dueDatePrinted?.let { due ->
+            val parsed = PaymentDue.parse(due)
+            if (parsed == null) {
+                add(
+                    ValidationIssue(
+                        ValidationCode.INVALID_DUE_DATE,
+                        "L'échéance n'est pas une date valide (jj/mm/aaaa).",
+                    ),
+                )
+            } else {
+                // A deadline before the document exists is not a deadline, it
+                // is a typo — and one that would show up as "late" on the day
+                // the customer receives the paper.
+                val issued = PaymentDue.parse(data.date)
+                if (issued != null && parsed.before(issued)) {
+                    add(
+                        ValidationIssue(
+                            ValidationCode.DUE_DATE_BEFORE_ISSUE,
+                            "L'échéance est antérieure à la date du document.",
+                            severity = Severity.WARNING,
+                        ),
+                    )
+                }
+            }
         }
 
         if (data.discountFixed < 0.0 || data.discountFixed.isNaN() || data.discountFixed.isInfinite()) {

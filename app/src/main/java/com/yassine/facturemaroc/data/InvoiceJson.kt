@@ -91,6 +91,11 @@ object InvoiceJson {
         put("vatPercent", data.vatPercent)
         put("paymentMethod", data.paymentMethod.id)
         put("documentType", data.documentType.id)
+        if (data.dueDate.isNullOrBlank()) {
+            put("dueDate", JSONObject.NULL)
+        } else {
+            put("dueDate", data.dueDate)
+        }
         if (data.validityDate.isNullOrBlank()) {
             put("validityDate", JSONObject.NULL)
         } else {
@@ -227,6 +232,11 @@ object InvoiceJson {
             vatPercent = obj.optDouble("vatPercent", 20.0).let { if (it.isNaN()) 20.0 else it },
             paymentMethod = PaymentMethod.fromId(obj.optString("paymentMethod", null)),
             documentType = DocumentType.fromId(obj.optString("documentType", null)),
+            dueDate = if (obj.isNull("dueDate")) {
+                null
+            } else {
+                obj.optString("dueDate", "").ifBlank { null }
+            },
             validityDate = if (obj.isNull("validityDate")) {
                 null
             } else {

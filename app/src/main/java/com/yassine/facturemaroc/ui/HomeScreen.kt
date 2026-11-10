@@ -117,6 +117,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceRecord
+import com.yassine.facturemaroc.data.PaymentDue
 import com.yassine.facturemaroc.data.PaymentInfo
 import com.yassine.facturemaroc.data.PaymentState
 import com.yassine.facturemaroc.data.InvoiceViewModel
@@ -1379,6 +1380,16 @@ private fun InvoiceCard(
                         MaterialTheme.colorScheme.onSecondaryContainer
                     },
                 )
+                if (!draft &&
+                    PaymentDue.isOverdue(record.data.dueDate, record.data.paymentState)
+                ) {
+                    Spacer(Modifier.height(4.dp))
+                    StatusPill(
+                        text = "En retard",
+                        container = MaterialTheme.colorScheme.errorContainer,
+                        content = MaterialTheme.colorScheme.onErrorContainer,
+                    )
+                }
                 if (!draft && record.data.paymentState != PaymentState.UNPAID) {
                     Spacer(Modifier.height(4.dp))
                     val settled = record.data.paymentState == PaymentState.PAID
@@ -2735,6 +2746,16 @@ private fun InvoiceDetailSheet(
                 )
             }
             DetailRow("Total HT", record.data.totalExcludingVat.asDirhams())
+            record.data.dueDatePrinted?.let { due ->
+                DetailRow(
+                    if (PaymentDue.isOverdue(due, record.data.paymentState)) {
+                        "Échéance (dépassée)"
+                    } else {
+                        "Échéance"
+                    },
+                    due,
+                )
+            }
             if (record.data.surcharge > 0.0) {
                 DetailRow(
                     record.data.surchargeLabel.ifBlank { "Livraison" },

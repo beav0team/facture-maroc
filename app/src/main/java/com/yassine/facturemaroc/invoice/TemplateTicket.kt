@@ -195,6 +195,10 @@ class TicketRenderer : PdfRenderer {
             PdfText.draw(canvas, "Règlement : ${data.paymentMethod.french}", margin, y, small, contentW, maxLines = 1)
             y += 9f
         }
+        data.dueDatePrinted?.let { due ->
+            PdfText.draw(canvas, "Échéance : $due", margin, y, small, contentW, maxLines = 1)
+            y += 9f
+        }
 
         if (design.showAmountWords) {
             y += 4f
