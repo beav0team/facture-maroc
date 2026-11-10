@@ -3,37 +3,81 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Facture Maroc — factures, devis et bons de commande hors ligne</title>
-<meta name="description" content="L’application de facturation pour les commerces marocains : dix documents, mentions légales (ICE, IF, RC, patente, CNSS), TVA, montant en toutes lettres, stock. Hors ligne, sans compte, sans publicité.">
+<title>Facture Maroc hors ligne — factures, devis, stock</title>
+<meta name="description" content="Facturation hors ligne pour les commerces marocains : factures, devis, avoirs, ICE, IF, TVA, stock. Gratuite, sans compte, sans connexion.">
 <link rel="canonical" href="https://factureapp.ma/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_MA">
-<meta property="og:title" content="Facture Maroc — vos factures, même sans réseau">
+<meta property="og:site_name" content="Facture Maroc hors ligne">
+<meta property="og:title" content="Facture Maroc hors ligne — vos factures, même sans réseau">
 <meta property="og:description" content="Dix documents avec vos mentions légales, le montant écrit en toutes lettres, et votre stock qui suit. Tout reste sur votre téléphone.">
 <meta property="og:url" content="https://factureapp.ma/">
 <meta property="og:image" content="https://factureapp.ma/assets/img/apercu-1024.jpg">
 <meta property="og:image:width" content="1024">
 <meta property="og:image:height" content="500">
+<meta property="og:image:alt" content="Aperçu de Facture Maroc : une facture marocaine avec ICE, TVA et le montant en toutes lettres.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Facture Maroc hors ligne — vos factures, même sans réseau">
+<meta name="twitter:description" content="Dix documents avec vos mentions légales, le montant en toutes lettres, le stock qui suit. Aucune permission réseau.">
+<meta name="twitter:image" content="https://factureapp.ma/assets/img/apercu-1024.jpg">
 <meta name="theme-color" content="#1E3FD2">
+<meta name="color-scheme" content="light">
 <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/img/icone-180.png">
-<link rel="preload" href="assets/fonts/bricolage-a79fdb52-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/fonts/plex-sans-e2291e84-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="manifest" href="manifest.json">
+<link rel="preload" href="assets/fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" as="image"
+      imagesrcset="assets/img/factures-260.webp 260w, assets/img/factures-400.webp 400w"
+      imagesizes="(max-width: 720px) 132px, (max-width: 1080px) 152px, 198px">
 <link rel="stylesheet" href="assets/css/site.css">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Facture Maroc",
-  "applicationCategory": "BusinessApplication",
-  "operatingSystem": "Android 8.0 ou plus récent",
-  "inLanguage": "fr",
-  "description": "Facturation hors ligne pour les commerces marocains : factures, devis, bons de commande, tickets, avoirs, proformas, acomptes, régularisations, factures simplifiées et factures à l’export, avec ICE, IF, RC, patente, CNSS, TVA et montants en toutes lettres.",
-  "url": "https://factureapp.ma/",
-  "image": "https://factureapp.ma/assets/img/apercu-1024.jpg",
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "MAD" },
-  "author": { "@type": "Organization", "name": "beav0team" }
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://factureapp.ma/#application",
+      "name": "Facture Maroc hors ligne",
+      "alternateName": "Facture Maroc",
+      "applicationCategory": "BusinessApplication",
+      "applicationSubCategory": "Facturation et gestion de stock",
+      "operatingSystem": "Android 8.0 ou plus récent",
+      "inLanguage": "fr",
+      "softwareVersion": "0.11.1",
+      "description": "Facturation hors ligne pour les commerces marocains : factures, devis, bons de commande, tickets, avoirs, proformas, acomptes, régularisations, factures simplifiées et factures à l’export, avec ICE, IF, RC, patente, CNSS, TVA et montants en toutes lettres.",
+      "url": "https://factureapp.ma/",
+      "image": "https://factureapp.ma/assets/img/apercu-1024.jpg",
+      "screenshot": "https://factureapp.ma/assets/img/factures-1040.webp",
+      "featureList": [
+        "Dix types de documents numérotés séparément",
+        "Mentions légales marocaines : ICE, IF, RC, patente, CNSS",
+        "TVA par ligne, 20 %, 10 %, 0 % ou exonérée",
+        "Stock mis à jour à l’émission du document",
+        "Fonctionne sans aucune permission réseau"
+      ],
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "MAD" },
+      "publisher": { "@id": "https://factureapp.ma/#editeur" }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://factureapp.ma/#editeur",
+      "name": "Facture Maroc hors ligne",
+      "url": "https://factureapp.ma/",
+      "logo": "https://factureapp.ma/assets/img/icone-512.png",
+      "sameAs": [
+        "https://github.com/beav0team/facture-maroc"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://factureapp.ma/#site",
+      "url": "https://factureapp.ma/",
+      "name": "Facture Maroc hors ligne",
+      "inLanguage": "fr",
+      "publisher": { "@id": "https://factureapp.ma/#editeur" }
+    }
+  ]
 }
 </script>
 </head>
@@ -135,9 +179,10 @@
 
       <div class="telephone">
         <div class="ecran">
-          <img src="assets/img/factures-520.webp"
-               srcset="assets/img/factures-520.webp 520w, assets/img/factures-1040.webp 1040w"
-               sizes="200px" width="520" height="976"
+          <img src="assets/img/factures-400.webp"
+               srcset="assets/img/factures-260.webp 260w, assets/img/factures-400.webp 400w"
+               sizes="(max-width: 720px) 132px, (max-width: 1080px) 152px, 198px"
+               width="400" height="751" fetchpriority="high" decoding="async"
                alt="Liste des factures dans l’application : total du mois, brouillons et documents émis">
         </div>
       </div>
@@ -180,6 +225,10 @@
       <p class="presentation">Une facture ne partage pas sa séquence avec un devis.
         Les avoirs et les régularisations rappellent le document qu’ils annulent ou
         remplacent.</p>
+      <p class="note">Ce que chaque document doit porter — ICE, IF, RC,
+        patente, CNSS, TVA ligne par ligne — est détaillé sur la page
+        <a href="mentions-obligatoires-facture-maroc.html">mentions obligatoires
+        d’une facture au Maroc</a>.</p>
 
       <ul class="documents">
         <li><span>Facture</span><b>F-</b></li>
@@ -234,37 +283,37 @@
       <ul class="captures">
         <li>
           <figure>
-            <img src="assets/img/factures-520.webp"
-                 srcset="assets/img/factures-520.webp 520w, assets/img/factures-1040.webp 1040w"
-                 sizes="(max-width: 900px) 60vw, 280px" width="520" height="976"
-                 loading="lazy" alt="Écran Factures : total du mois, brouillons, documents émis">
+            <img src="assets/img/factures-560.webp"
+                 srcset="assets/img/factures-560.webp 560w, assets/img/factures-1040.webp 1040w"
+                 sizes="(max-width: 520px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1051"
+                 loading="lazy" decoding="async" alt="Écran Factures : total du mois, brouillons, documents émis">
             <figcaption>Factures — ce qui est parti, ce qui reste en brouillon.</figcaption>
           </figure>
         </li>
         <li>
           <figure>
-            <img src="assets/img/constructeur-520.webp"
-                 srcset="assets/img/constructeur-520.webp 520w, assets/img/constructeur-1040.webp 1040w"
-                 sizes="(max-width: 900px) 60vw, 280px" width="520" height="976"
-                 loading="lazy" alt="Écran de construction d’un document : type, client, lignes, remise, TVA">
+            <img src="assets/img/constructeur-560.webp"
+                 srcset="assets/img/constructeur-560.webp 560w, assets/img/constructeur-1040.webp 1040w"
+                 sizes="(max-width: 520px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1051"
+                 loading="lazy" decoding="async" alt="Écran de construction d’un document : type, client, lignes, remise, TVA">
             <figcaption>Constructeur — le type, le client, les lignes, la remise.</figcaption>
           </figure>
         </li>
         <li>
           <figure>
-            <img src="assets/img/clients-520.webp"
-                 srcset="assets/img/clients-520.webp 520w, assets/img/clients-1040.webp 1040w"
-                 sizes="(max-width: 900px) 60vw, 280px" width="520" height="976"
-                 loading="lazy" alt="Écran Clients : carnet avec ICE, IF, RC et coordonnées">
+            <img src="assets/img/clients-560.webp"
+                 srcset="assets/img/clients-560.webp 560w, assets/img/clients-1040.webp 1040w"
+                 sizes="(max-width: 520px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1051"
+                 loading="lazy" decoding="async" alt="Écran Clients : carnet avec ICE, IF, RC et coordonnées">
             <figcaption>Clients — le carnet, avec leurs identifiants légaux.</figcaption>
           </figure>
         </li>
         <li>
           <figure>
-            <img src="assets/img/articles-520.webp"
-                 srcset="assets/img/articles-520.webp 520w, assets/img/articles-1040.webp 1040w"
-                 sizes="(max-width: 900px) 60vw, 280px" width="520" height="976"
-                 loading="lazy" alt="Écran Articles : catalogue, stock, prix d’achat et de vente">
+            <img src="assets/img/articles-560.webp"
+                 srcset="assets/img/articles-560.webp 560w, assets/img/articles-1040.webp 1040w"
+                 sizes="(max-width: 520px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1051"
+                 loading="lazy" decoding="async" alt="Écran Articles : catalogue, stock, prix d’achat et de vente">
             <figcaption>Articles — le stock, les prix, les dossiers.</figcaption>
           </figure>
         </li>
@@ -410,12 +459,15 @@
     <div>
       <h3>Informations</h3>
       <ul>
+        <li><a href="a-propos.html">À propos</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="mentions-obligatoires-facture-maroc.html">Mentions obligatoires d’une facture</a></li>
         <li><a href="privacy.html">Politique de confidentialité</a></li>
         <li><a href="test.html">Installer la version de test</a></li>
         <li><a href="https://github.com/beav0team/facture-maroc">Code source</a></li>
       </ul>
     </div>
-    <p class="mentions">Version 0.8.2 · Android 8.0 et plus · Français — © 2026
+    <p class="mentions">Version 0.11.1 · Android 8.0 et plus · Français — © 2026
       Facture Maroc. Les captures montrent une base de démonstration.</p>
   </div>
 </footer>

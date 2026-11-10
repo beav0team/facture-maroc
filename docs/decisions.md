@@ -194,3 +194,23 @@ amount, an "Avoir" badge, no deadline and is never late.
 - **Decimal quantities** — implemented (`Double` lines, whole-unit stock).
 - **Payment terms** — presets plus free text, implemented.
 - **Photos** — deliberately out of 1.0.
+
+### 2026-11-10 — The site is named "Facture Maroc hors ligne"
+The query "facture maroc" belongs to DATRON's app (`com.facturemaroc.invoices`,
+Play and App Store, 4.8 stars, 5,000+ downloads). The product keeps its name —
+it is descriptive, and it is already in the repository, the domain and the
+documents — but everything a search engine judges carries the qualifier: site
+title, `og:site_name`, JSON-LD `name`, the future Play listing title, and the
+first paragraph of every page. The claim nobody else can make is technical, not
+commercial: **no network permission at all**. The package stays
+`com.yassine.facturemaroc`, distinct from DATRON's, so the two cannot be
+confused at install time.
+
+### 2026-11-10 — The site publishes three editorial pages
+`a-propos`, `contact`, and a guide on the mandatory fields of a Moroccan
+invoice. Reasoning: a search engine and a language model both need an entity
+(name, author, address, source) and pages that answer one precise question.
+Every guide uses the same shape: an H1 that repeats the question, a 40–60 word
+direct answer, a table of the facts, the legal reference, a last-updated date and
+a named author. No bulk-generated content: six written pages beat six hundred
+empty ones.

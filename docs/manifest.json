@@ -1,0 +1,32 @@
+{
+  "name": "Facture Maroc hors ligne",
+  "short_name": "Facture Maroc",
+  "description": "Facturation hors ligne pour les commerces marocains : factures, devis, avoirs, ICE, IF, TVA, stock.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "browser",
+  "background_color": "#F6F8FE",
+  "theme_color": "#1E3FD2",
+  "icons": [
+    {
+      "src": "assets/img/icone-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/icone-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

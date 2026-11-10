@@ -168,6 +168,16 @@ construction ni JavaScript, et n’appelle **aucune ressource externe**, polices
 comprises : une page qui promet l’absence de réseau ne peut pas charger Google
 Fonts.
 
+Trois pages éditoriales s’y ajoutent : [`docs/a-propos.html`](docs/a-propos.html),
+[`docs/contact.html`](docs/contact.html) et le guide
+[`docs/mentions-obligatoires-facture-maroc.html`](docs/mentions-obligatoires-facture-maroc.html).
+`python3 docs/build.py` régénère le `sitemap.xml` (avec `lastmod` pris sur git)
+et aligne la version affichée sur `app/build.gradle.kts` ;
+`docs/scripts/site-check.sh` refuse une page sans titre unique, sans description,
+sans canonical, sans `<h1>`, une image sans dimensions, un lien local mort ou un
+budget de polices dépassé. Les polices sont sous-ensemblées par
+`docs/scripts/fonts.sh` (75 Ko → 35 Ko pour Bricolage, 45 → 31 pour Plex Sans).
+
 L’installation de la version de test est expliquée pas à pas sur
 [`docs/test.html`](docs/test.html) : rejoindre le groupe
 `facturemaroc-testeurs`, s’inscrire au test fermé, puis installer depuis Google
