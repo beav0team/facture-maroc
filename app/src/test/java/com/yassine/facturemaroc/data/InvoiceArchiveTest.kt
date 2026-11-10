@@ -30,7 +30,7 @@ class InvoiceArchiveTest {
         number = "F-20261029-0001",
         date = "29/10/2026",
         client = InvoiceClient("Client de passage"),
-        lines = listOf(InvoiceLine("Montage", quantity = 1, unitPrice = 100.0)),
+        lines = listOf(InvoiceLine("Montage", quantity = 1.0, unitPrice = 100.0)),
     )
 
     private fun xmlFor(number: String) =

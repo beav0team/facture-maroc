@@ -9,6 +9,7 @@ import android.text.TextPaint
 import com.yassine.facturemaroc.data.InvoiceData
 import com.yassine.facturemaroc.data.InvoiceDesign
 import com.yassine.facturemaroc.data.ShopSettings
+import com.yassine.facturemaroc.data.quantityText
 
 /**
  * No block of colour anywhere: a hairline instead of a band, rules instead of
@@ -140,7 +141,7 @@ class ModerneRenderer : PdfRenderer {
             var rowY = headTop + HEAD_H
             rows.forEachIndexed { position, lineIndex ->
                 val line = data.lines[lineIndex]
-                PdfText.draw(canvas, line.quantity.toString(), margin, rowY, cell, qtyW.toInt())
+                PdfText.draw(canvas, quantityText(line.quantity), margin, rowY, cell, qtyW.toInt())
                 PdfText.draw(canvas, line.lineLabel, descX, rowY, cell, descW, maxLines = 2)
                 PdfText.draw(
                     canvas, PdfText.money(line.unitPrice), unitX, rowY + 1f, cell, unitW.toInt(),

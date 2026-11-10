@@ -6,6 +6,7 @@ import com.yassine.facturemaroc.data.InvoiceData
 import com.yassine.facturemaroc.data.PaymentMethod
 import com.yassine.facturemaroc.data.ShopSettings
 import com.yassine.facturemaroc.data.VatRecap
+import com.yassine.facturemaroc.data.quantityValue
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -201,7 +202,7 @@ object InvoiceXml {
         data.lines.forEachIndexed { index, line ->
             x.open(lineTag)
             x.element("cbc:ID", (index + 1).toString())
-            x.element(quantityTag, line.quantity.toString(), " unitCode=\"${unitCode(line.unit)}\"")
+            x.element(quantityTag, quantityValue(line.quantity), " unitCode=\"${unitCode(line.unit)}\"")
             x.money("cbc:LineExtensionAmount", line.total)
             val lineGross = line.quantity * line.unitPrice
             if (line.lineDiscountFixed > 0.0) {

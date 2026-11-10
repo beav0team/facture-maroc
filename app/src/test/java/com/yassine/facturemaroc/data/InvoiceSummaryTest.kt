@@ -18,7 +18,7 @@ class InvoiceSummaryTest {
             number = "X-$id",
             date = date,
             client = InvoiceClient(name = "Client"),
-            lines = listOf(InvoiceLine("Ligne", 1, total)),
+            lines = listOf(InvoiceLine("Ligne", 1.0, total)),
             documentType = type,
         ),
         status = status,

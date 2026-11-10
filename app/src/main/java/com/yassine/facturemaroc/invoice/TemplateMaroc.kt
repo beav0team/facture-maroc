@@ -9,6 +9,7 @@ import android.text.TextPaint
 import com.yassine.facturemaroc.data.InvoiceData
 import com.yassine.facturemaroc.data.InvoiceDesign
 import com.yassine.facturemaroc.data.ShopSettings
+import com.yassine.facturemaroc.data.quantityText
 
 /**
  * The layout a Moroccan shop is used to seeing: a boxed header carrying the
@@ -169,7 +170,7 @@ class MarocRenderer : PdfRenderer {
             rows.forEach { lineIndex ->
                 val line = data.lines[lineIndex]
                 val rowH = heights[lineIndex]
-                PdfText.draw(canvas, line.quantity.toString(), margin + 6f, rowY + 5f, cell, 28)
+                PdfText.draw(canvas, quantityText(line.quantity), margin + 6f, rowY + 5f, cell, 28)
                 PdfText.draw(canvas, line.lineLabel, descX + 6f, rowY + 4f, cell, descW, maxLines = 2)
                 PdfText.draw(
                     canvas, PdfText.money(line.unitPrice), unitX + 4f, rowY + 5f, cellRight, (unitW - 8f).toInt(),

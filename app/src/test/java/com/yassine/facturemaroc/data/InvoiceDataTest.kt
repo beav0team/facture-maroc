@@ -26,8 +26,8 @@ class InvoiceDataTest {
     @Test
     fun `an exempt line is left out of the tax base`() {
         val data = invoice(
-            InvoiceLine("Conseil", quantity = 1, unitPrice = 100.0, taxExempt = true),
-            InvoiceLine("Produit", quantity = 1, unitPrice = 200.0),
+            InvoiceLine("Conseil", quantity = 1.0, unitPrice = 100.0, taxExempt = true),
+            InvoiceLine("Produit", quantity = 1.0, unitPrice = 200.0),
         )
 
         assertEquals(200.0, data.taxableSubtotal, 0.001)
@@ -38,8 +38,8 @@ class InvoiceDataTest {
     @Test
     fun `the invoice discount is shared so an exempt line cannot reduce the tax`() {
         val data = invoice(
-            InvoiceLine("Conseil", quantity = 1, unitPrice = 100.0, taxExempt = true),
-            InvoiceLine("Produit", quantity = 1, unitPrice = 200.0),
+            InvoiceLine("Conseil", quantity = 1.0, unitPrice = 100.0, taxExempt = true),
+            InvoiceLine("Produit", quantity = 1.0, unitPrice = 200.0),
             discount = 10,
         )
 
@@ -55,8 +55,8 @@ class InvoiceDataTest {
     @Test
     fun `without an exempt line the arithmetic is unchanged`() {
         val data = invoice(
-            InvoiceLine("A", quantity = 1, unitPrice = 123.45),
-            InvoiceLine("B", quantity = 1, unitPrice = 76.55),
+            InvoiceLine("A", quantity = 1.0, unitPrice = 123.45),
+            InvoiceLine("B", quantity = 1.0, unitPrice = 76.55),
             discount = 10,
         )
 
@@ -69,7 +69,7 @@ class InvoiceDataTest {
     @Test
     fun `an exempt client pays no tax on any line`() {
         val data = invoice(
-            InvoiceLine("Produit", quantity = 1, unitPrice = 500.0),
+            InvoiceLine("Produit", quantity = 1.0, unitPrice = 500.0),
             client = InvoiceClient(name = "Export", vatExempt = true),
         )
 
@@ -80,14 +80,14 @@ class InvoiceDataTest {
 
     @Test
     fun `a line discount is applied before the invoice discount`() {
-        val line = InvoiceLine("Produit", quantity = 2, unitPrice = 100.0, lineDiscountPercent = 25)
+        val line = InvoiceLine("Produit", quantity = 2.0, unitPrice = 100.0, lineDiscountPercent = 25)
 
         assertEquals(150.0, line.total, 0.001)
     }
 
     @Test
     fun `an exempt line says so on the printed label`() {
-        val line = InvoiceLine("Conseil", quantity = 1, unitPrice = 100.0, taxExempt = true)
+        val line = InvoiceLine("Conseil", quantity = 1.0, unitPrice = 100.0, taxExempt = true)
 
         assertEquals("Conseil · TVA exonérée", line.lineLabel)
     }
@@ -95,7 +95,7 @@ class InvoiceDataTest {
     @Test
     fun `a quote spells out its own document name`() {
         val data = invoice(
-            InvoiceLine("Prestation", quantity = 1, unitPrice = 100.0),
+            InvoiceLine("Prestation", quantity = 1.0, unitPrice = 100.0),
             type = DocumentType.DEVIS,
         )
 
@@ -108,7 +108,7 @@ class InvoiceDataTest {
             number = "F-20260101-0001",
             date = "01/01/2026",
             client = InvoiceClient(name = "Client"),
-            lines = listOf(InvoiceLine("Produit", quantity = 1, unitPrice = 100.0)),
+            lines = listOf(InvoiceLine("Produit", quantity = 1.0, unitPrice = 100.0)),
             vatPercent = 20.0,
             vatNotApplicable = true,
         )
@@ -124,7 +124,7 @@ class InvoiceDataTest {
             number = "F-20260101-0001",
             date = "01/01/2026",
             client = InvoiceClient(name = "Export", vatExempt = true),
-            lines = listOf(InvoiceLine("Produit", quantity = 1, unitPrice = 100.0)),
+            lines = listOf(InvoiceLine("Produit", quantity = 1.0, unitPrice = 100.0)),
             vatPercent = 20.0,
             vatNotApplicable = false,
         )
@@ -139,7 +139,7 @@ class InvoiceDataTest {
             number = "A-20260101-0001",
             date = "01/01/2026",
             client = InvoiceClient(name = "Client"),
-            lines = listOf(InvoiceLine("Produit", quantity = 1, unitPrice = 100.0)),
+            lines = listOf(InvoiceLine("Produit", quantity = 1.0, unitPrice = 100.0)),
             documentType = DocumentType.AVOIR,
             referenceNumber = "F-20260101-0042",
         )
@@ -155,7 +155,7 @@ class InvoiceDataTest {
             number = "E-20260101-0001",
             date = "01/01/2026",
             client = InvoiceClient(name = "Client"),
-            lines = listOf(InvoiceLine("Produit", quantity = 1, unitPrice = 100.0)),
+            lines = listOf(InvoiceLine("Produit", quantity = 1.0, unitPrice = 100.0)),
             documentType = DocumentType.EXPORT,
             incoterm = "FOB Casablanca",
         )
@@ -166,7 +166,7 @@ class InvoiceDataTest {
 
     @Test
     fun `an ordinary invoice has neither reference nor incoterm`() {
-        val data = invoice(InvoiceLine("Produit", quantity = 1, unitPrice = 100.0))
+        val data = invoice(InvoiceLine("Produit", quantity = 1.0, unitPrice = 100.0))
 
         assertFalse(data.showReferenceField)
         assertFalse(data.showIncoterm)
@@ -181,7 +181,7 @@ class InvoiceDataTest {
             date = "01/01/2026",
             client = InvoiceClient(name = "Le magasin"),
             supplier = InvoiceClient(name = "Grossiste Atlas", ice = "007711223000045"),
-            lines = listOf(InvoiceLine("Chaise", quantity = 1, unitPrice = 100.0)),
+            lines = listOf(InvoiceLine("Chaise", quantity = 1.0, unitPrice = 100.0)),
             documentType = DocumentType.BON_DE_COMMANDE,
         )
 
@@ -196,7 +196,7 @@ class InvoiceDataTest {
             number = "BC-20260101-0001",
             date = "01/01/2026",
             client = InvoiceClient(name = "Le magasin"),
-            lines = listOf(InvoiceLine("Chaise", quantity = 1, unitPrice = 100.0)),
+            lines = listOf(InvoiceLine("Chaise", quantity = 1.0, unitPrice = 100.0)),
             documentType = DocumentType.BON_DE_COMMANDE,
         )
 
@@ -207,7 +207,7 @@ class InvoiceDataTest {
     @Test
     fun `a sale with no identified buyer is a walk-in, not a blank`() {
         val data = invoice(
-            InvoiceLine("Chaise", quantity = 1, unitPrice = 100.0),
+            InvoiceLine("Chaise", quantity = 1.0, unitPrice = 100.0),
             client = InvoiceClient(name = ""),
         )
 
@@ -242,7 +242,7 @@ class InvoiceDataTest {
         val record = InvoiceRecord(
             id = "r2",
             data = invoice(
-                InvoiceLine("Chaise", quantity = 1, unitPrice = 100.0),
+                InvoiceLine("Chaise", quantity = 1.0, unitPrice = 100.0),
                 client = InvoiceClient(name = ""),
             ),
             status = InvoiceStatus.ISSUED,

@@ -58,16 +58,32 @@ later, but no UI.
 Personal Play account: production requires 12 opted-in testers for 14 continuous
 days.
 
+### 2026-11-10 — Decimal quantities
+A line quantity is a `Double`. Shops sell by the metre, the kilo and the hour,
+and a whole number forced them to invent a second unit. Existing JSON files are
+read unchanged (an integer is a Double). Stock stays counted in whole articles:
+a line quantity is rounded to the nearest unit and that is stated in the code,
+because silently turning stock into a decimal would change what "10 en stock"
+means. Quantities print without trailing zeros, with a comma on paper and a dot
+in XML.
+
+### 2026-11-10 — Numbering: prefix per type, optional annual reset
+Each document type can carry its own prefix (letters, digits, `-`, `_`; empty
+means the built-in one) because shops number their devis and invoices
+differently. Annual reset is a switch, off by default: many shops number a
+series continuously, and resetting without being asked would reissue numbers.
+When it is on, each counter stores the year it was last taken, so a restore or
+a cancelled share cannot restart the sequence in the middle of a year. Numbers
+stay `PREFIX-yyyyMMdd-0000`.
+
 ---
 
 ## Open
 
-1. **Decimal quantities** — recommended for a general app (kg, m, L), not yet
-   confirmed.
-2. **Arabic / bilingual** — pending accountant confirmation.
-3. **RAS TVA** — note only, or withheld amount with recalculated balance?
-4. **Payment terms** — presets (cash / 30 / 60 days) or free text?
-5. **Deposit** — should the final invoice deduct a referenced acompte
+1. **Arabic / bilingual** — pending accountant confirmation.
+2. **RAS TVA** — note only, or withheld amount with recalculated balance?
+3. **Payment terms** — presets (cash / 30 / 60 days) or free text?
+4. **Deposit** — should the final invoice deduct a referenced acompte
    automatically?
-6. **Auto-entrepreneur number** — print it on documents?
-7. **1.0 release** — Play only, or Play + GitHub release?
+5. **Auto-entrepreneur number** — print it on documents?
+6. **1.0 release** — Play only, or Play + GitHub release?

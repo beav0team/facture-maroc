@@ -38,7 +38,7 @@ class DiscountSurchargeTest {
     @Test
     fun `a discount in dirhams comes off the total before TVA`() {
         val data = invoice(
-            InvoiceLine("Table", 2, 100.0),
+            InvoiceLine("Table", 2.0, 100.0),
             discountFixed = 50.0,
         )
 
@@ -52,7 +52,7 @@ class DiscountSurchargeTest {
     @Test
     fun `a discount larger than the goods never produces a credit`() {
         val data = invoice(
-            InvoiceLine("Table", 1, 200.0),
+            InvoiceLine("Table", 1.0, 200.0),
             discountFixed = 500.0,
         )
 
@@ -64,7 +64,7 @@ class DiscountSurchargeTest {
     @Test
     fun `the amount discount takes over from the percentage`() {
         val data = invoice(
-            InvoiceLine("Table", 2, 100.0),
+            InvoiceLine("Table", 2.0, 100.0),
             discount = 10,
             discountFixed = 50.0,
         )
@@ -77,8 +77,8 @@ class DiscountSurchargeTest {
     @Test
     fun `a fixed discount is still shared so an exempt line cannot reduce the tax`() {
         val data = invoice(
-            InvoiceLine("Conseil", 1, 100.0, taxExempt = true),
-            InvoiceLine("Produit", 1, 200.0),
+            InvoiceLine("Conseil", 1.0, 100.0, taxExempt = true),
+            InvoiceLine("Produit", 1.0, 200.0),
             discountFixed = 30.0,
         )
 
@@ -91,8 +91,8 @@ class DiscountSurchargeTest {
 
     @Test
     fun `a line discount in dirhams reduces that line only`() {
-        val discounted = InvoiceLine("Chaise", quantity = 2, unitPrice = 950.0, lineDiscountFixed = 100.0)
-        val data = invoice(discounted, InvoiceLine("Livraison", 1, 100.0))
+        val discounted = InvoiceLine("Chaise", quantity = 2.0, unitPrice = 950.0, lineDiscountFixed = 100.0)
+        val data = invoice(discounted, InvoiceLine("Livraison", 1.0, 100.0))
 
         assertEquals(1_800.0, discounted.total, 0.001)
         assertEquals(1_900.0, data.subtotal, 0.001)
@@ -101,7 +101,7 @@ class DiscountSurchargeTest {
 
     @Test
     fun `a line discount larger than the line stops at zero`() {
-        val line = InvoiceLine("Chaise", quantity = 1, unitPrice = 950.0, lineDiscountFixed = 1_200.0)
+        val line = InvoiceLine("Chaise", quantity = 1.0, unitPrice = 950.0, lineDiscountFixed = 1_200.0)
 
         assertEquals(0.0, line.total, 0.001)
     }
@@ -110,7 +110,7 @@ class DiscountSurchargeTest {
     fun `a line amount discount takes over from its percentage`() {
         val line = InvoiceLine(
             "Chaise",
-            quantity = 1,
+            quantity = 1.0,
             unitPrice = 950.0,
             lineDiscountPercent = 50,
             lineDiscountFixed = 100.0,
@@ -122,7 +122,7 @@ class DiscountSurchargeTest {
     @Test
     fun `a surcharge given in percent is taxed and sits after the discount`() {
         val data = invoice(
-            InvoiceLine("Table", 2, 100.0),
+            InvoiceLine("Table", 2.0, 100.0),
             surchargePercent = 5.0,
         )
 
@@ -136,7 +136,7 @@ class DiscountSurchargeTest {
     @Test
     fun `the percentage surcharge is computed after the discount`() {
         val data = invoice(
-            InvoiceLine("Table", 2, 100.0),
+            InvoiceLine("Table", 2.0, 100.0),
             discount = 20,
             surchargePercent = 10.0,
         )
@@ -150,7 +150,7 @@ class DiscountSurchargeTest {
     @Test
     fun `the percentage surcharge takes over from the amount`() {
         val data = invoice(
-            InvoiceLine("Table", 2, 100.0),
+            InvoiceLine("Table", 2.0, 100.0),
             surcharge = 100.0,
             surchargePercent = 5.0,
         )
@@ -161,9 +161,9 @@ class DiscountSurchargeTest {
     @Test
     fun `the recap still adds up with a fixed discount and a percentage surcharge`() {
         val data = invoice(
-            InvoiceLine("Chaise", 2, 950.0, lineDiscountFixed = 100.0),
-            InvoiceLine("Montage", 3, 450.0, vatPercent = 10.0),
-            InvoiceLine("Conseil", 1, 300.0, taxExempt = true),
+            InvoiceLine("Chaise", 2.0, 950.0, lineDiscountFixed = 100.0),
+            InvoiceLine("Montage", 3.0, 450.0, vatPercent = 10.0),
+            InvoiceLine("Conseil", 1.0, 300.0, taxExempt = true),
             discountFixed = 200.0,
             surchargePercent = 2.5,
         )
@@ -184,7 +184,7 @@ class DiscountSurchargeTest {
     @Test
     fun `fixed discounts and a percentage surcharge survive a JSON round trip`() {
         val data = invoice(
-            InvoiceLine("Chaise", 2, 950.0, lineDiscountFixed = 100.0),
+            InvoiceLine("Chaise", 2.0, 950.0, lineDiscountFixed = 100.0),
             discountFixed = 150.0,
             surchargePercent = 3.0,
         )
@@ -199,7 +199,7 @@ class DiscountSurchargeTest {
 
     @Test
     fun `a negative amount discount is reported, not silently applied`() {
-        val data = invoice(InvoiceLine("Table", 1, 100.0), discountFixed = -50.0)
+        val data = invoice(InvoiceLine("Table", 1.0, 100.0), discountFixed = -50.0)
 
         val issues = InvoiceValidation.validate(data)
 
@@ -209,7 +209,7 @@ class DiscountSurchargeTest {
 
     @Test
     fun `a surcharge percentage above one hundred is reported`() {
-        val data = invoice(InvoiceLine("Table", 1, 100.0), surchargePercent = 150.0)
+        val data = invoice(InvoiceLine("Table", 1.0, 100.0), surchargePercent = 150.0)
 
         val issues = InvoiceValidation.validate(data)
 
@@ -218,15 +218,15 @@ class DiscountSurchargeTest {
 
     @Test
     fun `a discount in dirhams is printed without inventing a rate`() {
-        val fixed = invoice(InvoiceLine("Table", 1, 200.0), discountFixed = 50.0)
-        val percent = invoice(InvoiceLine("Table", 1, 200.0), discount = 5)
+        val fixed = invoice(InvoiceLine("Table", 1.0, 200.0), discountFixed = 50.0)
+        val percent = invoice(InvoiceLine("Table", 1.0, 200.0), discount = 5)
 
         assertEquals(true, fixed.showsDiscount)
         assertEquals(true, fixed.discountInAmount)
         assertEquals(true, percent.showsDiscount)
         assertEquals(false, percent.discountInAmount)
 
-        val none = invoice(InvoiceLine("Table", 1, 200.0))
+        val none = invoice(InvoiceLine("Table", 1.0, 200.0))
         assertEquals(false, none.showsDiscount)
     }
 }

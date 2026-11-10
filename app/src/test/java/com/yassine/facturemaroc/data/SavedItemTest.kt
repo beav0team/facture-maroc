@@ -20,7 +20,7 @@ class SavedItemTest {
         val line = item.toLine()
 
         assertEquals(100.0, line.unitPrice, 0.001)
-        assertEquals(1, line.quantity)
+        assertEquals(1.0, line.quantity, 0.0)
     }
 
     @Test

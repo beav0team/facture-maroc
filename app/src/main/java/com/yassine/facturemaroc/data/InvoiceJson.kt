@@ -48,6 +48,8 @@ object InvoiceJson {
 
     fun lineToJson(line: InvoiceLine): JSONObject = JSONObject().apply {
         put("description", line.description)
+        // Written as a number, so a whole quantity stays `2` on disk exactly as
+        // older files wrote it, and a decimal one needs no new key.
         put("quantity", line.quantity)
         put("unitPrice", line.unitPrice)
         put("unit", line.unit)
@@ -67,7 +69,11 @@ object InvoiceJson {
 
     fun lineFromJson(obj: JSONObject): InvoiceLine = InvoiceLine(
         description = obj.optString("description", ""),
-        quantity = obj.optInt("quantity", 1).coerceAtLeast(1),
+        // An integer written by an older build reads as a Double here, which is
+        // why nothing on disk had to be migrated. Only a missing, non-finite or
+        // non-positive value falls back to 1 — a 0,5 must stay a 0,5.
+        quantity = obj.optDouble("quantity", 1.0)
+            .let { if (it.isNaN() || it.isInfinite() || it <= 0.0) 1.0 else it },
         unitPrice = obj.optDouble("unitPrice", 0.0).let { if (it.isNaN()) 0.0 else it },
         unit = obj.optString("unit", ""),
         lineDiscountPercent = obj.optInt("lineDiscountPercent", 0).coerceIn(0, 100),

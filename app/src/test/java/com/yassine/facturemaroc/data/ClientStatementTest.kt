@@ -38,7 +38,7 @@ class ClientStatementTest {
             client = InvoiceClient(name = name, ice = "009876543000012"),
             // VAT at zero keeps the test about the statement, not about tax:
             // every figure below is the number written in the record.
-            lines = listOf(InvoiceLine("Ligne", 1, total, vatPercent = 0.0)),
+            lines = listOf(InvoiceLine("Ligne", 1.0, total, vatPercent = 0.0)),
             documentType = type,
             dueDate = dueDate,
             payment = if (paid > 0.0) PaymentInfo(paidAmount = paid) else null,

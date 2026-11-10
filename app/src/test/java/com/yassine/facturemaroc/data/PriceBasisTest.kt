@@ -43,7 +43,7 @@ class PriceBasisTest {
         // 99,99 TTC three times: each line prints 83,33, and three of those make
         // 249,99 — not the 249,98 the unrounded sum rounds to. A document whose
         // own column does not add up is a document a customer can query.
-        val line = InvoiceLine("Pose", quantity = 1, unitPrice = PriceBasis.excludingVat(99.99, 20.0))
+        val line = InvoiceLine("Pose", quantity = 1.0, unitPrice = PriceBasis.excludingVat(99.99, 20.0))
         val data = InvoiceData(
             number = "F-1",
             date = "29/10/2026",
@@ -66,7 +66,7 @@ class PriceBasisTest {
         val typed = 150.0
         val line = InvoiceLine(
             description = "Montage",
-            quantity = 1,
+            quantity = 1.0,
             unitPrice = PriceBasis.excludingVat(typed, 20.0),
             ttcPrice = typed,
         )
@@ -82,7 +82,7 @@ class PriceBasisTest {
 
     @Test
     fun `an HT line never moves when the buyer changes`() {
-        val line = InvoiceLine("Chaise", quantity = 1, unitPrice = 125.0)
+        val line = InvoiceLine("Chaise", quantity = 1.0, unitPrice = 125.0)
 
         assertEquals(125.0, PriceBasis.repriceTtcLines(listOf(line), 0.0).single().unitPrice, 0.0)
         assertEquals(125.0, PriceBasis.repriceTtcLines(listOf(line), 20.0).single().unitPrice, 0.0)
@@ -92,14 +92,14 @@ class PriceBasisTest {
     fun `an exempt line is never re-read`() {
         // An exempt line has no tax inside its price, so there is nothing to
         // take out of it whatever the client pays on the rest of the invoice.
-        val line = InvoiceLine("Export", quantity = 1, unitPrice = 100.0, taxExempt = true)
+        val line = InvoiceLine("Export", quantity = 1.0, unitPrice = 100.0, taxExempt = true)
 
         assertEquals(100.0, PriceBasis.repriceTtcLines(listOf(line), 20.0).single().unitPrice, 0.0)
     }
 
     @Test
     fun `a line entered TTC comes back as the price the shop quoted`() {
-        val line = InvoiceLine("Montage", quantity = 1, unitPrice = PriceBasis.excludingVat(150.0, 20.0))
+        val line = InvoiceLine("Montage", quantity = 1.0, unitPrice = PriceBasis.excludingVat(150.0, 20.0))
         val data = InvoiceData(
             number = "F-1",
             date = "29/10/2026",
@@ -115,7 +115,7 @@ class PriceBasisTest {
 
     @Test
     fun `a tricky price survives the round trip to the total`() {
-        val line = InvoiceLine("Pose", quantity = 1, unitPrice = PriceBasis.excludingVat(99.99, 20.0))
+        val line = InvoiceLine("Pose", quantity = 1.0, unitPrice = PriceBasis.excludingVat(99.99, 20.0))
         val data = InvoiceData(
             number = "F-1",
             date = "29/10/2026",
@@ -130,7 +130,7 @@ class PriceBasisTest {
 
     @Test
     fun `three units of a TTC price still add up`() {
-        val line = InvoiceLine("Montage", quantity = 3, unitPrice = PriceBasis.excludingVat(150.0, 20.0))
+        val line = InvoiceLine("Montage", quantity = 3.0, unitPrice = PriceBasis.excludingVat(150.0, 20.0))
         val data = InvoiceData(
             number = "F-1",
             date = "29/10/2026",
@@ -145,8 +145,8 @@ class PriceBasisTest {
 
     @Test
     fun `an exempt line in a TTC invoice keeps its price and charges nothing`() {
-        val taxed = InvoiceLine("Pose", quantity = 1, unitPrice = PriceBasis.excludingVat(120.0, 20.0))
-        val exempt = InvoiceLine("Export", quantity = 1, unitPrice = 100.0, taxExempt = true)
+        val taxed = InvoiceLine("Pose", quantity = 1.0, unitPrice = PriceBasis.excludingVat(120.0, 20.0))
+        val exempt = InvoiceLine("Export", quantity = 1.0, unitPrice = 100.0, taxExempt = true)
         val data = InvoiceData(
             number = "F-1",
             date = "29/10/2026",
@@ -166,7 +166,7 @@ class PriceBasisTest {
             number = "F-1",
             date = "29/10/2026",
             client = InvoiceClient("Client de passage"),
-            lines = listOf(InvoiceLine("Pose", quantity = 1, unitPrice = 150.0)),
+            lines = listOf(InvoiceLine("Pose", quantity = 1.0, unitPrice = 150.0)),
             vatNotApplicable = true,
         )
 
@@ -182,7 +182,7 @@ class PriceBasisTest {
         // the customer now pays 125.
         val taxed = InvoiceLine(
             description = "Montage",
-            quantity = 1,
+            quantity = 1.0,
             unitPrice = PriceBasis.excludingVat(150.0, 20.0),
             ttcPrice = 150.0,
         )
@@ -207,7 +207,7 @@ class PriceBasisTest {
         // shop would have had if it had never ticked the box.
         val exempt = InvoiceLine(
             description = "Montage",
-            quantity = 1,
+            quantity = 1.0,
             unitPrice = 150.0,
             taxExempt = true,
             ttcPrice = 150.0,
@@ -221,7 +221,7 @@ class PriceBasisTest {
     @Test
     fun `switching exemption on an HT line only flips the flag`() {
         // An HT price never had tax inside it, so there is nothing to re-read.
-        val line = InvoiceLine("Chaise", quantity = 1, unitPrice = 125.0)
+        val line = InvoiceLine("Chaise", quantity = 1.0, unitPrice = 125.0)
 
         val exempt = PriceBasis.withExemption(line, exempt = true, vatPercent = 20.0)
         assertEquals(125.0, exempt.unitPrice, 0.0)
@@ -234,7 +234,7 @@ class PriceBasisTest {
         // is still 150 DH TTC, and the HT behind it is read again.
         val line = InvoiceLine(
             description = "Pose",
-            quantity = 1,
+            quantity = 1.0,
             unitPrice = PriceBasis.excludingVat(150.0, 20.0),
             ttcPrice = 150.0,
         )

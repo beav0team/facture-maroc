@@ -74,12 +74,17 @@ object StockMovement {
         return items.map { item ->
             val quantity = sold[item.label.trim().lowercase()]
             val stock = item.stock
-            // A service (stock == null) is never counted, and a line that
-            // matches no item is not this function's business.
-            if (quantity == null || stock == null || quantity <= 0) {
+            // Stock is counted in whole articles, while a line may sell 1,5 m of
+            // cable. The line's quantity is therefore rounded to the nearest
+            // unit — not floored, not silently treated as a decimal stock: an
+            // article on a shelf is countable, and 2,5 sold means three left the
+            // shelf's ledger. A service (stock == null) and a line that matches
+            // no item are not this function's business.
+            val units = quantity?.let { Math.round(it).toInt() }
+            if (units == null || stock == null || units <= 0) {
                 item
             } else {
-                item.copy(stock = stock + signed * quantity)
+                item.copy(stock = stock + signed * units)
             }
         }
     }

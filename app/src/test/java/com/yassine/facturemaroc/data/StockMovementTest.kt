@@ -26,7 +26,7 @@ class StockMovementTest {
     )
 
     private fun line(label: String, quantity: Int) =
-        InvoiceLine(label, quantity = quantity, unitPrice = 100.0)
+        InvoiceLine(label, quantity = quantity.toDouble(), unitPrice = 100.0)
 
     private fun product(label: String, stock: Int?, price: Double = 100.0) =
         SavedItem(label = label, price = price, stock = stock)

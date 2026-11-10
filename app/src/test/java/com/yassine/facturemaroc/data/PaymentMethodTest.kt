@@ -18,7 +18,7 @@ class PaymentMethodTest {
         number = "F-20261110-0001",
         date = "10/11/2026",
         client = InvoiceClient("Client"),
-        lines = listOf(InvoiceLine("Prestation", 1, 100.0)),
+        lines = listOf(InvoiceLine("Prestation", 1.0, 100.0)),
         paymentMethod = PaymentMethod.TRANSFER,
         payment = payment,
     )

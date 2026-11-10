@@ -20,8 +20,8 @@ class QuoteConversionTest {
             date = "01/11/2026",
             client = InvoiceClient("Société BTP"),
             lines = listOf(
-                InvoiceLine("Chaise", 2, 950.0, vatPercent = 20.0),
-                InvoiceLine("Montage", 3, 450.0, vatPercent = 10.0),
+                InvoiceLine("Chaise", 2.0, 950.0, vatPercent = 20.0),
+                InvoiceLine("Montage", 3.0, 450.0, vatPercent = 10.0),
             ),
             discountPercent = 5,
             surchargeLabel = "Livraison",

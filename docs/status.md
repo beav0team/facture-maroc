@@ -7,9 +7,9 @@ answering from memory.
 | | |
 |---|---|
 | Version | **0.10.0** (versionCode 16) |
-| Last commit | `cbff215` — client statement, credit notes subtracted, A4 PDF |
-| Branch | `master` (pushed; no tag/release for 0.10.0 yet) |
-| Tests | **328 JVM**, **18 instrumented** |
+| Last commit | `2008bbc` — numbering prefix + annual reset; this commit — decimal quantities |
+| Branch | `master` (Phase A3 local commits; no tag/release for 0.10.0 yet) |
+| Tests | **378 JVM**, **18 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -22,7 +22,10 @@ released**: per-line VAT, recap by rate on every template, UBL per rate, ICE
 validation, detail sheet rows, fixed-amount discounts (global and per line) and
 a percentage surcharge. A1 is complete. A2 (payments lifecycle) is in
 progress: the payment deadline, the method per payment, the A5 receipt and the
-client statement have landed; RAS and the reminder text remain.
+client statement have landed; RAS and the reminder text remain. A3 has started:
+issued documents are no longer deletable, credit notes and quote conversion are
+one tap, deposit deduction, configurable numbering (prefix per type, annual
+reset) and decimal quantities have landed.
 
 **Next task — RAS TVA.** Decide and implement withholding at source
 (75 %/100 % by some clients): the open question in `docs/decisions.md` is
@@ -38,7 +41,7 @@ statement and the payment tracking must keep agreeing on what is really owed.
 |---|---|---|
 | Document types | **Exists** | facture, devis, bon de commande, ticket, avoir, proforma, acompte, régularisation, simplifiée, export |
 | Templates | **Exists** | Classique, Moderne, Facture Maroc, Épuré, Bandeau, Ticket 80 mm |
-| Lines | **Exists** | description, quantity (Int), unit price, unit, line discount % or amount, **VAT rate per line (20/10/0/exempt)** |
+| Lines | **Exists** | description, **quantity (decimal: m, kg, heure)**, unit price, unit, line discount % or amount, **VAT rate per line (20/10/0/exempt)** |
 | Global discount | **Exists** | percentage or fixed amount, one per document; amount drops the percentage |
 | Surcharge | **Exists** | fixed amount or percentage of the discounted total, taxed at the document rate |
 | VAT | **Exists** | per line since A1: 20/10/0/exempt, legacy 7/14 readable; recap by rate on the 6 templates; one UBL `TaxSubtotal` per rate |
@@ -49,7 +52,7 @@ statement and the payment tracking must keep agreeing on what is really owed.
 | Quote → invoice | **Exists** | one tap from a devis; lines, prices, rates and discount copied; quote number kept as reference |
 | Invoice → credit note | **Exists** | one tap; the avoir repeats the invoice exactly and drops payment/deadline |
 | Deposit deduction | **Exists** | `depositAmount`/`depositReference`, deducted from the balance only (never from the VAT base), printed with the payment block, carried by the receipt and the statement |
-| Numbering | **Partial** | per-type sequences; only invoice counter editable; no annual reset |
+| Numbering | **Exists** | per-type sequences; **per-type prefix override** (letters/digits/-/_, empty = default); **optional annual reset** (counter year stamped on every take/rewind); invoice counter editable |
 | ICE validation | **Exists** | 15-digit check + missing-ICE warning on a business invoice (non-blocking) |
 | Notes / signature | **Exists** | client note, terms, thank-you, drawn/photo signature |
 | Shop snapshot | **Exists** | issued documents keep issue-time details + logo hash |
@@ -111,13 +114,12 @@ statement and the payment tracking must keep agreeing on what is really owed.
 
 See `docs/decisions.md`. The unresolved ones:
 
-1. Decimal quantities (recommended yes).
-2. Arabic / bilingual (pending accountant).
-3. RAS TVA: note only or withheld amount with recalculated balance.
-4. Payment terms: presets or free text.
-5. Deposit: automatic deduction.
-6. Auto-entrepreneur number printed.
-7. 1.0 release: Play only or Play + GitHub.
+1. Arabic / bilingual (pending accountant).
+2. RAS TVA: note only or withheld amount with recalculated balance.
+3. Payment terms: presets or free text.
+4. Deposit: automatic deduction.
+5. Auto-entrepreneur number printed.
+6. 1.0 release: Play only or Play + GitHub.
 
 ---
 

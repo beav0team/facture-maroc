@@ -58,6 +58,7 @@ import com.yassine.facturemaroc.data.InvoiceRecord
 import com.yassine.facturemaroc.data.PaymentInfo
 import com.yassine.facturemaroc.data.PaymentMethod
 import com.yassine.facturemaroc.data.InvoiceLine
+import com.yassine.facturemaroc.data.quantityText
 import com.yassine.facturemaroc.data.ItemField
 import com.yassine.facturemaroc.data.PartyRole
 import com.yassine.facturemaroc.data.PriceBasis
@@ -712,7 +713,7 @@ fun LineEditorDialog(
     val ttcBasis = pricesIncludeVat && !taxExempt && effectiveRate > 0.0
     var description by remember(initial) { mutableStateOf(initial.description) }
     var unit by remember(initial) { mutableStateOf(initial.unit) }
-    var quantityText by remember(initial) { mutableStateOf(initial.quantity.toString()) }
+    var quantityInput by remember(initial) { mutableStateOf(quantityText(initial.quantity)) }
     var priceText by remember(initial) {
         mutableStateOf(
             (
@@ -744,7 +745,7 @@ fun LineEditorDialog(
         )
     }
 
-    val quantity = quantityText.toIntOrNull()?.coerceAtLeast(1) ?: 1
+    val quantity = quantityInput.replace(',', '.').toDoubleOrNull()?.takeIf { it > 0.0 } ?: 1.0
     val price = priceText.replace(',', '.').toDoubleOrNull() ?: 0.0
     val discount = discountText.toIntOrNull()?.coerceIn(0, 100) ?: 0
     val discountFixed = discountFixedText.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
@@ -781,15 +782,20 @@ fun LineEditorDialog(
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
-                        value = quantityText,
+                        value = quantityInput,
                         onValueChange = { input ->
-                            quantityText = input.filter { it.isDigit() }.take(6)
+                            // Comma or dot: the Moroccan keyboard offers both,
+                            // and a shop typing 1,5 must not have the comma
+                            // silently dropped.
+                            quantityInput = input
+                                .filter { it.isDigit() || it == ',' || it == '.' }
+                                .take(10)
                         },
                         label = { Text("Quantité") },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
+                            keyboardType = KeyboardType.Decimal,
                             imeAction = ImeAction.Next,
                         ),
                     )

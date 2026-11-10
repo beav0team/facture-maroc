@@ -11,6 +11,7 @@ import android.text.TextPaint
 import com.yassine.facturemaroc.data.InvoiceData
 import com.yassine.facturemaroc.data.InvoiceDesign
 import com.yassine.facturemaroc.data.ShopSettings
+import com.yassine.facturemaroc.data.quantityText
 
 /**
  * The 80mm receipt.
@@ -119,13 +120,13 @@ class TicketRenderer : PdfRenderer {
         // digit, so a sale of 120 units printed "1…" beside the line. The
         // column is as wide as the longest count on this receipt.
         val countW = data.lines
-            .maxOfOrNull { smallBold.measureText(it.quantity.toString()) }
+            .maxOfOrNull { smallBold.measureText(quantityText(it.quantity)) }
             ?.let { kotlin.math.ceil(it.toDouble()).toFloat() + 1f }
             ?.coerceAtLeast(11f) ?: 11f
         val labelX = margin + countW + 3f
         val labelW = (right - amountW - 4f - labelX).toInt()
         data.lines.forEach { line ->
-            PdfText.draw(canvas, line.quantity.toString(), margin, y, smallBold, countW.toInt())
+            PdfText.draw(canvas, quantityText(line.quantity), margin, y, smallBold, countW.toInt())
             PdfText.draw(canvas, line.lineLabel, labelX, y, item, labelW, maxLines = 2)
             PdfText.draw(
                 canvas, PdfText.money(line.total), right - amountW, y, money, amountW.toInt(),

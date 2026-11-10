@@ -10,7 +10,7 @@ import org.junit.Test
 class PaymentSurchargeTest {
 
     private fun invoice(
-        lines: List<InvoiceLine> = listOf(InvoiceLine("Prestation", 1, 100.0)),
+        lines: List<InvoiceLine> = listOf(InvoiceLine("Prestation", 1.0, 100.0)),
         surcharge: Double = 0.0,
         payment: PaymentInfo? = null,
     ) = InvoiceData(
@@ -26,8 +26,8 @@ class PaymentSurchargeTest {
     fun `a surcharge is taxed and sits after the discount`() {
         val data = invoice(
             lines = listOf(
-                InvoiceLine("A", 1, 100.0),
-                InvoiceLine("B", 1, 100.0),
+                InvoiceLine("A", 1.0, 100.0),
+                InvoiceLine("B", 1.0, 100.0),
             ),
             surcharge = 50.0,
         ).copy(discountPercent = 10)
@@ -48,7 +48,7 @@ class PaymentSurchargeTest {
     fun `a surcharge is taxed even when the lines are exempt`() {
         // The delivery is a taxed service even when the goods are exported.
         val data = invoice(
-            lines = listOf(InvoiceLine("Export", 1, 100.0, taxExempt = true)),
+            lines = listOf(InvoiceLine("Export", 1.0, 100.0, taxExempt = true)),
             surcharge = 100.0,
         )
 

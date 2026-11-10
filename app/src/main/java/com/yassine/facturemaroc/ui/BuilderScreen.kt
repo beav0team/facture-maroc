@@ -95,6 +95,7 @@ import com.yassine.facturemaroc.data.InvoiceLine
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.PaymentMethod
 import com.yassine.facturemaroc.data.PartyRole
+import com.yassine.facturemaroc.data.quantityText
 import com.yassine.facturemaroc.data.visibleItemFields
 import com.yassine.facturemaroc.data.XmlExportOutcome
 import com.yassine.facturemaroc.invoice.InvoicePdf
@@ -1023,7 +1024,7 @@ private fun AddFirstItemCard(onClick: () -> Unit) {
 private fun LineCard(
     line: InvoiceLine,
     onEdit: () -> Unit,
-    onQuantity: (Int) -> Unit,
+    onQuantity: (Double) -> Unit,
     onDelete: () -> Unit,
 ) {
     Card(
@@ -1114,7 +1115,7 @@ private fun LineCard(
 }
 
 @Composable
-private fun QuantityStepper(quantity: Int, onChange: (Int) -> Unit) {
+private fun QuantityStepper(quantity: Double, onChange: (Double) -> Unit) {
     Surface(
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -1126,7 +1127,7 @@ private fun QuantityStepper(quantity: Int, onChange: (Int) -> Unit) {
                 onClick = { onChange(quantity - 1) },
             )
             Text(
-                quantity.toString(),
+                quantityText(quantity),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.width(26.dp),

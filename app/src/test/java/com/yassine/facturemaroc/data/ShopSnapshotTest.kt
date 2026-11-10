@@ -34,7 +34,7 @@ class ShopSnapshotTest {
             number = "F-20260101-0001",
             date = "01/01/2026",
             client = InvoiceClient(name = "Client"),
-            lines = listOf(InvoiceLine("Montage", 1, 100.0)),
+            lines = listOf(InvoiceLine("Montage", 1.0, 100.0)),
             shop = ShopSnapshot.of(shop, logoHash),
         )
 
@@ -93,7 +93,7 @@ class ShopSnapshotTest {
             number = "F-20260101-0007",
             date = "01/01/2026",
             client = InvoiceClient(name = "Client"),
-            lines = listOf(InvoiceLine("Pneu", 2, 500.0)),
+            lines = listOf(InvoiceLine("Pneu", 2.0, 500.0)),
             shop = ShopSnapshot.of(shop, logoHash),
             customerNote = "Merci de vérifier la marchandise.",
             termsNote = "Paiement comptant.",

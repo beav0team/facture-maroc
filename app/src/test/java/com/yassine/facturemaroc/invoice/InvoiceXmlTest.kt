@@ -45,8 +45,8 @@ class InvoiceXmlTest {
             ice = "009876543000012",
         ),
         lines = listOf(
-            InvoiceLine("Conseil", quantity = 1, unitPrice = 100.0, taxExempt = true),
-            InvoiceLine("Produit", quantity = 2, unitPrice = 100.0, unit = "unité"),
+            InvoiceLine("Conseil", quantity = 1.0, unitPrice = 100.0, taxExempt = true),
+            InvoiceLine("Produit", quantity = 2.0, unitPrice = 100.0, unit = "unité"),
         ),
         discountPercent = 10,
         vatPercent = 20.0,
@@ -326,8 +326,8 @@ class InvoiceXmlTest {
     fun `a mixed-rate invoice exports one tax subtotal per rate`() {
         val mixed = data.copy(
             lines = listOf(
-                InvoiceLine("Chaise", quantity = 1, unitPrice = 100.0),
-                InvoiceLine("Montage", quantity = 1, unitPrice = 100.0, vatPercent = 10.0),
+                InvoiceLine("Chaise", quantity = 1.0, unitPrice = 100.0),
+                InvoiceLine("Montage", quantity = 1.0, unitPrice = 100.0, vatPercent = 10.0),
             ),
         )
 
@@ -347,11 +347,24 @@ class InvoiceXmlTest {
     }
 
     @Test
+    fun `a decimal quantity is written with a dot and no trailing zeros`() {
+        val metres = data.copy(
+            lines = listOf(
+                InvoiceLine("Câble", quantity = 2.5, unitPrice = 40.0, unit = "m"),
+            ),
+        )
+
+        val xml = InvoiceXml.build(metres, shop)
+
+        assertTrue(xml.contains("<cbc:InvoicedQuantity unitCode=\"MTR\">2.5</cbc:InvoicedQuantity>"))
+    }
+
+    @Test
     fun `each line carries its own rate`() {
         val mixed = data.copy(
             lines = listOf(
-                InvoiceLine("Chaise", quantity = 1, unitPrice = 100.0),
-                InvoiceLine("Montage", quantity = 1, unitPrice = 100.0, vatPercent = 10.0),
+                InvoiceLine("Chaise", quantity = 1.0, unitPrice = 100.0),
+                InvoiceLine("Montage", quantity = 1.0, unitPrice = 100.0, vatPercent = 10.0),
             ),
         )
 

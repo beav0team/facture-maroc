@@ -64,7 +64,7 @@ class InvoicePdfPagesTest {
         lines = List(lineCount) { index ->
             InvoiceLine(
                 description = "Chaise en rotin ${index + 1}",
-                quantity = 1,
+                quantity = 1.0,
                 unitPrice = 950.0 + index,
             )
         },
@@ -224,9 +224,9 @@ class InvoicePdfPagesTest {
         // its arithmetic.
         val data = invoice("F-20261029-9012", 3).copy(
             lines = listOf(
-                InvoiceLine("Chaise en rotin", 2, 950.0),
-                InvoiceLine("Montage à domicile", 1, 450.0, vatPercent = 10.0),
-                InvoiceLine("Livraison express", 1, 120.0, vatPercent = 10.0),
+                InvoiceLine("Chaise en rotin", 2.0, 950.0),
+                InvoiceLine("Montage à domicile", 1.0, 450.0, vatPercent = 10.0),
+                InvoiceLine("Livraison express", 1.0, 120.0, vatPercent = 10.0),
             ),
             surchargeAmount = 80.0,
         )
@@ -366,7 +366,7 @@ class InvoicePdfPagesTest {
             number = "F-20261110-0007",
             date = "10/11/2026",
             client = InvoiceClient(name = "Client", ice = "009876543000012"),
-            lines = listOf(InvoiceLine("Chaise", 2, 950.0)),
+            lines = listOf(InvoiceLine("Chaise", 2.0, 950.0)),
             payment = PaymentInfo(paidAmount = 1_000.0, paidAt = "12/11/2026"),
         )
 
@@ -412,7 +412,7 @@ class InvoicePdfPagesTest {
             number = number,
             date = date,
             client = client,
-            lines = listOf(InvoiceLine("Chaise en rotin", 1, 950.0)),
+            lines = listOf(InvoiceLine("Chaise en rotin", 1.0, 950.0)),
             documentType = type,
         ),
         status = InvoiceStatus.ISSUED,

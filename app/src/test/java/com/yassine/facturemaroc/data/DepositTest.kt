@@ -16,7 +16,7 @@ import org.junit.Test
 class DepositTest {
 
     private fun invoice(
-        lines: List<InvoiceLine> = listOf(InvoiceLine("Chaise", 1, 1_000.0)),
+        lines: List<InvoiceLine> = listOf(InvoiceLine("Chaise", 1.0, 1_000.0)),
         deposit: Double = 0.0,
         reference: String = "",
         paid: Double = 0.0,

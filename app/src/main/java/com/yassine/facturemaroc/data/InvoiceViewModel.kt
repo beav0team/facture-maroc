@@ -242,7 +242,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         )
     }
 
-    fun setQuantity(index: Int, quantity: Int) {
+    fun setQuantity(index: Int, quantity: Double) {
         val current = _lines.value.getOrNull(index) ?: return
         if (quantity <= 0) {
             remove(index)

@@ -445,7 +445,7 @@ private fun FreeEntry(onAdd: (InvoiceLine) -> Unit) {
                 onAdd(
                     InvoiceLine(
                         description = description.trim(),
-                        quantity = 1,
+                        quantity = 1.0,
                         unitPrice = price,
                         unit = unit.trim(),
                     ),

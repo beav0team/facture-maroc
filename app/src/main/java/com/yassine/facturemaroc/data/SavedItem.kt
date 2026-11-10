@@ -94,7 +94,7 @@ data class SavedItem(
      * that is already half written, so the number is settled when the line is
      * made.
      */
-    fun toLine(quantity: Int = 1): InvoiceLine = InvoiceLine(
+    fun toLine(quantity: Double = 1.0): InvoiceLine = InvoiceLine(
         description = label.trim(),
         quantity = quantity,
         unitPrice = price,

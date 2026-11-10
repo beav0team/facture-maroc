@@ -11,8 +11,15 @@ package com.yassine.facturemaroc.data
 data class InvoiceLine(
     /** What the line is called on the document. */
     val description: String,
-    /** Quantity of this item. */
-    val quantity: Int,
+    /**
+     * Quantity of this item.
+     *
+     * A Double because a shop sells by the metre, the kilo or the hour: 2,5 m
+     * of cable and 1,25 h of labour are real lines, and a whole-number quantity
+     * could not write them without inventing a second unit. Stock, which is
+     * counted in whole articles, rounds this — see `StockMovement`.
+     */
+    val quantity: Double,
     /** Price for one unit, before any discount and before TVA. */
     val unitPrice: Double,
     /** How it is sold: `heure`, `jour`, `kg`, `unité`. Printed beside the name. */
@@ -103,6 +110,34 @@ data class InvoiceLine(
 internal fun trimRate(rate: Double): String =
     if (rate == Math.floor(rate)) rate.toInt().toString()
     else rate.toString().trimEnd('0').trimEnd('.')
+
+/**
+ * A quantity as a machine reads it: `2`, `1.5`, `0.25`.
+ *
+ * Rounding to three decimals keeps a typed `1,234` from printing as
+ * `1,2339999999`, while leaving enough precision for a kilo sold by weight.
+ * XML uses this form; the paper uses [quantityText].
+ */
+fun quantityValue(quantity: Double): String {
+    if (quantity.isNaN() || quantity.isInfinite()) return "0"
+    val rounded = Math.round(quantity * 1000.0) / 1000.0
+    return if (rounded == Math.floor(rounded)) {
+        rounded.toLong().toString()
+    } else {
+        java.lang.String
+            .format(java.util.Locale.US, "%.3f", rounded)
+            .trimEnd('0')
+            .trimEnd('.')
+    }
+}
+
+/**
+ * A quantity as it is printed in French: `2`, `1,5`, `0,25`.
+ *
+ * A line that sells two hours must not print "2.0", and a line that sells
+ * 1,5 m must not print "1.5000": the document is read on paper, not parsed.
+ */
+fun quantityText(quantity: Double): String = quantityValue(quantity).replace('.', ',')
 
 /** `1 234,50` — a French amount, without the currency. */
 internal fun moneyText(value: Double): String =

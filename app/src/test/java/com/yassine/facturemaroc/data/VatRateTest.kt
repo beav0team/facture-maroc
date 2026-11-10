@@ -38,7 +38,7 @@ class VatRateTest {
 
     @Test
     fun `a document at one rate keeps its single VAT row`() {
-        val data = invoice(listOf(InvoiceLine("Chaise", 1, 100.0)))
+        val data = invoice(listOf(InvoiceLine("Chaise", 1.0, 100.0)))
 
         assertEquals(100.0, data.totalExcludingVat, 0.0)
         assertEquals(20.0, data.vatAmount, 0.0)
@@ -54,8 +54,8 @@ class VatRateTest {
     fun `a 20 and a 10 percent line are taxed separately and recapped`() {
         val data = invoice(
             lines = listOf(
-                InvoiceLine("Chaise", 1, 100.0),
-                InvoiceLine("Montage", 1, 100.0, vatPercent = 10.0),
+                InvoiceLine("Chaise", 1.0, 100.0),
+                InvoiceLine("Montage", 1.0, 100.0, vatPercent = 10.0),
             ),
         )
 
@@ -73,8 +73,8 @@ class VatRateTest {
     fun `the rate of a line is the document's until it is set`() {
         val data = invoice(
             lines = listOf(
-                InvoiceLine("Chaise", 1, 100.0),
-                InvoiceLine("Montage", 1, 100.0, vatPercent = 10.0),
+                InvoiceLine("Chaise", 1.0, 100.0),
+                InvoiceLine("Montage", 1.0, 100.0, vatPercent = 10.0),
             ),
         )
 
@@ -87,7 +87,7 @@ class VatRateTest {
         // 7 % and 14 % were removed on 1 January 2026, but documents written
         // before that must keep adding up the way they were signed.
         val data = invoice(
-            lines = listOf(InvoiceLine("Ancien taux", 1, 100.0, vatPercent = 7.0)),
+            lines = listOf(InvoiceLine("Ancien taux", 1.0, 100.0, vatPercent = 7.0)),
         )
 
         assertEquals(7.0, data.vatAmount, 0.0)
@@ -99,8 +99,8 @@ class VatRateTest {
     fun `an exempt line sits beside a taxed one without touching it`() {
         val data = invoice(
             lines = listOf(
-                InvoiceLine("Chaise", 1, 100.0),
-                InvoiceLine("Export", 1, 100.0, taxExempt = true),
+                InvoiceLine("Chaise", 1.0, 100.0),
+                InvoiceLine("Export", 1.0, 100.0, taxExempt = true),
             ),
         )
 
@@ -118,7 +118,7 @@ class VatRateTest {
     @Test
     fun `an auto-entrepreneur charges nothing whatever the lines say`() {
         val data = invoice(
-            lines = listOf(InvoiceLine("Chaise", 1, 100.0, vatPercent = 10.0)),
+            lines = listOf(InvoiceLine("Chaise", 1.0, 100.0, vatPercent = 10.0)),
             shopVatOff = true,
         )
 
@@ -130,7 +130,7 @@ class VatRateTest {
     @Test
     fun `a VAT-exempt client charges nothing whatever the lines say`() {
         val data = invoice(
-            lines = listOf(InvoiceLine("Chaise", 1, 100.0)),
+            lines = listOf(InvoiceLine("Chaise", 1.0, 100.0)),
             clientExempt = true,
         )
 
@@ -148,8 +148,8 @@ class VatRateTest {
     fun `a global discount is spread over every rate`() {
         val data = invoice(
             lines = listOf(
-                InvoiceLine("Chaise", 1, 100.0),
-                InvoiceLine("Montage", 1, 100.0, vatPercent = 10.0),
+                InvoiceLine("Chaise", 1.0, 100.0),
+                InvoiceLine("Montage", 1.0, 100.0, vatPercent = 10.0),
             ),
             discount = 10,
         )
@@ -165,7 +165,7 @@ class VatRateTest {
     @Test
     fun `a surcharge follows the only taxed rate on the document`() {
         val data = invoice(
-            lines = listOf(InvoiceLine("Montage", 1, 100.0, vatPercent = 10.0)),
+            lines = listOf(InvoiceLine("Montage", 1.0, 100.0, vatPercent = 10.0)),
             surcharge = 50.0,
         )
 
@@ -178,7 +178,7 @@ class VatRateTest {
     @Test
     fun `a surcharge on an export is still taxed at the document rate`() {
         val data = invoice(
-            lines = listOf(InvoiceLine("Export", 1, 100.0, taxExempt = true)),
+            lines = listOf(InvoiceLine("Export", 1.0, 100.0, taxExempt = true)),
             surcharge = 100.0,
         )
 
@@ -191,8 +191,8 @@ class VatRateTest {
     fun `a mixed invoice taxes the surcharge at the shop rate`() {
         val data = invoice(
             lines = listOf(
-                InvoiceLine("Chaise", 1, 100.0),
-                InvoiceLine("Montage", 1, 100.0, vatPercent = 10.0),
+                InvoiceLine("Chaise", 1.0, 100.0),
+                InvoiceLine("Montage", 1.0, 100.0, vatPercent = 10.0),
             ),
             surcharge = 50.0,
         )
@@ -207,23 +207,23 @@ class VatRateTest {
     @Test
     fun `the recap always adds up to the printed totals`() {
         val cases = listOf(
-            invoice(listOf(InvoiceLine("A", 1, 99.99), InvoiceLine("B", 1, 33.33, vatPercent = 10.0))),
+            invoice(listOf(InvoiceLine("A", 1.0, 99.99), InvoiceLine("B", 1.0, 33.33, vatPercent = 10.0))),
             invoice(
-                listOf(InvoiceLine("A", 3, 19.99), InvoiceLine("B", 2, 7.45, vatPercent = 10.0)),
+                listOf(InvoiceLine("A", 3.0, 19.99), InvoiceLine("B", 2.0, 7.45, vatPercent = 10.0)),
                 discount = 7,
                 surcharge = 24.5,
             ),
             invoice(
                 listOf(
-                    InvoiceLine("A", 1, 0.05),
-                    InvoiceLine("B", 1, 0.05, vatPercent = 10.0),
+                    InvoiceLine("A", 1.0, 0.05),
+                    InvoiceLine("B", 1.0, 0.05, vatPercent = 10.0),
                 ),
             ),
             invoice(
                 listOf(
-                    InvoiceLine("A", 7, 1.11),
-                    InvoiceLine("B", 3, 2.22, vatPercent = 14.0),
-                    InvoiceLine("C", 1, 5.0, taxExempt = true),
+                    InvoiceLine("A", 7.0, 1.11),
+                    InvoiceLine("B", 3.0, 2.22, vatPercent = 14.0),
+                    InvoiceLine("C", 1.0, 5.0, taxExempt = true),
                 ),
                 discount = 3,
                 surcharge = 9.99,
@@ -247,8 +247,8 @@ class VatRateTest {
     fun `a mixed invoice passes validation`() {
         val data = invoice(
             lines = listOf(
-                InvoiceLine("Chaise", 1, 100.0),
-                InvoiceLine("Montage", 1, 100.0, vatPercent = 10.0),
+                InvoiceLine("Chaise", 1.0, 100.0),
+                InvoiceLine("Montage", 1.0, 100.0, vatPercent = 10.0),
             ),
             discount = 5,
             surcharge = 12.0,
@@ -261,7 +261,7 @@ class VatRateTest {
 
     @Test
     fun `a line rate outside zero to a hundred is refused`() {
-        val data = invoice(listOf(InvoiceLine("Chaise", 1, 100.0, vatPercent = 140.0)))
+        val data = invoice(listOf(InvoiceLine("Chaise", 1.0, 100.0, vatPercent = 140.0)))
 
         assertTrue(
             InvoiceValidation.validate(data)
@@ -275,8 +275,8 @@ class VatRateTest {
     fun `a line rate survives the round trip through JSON`() {
         val data = invoice(
             lines = listOf(
-                InvoiceLine("Chaise", 1, 100.0),
-                InvoiceLine("Montage", 1, 100.0, vatPercent = 10.0),
+                InvoiceLine("Chaise", 1.0, 100.0),
+                InvoiceLine("Montage", 1.0, 100.0, vatPercent = 10.0),
             ),
         )
 
@@ -290,7 +290,7 @@ class VatRateTest {
 
     @Test
     fun `a line without its own rate is written without the field`() {
-        val json = InvoiceJson.lineToJson(InvoiceLine("Chaise", 1, 100.0))
+        val json = InvoiceJson.lineToJson(InvoiceLine("Chaise", 1.0, 100.0))
 
         assertFalse(json.has("vatPercent"))
     }
@@ -301,18 +301,18 @@ class VatRateTest {
     fun `an explicit rate is named on the line`() {
         assertEquals(
             "Montage · TVA 10\u00A0%",
-            InvoiceLine("Montage", 1, 100.0, vatPercent = 10.0).lineLabel,
+            InvoiceLine("Montage", 1.0, 100.0, vatPercent = 10.0).lineLabel,
         )
         // A line following the document says nothing: the totals block already
         // says it, once.
-        assertEquals("Chaise", InvoiceLine("Chaise", 1, 100.0).lineLabel)
+        assertEquals("Chaise", InvoiceLine("Chaise", 1.0, 100.0).lineLabel)
     }
 
     @Test
     fun `a zero rate line is announced as zero`() {
         assertEquals(
             "Cadeau · TVA 0\u00A0%",
-            InvoiceLine("Cadeau", 1, 0.0, vatPercent = 0.0).lineLabel,
+            InvoiceLine("Cadeau", 1.0, 0.0, vatPercent = 0.0).lineLabel,
         )
     }
 }

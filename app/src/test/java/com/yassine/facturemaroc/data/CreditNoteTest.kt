@@ -26,8 +26,8 @@ class CreditNoteTest {
             date = "10/11/2026",
             client = InvoiceClient("Société BTP", ice = "009876543000012"),
             lines = listOf(
-                InvoiceLine("Chaise", 2, 950.0, vatPercent = 20.0),
-                InvoiceLine("Montage", 1, 300.0, vatPercent = 10.0),
+                InvoiceLine("Chaise", 2.0, 950.0, vatPercent = 20.0),
+                InvoiceLine("Montage", 1.0, 300.0, vatPercent = 10.0),
             ),
             discountFixed = 50.0,
             dueDate = "10/12/2026",

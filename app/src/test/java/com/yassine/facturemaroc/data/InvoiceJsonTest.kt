@@ -23,8 +23,8 @@ class InvoiceJsonTest {
             vatExempt = true,
         ),
         lines = listOf(
-            InvoiceLine("Prestation", 2, 250.0, unit = "heure", lineDiscountPercent = 10, taxExempt = true),
-            InvoiceLine("Fourniture", 1, 99.99),
+            InvoiceLine("Prestation", 2.0, 250.0, unit = "heure", lineDiscountPercent = 10, taxExempt = true),
+            InvoiceLine("Fourniture", 1.0, 99.99),
         ),
         discountPercent = 7,
         vatPercent = 20.0,
@@ -50,8 +50,8 @@ class InvoiceJsonTest {
         // losing it in the file would make the next buyer's invoice wrong.
         val data = full.copy(
             lines = listOf(
-                InvoiceLine("Montage", 1, 125.0, ttcPrice = 150.0),
-                InvoiceLine("Chaise", 1, 83.325),
+                InvoiceLine("Montage", 1.0, 125.0, ttcPrice = 150.0),
+                InvoiceLine("Chaise", 1.0, 83.325),
             ),
         )
 
@@ -92,7 +92,7 @@ class InvoiceJsonTest {
             number = "A-20260101-0001",
             date = "01/01/2026",
             client = InvoiceClient(name = "Client"),
-            lines = listOf(InvoiceLine("Produit", quantity = 1, unitPrice = 100.0)),
+            lines = listOf(InvoiceLine("Produit", quantity = 1.0, unitPrice = 100.0)),
             documentType = DocumentType.AVOIR,
             referenceNumber = "F-20260101-0042",
         )

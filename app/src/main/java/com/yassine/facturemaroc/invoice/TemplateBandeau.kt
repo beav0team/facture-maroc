@@ -9,6 +9,7 @@ import android.text.TextPaint
 import com.yassine.facturemaroc.data.InvoiceData
 import com.yassine.facturemaroc.data.InvoiceDesign
 import com.yassine.facturemaroc.data.ShopSettings
+import com.yassine.facturemaroc.data.quantityText
 
 /**
  * The coloured one: a solid band across the top carrying the shop, and the
@@ -170,7 +171,7 @@ class BandeauRenderer : PdfRenderer {
             var rowY = headTop + HEAD_H
             rows.forEach { lineIndex ->
                 val line = data.lines[lineIndex]
-                PdfText.draw(canvas, line.quantity.toString(), margin + 6f, rowY + 5f, cell, 24)
+                PdfText.draw(canvas, quantityText(line.quantity), margin + 6f, rowY + 5f, cell, 24)
                 PdfText.draw(canvas, line.lineLabel, descX, rowY + 5f, cell, descW, maxLines = 2)
                 PdfText.draw(
                     canvas, PdfText.money(line.unitPrice), unitX, rowY + 5f, cell, unitW.toInt(),
