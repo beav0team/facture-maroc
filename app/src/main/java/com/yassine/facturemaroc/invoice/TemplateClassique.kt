@@ -201,10 +201,10 @@ class ClassiqueRenderer : PdfRenderer {
         var ty = lastRowEnd + 16f
         PdfTotals.row(canvas, box, "Total HT", PdfText.money(data.subtotal), ty, totalLabel, body)
         ty += 15f
-        if (data.discountPercent > 0) {
+        if (data.showsDiscount) {
             PdfTotals.row(
                 canvas, box,
-                "Remise −${PdfText.percent(data.discountPercent.toDouble())}%",
+                (if (data.discountInAmount) "Remise" else "Remise −${PdfText.percent(data.discountPercent.toDouble())}%"),
                 "−${PdfText.money(data.discountAmount)}",
                 ty, totalLabel, body,
             )
@@ -279,7 +279,7 @@ class ClassiqueRenderer : PdfRenderer {
         words: TextPaint,
         contentW: Int,
     ): Float {
-        val rows = 1 + data.vatRowCount + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
+        val rows = 1 + data.vatRowCount + (if (data.showsDiscount) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         var h = 54f + 15f * rows
         if (data.showIncoterm && data.incoterm.isNotBlank()) h += 16f
         if (design.showAmountWords) h += 8f + PdfText.height(data.amountInWords, words, contentW, 4)

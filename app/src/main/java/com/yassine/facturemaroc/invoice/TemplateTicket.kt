@@ -153,9 +153,9 @@ class TicketRenderer : PdfRenderer {
         }
 
         totalRow("Total HT", PdfText.money(data.subtotal), small, money)
-        if (data.discountPercent > 0) {
+        if (data.showsDiscount) {
             totalRow(
-                "Remise ${PdfText.percent(data.discountPercent.toDouble())}%",
+                (if (data.discountInAmount) "Remise" else "Remise ${PdfText.percent(data.discountPercent.toDouble())}%"),
                 "−${PdfText.money(data.discountAmount)}",
                 small,
                 money,

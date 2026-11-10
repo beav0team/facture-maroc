@@ -87,6 +87,16 @@ object InvoiceValidation {
                     ),
                 )
             }
+            if (line.lineDiscountFixed < 0.0 || line.lineDiscountFixed.isNaN() ||
+                line.lineDiscountFixed.isInfinite()
+            ) {
+                add(
+                    ValidationIssue(
+                        ValidationCode.DISCOUNT_OUT_OF_RANGE,
+                        "Ligne $position : la remise en dirhams n'est pas un montant valide.",
+                    ),
+                )
+            }
             val rate = line.vatPercent
             if (rate != null && (rate < 0.0 || rate > 100.0 || rate.isNaN())) {
                 add(
@@ -103,6 +113,26 @@ object InvoiceValidation {
                 ValidationIssue(
                     ValidationCode.DISCOUNT_OUT_OF_RANGE,
                     "La remise générale doit être comprise entre 0 et 100 %.",
+                ),
+            )
+        }
+
+        if (data.discountFixed < 0.0 || data.discountFixed.isNaN() || data.discountFixed.isInfinite()) {
+            add(
+                ValidationIssue(
+                    ValidationCode.DISCOUNT_OUT_OF_RANGE,
+                    "La remise générale en dirhams n'est pas un montant valide.",
+                ),
+            )
+        }
+
+        if (data.surchargePercent < 0.0 || data.surchargePercent > 100.0 ||
+            data.surchargePercent.isNaN()
+        ) {
+            add(
+                ValidationIssue(
+                    ValidationCode.INVALID_SURCHARGE,
+                    "Le pourcentage de surcharge doit être compris entre 0 et 100 %.",
                 ),
             )
         }
@@ -180,14 +210,23 @@ object InvoiceValidation {
         // that was edited, or a formula that drifted. Per line, because a
         // document can now carry several rates.
         val exactSubtotal = data.lines.sumOf { it.total }
-        val keep = 1.0 - data.discountPercent.coerceIn(0, 100) / 100.0
+        val exactDiscount = if (data.discountFixed > 0.0) {
+            data.discountFixed.coerceAtMost(exactSubtotal).coerceAtLeast(0.0)
+        } else {
+            exactSubtotal * data.discountPercent.coerceIn(0, 100) / 100.0
+        }
+        val keep = if (exactSubtotal <= 0.0) 1.0 else (exactSubtotal - exactDiscount) / exactSubtotal
         val nets = mutableMapOf<Double, Double>()
         data.lines.forEach { line ->
             val rate = data.rateOf(line)
             nets[rate] = (nets[rate] ?: 0.0) + line.total * keep
         }
-        val exactDiscount = exactSubtotal * data.discountPercent.coerceIn(0, 100) / 100.0
-        val exactSurcharge = data.surchargeAmount.coerceAtLeast(0.0)
+        val exactSurcharge = if (data.surchargePercent > 0.0) {
+            (exactSubtotal - exactDiscount).coerceAtLeast(0.0) *
+                data.surchargePercent.coerceIn(0.0, 100.0) / 100.0
+        } else {
+            data.surchargeAmount.coerceAtLeast(0.0)
+        }
         val exactVat = nets.entries.sumOf { (rate, net) -> net * rate / 100.0 } +
             exactSurcharge * data.surchargeVatPercent / 100.0
         val recomputedTotal = round(exactSubtotal - exactDiscount + exactSurcharge + exactVat)

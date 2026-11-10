@@ -144,7 +144,11 @@ object InvoiceXml {
         }
 
         // --- sequence 43: the invoice-level discount, before the tax block
-        if (data.discountPercent > 0 && data.discountAmount > 0.0) {
+        if (data.discountFixed > 0.0 && data.discountAmount > 0.0) {
+            // A discount in dirhams has no percentage to report, and inventing
+            // one (amount / base) would state a figure the shop never gave.
+            fixedAllowance(x, "Remise", data.discountAmount, data.subtotal)
+        } else if (data.discountPercent > 0 && data.discountAmount > 0.0) {
             allowance(x, data.discountPercent, data.discountAmount, data.subtotal)
         }
         if (data.surcharge > 0.0) {
@@ -199,9 +203,11 @@ object InvoiceXml {
             x.element("cbc:ID", (index + 1).toString())
             x.element(quantityTag, line.quantity.toString(), " unitCode=\"${unitCode(line.unit)}\"")
             x.money("cbc:LineExtensionAmount", line.total)
-            if (line.lineDiscountPercent > 0) {
-                val gross = line.quantity * line.unitPrice
-                allowance(x, line.lineDiscountPercent, gross - line.total, gross)
+            val lineGross = line.quantity * line.unitPrice
+            if (line.lineDiscountFixed > 0.0) {
+                fixedAllowance(x, "Remise", lineGross - line.total, lineGross)
+            } else if (line.lineDiscountPercent > 0) {
+                allowance(x, line.lineDiscountPercent, lineGross - line.total, lineGross)
             }
             x.open("cac:Item")
             x.element("cbc:Name", line.description)
@@ -370,6 +376,16 @@ object InvoiceXml {
         x.close("cac:TaxScheme")
         x.close("cac:TaxCategory")
         x.close("cac:TaxSubtotal")
+    }
+
+    /** An allowance stated as an amount, with no percentage behind it. */
+    private fun fixedAllowance(x: Xml, reason: String, amount: Double, base: Double) {
+        x.open("cac:AllowanceCharge")
+        x.element("cbc:ChargeIndicator", "false")
+        x.element("cbc:AllowanceChargeReason", reason)
+        x.money("cbc:Amount", amount)
+        x.money("cbc:BaseAmount", base)
+        x.close("cac:AllowanceCharge")
     }
 
     private fun allowance(

@@ -15,6 +15,12 @@ data class InvoiceData(
     val client: InvoiceClient,
     val lines: List<InvoiceLine>,
     val discountPercent: Int = 0,
+    /**
+     * A discount given in dirhams rather than in percent, taken off after the
+     * lines. When set it takes over from [discountPercent]: a shop says either
+     * "5 % off" or "200 DH off", not both.
+     */
+    val discountFixed: Double = 0.0,
     /** TVA. Morocco's standard rate is 20; 0 is legitimate for some sales. */
     val vatPercent: Double = 20.0,
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
@@ -50,6 +56,11 @@ data class InvoiceData(
     val surchargeLabel: String = "Livraison",
     /** The charge itself, HT, added to the taxable base. 0 means none. */
     val surchargeAmount: Double = 0.0,
+    /**
+     * A charge given as a percentage of the discounted total instead of an
+     * amount, e.g. 2 % for packaging. Takes over from [surchargeAmount].
+     */
+    val surchargePercent: Double = 0.0,
     /** What the shop has received; null on an unpaid document. */
     val payment: PaymentInfo? = null,
 ) {
@@ -70,18 +81,48 @@ data class InvoiceData(
     private val exactSubtotal: Double get() = lines.sumOf { it.total }
 
     val discountAmount: Double
-        get() = money(subtotal * discountPercent.coerceIn(0, 100) / 100.0)
+        get() = if (discountFixed > 0.0) {
+            // Never more than the goods are worth: a discount larger than the
+            // invoice is a typing mistake, not a payment.
+            money(discountFixed.coerceAtMost(subtotal).coerceAtLeast(0.0))
+        } else {
+            money(subtotal * discountPercent.coerceIn(0, 100) / 100.0)
+        }
+
+    /** Whether the page prints a discount row at all. */
+    val showsDiscount: Boolean get() = discountAmount > 0.0
+
+    /**
+     * Whether the discount was given in dirhams.
+     *
+     * Such a discount has no rate, and printing one back out — amount divided
+     * by base — would state a percentage the shop never gave.
+     */
+    val discountInAmount: Boolean get() = discountFixed > 0.0
 
     /** The same discount without rounding, for the same reason as [exactSubtotal]. */
     private val exactDiscount: Double
-        get() = exactSubtotal * discountPercent.coerceIn(0, 100) / 100.0
+        get() = if (discountFixed > 0.0) {
+            discountFixed.coerceAtMost(exactSubtotal).coerceAtLeast(0.0)
+        } else {
+            exactSubtotal * discountPercent.coerceIn(0, 100) / 100.0
+        }
 
     /** Total HT: what the goods come to before TVA. */
     val totalExcludingVat: Double
         get() = money(subtotal - discountAmount)
 
     /** Delivery or another charge, HT, after the discount and before TVA. */
-    val surcharge: Double get() = money(surchargeAmount.coerceAtLeast(0.0))
+    val surcharge: Double get() = money(exactSurcharge)
+
+    /** The same charge without rounding, which is what [total] is built from. */
+    private val exactSurcharge: Double
+        get() = if (surchargePercent > 0.0) {
+            (exactSubtotal - exactDiscount).coerceAtLeast(0.0) *
+                surchargePercent.coerceIn(0.0, 100.0) / 100.0
+        } else {
+            surchargeAmount.coerceAtLeast(0.0)
+        }
 
     /** The effective VAT: 0 for an auto-entrepreneur or an exempt client. */
     val effectiveVatPercent: Double
@@ -130,13 +171,21 @@ data class InvoiceData(
      * discount, plus the surcharge on the rate it follows.
      */
     private fun exactRateNets(): Map<Double, Double> {
-        val keep = 1.0 - discountPercent.coerceIn(0, 100) / 100.0
+        // The discount is spread over the rates in proportion to what each
+        // rate is worth, so an exempt line cannot reduce the tax a taxed line
+        // owes. Computed from the amount, because a fixed discount has no
+        // percentage to apply.
+        val keep = if (exactSubtotal <= 0.0) {
+            1.0
+        } else {
+            (exactSubtotal - exactDiscount) / exactSubtotal
+        }
         val nets = LinkedHashMap<Double, Double>()
         lines.forEach { line ->
             val rate = rateOf(line)
             nets[rate] = (nets[rate] ?: 0.0) + line.total * keep
         }
-        val charge = surchargeAmount.coerceAtLeast(0.0)
+        val charge = exactSurcharge
         if (charge > 0.0) {
             val rate = surchargeVatPercent
             nets[rate] = (nets[rate] ?: 0.0) + charge
@@ -221,7 +270,7 @@ data class InvoiceData(
      */
     val total: Double
         get() = money(
-            exactSubtotal - exactDiscount + surchargeAmount.coerceAtLeast(0.0) + exactVat,
+            exactSubtotal - exactDiscount + exactSurcharge + exactVat,
         )
 
     /** The amount in words, the line that makes the document hard to alter. */

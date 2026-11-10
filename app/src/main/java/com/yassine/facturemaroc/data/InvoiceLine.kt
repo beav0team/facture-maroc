@@ -20,6 +20,15 @@ data class InvoiceLine(
     /** Discount applied to this line only, before the invoice-level discount. 0 means none. */
     val lineDiscountPercent: Int = 0,
     /**
+     * A discount on this line given in dirhams rather than in percent.
+     *
+     * A shop that says "50 DH off the chair" should not have to work out what
+     * percentage that is, and rounding the percentage back to a whole number
+     * would silently change the price. When set, it takes over from
+     * [lineDiscountPercent]: one discount per line, not two.
+     */
+    val lineDiscountFixed: Double = 0.0,
+    /**
      * True when TVA does not apply to this line (export, some public bodies).
      *
      * Set per line rather than only per invoice because an invoice can mix a
@@ -51,8 +60,16 @@ data class InvoiceLine(
      */
     val ttcPrice: Double? = null,
 ) {
-    val total: Double get() =
-        quantity * unitPrice * (1.0 - lineDiscountPercent.coerceIn(0, 100) / 100.0)
+    val total: Double get() {
+        val gross = quantity * unitPrice
+        // Never below zero: a discount larger than the line is a typing
+        // mistake, not a credit note.
+        return if (lineDiscountFixed > 0.0) {
+            (gross - lineDiscountFixed).coerceAtLeast(0.0)
+        } else {
+            gross * (1.0 - lineDiscountPercent.coerceIn(0, 100) / 100.0)
+        }
+    }
 
     /** The line as it is printed: `Main-d'œuvre · heure · −10% · TVA exonérée`. */
     val lineLabel: String
@@ -61,6 +78,7 @@ data class InvoiceLine(
             val unitText = unit.trim()
             if (unitText.isNotEmpty()) add(unitText)
             if (lineDiscountPercent > 0) add("−$lineDiscountPercent%")
+            if (lineDiscountFixed > 0.0) add("−${moneyText(lineDiscountFixed)} DH")
             if (taxExempt) add("TVA exonérée")
             // Only an explicit rate is printed: a document at one rate says it
             // once in the totals, and repeating it on every line is noise. The
@@ -85,3 +103,10 @@ data class InvoiceLine(
 internal fun trimRate(rate: Double): String =
     if (rate == Math.floor(rate)) rate.toInt().toString()
     else rate.toString().trimEnd('0').trimEnd('.')
+
+/** `1 234,50` — a French amount, without the currency. */
+internal fun moneyText(value: Double): String =
+    java.lang.String
+        .format(java.util.Locale.FRANCE, "%,.2f", value)
+        .replace('\u202F', ' ')
+        .replace('\u00A0', ' ')

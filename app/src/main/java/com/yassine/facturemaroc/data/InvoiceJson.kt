@@ -52,6 +52,9 @@ object InvoiceJson {
         put("unitPrice", line.unitPrice)
         put("unit", line.unit)
         put("lineDiscountPercent", line.lineDiscountPercent)
+        // Written only when used, so an older file stays as it was and a line
+        // without a fixed discount says so by saying nothing.
+        if (line.lineDiscountFixed > 0.0) put("lineDiscountFixed", line.lineDiscountFixed)
         put("taxExempt", line.taxExempt)
         // Written only when the line carries its own rate: a line that follows
         // the shop setting must keep following it, and an old file stays
@@ -68,6 +71,8 @@ object InvoiceJson {
         unitPrice = obj.optDouble("unitPrice", 0.0).let { if (it.isNaN()) 0.0 else it },
         unit = obj.optString("unit", ""),
         lineDiscountPercent = obj.optInt("lineDiscountPercent", 0).coerceIn(0, 100),
+        lineDiscountFixed = obj.optDouble("lineDiscountFixed", 0.0)
+            .let { if (it.isNaN() || it.isInfinite()) 0.0 else it.coerceAtLeast(0.0) },
         taxExempt = obj.optBoolean("taxExempt", false),
         vatPercent = obj.optDouble("vatPercent", Double.NaN).let { if (it.isNaN()) null else it.coerceAtLeast(0.0) },
         ttcPrice = obj.optDouble("ttcPrice", Double.NaN).let { if (it.isNaN()) null else it },
@@ -82,6 +87,7 @@ object InvoiceJson {
             JSONArray().apply { data.lines.forEach { put(lineToJson(it)) } },
         )
         put("discountPercent", data.discountPercent)
+        if (data.discountFixed > 0.0) put("discountFixed", data.discountFixed)
         put("vatPercent", data.vatPercent)
         put("paymentMethod", data.paymentMethod.id)
         put("documentType", data.documentType.id)
@@ -108,6 +114,7 @@ object InvoiceJson {
         }
         put("surchargeLabel", data.surchargeLabel)
         put("surchargeAmount", data.surchargeAmount)
+        if (data.surchargePercent > 0.0) put("surchargePercent", data.surchargePercent)
         // Omitted when nothing was received, so an unpaid document says so by
         // saying nothing and old files stay byte-for-byte compatible.
         data.payment?.takeIf { !it.isEmpty || it.paidAt.isNotBlank() }?.let {
@@ -215,6 +222,8 @@ object InvoiceJson {
             client = clientFromJson(obj.optJSONObject("client")),
             lines = lines,
             discountPercent = obj.optInt("discountPercent", 0).coerceIn(0, 100),
+            discountFixed = obj.optDouble("discountFixed", 0.0)
+                .let { if (it.isNaN() || it.isInfinite()) 0.0 else it.coerceAtLeast(0.0) },
             vatPercent = obj.optDouble("vatPercent", 20.0).let { if (it.isNaN()) 20.0 else it },
             paymentMethod = PaymentMethod.fromId(obj.optString("paymentMethod", null)),
             documentType = DocumentType.fromId(obj.optString("documentType", null)),
@@ -238,6 +247,8 @@ object InvoiceJson {
             surchargeLabel = obj.optString("surchargeLabel", "Livraison"),
             surchargeAmount = obj.optDouble("surchargeAmount", 0.0)
                 .let { if (it.isNaN() || it.isInfinite()) 0.0 else it },
+            surchargePercent = obj.optDouble("surchargePercent", 0.0)
+                .let { if (it.isNaN() || it.isInfinite()) 0.0 else it.coerceIn(0.0, 100.0) },
             payment = obj.optJSONObject("payment")?.let { payment ->
                 PaymentInfo(
                     paidAmount = payment.optDouble("paidAmount", 0.0)

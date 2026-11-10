@@ -9,7 +9,7 @@ answering from memory.
 | Version | **0.10.0** (versionCode 16) |
 | Last commit | `3a4dc3a` — payments, surcharge, logo store, PDF archive |
 | Branch | `master` (pushed; no tag/release for 0.10.0 yet) |
-| Tests | **286 JVM**, **16 instrumented** |
+| Tests | **301 JVM**, **16 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -19,8 +19,8 @@ answering from memory.
 
 A1 (VAT and compliance engine) has landed on top of 0.10.0 and is **not
 released**: per-line VAT, recap by rate on every template, UBL per rate, ICE
-validation, detail sheet rows. Still to do in A1: fixed-amount discounts
-(global and per line) and a percentage surcharge.
+validation, detail sheet rows, fixed-amount discounts (global and per line) and
+a percentage surcharge. A1 is complete; A2 (payments lifecycle) is next.
 
 ## Feature status
 
@@ -30,9 +30,9 @@ validation, detail sheet rows. Still to do in A1: fixed-amount discounts
 |---|---|---|
 | Document types | **Exists** | facture, devis, bon de commande, ticket, avoir, proforma, acompte, régularisation, simplifiée, export |
 | Templates | **Exists** | Classique, Moderne, Facture Maroc, Épuré, Bandeau, Ticket 80 mm |
-| Lines | **Exists** | description, quantity (Int), unit price, unit, line discount %, **VAT rate per line (20/10/0/exempt)** |
-| Global discount | **Partial** | percentage only; no fixed amount |
-| Surcharge | **Partial** | fixed amount only; percentage to come |
+| Lines | **Exists** | description, quantity (Int), unit price, unit, line discount % or amount, **VAT rate per line (20/10/0/exempt)** |
+| Global discount | **Exists** | percentage or fixed amount, one per document; amount drops the percentage |
+| Surcharge | **Exists** | fixed amount or percentage of the discounted total, taxed at the document rate |
 | VAT | **Exists** | per line since A1: 20/10/0/exempt, legacy 7/14 readable; recap by rate on the 6 templates; one UBL `TaxSubtotal` per rate |
 | Payment tracking | **Exists** | amount, date, reference, partial/paid, badge, PDF block, UBL prepaid |
 | Receipt PDF | **Missing** | |

@@ -726,11 +726,33 @@ fun LineEditorDialog(
     var discountText by remember(initial) {
         mutableStateOf(if (initial.lineDiscountPercent > 0) initial.lineDiscountPercent.toString() else "")
     }
+    // A discount given in dirhams is written the way the shop sees the price:
+    // in the same basis as the price field. It is stored HT, so it is converted
+    // on the way in and back on the way out, exactly like the unit price — a
+    // shop that types TTC must get "−50 DH TTC" back, not "−41,67".
+    var discountFixedText by remember(initial) {
+        mutableStateOf(
+            if (initial.lineDiscountFixed > 0.0) {
+                (
+                    if (ttcBasis) PriceBasis.includingVat(initial.lineDiscountFixed, effectiveRate)
+                    else initial.lineDiscountFixed
+                    ).trimZeros()
+            } else {
+                ""
+            },
+        )
+    }
 
     val quantity = quantityText.toIntOrNull()?.coerceAtLeast(1) ?: 1
     val price = priceText.replace(',', '.').toDoubleOrNull() ?: 0.0
     val discount = discountText.toIntOrNull()?.coerceIn(0, 100) ?: 0
-    val total = quantity * price * (1.0 - discount / 100.0)
+    val discountFixed = discountFixedText.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
+    val gross = quantity * price
+    val total = if (discountFixed > 0.0) {
+        (gross - discountFixed).coerceAtLeast(0.0)
+    } else {
+        gross * (1.0 - discount / 100.0)
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -784,19 +806,39 @@ fun LineEditorDialog(
                         ),
                     )
                 }
-                OutlinedTextField(
-                    value = discountText,
-                    onValueChange = { input ->
-                        discountText = input.filter { it.isDigit() }.take(3)
-                    },
-                    label = { Text("Remise sur la ligne (%)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done,
-                    ),
-                )
+                // One discount per line: typing one clears the other, so the
+                // line never carries two figures that would be added together.
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = discountText,
+                        onValueChange = { input ->
+                            discountText = input.filter { it.isDigit() }.take(3)
+                            if (discountText.isNotEmpty()) discountFixedText = ""
+                        },
+                        label = { Text("Remise (%)") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done,
+                        ),
+                    )
+                    OutlinedTextField(
+                        value = discountFixedText,
+                        onValueChange = { input ->
+                            discountFixedText =
+                                input.filter { it.isDigit() || it == '.' || it == ',' }.take(10)
+                            if (discountFixedText.isNotEmpty()) discountText = ""
+                        },
+                        label = { Text(if (ttcBasis) "Remise (DH TTC)" else "Remise (DH)") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Done,
+                        ),
+                    )
+                }
                 // Morocco taxes each line (CGI art. 145), so one invoice may
                 // carry an article at 20 % and a service at 10 % on the same
                 // page. "Document" keeps the line on the shop's own rate.
@@ -904,6 +946,15 @@ fun LineEditorDialog(
                             // for an exempt line, which has no TVA inside it.
                             ttcPrice = if (ttcBasis) price else null,
                             lineDiscountPercent = discount,
+                            lineDiscountFixed = if (discountFixed > 0.0) {
+                                if (ttcBasis) {
+                                    PriceBasis.excludingVat(discountFixed, effectiveRate)
+                                } else {
+                                    discountFixed
+                                }
+                            } else {
+                                0.0
+                            },
                             taxExempt = taxExempt,
                             vatPercent = rateChoice,
                         ),
@@ -917,6 +968,111 @@ fun LineEditorDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Annuler") }
+        },
+    )
+}
+
+/**
+ * The general discount, given either in percent or in dirhams.
+ *
+ * One discount per document: a shop says either "5 % de remise" or "200 DH de
+ * remise", and choosing one clears the other. Only the fields for the chosen
+ * mode are shown, so a figure can never be read as belonging to the other.
+ */
+@Composable
+fun DiscountDialog(
+    initialPercent: Int,
+    initialAmount: Double,
+    onConfirm: (percent: Int, amount: Double) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var inAmount by remember(initialAmount) { mutableStateOf(initialAmount > 0.0) }
+    var text by remember(initialPercent, initialAmount) {
+        mutableStateOf(
+            when {
+                initialAmount > 0.0 -> initialAmount.trimZeros()
+                initialPercent > 0 -> initialPercent.toString()
+                else -> ""
+            },
+        )
+    }
+    val percent = text.toIntOrNull()?.coerceIn(0, 100) ?: 0
+    val amount = text.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Remise générale") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ChoiceChip(
+                        label = "Pourcentage",
+                        selected = !inAmount,
+                        onClick = { if (inAmount) { inAmount = false; text = "" } },
+                    )
+                    ChoiceChip(
+                        label = "Montant",
+                        selected = inAmount,
+                        onClick = { if (!inAmount) { inAmount = true; text = "" } },
+                    )
+                }
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { input ->
+                        text = if (inAmount) {
+                            input.filter { it.isDigit() || it == '.' || it == ',' }.take(10)
+                        } else {
+                            input.filter { it.isDigit() }.take(3)
+                        }
+                    },
+                    label = { Text(if (inAmount) "Montant de la remise" else "Pourcentage") },
+                    suffix = { Text(if (inAmount) "DH" else "%") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = if (inAmount) KeyboardType.Decimal else KeyboardType.Number,
+                        imeAction = ImeAction.Done,
+                    ),
+                )
+                if (!inAmount) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(0, 5, 10, 20).forEach { candidate ->
+                            ChoiceChip(
+                                label = if (candidate == 0) "Aucune" else "$candidate %",
+                                selected = percent == candidate,
+                                onClick = { text = if (candidate == 0) "" else candidate.toString() },
+                            )
+                        }
+                    }
+                }
+                Text(
+                    if (inAmount) {
+                        "Retirée du total HT, avant la TVA. Jamais plus que le total."
+                    } else {
+                        "Appliquée au total HT, avant la TVA."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (inAmount) onConfirm(0, amount) else onConfirm(percent, 0.0)
+                },
+                shape = MaterialTheme.shapes.small,
+            ) {
+                Text("Appliquer")
+            }
+        },
+        dismissButton = {
+            Row {
+                if (initialPercent > 0 || initialAmount > 0.0) {
+                    TextButton(onClick = { onConfirm(0, 0.0) }) { Text("Retirer") }
+                }
+                TextButton(onClick = onDismiss) { Text("Annuler") }
+            }
         },
     )
 }
@@ -1085,14 +1241,22 @@ fun NoteDialog(
 fun SurchargeDialog(
     initialLabel: String,
     initialAmount: Double,
-    onConfirm: (String, Double) -> Unit,
+    initialPercent: Double,
+    onConfirm: (String, Double, Double) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var label by remember(initialLabel) { mutableStateOf(initialLabel) }
-    var amount by remember(initialAmount) {
-        mutableStateOf(if (initialAmount > 0.0) initialAmount.trimZeros() else "")
+    var inPercent by remember(initialPercent) { mutableStateOf(initialPercent > 0.0) }
+    var text by remember(initialAmount, initialPercent) {
+        mutableStateOf(
+            when {
+                initialPercent > 0.0 -> initialPercent.trimZeros()
+                initialAmount > 0.0 -> initialAmount.trimZeros()
+                else -> ""
+            },
+        )
     }
-    val value = amount.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
+    val value = text.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1107,13 +1271,29 @@ fun SurchargeDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ChoiceChip(
+                        label = "Montant",
+                        selected = !inPercent,
+                        onClick = { if (inPercent) { inPercent = false; text = "" } },
+                    )
+                    ChoiceChip(
+                        label = "Pourcentage",
+                        selected = inPercent,
+                        onClick = { if (!inPercent) { inPercent = true; text = "" } },
+                    )
+                }
                 OutlinedTextField(
-                    value = amount,
+                    value = text,
                     onValueChange = { input ->
-                        amount = input.filter { it.isDigit() || it == ',' || it == '.' }.take(10)
+                        text = if (inPercent) {
+                            input.filter { it.isDigit() || it == '.' || it == ',' }.take(6)
+                        } else {
+                            input.filter { it.isDigit() || it == ',' || it == '.' }.take(10)
+                        }
                     },
-                    label = { Text("Montant HT") },
-                    suffix = { Text("DH") },
+                    label = { Text(if (inPercent) "Pourcentage du total HT" else "Montant HT") },
+                    suffix = { Text(if (inPercent) "%" else "DH") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(
@@ -1122,7 +1302,11 @@ fun SurchargeDialog(
                     ),
                 )
                 Text(
-                    "Ajouté après la remise, avant la TVA.",
+                    if (inPercent) {
+                        "Calculée sur le total après remise, puis soumise à la TVA."
+                    } else {
+                        "Ajouté après la remise, avant la TVA."
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1130,7 +1314,10 @@ fun SurchargeDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onConfirm(label.trim().ifBlank { "Livraison" }, value) },
+                onClick = {
+                    val name = label.trim().ifBlank { "Livraison" }
+                    if (inPercent) onConfirm(name, 0.0, value) else onConfirm(name, value, 0.0)
+                },
                 shape = MaterialTheme.shapes.small,
             ) {
                 Text("Appliquer")
@@ -1138,8 +1325,10 @@ fun SurchargeDialog(
         },
         dismissButton = {
             Row {
-                if (initialAmount > 0.0) {
-                    TextButton(onClick = { onConfirm("Livraison", 0.0) }) { Text("Retirer") }
+                if (initialAmount > 0.0 || initialPercent > 0.0) {
+                    TextButton(onClick = { onConfirm("Livraison", 0.0, 0.0) }) {
+                        Text("Retirer")
+                    }
                 }
                 TextButton(onClick = onDismiss) { Text("Annuler") }
             }

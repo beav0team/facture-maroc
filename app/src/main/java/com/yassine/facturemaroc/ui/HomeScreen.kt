@@ -2724,9 +2724,13 @@ private fun InvoiceDetailSheet(
             // showed the net one under that name gave two different HT totals
             // for the same invoice.
             DetailRow("Sous-total HT", record.data.subtotal.asDirhams())
-            if (record.data.discountPercent > 0) {
+            if (record.data.showsDiscount) {
                 DetailRow(
-                    "Remise ${record.data.discountPercent} %",
+                    if (record.data.discountInAmount) {
+                        "Remise"
+                    } else {
+                        "Remise ${record.data.discountPercent} %"
+                    },
                     "−${record.data.discountAmount.asDirhams()}",
                 )
             }

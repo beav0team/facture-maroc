@@ -55,6 +55,10 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     private val _discountPercent = MutableStateFlow(0)
     val discountPercent: StateFlow<Int> = _discountPercent.asStateFlow()
 
+    /** A discount in dirhams; it takes over from the percentage when set. */
+    private val _discountFixed = MutableStateFlow(0.0)
+    val discountFixed: StateFlow<Double> = _discountFixed.asStateFlow()
+
     private val _paymentMethod = MutableStateFlow(PaymentMethod.CASH)
     val paymentMethod: StateFlow<PaymentMethod> = _paymentMethod.asStateFlow()
 
@@ -87,6 +91,10 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     private val _surchargeAmount = MutableStateFlow(0.0)
     val surchargeAmount: StateFlow<Double> = _surchargeAmount.asStateFlow()
+
+    /** A surcharge as a percentage of the discounted total. */
+    private val _surchargePercent = MutableStateFlow(0.0)
+    val surchargePercent: StateFlow<Double> = _surchargePercent.asStateFlow()
 
     private val _supplier = MutableStateFlow<InvoiceClient?>(null)
     val supplier: StateFlow<InvoiceClient?> = _supplier.asStateFlow()
@@ -139,6 +147,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         client = _client.value,
         lines = _lines.value,
         discountPercent = _discountPercent.value,
+        discountFixed = _discountFixed.value,
         vatPercent = _shop.value.vatPercent,
         vatNotApplicable = _shop.value.vatNotApplicable,
         paymentMethod = _paymentMethod.value,
@@ -153,6 +162,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         signature = _signature.value,
         surchargeLabel = _surchargeLabel.value,
         surchargeAmount = _surchargeAmount.value,
+        surchargePercent = _surchargePercent.value,
     )
 
     private fun refreshInvoice() {
@@ -324,6 +334,16 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     fun setDiscountPercent(percent: Int) {
         _discountPercent.value = percent.coerceIn(0, 100)
+        // One discount: choosing a percentage drops the amount and the other
+        // way round, so the document never carries two.
+        if (percent > 0) _discountFixed.value = 0.0
+        refreshInvoice()
+    }
+
+    /** A discount given in dirhams, which drops any percentage set before. */
+    fun setDiscountFixed(amount: Double) {
+        _discountFixed.value = amount.coerceAtLeast(0.0)
+        if (amount > 0.0) _discountPercent.value = 0
         refreshInvoice()
     }
 
@@ -389,6 +409,20 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     fun setSurcharge(label: String, amount: Double) {
         _surchargeLabel.value = label.trim().ifBlank { "Livraison" }
         _surchargeAmount.value = amount.coerceAtLeast(0.0)
+        if (amount > 0.0) _surchargePercent.value = 0.0
+        refreshInvoice()
+    }
+
+    /**
+     * The extra charge as a percentage of the discounted total.
+     *
+     * A shop that charges "2 % de frais de dossier" should be able to say so
+     * rather than recompute the figure every time the invoice changes.
+     */
+    fun setSurchargePercent(label: String, percent: Double) {
+        _surchargeLabel.value = label.trim().ifBlank { "Livraison" }
+        _surchargePercent.value = percent.coerceIn(0.0, 100.0)
+        if (percent > 0.0) _surchargeAmount.value = 0.0
         refreshInvoice()
     }
 
@@ -450,6 +484,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _lines.value = data.lines
         _client.value = data.client
         _discountPercent.value = data.discountPercent
+        _discountFixed.value = data.discountFixed
         _paymentMethod.value = data.paymentMethod
         _documentType.value = data.documentType
         _validityDate.value = data.validityDate
@@ -462,6 +497,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _signature.value = data.signature
         _surchargeLabel.value = data.surchargeLabel
         _surchargeAmount.value = data.surchargeAmount
+        _surchargePercent.value = data.surchargePercent
         repriceForClient(_client.value)
         refreshInvoice()
     }
@@ -471,6 +507,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _lines.value = emptyList()
         _client.value = InvoiceClient(name = "")
         _discountPercent.value = 0
+        _discountFixed.value = 0.0
         _paymentMethod.value = PaymentMethod.CASH
         _documentType.value = DocumentType.FACTURE
         _validityDate.value = null
@@ -483,6 +520,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _signature.value = null
         _surchargeLabel.value = "Livraison"
         _surchargeAmount.value = 0.0
+        _surchargePercent.value = 0.0
         refreshInvoice()
     }
 
@@ -543,6 +581,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         client = _client.value,
         lines = _lines.value,
         discountPercent = _discountPercent.value,
+        discountFixed = _discountFixed.value,
         vatPercent = _shop.value.vatPercent,
         vatNotApplicable = _shop.value.vatNotApplicable,
         paymentMethod = _paymentMethod.value,
@@ -558,6 +597,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         signature = _signature.value,
         surchargeLabel = _surchargeLabel.value,
         surchargeAmount = _surchargeAmount.value,
+        surchargePercent = _surchargePercent.value,
     )
 
     /**

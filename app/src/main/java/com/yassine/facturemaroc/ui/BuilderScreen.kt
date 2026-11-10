@@ -427,8 +427,10 @@ fun BuilderScreen(
                     showPayment = invoice.showPaymentMethod,
                     isDevis = invoice.isDevis,
                     validityDate = invoice.validityDate,
+                    discountFixed = invoice.discountFixed,
                     surchargeLabel = invoice.surchargeLabel,
                     surchargeAmount = invoice.surcharge,
+                    surchargePercent = invoice.surchargePercent,
                     onDiscount = { showDiscountDialog = true },
                     onSurcharge = { showSurchargeDialog = true },
                     onPayment = viewModel::setPaymentMethod,
@@ -558,11 +560,12 @@ fun BuilderScreen(
     }
 
     if (showDiscountDialog) {
-        PercentDialog(
-            title = "Remise générale",
-            initial = invoice.discountPercent,
-            onConfirm = {
-                viewModel.setDiscountPercent(it)
+        DiscountDialog(
+            initialPercent = invoice.discountPercent,
+            initialAmount = invoice.discountFixed,
+            onConfirm = { percent, amount ->
+                if (amount > 0.0) viewModel.setDiscountFixed(amount)
+                else viewModel.setDiscountPercent(percent)
                 showDiscountDialog = false
             },
             onDismiss = { showDiscountDialog = false },
@@ -612,9 +615,11 @@ fun BuilderScreen(
     if (showSurchargeDialog) {
         SurchargeDialog(
             initialLabel = invoice.surchargeLabel,
-            initialAmount = invoice.surcharge,
-            onConfirm = { label, amount ->
-                viewModel.setSurcharge(label, amount)
+            initialAmount = invoice.surchargeAmount,
+            initialPercent = invoice.surchargePercent,
+            onConfirm = { label, amount, percent ->
+                if (percent > 0.0) viewModel.setSurchargePercent(label, percent)
+                else viewModel.setSurcharge(label, amount)
                 showSurchargeDialog = false
             },
             onDismiss = { showSurchargeDialog = false },
@@ -1128,6 +1133,7 @@ private fun StepButton(
 @Composable
 private fun OptionsCard(
     discountPercent: Int,
+    discountFixed: Double,
     paymentMethod: PaymentMethod,
     vatPercent: Double,
     pricesIncludeVat: Boolean,
@@ -1136,6 +1142,7 @@ private fun OptionsCard(
     validityDate: String?,
     surchargeLabel: String,
     surchargeAmount: Double,
+    surchargePercent: Double,
     onDiscount: () -> Unit,
     onSurcharge: () -> Unit,
     onPayment: (PaymentMethod) -> Unit,
@@ -1153,7 +1160,11 @@ private fun OptionsCard(
             OptionRow(
                 icon = Icons.Filled.Percent,
                 label = "Remise générale",
-                value = if (discountPercent == 0) "Aucune" else "−$discountPercent %",
+                value = when {
+                    discountFixed > 0.0 -> "−${discountFixed.asDirhams()}"
+                    discountPercent == 0 -> "Aucune"
+                    else -> "−$discountPercent %"
+                },
                 onClick = onDiscount,
             )
 
@@ -1161,10 +1172,10 @@ private fun OptionsCard(
             OptionRow(
                 icon = Icons.Filled.LocalShipping,
                 label = "Livraison / surcharge",
-                value = if (surchargeAmount <= 0.0) {
-                    "Aucune"
-                } else {
-                    "$surchargeLabel · ${surchargeAmount.asDirhams()}"
+                value = when {
+                    surchargePercent > 0.0 -> "$surchargeLabel · ${surchargePercent.trimZeros()} %"
+                    surchargeAmount <= 0.0 -> "Aucune"
+                    else -> "$surchargeLabel · ${surchargeAmount.asDirhams()}"
                 },
                 onClick = onSurcharge,
             )

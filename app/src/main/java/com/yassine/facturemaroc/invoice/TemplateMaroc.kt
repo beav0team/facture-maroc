@@ -206,10 +206,10 @@ class MarocRenderer : PdfRenderer {
         val boxTop = ty - 8f
         PdfTotals.row(canvas, box, "Total HT", PdfText.money(data.subtotal), ty, body, cellRight)
         ty += 16f
-        if (data.discountPercent > 0) {
+        if (data.showsDiscount) {
             PdfTotals.row(
                 canvas, box,
-                "Remise ${PdfText.percent(data.discountPercent.toDouble())}%",
+                (if (data.discountInAmount) "Remise" else "Remise ${PdfText.percent(data.discountPercent.toDouble())}%"),
                 "−${PdfText.money(data.discountAmount)}",
                 ty, body, cellRight,
             )
@@ -310,7 +310,7 @@ class MarocRenderer : PdfRenderer {
         words: TextPaint,
         contentW: Int,
     ): Float {
-        val rows = 1 + data.vatRowCount + (if (data.discountPercent > 0) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
+        val rows = 1 + data.vatRowCount + (if (data.showsDiscount) 1 else 0) + (if (data.surcharge > 0.0) 1 else 0)
         var h = 18f + 16f * rows + 26f
         if (design.showAmountWords) {
             h += 12f + PdfText.height(data.amountInWords, words, contentW, 3)
