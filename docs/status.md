@@ -6,10 +6,10 @@ answering from memory.
 
 | | |
 |---|---|
-| Version | **0.10.0** (versionCode 16) — 0.11.0 en préparation, non publiée |
-| Last commit | Phase B2 — bons de réception, coûts et marge (commits locaux) |
-| Branch | `master` (Phase A/B local commits; no tag/release for 0.11.0 yet) |
-| Tests | **503 JVM**, **18 instrumented** |
+| Version | **0.11.0** (versionCode 17) — release en préparation |
+| Last commit | Phase A/B/C — facturation complète, stock, rapports, rappel de paiement |
+| Branch | `master` (tag `v0.11.0` à poser après le build R8) |
+| Tests | **510 JVM**, **20 instrumented** |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -53,7 +53,10 @@ B4 has landed: the month card shows VAT collected (net of credit notes) with a
 per-rate line, the article summary keeps the stock value and the reorder count,
 and Settings exports the issued documents as a CSV the accountant can open
 (semicolons, French decimals, one row per document, drafts excluded).
-**C1 (hardening) is next** — then A5/R8/0.11.0 and C2.
+**A5 is in progress** — a rich-data render test across all six templates plus
+the receipt and the statement, the total invariants (HT + TVA = TTC, recap =
+tax, lines = subtotal), version 0.11.0 and the R8 release. C1 (hardening) and
+C2 (Play) follow.
 
 **RAS TVA stays out** — settled in `docs/decisions.md`: the user asked to
 continue without it, so no field is invented. Revisit only on request.
@@ -136,8 +139,8 @@ continue without it, so no field is invented. Revisit only on request.
 | Tracks | Closed test open |
 | Production gate | **12 opted-in testers for 14 continuous days** — not reached yet |
 | Listing assets | `play_store/` (icon, feature graphic, 4 screenshots, `listing-fr.md`, `UPLOAD.md`) |
-| Known stale items | contact e-mail line in README; screenshots predate A2–A4 |
-| Open checks | **16 KB page-size support** on the AAB (CameraX + ML Kit) |
+| Known stale items | screenshots predate 0.11.0 (refresh from Waydroid); Play contact e-mail still to enter in the console |
+| Open checks | **16 KB verified** on the 0.11.0 release APK (`zipalign -P 16` passes, ELF `LOAD` align `0x4000`); AAB 15.7 MB built |
 
 ---
 

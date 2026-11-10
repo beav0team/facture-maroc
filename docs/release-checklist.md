@@ -9,7 +9,8 @@ builds; it is done when the repository and the memory both describe it.
 - [ ] Instrumented tests pass (`./gradlew connectedDebugAndroidTest` or
       `adb shell am instrument`).
 - [ ] R8 release build installed and walked through on the device/Waydroid.
-- [ ] **Do not build R8 or publish without Yassine’s approval.**
+- [ ] **R8 builds are approved** (Yassine, 2026-11-10). Still walk the R8
+      build through on the device before publishing.
 - [ ] Version bumped in `app/build.gradle.kts` (versionCode + versionName).
 
 ## 2. Compliance and content

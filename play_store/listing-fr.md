@@ -23,7 +23,14 @@ TOUT AU MÊME ENDROIT
 • Trois onglets : Factures, Clients, Articles.
 • Vos coordonnées et mentions légales (ICE, IF, RC, patente, CNSS) enregistrées une fois.
 • Vos clients réutilisables en un tap, avec leur adresse et leur ICE.
-• Un catalogue d’articles et de services : liste complète, dossiers en filtre, champs de la fiche au choix.
+• Votre catalogue d’articles et de services : dossiers, code-barres, prix d’achat, seuil de réapprovisionnement, paliers de prix par quantité et attributs libres (référence, marque, dimensions…).
+
+STOCK ET MARGE
+• Journal des mouvements et historique par article : chaque vente, avoir, achat et correction est conservé.
+• Inventaire : saisie du comptage réel, écart motivé et résumé de la valeur.
+• Bons de réception fournisseurs qui entrent le stock et mettent à jour le prix d’achat.
+• Valorisation au coût moyen pondéré (défaut) ou FIFO, réglable.
+• Marge par article et par mois, coût figé sur chaque facture, alerte de vente sous le coût.
 
 DES DOCUMENTS PROPRES
 • Dix types : facture, devis, bon de commande, ticket 80 mm, avoir, proforma, acompte, régularisation, facture simplifiée, facture à l’export.
@@ -40,6 +47,7 @@ PAIEMENTS ET SUIVI
 • Encaissements partiels : montant, date, moyen et référence, avec « Reste à payer ».
 • Reçus A5 pour chaque paiement et relevé de compte par client, en PDF.
 • Acompte déjà versé déduit du reste, sans toucher à la TVA.
+• Rappel de paiement prêt à envoyer par SMS ou WhatsApp.
 • Coordonnées bancaires (banque, RIB, titulaire) et QR de paiement facultatif.
 • Vue « Facture acquittée », avoir en un geste et devis converti en facture.
 

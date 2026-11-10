@@ -5,7 +5,7 @@ Factures, devis, bons de commande, tickets, avoirs, proformas, acomptes,
 régularisations, factures simplifiées et factures à l'export — avec ICE, IF, RC,
 patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
-Version **0.10.0** (versionCode 16) · Android 8.0+ (minSdk 26) · Français.
+Version **0.11.0** (versionCode 17) · Android 8.0+ (minSdk 26) · Français.
 
 État du produit : [`docs/status.md`](docs/status.md) · Décisions :
 [`docs/decisions.md`](docs/decisions.md) · Checklist de version :
@@ -184,7 +184,7 @@ wrapper Gradle fourni.
 
 ```bash
 export JAVA_HOME="$HOME/.local/jdk"      # ou votre JDK 21
-./gradlew testDebugUnitTest             # 405 tests JVM
+./gradlew testDebugUnitTest             # 510 tests JVM
 ./gradlew assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew bundleRelease                 # app/build/outputs/bundle/release/app-release.aab
 ./gradlew assembleRelease               # app/build/outputs/apk/release/app-release.apk
@@ -202,7 +202,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 
 ## Tests
 
-**405 tests JVM**, plus dix-huit tests instrumentés :
+**510 tests JVM**, plus vingt tests instrumentés :
 
 | Suite | Ce qu’elle protège |
 |---|---|
@@ -241,7 +241,7 @@ les données d’un client réel.
 ### Tests sur l’appareil
 
 ```bash
-./gradlew connectedDebugAndroidTest   # 18 tests instrumentés
+./gradlew connectedDebugAndroidTest   # 20 tests instrumentés
 ```
 
 `InvoicePdfPagesTest` compte les feuilles d’un vrai PDF avec le lecteur
@@ -356,14 +356,19 @@ par Google) est bien saisie dans Play Console.
 
 ## Historique
 
-- **0.11.0 (en préparation)** — conformité et finition : TVA par ligne et
+- **0.11.0** — facturation complète et stock : TVA par ligne et
   récapitulatif par taux, remise en dirhams, surcharge en pourcentage, échéance
   de paiement, encaissements partiels, reçus et relevés, avoir en un geste,
   devis converti, acompte déduit, documents émis non supprimables, numérotation
   par type avec préfixe et remise à zéro annuelle, quantités décimales,
   conditions de règlement présélectionnées, clause de retard de paiement,
   coordonnées bancaires et QR facultatif, nom de PDF réglable et visibilité de
-  l'archive sur chaque fiche.
+  l'archive sur chaque fiche. Côté stock : journal des mouvements et historique
+  par article, inventaire avec écarts motivés, seuil de réapprovisionnement,
+  bons de réception, valorisation CMP/FIFO, coût figé sur les lignes, marge par
+  article et par mois, paliers de prix par quantité, attributs libres, TVA du
+  mois par taux et export comptable en CSV. Le rappel de paiement se partage en
+  texte depuis la fiche d'une facture non soldée.
 - **0.10.0** — paiements encaissés (partiels), surcharge de livraison, logo
   stocké une fois par contenu, PDF partagés dans l'archive vérifiable.
 - **0.8.2** — exemples génériques. Les écrans vides, les brouillons, les

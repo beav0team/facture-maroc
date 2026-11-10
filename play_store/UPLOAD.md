@@ -9,13 +9,13 @@ et les réponses aux formulaires.
 | Élément | Valeur |
 |---|---|
 | Paquet | `com.yassine.facturemaroc` |
-| Version | `0.10.0` (`versionCode` 16) — la 0.11.0 est en préparation, non publiée |
+| Version | `0.11.0` (`versionCode` 17) — facturation complète, stock et rapports |
 | Cible | API 36, minimum API 26 |
 | Permissions | `CAMERA` seule, facultative |
 | Modèles de document | 6 (Classique, Moderne, Facture Maroc, Épuré, Bandeau, Ticket 80 mm) |
 | Fichier | `app/build/outputs/bundle/release/app-release.aab` |
-| Taille | à relever sur l'AAB de la 0.10.0/0.11.0 (les valeurs ci-dessous décrivaient la 0.8.2) |
-| SHA-256 | à relever sur le même fichier avant téléversement |
+| Taille | AAB 0.11.0 : 15 725 720 octets (~15,0 Mo) ; APK release : 24 235 955 octets (~23,1 Mo) |
+| SHA-256 (AAB) | `40f9aa69fdcf1307f2b73c61360e4edbde1a2c1593c909609c54902b7a5e6fa7` |
 | Signature | clé de `~/.android/tyre-inventory.jks` (alias `inventory`) |
 
 L'AAB se reconstruit avec `./gradlew :app:bundleRelease`. **Ne jamais téléverser
