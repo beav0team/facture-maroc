@@ -151,6 +151,7 @@ import com.yassine.facturemaroc.data.filterArticles
 import com.yassine.facturemaroc.data.filterToReorder
 import com.yassine.facturemaroc.data.labelTaken
 import com.yassine.facturemaroc.data.nameTaken
+import com.yassine.facturemaroc.data.outstanding
 import com.yassine.facturemaroc.data.summarizeArticles
 import com.yassine.facturemaroc.data.visibleItemFields
 import com.yassine.facturemaroc.invoice.InvoiceXml
@@ -1493,15 +1494,22 @@ private fun MonthSummary(records: List<InvoiceRecord>) {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(18.dp)) {
+            // The shop opens this screen to answer one question: who still
+            // owes me money. "Facturé ce mois-ci" is the accountant's question,
+            // so it moves down to a small line and the money still out there
+            // becomes the dominant figure on the page.
+            val outstanding = remember(records) { records.outstanding() }
             Text(
-                "Facturé ce mois-ci",
+                "Reste à encaisser",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f),
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                total.asDirhams(),
-                style = MaterialTheme.typography.displaySmall,
+                outstanding.due.asDirhams(),
+                style = MaterialTheme.typography.displaySmall.copy(
+                    fontFeatureSettings = "tnum",
+                ),
                 color = MaterialTheme.colorScheme.onPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -1516,30 +1524,66 @@ private fun MonthSummary(records: List<InvoiceRecord>) {
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    // The total is net of the credit notes, so the count has to
-                    // say so: "1 facture" next to a zero total reads as a bug
-                    // unless the avoir is named.
-                    when {
-                        issuedThisMonth.isEmpty() && creditedThisMonth.isEmpty() ->
-                            "Aucune facture émise ce mois-ci"
-
-                        creditedThisMonth.isEmpty() && issuedThisMonth.size == 1 ->
-                            "1 facture émise ce mois-ci"
-
-                        creditedThisMonth.isEmpty() ->
-                            "${issuedThisMonth.size} factures émises ce mois-ci"
-
-                        else ->
-                            "${issuedThisMonth.size} facture" +
-                                (if (issuedThisMonth.size > 1) "s" else "") +
-                                " et ${creditedThisMonth.size} avoir" +
-                                (if (creditedThisMonth.size > 1) "s" else "") +
-                                " ce mois-ci"
+                    when (outstanding.documents) {
+                        0 -> "Aucun document en attente"
+                        1 -> "1 document en attente"
+                        else -> "${outstanding.documents} documents en attente"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                 )
             }
+            if (outstanding.overdue > 0.0) {
+                Text(
+                    "Dont ${outstanding.overdue.asDirhams()} en retard",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.24f),
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Facturé ce mois-ci",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f),
+            )
+            Text(
+                total.asDirhams(),
+                style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                // The total is net of the credit notes, so the count has to
+                // say so: "1 facture" next to a zero total reads as a bug
+                // unless the avoir is named.
+                when {
+                    issuedThisMonth.isEmpty() && creditedThisMonth.isEmpty() ->
+                        "Aucune facture émise ce mois-ci"
+
+                    creditedThisMonth.isEmpty() && issuedThisMonth.size == 1 ->
+                        "1 facture émise ce mois-ci"
+
+                    creditedThisMonth.isEmpty() ->
+                        "${issuedThisMonth.size} factures émises ce mois-ci"
+
+                    else ->
+                        "${issuedThisMonth.size} facture" +
+                            (if (issuedThisMonth.size > 1) "s" else "") +
+                            " et ${creditedThisMonth.size} avoir" +
+                            (if (creditedThisMonth.size > 1) "s" else "") +
+                            " ce mois-ci"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+            )
             // The tax the month collected, net of its credit notes. A shop reads
             // this figure when it sets money aside, and hiding it under a detail
             // screen is exactly when it gets forgotten.

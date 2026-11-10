@@ -152,3 +152,46 @@ private val STATEMENT_DOCUMENTS = setOf(
 
 /** Half-up rounding to two decimals, as everywhere else in the app. */
 private fun money(value: Double): Double = Math.round(value * 100.0) / 100.0
+
+/**
+ * What the whole shop is waiting to be paid.
+ *
+ * The home screen used to open on "Facturé ce mois-ci", which answers an
+ * accountant's question. A shop opening the app wants the other one: how much
+ * is still out there, and how much of it is late. Built from the same client
+ * statements as everything else, so the figure on the card is the sum of the
+ * figures the statements print — never a second arithmetic that can drift.
+ */
+data class ShopOutstanding(
+    /** Money still owed, net of credit notes. Negative when the shop owes more. */
+    val due: Double,
+    /** The part of [due] whose deadline has passed. */
+    val overdue: Double,
+    /** Documents still waiting for money, late or not. */
+    val documents: Int,
+)
+
+fun List<InvoiceRecord>.outstanding(today: Date = Date()): ShopOutstanding {
+    // Grouped by name because that is how the app identifies a client; a client
+    // with an invoice and an avoir nets them off on his own statement, which is
+    // what the customer experiences too.
+    val names = asSequence()
+        .filter { !it.isDraft && it.data.documentType in STATEMENT_DOCUMENTS }
+        .map { it.data.client.name.trim() }
+        .filter { it.isNotEmpty() }
+        .distinct()
+        .toList()
+
+    val statements = names.map { ClientStatements.forClient(this, it, today) }
+    return ShopOutstanding(
+        due = statements.sumOf { it.balance },
+        overdue = statements.sumOf { statement ->
+            statement.lines.filter { it.isLate }.sumOf { it.balance }
+        },
+        documents = statements.sumOf { statement ->
+            // A credit note is not a document waiting to be paid, even though
+            // it moves the balance.
+            statement.lines.count { !it.isCredit && it.balance > 0.0 }
+        },
+    )
+}
