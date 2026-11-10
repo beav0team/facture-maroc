@@ -32,6 +32,17 @@ class ShopSettingsStore(private val context: Context) {
             rc = prefs.getString("rc", "") ?: "",
             patente = prefs.getString("patente", "") ?: "",
             cnss = prefs.getString("cnss", "") ?: "",
+            bankName = prefs.getString("bankName", "") ?: "",
+            bankRib = prefs.getString("bankRib", "") ?: "",
+            bankHolder = prefs.getString("bankHolder", "") ?: "",
+            latePenaltyClause = prefs.getString(
+                "latePenaltyClause",
+                ShopSettings.DEFAULT_LATE_PENALTY_CLAUSE,
+            ) ?: ShopSettings.DEFAULT_LATE_PENALTY_CLAUSE,
+            pdfFileNamePattern = prefs.getString(
+                "pdfFileNamePattern",
+                ShopSettings.DEFAULT_PDF_PATTERN,
+            ) ?: ShopSettings.DEFAULT_PDF_PATTERN,
             logoBytes = prefs.getString("logoBytes", null)
                 ?.takeIf { it.isNotBlank() }
                 ?.let { android.util.Base64.decode(it, android.util.Base64.DEFAULT) }
@@ -62,6 +73,11 @@ class ShopSettingsStore(private val context: Context) {
                 putString("rc", settings.rc)
                 putString("patente", settings.patente)
                 putString("cnss", settings.cnss)
+                putString("bankName", settings.bankName)
+                putString("bankRib", settings.bankRib)
+                putString("bankHolder", settings.bankHolder)
+                putString("latePenaltyClause", settings.latePenaltyClause)
+                putString("pdfFileNamePattern", settings.pdfFileNamePattern)
                 putString("logoBytes", settings.logoBytes?.let { android.util.Base64.encodeToString(it, android.util.Base64.DEFAULT) })
                 putFloat("vatPercent", settings.vatPercent.toFloat())
                 putBoolean("vatNotApplicable", settings.vatNotApplicable)

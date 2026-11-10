@@ -94,6 +94,7 @@ import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceLine
 import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.PaymentMethod
+import com.yassine.facturemaroc.data.PaymentTerms
 import com.yassine.facturemaroc.data.PartyRole
 import com.yassine.facturemaroc.data.quantityText
 import com.yassine.facturemaroc.data.visibleItemFields
@@ -468,6 +469,7 @@ fun BuilderScreen(
                 NotesCard(
                     customerNote = invoice.customerNote,
                     termsNote = invoice.termsNote,
+                    paymentTerms = invoice.paymentTerms,
                     thankYouNote = invoice.thankYouNote,
                     hasSignature = invoice.hasSignature,
                     onCustomerNote = { editingNote = NoteKind.CUSTOMER },
@@ -617,32 +619,44 @@ fun BuilderScreen(
     }
 
     editingNote?.let { kind ->
-        NoteDialog(
-            title = when (kind) {
-                NoteKind.CUSTOMER -> "Note au client"
-                NoteKind.TERMS -> "Conditions de règlement"
-                NoteKind.THANK_YOU -> "Remerciement"
-            },
-            initial = when (kind) {
-                NoteKind.CUSTOMER -> invoice.customerNote
-                NoteKind.TERMS -> invoice.termsNote
-                NoteKind.THANK_YOU -> invoice.thankYouNote
-            },
-            placeholder = when (kind) {
-                NoteKind.CUSTOMER -> "Ex: Merci de vérifier la marchandise avant de quitter l'atelier."
-                NoteKind.TERMS -> "Ex: Paiement à 30 jours. Marchandise vendue au comptant."
-                NoteKind.THANK_YOU -> "Ex: Merci de votre confiance."
-            },
-            onConfirm = { text ->
-                when (kind) {
-                    NoteKind.CUSTOMER -> viewModel.setCustomerNote(text)
-                    NoteKind.TERMS -> viewModel.setTermsNote(text)
-                    NoteKind.THANK_YOU -> viewModel.setThankYouNote(text)
-                }
-                editingNote = null
-            },
-            onDismiss = { editingNote = null },
-        )
+        if (kind == NoteKind.TERMS) {
+            PaymentTermsDialog(
+                initialTerms = invoice.paymentTerms,
+                initialNote = invoice.termsNote,
+                onConfirm = { terms, text ->
+                    viewModel.setPaymentTerms(terms, text)
+                    editingNote = null
+                },
+                onDismiss = { editingNote = null },
+            )
+        } else {
+            NoteDialog(
+                title = when (kind) {
+                    NoteKind.CUSTOMER -> "Note au client"
+                    NoteKind.TERMS -> "Conditions de règlement"
+                    NoteKind.THANK_YOU -> "Remerciement"
+                },
+                initial = when (kind) {
+                    NoteKind.CUSTOMER -> invoice.customerNote
+                    NoteKind.TERMS -> invoice.termsNote
+                    NoteKind.THANK_YOU -> invoice.thankYouNote
+                },
+                placeholder = when (kind) {
+                    NoteKind.CUSTOMER -> "Ex: Merci de vérifier la marchandise avant de quitter l'atelier."
+                    NoteKind.TERMS -> "Ex: Paiement à 30 jours. Marchandise vendue au comptant."
+                    NoteKind.THANK_YOU -> "Ex: Merci de votre confiance."
+                },
+                onConfirm = { text ->
+                    when (kind) {
+                        NoteKind.CUSTOMER -> viewModel.setCustomerNote(text)
+                        NoteKind.TERMS -> viewModel.setTermsNote(text)
+                        NoteKind.THANK_YOU -> viewModel.setThankYouNote(text)
+                    }
+                    editingNote = null
+                },
+                onDismiss = { editingNote = null },
+            )
+        }
     }
 
     if (showSurchargeDialog) {
@@ -735,6 +749,7 @@ fun BuilderScreen(
 private fun NotesCard(
     customerNote: String,
     termsNote: String,
+    paymentTerms: PaymentTerms,
     thankYouNote: String,
     hasSignature: Boolean,
     onCustomerNote: () -> Unit,
@@ -760,7 +775,13 @@ private fun NotesCard(
             OptionRow(
                 icon = Icons.Filled.Gavel,
                 label = "Conditions de règlement",
-                value = noteSummary(termsNote),
+                value = if (termsNote.isBlank()) {
+                    "Aucune"
+                } else if (paymentTerms != PaymentTerms.CUSTOM) {
+                    "${paymentTerms.label} · ${noteSummary(termsNote)}"
+                } else {
+                    noteSummary(termsNote)
+                },
                 onClick = onTermsNote,
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

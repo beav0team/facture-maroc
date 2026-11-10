@@ -86,6 +86,10 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     private val _termsNote = MutableStateFlow("")
     val termsNote: StateFlow<String> = _termsNote.asStateFlow()
 
+    /** The preset behind [termsNote]; free text is [PaymentTerms.CUSTOM]. */
+    private val _paymentTerms = MutableStateFlow(PaymentTerms.CUSTOM)
+    val paymentTerms: StateFlow<PaymentTerms> = _paymentTerms.asStateFlow()
+
     private val _thankYouNote = MutableStateFlow("")
     val thankYouNote: StateFlow<String> = _thankYouNote.asStateFlow()
 
@@ -172,6 +176,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         incoterm = _incoterm.value,
         customerNote = _customerNote.value,
         termsNote = _termsNote.value,
+        paymentTerms = _paymentTerms.value,
+        latePenaltyClause = _shop.value.latePenaltyClause,
         thankYouNote = _thankYouNote.value,
         signature = _signature.value,
         surchargeLabel = _surchargeLabel.value,
@@ -411,6 +417,22 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun setTermsNote(note: String) {
+        // Typing the conditions by hand means they are no longer a preset, so
+        // the stored term goes back to CUSTOM. A preset fills the note; the
+        // shop is always free to overwrite it.
+        _termsNote.value = note
+        _paymentTerms.value = PaymentTerms.CUSTOM
+        refreshInvoice()
+    }
+
+    /**
+     * Applies a payment-term preset and the sentence it writes.
+     *
+     * The dialog that calls this warns before replacing a hand-typed note, so
+     * the overwrite here is always one the shop asked for.
+     */
+    fun setPaymentTerms(terms: PaymentTerms, note: String) {
+        _paymentTerms.value = terms
         _termsNote.value = note
         refreshInvoice()
     }
@@ -522,6 +544,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _supplier.value = data.supplier
         _customerNote.value = data.customerNote
         _termsNote.value = data.termsNote
+        _paymentTerms.value = data.paymentTerms
         _thankYouNote.value = data.thankYouNote
         _signature.value = data.signature
         _surchargeLabel.value = data.surchargeLabel
@@ -548,6 +571,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _supplier.value = null
         _customerNote.value = ""
         _termsNote.value = ""
+        _paymentTerms.value = PaymentTerms.CUSTOM
         _thankYouNote.value = ""
         _signature.value = null
         _surchargeLabel.value = "Livraison"
@@ -628,6 +652,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         shop = snapshotOfShop(),
         customerNote = _customerNote.value,
         termsNote = _termsNote.value,
+        paymentTerms = _paymentTerms.value,
+        latePenaltyClause = _shop.value.latePenaltyClause,
         thankYouNote = _thankYouNote.value,
         signature = _signature.value,
         surchargeLabel = _surchargeLabel.value,

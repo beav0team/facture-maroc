@@ -57,6 +57,21 @@ data class InvoiceData(
     val customerNote: String = "",
     /** Payment or delivery conditions, printed under the note. */
     val termsNote: String = "",
+    /**
+     * The preset behind [termsNote]: comptant, 30/60 jours, fin de mois, or
+     * free text. [PaymentTerms.CUSTOM] is the honest default for every document
+     * written before this field existed.
+     */
+    val paymentTerms: PaymentTerms = PaymentTerms.CUSTOM,
+    /**
+     * The shop's late-payment clause, copied from settings when the document is
+     * built so a reprint keeps what the customer read.
+     *
+     * Empty means the shop cleared it, and then nothing is printed. The text is
+     * a model clause the shop is told to have checked; the app does not claim
+     * it is legally binding.
+     */
+    val latePenaltyClause: String = "",
     /** Replaces the stock thank-you line at the foot of the document. */
     val thankYouNote: String = "",
     /** The shop's signature or stamp, drawn at the end of the document. */
@@ -355,7 +370,43 @@ data class InvoiceData(
 
     /** Whether the free-text block has anything to print. */
     val hasNotes: Boolean
-        get() = customerNote.isNotBlank() || termsNote.isNotBlank()
+        get() = customerNote.isNotBlank() || termsNote.isNotBlank() ||
+            printsLateClause
+
+    /**
+     * Whether this document is paid at the counter.
+     *
+     * An explicit preset decides. A document with no preset at all — every
+     * document written before the field existed — is cash when its method is
+     * cash, it states no deadline and its terms note is empty. A typed
+     * condition is treated as deferred, unless the shop actually wrote
+     * "comptant": that is the word that makes a clause about late interest
+     * absurd on the page.
+     */
+    val isCashTerms: Boolean
+        get() = when (paymentTerms) {
+            PaymentTerms.CASH -> true
+            PaymentTerms.DAYS30, PaymentTerms.DAYS60, PaymentTerms.END_OF_MONTH -> false
+            PaymentTerms.CUSTOM -> {
+                val text = termsNote.trim().lowercase()
+                when {
+                    text.isEmpty() ->
+                        paymentMethod == PaymentMethod.CASH && dueDatePrinted == null
+                    text.contains("comptant") -> true
+                    else -> false
+                }
+            }
+        }
+
+    /**
+     * Whether the legal late-payment clause is printed.
+     *
+     * Only on a document that is not paid at the counter, and only when the
+     * shop filled the clause in. A cash invoice with a paragraph about
+     * collection fees on it is a document the customer has a right to query.
+     */
+    val printsLateClause: Boolean
+        get() = !isCashTerms && latePenaltyClause.isNotBlank()
 
     /** Whether a signature or stamp image was captured for this document. */
     val hasSignature: Boolean get() = signature != null

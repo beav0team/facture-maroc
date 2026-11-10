@@ -117,6 +117,12 @@ object InvoiceJson {
         put("vatNotApplicable", data.vatNotApplicable)
         put("customerNote", data.customerNote)
         put("termsNote", data.termsNote)
+        if (data.paymentTerms != PaymentTerms.CUSTOM) {
+            put("paymentTerms", data.paymentTerms.id)
+        }
+        if (data.latePenaltyClause.isNotBlank()) {
+            put("latePenaltyClause", data.latePenaltyClause)
+        }
         put("thankYouNote", data.thankYouNote)
         // Omitted on a draft, so the file says "no snapshot" by saying nothing.
         data.shop?.let { put("shop", shopSnapshotToJson(it)) }
@@ -156,6 +162,9 @@ object InvoiceJson {
         put("rc", snapshot.rc)
         put("patente", snapshot.patente)
         put("cnss", snapshot.cnss)
+        if (snapshot.bankName.isNotBlank()) put("bankName", snapshot.bankName)
+        if (snapshot.bankRib.isNotBlank()) put("bankRib", snapshot.bankRib)
+        if (snapshot.bankHolder.isNotBlank()) put("bankHolder", snapshot.bankHolder)
         put("vatPercent", snapshot.vatPercent)
         put("vatNotApplicable", snapshot.vatNotApplicable)
         put("pricesIncludeVat", snapshot.pricesIncludeVat)
@@ -188,6 +197,9 @@ object InvoiceJson {
             rc = obj.optString("rc", ""),
             patente = obj.optString("patente", ""),
             cnss = obj.optString("cnss", ""),
+            bankName = obj.optString("bankName", ""),
+            bankRib = obj.optString("bankRib", ""),
+            bankHolder = obj.optString("bankHolder", ""),
             vatPercent = obj.optDouble("vatPercent", 20.0).let { if (it.isNaN()) 20.0 else it },
             vatNotApplicable = obj.optBoolean("vatNotApplicable", false),
             pricesIncludeVat = obj.optBoolean("pricesIncludeVat", false),
@@ -260,6 +272,13 @@ object InvoiceJson {
             shop = shopSnapshotFromJson(obj.optJSONObject("shop")),
             customerNote = obj.optString("customerNote", ""),
             termsNote = obj.optString("termsNote", ""),
+            // Absent on every document written before the presets existed:
+            // the note is still read, and the preset is derived from it.
+            paymentTerms = obj.optString("paymentTerms", "")
+                .takeIf { it.isNotBlank() }
+                ?.let(PaymentTerms::fromId)
+                ?: PaymentTerms.fromNote(obj.optString("termsNote", "")),
+            latePenaltyClause = obj.optString("latePenaltyClause", ""),
             thankYouNote = obj.optString("thankYouNote", ""),
             signature = runCatching {
                 obj.optString("signature", "").takeIf { it.isNotBlank() }

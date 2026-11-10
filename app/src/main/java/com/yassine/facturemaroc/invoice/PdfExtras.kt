@@ -49,6 +49,11 @@ object PdfExtras {
             h += PdfText.height("CONDITIONS", label, width, 1) + 1f
             h += PdfText.height(terms, body, width, maxLines) + 8f
         }
+        val clause = data.latePenaltyClause.trim()
+        if (data.printsLateClause && clause.isNotEmpty()) {
+            h += PdfText.height("RETARD DE PAIEMENT", label, width, 1) + 1f
+            h += PdfText.height(clause, body, width, maxLines) + 8f
+        }
         return h
     }
 
@@ -80,6 +85,16 @@ object PdfExtras {
             cursor += PdfText.height("CONDITIONS", label, width, 1) + 1f
             PdfText.draw(canvas, terms, x, cursor, body, width, maxLines = maxLines)
             cursor += PdfText.height(terms, body, width, maxLines) + 8f
+        }
+
+        // A model clause the shop had checked: printed only when the document
+        // is not paid at the counter, and only when the shop filled it in.
+        val clause = data.latePenaltyClause.trim()
+        if (data.printsLateClause && clause.isNotEmpty()) {
+            PdfText.draw(canvas, "RETARD DE PAIEMENT", x, cursor, label, width, maxLines = 1)
+            cursor += PdfText.height("RETARD DE PAIEMENT", label, width, 1) + 1f
+            PdfText.draw(canvas, clause, x, cursor, body, width, maxLines = maxLines)
+            cursor += PdfText.height(clause, body, width, maxLines) + 8f
         }
 
         return cursor

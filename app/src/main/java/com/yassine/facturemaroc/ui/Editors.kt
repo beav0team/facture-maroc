@@ -57,6 +57,7 @@ import com.yassine.facturemaroc.data.InvoiceClient
 import com.yassine.facturemaroc.data.InvoiceRecord
 import com.yassine.facturemaroc.data.PaymentInfo
 import com.yassine.facturemaroc.data.PaymentMethod
+import com.yassine.facturemaroc.data.PaymentTerms
 import com.yassine.facturemaroc.data.InvoiceLine
 import com.yassine.facturemaroc.data.quantityText
 import com.yassine.facturemaroc.data.ItemField
@@ -1356,6 +1357,124 @@ fun ValidityDateDialog(
  * the value already on the invoice, so reopening the dialog shows what will
  * print rather than an empty box.
  */
+/**
+ * The payment conditions on the document: a preset, or the shop's own words.
+ *
+ * The preset writes the sentence the customer reads, but it never lands on a
+ * hand-typed condition silently: tapping a chip over text the shop wrote asks
+ * first, and "garder mon texte" keeps the note as [PaymentTerms.CUSTOM]. A
+ * preset is a shortcut, not an override.
+ */
+@Composable
+fun PaymentTermsDialog(
+    initialTerms: PaymentTerms,
+    initialNote: String,
+    onConfirm: (PaymentTerms, String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var note by remember(initialNote) { mutableStateOf(initialNote) }
+    var selected by remember(initialTerms) { mutableStateOf(initialTerms) }
+    var pending by remember { mutableStateOf<PaymentTerms?>(null) }
+
+    fun apply(terms: PaymentTerms) {
+        selected = terms
+        if (terms.note.isNotEmpty()) note = terms.note
+        pending = null
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Conditions de règlement") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PaymentTerms.entries.chunked(2).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { terms ->
+                            FilterChip(
+                                selected = selected == terms,
+                                onClick = {
+                                    if (terms == PaymentTerms.CUSTOM) {
+                                        // Free text keeps whatever is in the field;
+                                        // switching to it is not a replacement.
+                                        selected = PaymentTerms.CUSTOM
+                                        pending = null
+                                    } else if (
+                                        note.isNotBlank() &&
+                                        note.trim() != terms.note &&
+                                        selected != terms
+                                    ) {
+                                        pending = terms
+                                    } else {
+                                        apply(terms)
+                                    }
+                                },
+                                label = { Text(terms.label) },
+                            )
+                        }
+                    }
+                }
+
+                pending?.let { terms ->
+                    Text(
+                        "« ${terms.label} » remplacera le texte saisi. Le vôtre sera perdu.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { apply(terms) }) { Text("Remplacer") }
+                        TextButton(
+                            onClick = {
+                                pending = null
+                                selected = PaymentTerms.CUSTOM
+                            },
+                        ) { Text("Garder mon texte") }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { input ->
+                        note = input
+                        // Editing the sentence means it is no longer a preset,
+                        // so a later reopen does not offer to "restore" it.
+                        selected = PaymentTerms.fromNote(input)
+                        pending = null
+                    },
+                    placeholder = { Text("Ex: Paiement à 30 jours. Marchandise vendue en l'état.") },
+                    minLines = 3,
+                    maxLines = 6,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    if (selected.isDeferred) {
+                        "La clause de retard de paiement des paramètres s'imprimera sous les totaux."
+                    } else {
+                        "Aucune clause de retard n'est imprimée sur un règlement comptant."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(selected, note.trim()) },
+                shape = MaterialTheme.shapes.small,
+            ) { Text("Enregistrer") }
+        },
+        dismissButton = {
+            Row {
+                if (initialNote.isNotBlank()) {
+                    TextButton(onClick = { onConfirm(PaymentTerms.CUSTOM, "") }) {
+                        Text("Effacer")
+                    }
+                }
+                TextButton(onClick = onDismiss) { Text("Annuler") }
+            }
+        },
+    )
+}
+
 @Composable
 fun NoteDialog(
     title: String,

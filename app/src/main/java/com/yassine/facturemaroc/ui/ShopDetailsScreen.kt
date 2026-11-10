@@ -81,6 +81,7 @@ import com.yassine.facturemaroc.data.InvoiceViewModel
 import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceNumber
 import com.yassine.facturemaroc.data.NumberingStore
+import com.yassine.facturemaroc.data.ShopSettings
 import com.yassine.facturemaroc.data.Backup
 import com.yassine.facturemaroc.data.BackupData
 import com.yassine.facturemaroc.data.BackupExportOutcome
@@ -121,6 +122,15 @@ fun ShopDetailsScreen(
     var rc by remember(settings.rc) { mutableStateOf(settings.rc) }
     var patente by remember(settings.patente) { mutableStateOf(settings.patente) }
     var cnss by remember(settings.cnss) { mutableStateOf(settings.cnss) }
+    var bankName by remember(settings.bankName) { mutableStateOf(settings.bankName) }
+    var bankRib by remember(settings.bankRib) { mutableStateOf(settings.bankRib) }
+    var bankHolder by remember(settings.bankHolder) { mutableStateOf(settings.bankHolder) }
+    var lateClause by remember(settings.latePenaltyClause) {
+        mutableStateOf(settings.latePenaltyClause)
+    }
+    var pdfPattern by remember(settings.pdfFileNamePattern) {
+        mutableStateOf(settings.pdfFileNamePattern)
+    }
     var vatText by remember(settings.vatPercent) {
         mutableStateOf(settings.vatPercent.trimZeros())
     }
@@ -274,6 +284,11 @@ fun ShopDetailsScreen(
                 rc = rc.trim(),
                 patente = patente.trim(),
                 cnss = cnss.trim(),
+                bankName = bankName.trim(),
+                bankRib = bankRib.trim(),
+                bankHolder = bankHolder.trim(),
+                latePenaltyClause = lateClause.trim(),
+                pdfFileNamePattern = pdfPattern.trim().ifBlank { ShopSettings.DEFAULT_PDF_PATTERN },
                 vatPercent = vat,
                 vatNotApplicable = vatNotApplicable,
                 pricesIncludeVat = pricesIncludeVat,
@@ -523,6 +538,97 @@ fun ShopDetailsScreen(
                         label = { Text("CNSS") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+
+            item(key = "payment") {
+                SettingsSection(
+                    title = "Paiement et banque",
+                    subtitle = "Ce que le client lit pour vous payer, et ce qui s'imprime en cas de retard.",
+                ) {
+                    Text(
+                        "Coordonnées bancaires",
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    OutlinedTextField(
+                        value = bankName,
+                        onValueChange = { bankName = it },
+                        label = { Text("Banque") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = bankRib,
+                        onValueChange = { input ->
+                            // Digits and spaces only: a RIB is written in groups of
+                            // four, and a letter in it is always a typing mistake.
+                            bankRib = input.filter { it.isDigit() || it == ' ' }.take(40)
+                        },
+                        label = { Text("RIB (24 chiffres)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = bankRib.filter { it.isDigit() }.let {
+                            it.isNotEmpty() && it.length != 24
+                        },
+                        supportingText = {
+                            val digits = bankRib.filter { it.isDigit() }
+                            Text(
+                                if (digits.isNotEmpty() && digits.length != 24) {
+                                    "Un RIB marocain compte 24 chiffres : il en reste " +
+                                        "${24 - digits.length} à saisir. " +
+                                        "Le document s'imprime quand même."
+                                } else {
+                                    "Imprimé avec les coordonnées de paiement du document."
+                                },
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next,
+                        ),
+                    )
+                    OutlinedTextField(
+                        value = bankHolder,
+                        onValueChange = { bankHolder = it },
+                        label = { Text("Titulaire du compte") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    OutlinedTextField(
+                        value = lateClause,
+                        onValueChange = { lateClause = it },
+                        label = { Text("Clause de retard de paiement") },
+                        minLines = 2,
+                        maxLines = 5,
+                        modifier = Modifier.fillMaxWidth(),
+                        supportingText = {
+                            Text(
+                                "Modèle de clause, à faire vérifier par votre comptable " +
+                                    "avant de l'imprimer. Elle ne s'imprime que sur les " +
+                                    "documents dont le règlement n'est pas comptant. " +
+                                    "Videz le champ pour ne rien imprimer.",
+                            )
+                        },
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    OutlinedTextField(
+                        value = pdfPattern,
+                        onValueChange = { pdfPattern = it },
+                        label = { Text("Nom du fichier PDF") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        supportingText = {
+                            Text(
+                                "Le nom du fichier partagé. {number}, {client}, {date} " +
+                                    "et {type} sont remplacés. L'extension .pdf est ajoutée.",
+                            )
+                        },
                     )
                 }
             }
