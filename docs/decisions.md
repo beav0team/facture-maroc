@@ -147,8 +147,15 @@ place that verifies the whole chain.
 ## Open
 
 1. **Arabic / bilingual** — pending accountant confirmation.
-2. **RAS TVA** — note only, or withheld amount with recalculated balance?
-3. **Deposit** — should the final invoice deduct a referenced acompte
-   automatically?
-4. **Auto-entrepreneur number** — print it on documents?
-5. **1.0 release** — Play only, or Play + GitHub release?
+2. **Auto-entrepreneur number** — print it on documents?
+
+## Closed since the roadmap was written
+
+- **RAS TVA** — the user asked to continue without it; no field is invented.
+- **Deposit** — implemented: the final invoice deducts a referenced acompte from
+  the balance, never from the taxable base.
+- **1.0 release** — Play is the official channel; GitHub releases are the
+  internal/beta channel.
+- **Decimal quantities** — implemented (`Double` lines, whole-unit stock).
+- **Payment terms** — presets plus free text, implemented.
+- **Photos** — deliberately out of 1.0.
