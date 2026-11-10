@@ -87,6 +87,7 @@ import com.yassine.facturemaroc.data.DocumentType
 import com.yassine.facturemaroc.data.InvoiceNumber
 import com.yassine.facturemaroc.data.NumberingStore
 import com.yassine.facturemaroc.data.ShopSettings
+import com.yassine.facturemaroc.data.trimRate
 import com.yassine.facturemaroc.data.Backup
 import com.yassine.facturemaroc.data.BackupData
 import com.yassine.facturemaroc.data.BackupExportOutcome
@@ -501,9 +502,39 @@ fun ShopDetailsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 4.dp),
                         )
+                        /*
+                         * Each row carries the value the group currently holds.
+                         *
+                         * A summary alone ("TVA, numérotation") describes the
+                         * group; the value answers the question the shop came
+                         * with — is the TVA already right? — without opening
+                         * anything. It reads the saved settings, not the
+                         * unsaved edits of a half-filled form.
+                         */
+                        val valueOf: (SettingsGroup) -> String = { group ->
+                            when (group) {
+                                SettingsGroup.SHOP ->
+                                    settings.name.ifBlank { "Nom non renseigné" }
+
+                                SettingsGroup.INVOICING -> if (settings.vatNotApplicable) {
+                                    "TVA non applicable"
+                                } else {
+                                    "TVA ${trimRate(settings.vatPercent)} %"
+                                }
+
+                                SettingsGroup.CATALOGUE -> settings.costMethod.label
+
+                                SettingsGroup.DATA -> autoSnapshots.firstOrNull()?.let { last ->
+                                    "Copie le ${snapshotDate.format(Date(last.takenAt))}"
+                                } ?: "Aucune copie automatique"
+
+                                SettingsGroup.DIAGNOSTIC -> "Journal du stock, réparations"
+                            }
+                        }
                         groups.forEach { group ->
                             SettingsIndexRow(
                                 group = group,
+                                value = valueOf(group),
                                 onClick = {
                                     settingsQuery = ""
                                     openGroupIndex = group.ordinal
@@ -1542,6 +1573,8 @@ private fun FieldSwitch(
 @Composable
 private fun SettingsIndexRow(
     group: SettingsGroup,
+    /** What the group currently says, shown under the summary. */
+    value: String,
     onClick: () -> Unit,
 ) {
     Card(
@@ -1562,6 +1595,13 @@ private fun SettingsIndexRow(
                     group.summary,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    value,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
             Icon(

@@ -169,4 +169,37 @@ class SavedItemStoreTest {
         assertEquals(1, errors.size)
         assertFalse("nothing may claim the catalogue was saved", catalogue().isFile)
     }
+
+    @Test
+    fun `a deleted article can be put back without moving its stock again`() {
+        // Undo restores through `restore`, not `save`: `save` reads a row it has
+        // never seen as an opening movement, and the ledger still holds the
+        // entries the article had, so the quantity would double.
+        val store = open()
+        val chair = SavedItem(label = "Chaise", price = 350.0, stock = 4)
+        store.save(chair)
+        val saved = store.items.value.single()
+        val balanceBefore = store.ledger.balance(saved.id)
+
+        store.delete(saved)
+        assertTrue(store.items.value.isEmpty())
+
+        store.restore(saved)
+
+        assertEquals(listOf(saved), store.items.value)
+        assertEquals(balanceBefore, store.ledger.balance(saved.id))
+    }
+
+    @Test
+    fun `restoring an article that is already there changes nothing`() {
+        val store = open()
+        val chair = SavedItem(label = "Chaise", price = 350.0, stock = 4)
+        store.save(chair)
+        val saved = store.items.value.single()
+
+        store.restore(saved)
+
+        assertEquals(1, store.items.value.size)
+        assertEquals(4, store.items.value.single().stock)
+    }
 }

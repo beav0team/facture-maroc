@@ -93,7 +93,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -294,7 +296,6 @@ fun HomeScreen(
     var deleteInvoice by remember { mutableStateOf<InvoiceRecord?>(null) }
     var paymentRecord by remember { mutableStateOf<InvoiceRecord?>(null) }
     var deleteClient by remember { mutableStateOf<InvoiceClient?>(null) }
-    var deleteItem by remember { mutableStateOf<SavedItem?>(null) }
     var movingItem by remember { mutableStateOf<SavedItem?>(null) }
 
     val snackbar = remember { SnackbarHostState() }
@@ -794,7 +795,28 @@ fun HomeScreen(
                         editingItem = it
                         itemEditorOpen = true
                     }
-                    val onDeleteItem: (SavedItem) -> Unit = { deleteItem = it }
+                    /*
+                     * Deleting an article is undoable rather than confirmed.
+                     *
+                     * A dialog asks the shop to prove it meant the tap; a
+                     * snackbar gives the row back if it did not, which is the
+                     * same guarantee without a second screen between the menu
+                     * and the result. Restoring goes through
+                     * `SavedItemStore.restore`, so the ledger is untouched.
+                     */
+                    val onDeleteItem: (SavedItem) -> Unit = { item ->
+                        viewModel.savedItems.delete(item)
+                        scope.launch {
+                            val answer = snackbar.showSnackbar(
+                                message = "« ${item.label} » supprimé.",
+                                actionLabel = "Annuler",
+                                duration = SnackbarDuration.Short,
+                            )
+                            if (answer == SnackbarResult.ActionPerformed) {
+                                viewModel.savedItems.restore(item)
+                            }
+                        }
+                    }
 
                     if (managingFolders) {
                         /*
@@ -1268,18 +1290,6 @@ fun HomeScreen(
             onConfirm = {
                 viewModel.clients.delete(client)
                 deleteClient = null
-            },
-        )
-    }
-
-    deleteItem?.let { item ->
-        DeleteSimpleDialog(
-            title = "Supprimer cet article ?",
-            message = "${item.label} ne sera plus proposé sur les prochaines factures. Les lignes déjà écrites ne changent pas.",
-            onDismiss = { deleteItem = null },
-            onConfirm = {
-                viewModel.savedItems.delete(item)
-                deleteItem = null
             },
         )
     }

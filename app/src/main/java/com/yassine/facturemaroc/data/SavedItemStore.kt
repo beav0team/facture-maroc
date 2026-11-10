@@ -134,6 +134,21 @@ class SavedItemStore(
         persist(_items.value.filterNot { it.label.trim().lowercase() == key }, _folders.value)
     }
 
+    /**
+     * Puts a just-deleted article back, exactly as it was.
+     *
+     * Deliberately not [save]: that treats a new row's quantity as an opening
+     * movement, and the ledger still holds every entry the article had — delete
+     * only removes the row. Restoring through `save` would therefore count the
+     * stock a second time. This writes the catalogue back and touches no
+     * history.
+     */
+    fun restore(item: SavedItem) {
+        if (item.label.isBlank()) return
+        if (_items.value.any { it.id == item.id }) return
+        persist(_items.value + item, _folders.value)
+    }
+
     /** Replaces the whole list, for a backup restore. */
     fun replaceAll(items: List<SavedItem>, folders: List<String> = emptyList()) {
         persist(
