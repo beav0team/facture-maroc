@@ -449,7 +449,8 @@
       const bytes = await genererPdfBytes()
       if (!bytes) return
       const nom = nomFichier(facture.numero || 'document')
-      const resume = `${TYPES_DOCUMENT[facture.type ?? 'facture'].libelle} ${facture.numero || ''} — ${dirhams(totaux.netAPayer)}`
+      const libelle = TYPES_DOCUMENT[facture.type ?? 'facture'].libelle
+      const resume = `${libelle} ${facture.numero || ''} du ${facture.date} — ${dirhams(totaux.netAPayer)}. Bonjour ${facture.client.nom || ''}, votre document est joint. Merci.`
       const fichier = new File([new Uint8Array(bytes)], nom, { type: 'application/pdf' })
       if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [fichier] })) {
         await navigator.share({ files: [fichier], title: nom, text: resume })

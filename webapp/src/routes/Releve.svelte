@@ -75,7 +75,7 @@
         doc,
         net: Number(doc.net_a_payer) || 0,
         paye: solde.paye,
-        reste: solde.reste,
+        reste: doc.type === 'avoir' ? 0 : solde.reste,
         statut: statutDocument(doc, solde),
       }
     }),
