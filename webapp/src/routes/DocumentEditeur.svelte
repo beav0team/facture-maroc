@@ -216,12 +216,20 @@
     modifierLigne(index, ligne)
   }
 
+  /** `1` is not yet `1,` : committing would erase the comma mid-typing. */
+  function enCoursDeSaisie(texte: string): boolean {
+    const propre = texte.trim()
+    return propre === '' || /[.,]$/.test(propre)
+  }
+
   function majQuantite(index: number, texte: string) {
+    if (enCoursDeSaisie(texte)) return
     const valeur = analyserMontant(texte)
     if (valeur !== null && valeur >= 0) modifierLigne(index, { quantite: valeur })
   }
 
   function majPrix(index: number, texte: string) {
+    if (enCoursDeSaisie(texte)) return
     const valeur = analyserMontant(texte)
     if (valeur === null || valeur < 0) return
     const ligne = facture.lignes[index]
@@ -234,11 +242,13 @@
   }
 
   function majRemiseLigne(index: number, texte: string) {
+    if (enCoursDeSaisie(texte)) return
     const valeur = analyserMontant(texte)
     if (valeur !== null && valeur >= 0 && valeur <= 100) modifierLigne(index, { remisePourcent: valeur })
   }
 
   function majTauxLigne(index: number, texte: string) {
+    if (enCoursDeSaisie(texte)) return
     const ligne = facture.lignes[index]
     if (!ligne) return
     const valeur = texte === '' ? null : analyserMontant(texte)
@@ -254,6 +264,7 @@
   }
 
   function majRemiseGlobale(texte: string) {
+    if (enCoursDeSaisie(texte)) return
     const valeur = analyserMontant(texte)
     if (valeur !== null && valeur >= 0 && valeur <= 100) {
       saisie.facture.remisePourcent = valeur
@@ -262,6 +273,7 @@
   }
 
   function majRemiseMontant(texte: string) {
+    if (enCoursDeSaisie(texte)) return
     const valeur = analyserMontant(texte)
     if (valeur !== null && valeur >= 0) {
       saisie.facture.remiseMontant = valeur
@@ -270,21 +282,25 @@
   }
 
   function majSurchargeMontant(texte: string) {
+    if (enCoursDeSaisie(texte)) return
     const valeur = analyserMontant(texte)
     if (valeur !== null && valeur >= 0) saisie.facture.surchargeMontant = valeur
   }
 
   function majSurchargePourcent(texte: string) {
+    if (enCoursDeSaisie(texte)) return
     const valeur = analyserMontant(texte)
     if (valeur !== null && valeur >= 0 && valeur <= 100) saisie.facture.surchargePourcent = valeur
   }
 
   function majAcompte(texte: string) {
+    if (enCoursDeSaisie(texte)) return
     const valeur = analyserMontant(texte)
     if (valeur !== null && valeur >= 0) saisie.facture.acompte = valeur
   }
 
   function majTauxDocument(texte: string) {
+    if (enCoursDeSaisie(texte)) return
     const valeur = analyserMontant(texte)
     if (valeur !== null && valeur >= 0 && valeur <= 100) saisie.facture.tauxTva = valeur
   }
@@ -692,7 +708,7 @@
                       value={quantiteValeur(ligne.quantite)}
                       disabled={!modifiable}
                       inputmode="decimal"
-                      onchange={(e) => majQuantite(index, e.currentTarget.value)}
+                      oninput={(e) => majQuantite(index, e.currentTarget.value)}
                     />
                     <input
                       class="nombre"
@@ -700,7 +716,7 @@
                       value={prixAffiche(ligne)}
                       disabled={!modifiable}
                       inputmode="decimal"
-                      onchange={(e) => majPrix(index, e.currentTarget.value)}
+                      oninput={(e) => majPrix(index, e.currentTarget.value)}
                     />
                     <input
                       class="nombre"
@@ -708,7 +724,7 @@
                       value={ligne.remisePourcent ?? 0}
                       disabled={!modifiable}
                       inputmode="decimal"
-                      onchange={(e) => majRemiseLigne(index, e.currentTarget.value)}
+                      oninput={(e) => majRemiseLigne(index, e.currentTarget.value)}
                     />
                     <input
                       class="nombre"
@@ -717,7 +733,7 @@
                       disabled={!modifiable}
                       inputmode="decimal"
                       placeholder={String(tauxDocument)}
-                      onchange={(e) => majTauxLigne(index, e.currentTarget.value)}
+                      oninput={(e) => majTauxLigne(index, e.currentTarget.value)}
                     />
                     <span class="ligne__total">{dirhams(arrondi(totalLigne(ligne)))}</span>
                     <div class="ligne__outils">
@@ -802,15 +818,15 @@
             <div class="grille-champs">
               <div class="champ">
                 <label for="d-remise">Remise globale (%)</label>
-                <input id="d-remise" value={facture.remisePourcent ?? 0} disabled={!modifiable} inputmode="decimal" onchange={(e) => majRemiseGlobale(e.currentTarget.value)} />
+                <input id="d-remise" value={facture.remisePourcent ?? 0} disabled={!modifiable} inputmode="decimal" oninput={(e) => majRemiseGlobale(e.currentTarget.value)} />
               </div>
               <div class="champ">
                 <label for="d-remise-montant">Remise globale (DH)</label>
-                <input id="d-remise-montant" value={facture.remiseMontant ?? 0} disabled={!modifiable} inputmode="decimal" onchange={(e) => majRemiseMontant(e.currentTarget.value)} />
+                <input id="d-remise-montant" value={facture.remiseMontant ?? 0} disabled={!modifiable} inputmode="decimal" oninput={(e) => majRemiseMontant(e.currentTarget.value)} />
               </div>
               <div class="champ">
                 <label for="d-surcharge">Frais (DH)</label>
-                <input id="d-surcharge" value={facture.surchargeMontant ?? 0} disabled={!modifiable} inputmode="decimal" onchange={(e) => majSurchargeMontant(e.currentTarget.value)} />
+                <input id="d-surcharge" value={facture.surchargeMontant ?? 0} disabled={!modifiable} inputmode="decimal" oninput={(e) => majSurchargeMontant(e.currentTarget.value)} />
               </div>
               <div class="champ">
                 <label for="d-surcharge-libelle">Libellé des frais</label>
@@ -818,7 +834,7 @@
               </div>
               <div class="champ">
                 <label for="d-acompte">Acompte (DH)</label>
-                <input id="d-acompte" value={facture.acompte ?? 0} disabled={!modifiable} inputmode="decimal" onchange={(e) => majAcompte(e.currentTarget.value)} />
+                <input id="d-acompte" value={facture.acompte ?? 0} disabled={!modifiable} inputmode="decimal" oninput={(e) => majAcompte(e.currentTarget.value)} />
               </div>
               <div class="champ">
                 <label for="d-acompte-ref">Référence de l’acompte</label>

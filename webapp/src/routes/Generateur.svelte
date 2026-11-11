@@ -46,6 +46,7 @@
   }
 
   function majQuantite(index: number, texte: string) {
+    if (texte.trim() === '' || /[.,]$/.test(texte.trim())) return
     const valeur = analyserMontant(texte)
     if (valeur === null || valeur < 0) return
     const copie = [...lignes]
@@ -56,6 +57,7 @@
   }
 
   function majPrix(index: number, texte: string) {
+    if (texte.trim() === '' || /[.,]$/.test(texte.trim())) return
     const valeur = analyserMontant(texte)
     if (valeur === null || valeur < 0) return
     const copie = [...lignes]
@@ -160,13 +162,13 @@
                 aria-label="Quantité"
                 value={ligne.quantite}
                 inputmode="decimal"
-                onchange={(e) => majQuantite(index, e.currentTarget.value)}
+                oninput={(e) => majQuantite(index, e.currentTarget.value)}
               />
               <input
                 aria-label="Prix unitaire HT"
                 value={ligne.prixUnitaire}
                 inputmode="decimal"
-                onchange={(e) => majPrix(index, e.currentTarget.value)}
+                oninput={(e) => majPrix(index, e.currentTarget.value)}
               />
               <span class="ligne__total">{dirhams(totalLigne(ligne))}</span>
               {#if lignes.length > 1}

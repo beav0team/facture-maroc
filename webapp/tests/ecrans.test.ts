@@ -280,4 +280,30 @@ describe('éditeur de document', () => {
     expect(cible.querySelector('input[aria-label="Désignation"]')).toBeTruthy()
     expect(cible.textContent).toContain('0,00 DH')
   })
+
+  it('le prix et la quantité saisis entrent dans le total', async () => {
+    const cible = await rendre(DocumentEditeur)
+    const ajouter = [...cible.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Ajouter une ligne'),
+    )
+    ajouter?.click()
+    flushSync()
+
+    const saisir = (selecteur: string, valeur: string) => {
+      const champ = cible.querySelector<HTMLInputElement>(selecteur)
+      expect(champ).toBeTruthy()
+      if (!champ) return
+      champ.value = valeur
+      champ.dispatchEvent(new Event('input', { bubbles: true }))
+    }
+
+    saisir('input[aria-label="Désignation"]', 'Prestation')
+    saisir('input[aria-label="Quantité"]', '2')
+    saisir('input[aria-label="Prix unitaire HT"]', '500')
+    flushSync()
+
+    // 2 × 500 HT, TVA 20 % : le total doit suivre la saisie, pas rester à zéro.
+    expect(cible.textContent).toContain('1\u202F000,00 DH')
+    expect(cible.textContent).toContain('1\u202F200,00 DH')
+  })
 })
