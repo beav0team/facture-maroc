@@ -1,10 +1,36 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
+  import { texteQuota, type QuotaBoutique } from '../lib/documents'
+  import * as api from '../lib/documentsApi'
   import { auth, creerBoutique } from '../lib/session.svelte'
   import Barre from '../lib/ui/Barre.svelte'
 
   let nom = $state('')
   let erreur = $state<string | null>(null)
   let enCours = $state(false)
+  let quota = $state<QuotaBoutique | null>(null)
+
+  /*
+   * The header badge used to be the literal « Plan gratuit · 5 factures / mois »
+   * for every shop, so a shop that had paid still read the free plan on the
+   * first screen after login. It now comes from `quota_boutique`, and the value
+   * is re-read when the tab comes back (an activation happens elsewhere).
+   */
+  onMount(() => {
+    void chargerQuota()
+    const auRetour = () => {
+      if (document.visibilityState === 'visible') void chargerQuota()
+    }
+    document.addEventListener('visibilitychange', auRetour)
+    return () => document.removeEventListener('visibilitychange', auRetour)
+  })
+
+  async function chargerQuota() {
+    const shop = auth.boutique
+    if (!shop) return
+    const res = await api.chargerQuota(shop.id)
+    if (res.donnees) quota = res.donnees
+  }
 
   const raccourcis = [
     {
@@ -79,7 +105,13 @@
           <p class="entete__surtitre">Bonjour</p>
           <h1>{auth.boutique.nom}</h1>
         </div>
-        <a class="etiquette" href="/app/tarifs">Plan gratuit · 5 factures / mois</a>
+        {#if quota?.plan === 'pro'}
+          <span class="etiquette">{texteQuota(quota)}</span>
+        {:else if quota}
+          <a class="etiquette" href="/app/tarifs">Plan gratuit · {texteQuota(quota)}</a>
+        {:else}
+          <a class="etiquette" href="/app/tarifs">Plan gratuit · 5 factures / mois</a>
+        {/if}
       </section>
 
       <section class="carte vide">
