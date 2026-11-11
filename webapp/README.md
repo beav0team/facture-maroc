@@ -9,7 +9,7 @@ relevés, générateur public, tarifs, admin et import Android.
 
 | | |
 |---|---|
-| Connexion | e-mail / mot de passe, et Google |
+| Connexion | e-mail / mot de passe, et Google ; réinitialisation par e-mail vers un écran « Nouveau mot de passe » |
 | Boutique | créée par son propriétaire à la première connexion |
 | Isolation | RLS Postgres, vérifiée par `supabase/tests/` |
 | Moteur | arithmétique, dates et numérotation portés depuis Kotlin ; fixtures partagées |
@@ -244,8 +244,6 @@ le site et l'application Android casse la suite.
   `/app/admin` après virement ou espèces. C'est assumé pour le lancement.
 - Les paliers de prix et les attributs libres d'un article sont stockés et
   conservés, mais pas encore modifiables dans l'interface web.
-- « Mot de passe oublié » envoie le lien de réinitialisation, mais l'écran qui
-  permet de choisir un nouveau mot de passe n'existe pas encore.
 - Une seule boutique par utilisateur dans l'interface. Le schéma en autorise
   plusieurs, `chargerBoutique()` prend la plus ancienne.
 - L'import Android ramène les documents en brouillons : un numéro déjà imprimé

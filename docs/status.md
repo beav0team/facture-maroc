@@ -30,7 +30,8 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
 - **Google OAuth publié en production** ; connexion Google et e-mail/mot de
   passe vérifiées sur le site.
 - Données réelles : 3 comptes/boutiques (Atlas, Benzen, PNEUMATIQUE AGHARAS),
-  `documents = 0`, `archives = 0`, `platform_admins = 0`.
+  `documents = 0`, `archives = 0`, `platform_admins = 1`
+  (`agnaou1996@gmail.com`).
 - Les données de test (Atelier Essai, `essai@factureapp.ma`, 4 factures,
   2 PDF) ont été supprimées et vérifiées.
 
@@ -45,12 +46,18 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   SHA-256 ; réimpression depuis l'archive. Partage WhatsApp/natif.
 - Paiements multiples, reçu PDF, reste dû, retard, relevé client.
 - Générateur public, tarifs, admin, import de sauvegarde Android.
-- 133 tests Vitest, 0 erreur `svelte-check` ; preuves RLS locales.
+- **Réinitialisation du mot de passe** : le lien envoyé par « Mot de passe
+  oublié » ouvre le tableau de bord avec une session de récupération ;
+  `typeRecuperation()` lit le fragment avant `getSession()` et l'application
+  affiche « Nouveau mot de passe » (deux saisies, refus si différentes), puis
+  `updateUser` remplace l'ancien. Un lien expiré ou déjà servi le dit, il ne
+  laisse pas l'écran vide.
+- 142 tests Vitest, 0 erreur `svelte-check` ; preuves RLS locales.
 
 **Reste à faire pour vendre**
 
-- **Nommer un administrateur plateforme** (`platform_admins` est vide) : sans
-  ça, `/app/admin` et l'activation Pro sont inaccessibles.
+- ~~Nommer un administrateur plateforme~~ — fait : `agnaou1996@gmail.com`
+  (uid `7fc28c1c…`) est dans `platform_admins` depuis le 2026-11-11.
 - **Sauvegardes** : non installées. Le rôle `factureapp_backup` existe mais ne
   se connecte pas (IPv6 absent, pooler sans rôles custom). Choisir entre export
   JSON+PDF via `service_role` ou reset du mot de passe Postgres + `pg_dump`.

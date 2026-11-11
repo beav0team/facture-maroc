@@ -1,5 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { messageRecuperation, typeRecuperation } from './recuperation'
 
 export type Boutique = {
   id: string
@@ -33,6 +34,8 @@ type Etat = {
   boutique: Boutique | null
   erreur: string | null
   chargement: boolean
+  /** The shop arrived from a reset e-mail and must choose a new password. */
+  recuperation: boolean
 }
 
 export const auth = $state<Etat>({
@@ -41,6 +44,7 @@ export const auth = $state<Etat>({
   boutique: null,
   erreur: null,
   chargement: false,
+  recuperation: false,
 })
 
 export async function demarrer(): Promise<void> {
@@ -49,11 +53,19 @@ export async function demarrer(): Promise<void> {
     return
   }
 
+  // Read the recovery return before `getSession()` consumes the URL hash. The
+  // `PASSWORD_RECOVERY` event alone is not enough: it can fire during the
+  // client's initialisation, before this listener exists.
+  if (typeof location !== 'undefined') {
+    auth.recuperation = typeRecuperation(location.hash, location.search)
+  }
+
   const { data } = await supabase.auth.getSession()
   auth.user = data.session?.user ?? null
 
-  supabase.auth.onAuthStateChange((_evenement, session) => {
+  supabase.auth.onAuthStateChange((evenement, session) => {
     auth.user = session?.user ?? null
+    if (evenement === 'PASSWORD_RECOVERY') auth.recuperation = true
     // On an OAuth return (Google) the session arrives after mount: the shop
     // must be reloaded, not only cleared on sign-out.
     if (session) void chargerBoutique()
@@ -145,11 +157,41 @@ export async function connexionGoogle(): Promise<string | null> {
 
 export async function motDePasseOublie(email: string): Promise<string | null> {
   if (!supabase) return 'Supabase n’est pas configuré.'
+  // The link returns to the app root: Supabase appends the recovery session to
+  // the URL and `demarrer()` turns it into the "new password" screen. Pointing
+  // it at a dedicated path would also need that path allowlisted in Supabase
+  // and rewritten in docs/_redirects for nothing.
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${location.origin}/app/`,
   })
   if (error) return messageAuth(error.message)
   return null
+}
+
+/**
+ * Saves the password chosen on the recovery screen. The recovery link already
+ * opened a session; `updateUser` is the only call allowed to use it. The hash
+ * is cleared so a reload does not replay the recovery token.
+ */
+export async function changerMotDePasse(motDePasse: string): Promise<string | null> {
+  if (!supabase) return 'Supabase n’est pas configuré.'
+  auth.chargement = true
+  const { error } = await supabase.auth.updateUser({ password: motDePasse })
+  auth.chargement = false
+  if (error) return messageRecuperation(error.message)
+  if (typeof location !== 'undefined' && location.hash) {
+    history.replaceState({}, '', location.pathname + location.search)
+  }
+  await chargerBoutique()
+  return null
+}
+
+/** Leaves the recovery screen once the new password is saved. */
+export function terminerRecuperation(): void {
+  auth.recuperation = false
+  if (typeof location !== 'undefined' && location.hash) {
+    history.replaceState({}, '', location.pathname + location.search)
+  }
 }
 
 export async function creerBoutique(nom: string): Promise<string | null> {

@@ -15,6 +15,7 @@
   import Admin from './routes/Admin.svelte'
   import Import from './routes/Import.svelte'
   import Introuvable from './routes/Introuvable.svelte'
+  import MotDePasse from './routes/MotDePasse.svelte'
 
   onMount(() => {
     demarrerRouteur()
@@ -28,6 +29,8 @@
 
 {#if !auth.pret}
   <div class="chargement">Chargement…</div>
+{:else if auth.recuperation}
+  <MotDePasse />
 {:else if route.chemin === '/gratuit'}
   <Generateur />
 {:else if route.chemin === '/tarifs'}
