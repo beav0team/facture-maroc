@@ -265,6 +265,9 @@ fun ClientEditorDialog(
                             email = email.trim(),
                             vatExempt = vatExempt,
                             role = role,
+                            // Identity travels with the edit: a rename saves
+                            // the party it came from, it does not create one.
+                            id = initial?.id.orEmpty(),
                         ),
                     )
                 },

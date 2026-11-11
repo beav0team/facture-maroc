@@ -64,6 +64,13 @@ gèle, les 577 tests JVM passent et le rendu PDF est inchangé.
   le champ est visible ; la quantité vient du journal de stock
   (`StockLedger.balances()`), plus du cache ; « marge inconnue » au lieu d'une
   ligne absente.
+- **Identité des tiers** : les clients et fournisseurs ont un `id` stable
+  (`PartyIdentity`), les documents émis avant sont estampillés une fois par
+  leur nom, et un nom sans id reste la clé de secours. Renommer un client ne
+  détache plus son historique.
+- **Dossiers** : déplacer un dossier avec tout son contenu sous un autre, et le
+  copier (sous-dossiers + articles, chaque copie recevant un id, un nom unique
+  et son stock d'ouverture dans le journal).
 - Paramètres : index de cinq groupes avec recherche insensible aux accents
   (Boutique, Facturation, Catalogue et stock, Données, Diagnostic), valeur
   courante affichée sous chaque groupe (« TVA 20 % », « Version … »), retour =

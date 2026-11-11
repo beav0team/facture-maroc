@@ -1,6 +1,7 @@
 package com.yassine.facturemaroc.data
 
 import android.content.Context
+import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -105,22 +106,35 @@ class ClientStore(private val context: Context) {
 
     fun save(client: InvoiceClient) {
         if (client.name.isBlank()) return
-        // Keyed by name *and* role: a garage can be a supplier and a customer,
-        // and the two records say different things about the relationship.
-        val key = key(client.name, client.role)
         val existing = _clients.value.toMutableList()
-        val index = existing.indexOfFirst { key(it.name, it.role) == key }
-        if (index >= 0) {
-            existing[index] = client.copy(name = client.name.trim())
-        } else {
-            existing.add(client.copy(name = client.name.trim()))
+        // The id wins when there is one: a rename arrives with the id it already
+        // had and the new name, so matching on the name would add a second
+        // party instead of renaming the first. Name *and* role remain the
+        // fallback for a party written before ids existed, and they are still
+        // what makes a garage able to be a supplier and a customer at once.
+        val byId = client.id.takeIf { it.isNotBlank() }
+            ?.let { id -> existing.indexOfFirst { it.id == id } }
+            ?.takeIf { it >= 0 }
+        val index = byId ?: existing.indexOfFirst {
+            key(it.name, it.role) == key(client.name, client.role)
         }
+        val resolvedId = client.id.ifBlank {
+            existing.getOrNull(index)?.id.orEmpty().ifBlank { UUID.randomUUID().toString() }
+        }
+        val saved = client.copy(id = resolvedId, name = client.name.trim())
+        if (index >= 0) existing[index] = saved else existing.add(saved)
         persist(existing)
     }
 
     fun delete(client: InvoiceClient) {
-        val key = key(client.name, client.role)
-        persist(_clients.value.filterNot { key(it.name, it.role) == key })
+        val byId = client.id.takeIf { it.isNotBlank() }
+            ?.takeIf { id -> _clients.value.any { it.id == id } }
+        val kept = if (byId != null) {
+            _clients.value.filterNot { it.id == byId }
+        } else {
+            _clients.value.filterNot { key(it.name, it.role) == key(client.name, client.role) }
+        }
+        persist(kept)
     }
 
     /** The saved parties of one kind, in the order they were saved. */
@@ -146,6 +160,7 @@ class ClientStore(private val context: Context) {
         val array = org.json.JSONArray()
         list.forEach { c ->
             array.put(org.json.JSONObject().apply {
+                if (c.id.isNotBlank()) put("id", c.id)
                 put("name", c.name)
                 put("address", c.address)
                 put("ice", c.ice)
@@ -182,6 +197,7 @@ class ClientStore(private val context: Context) {
                         email = obj.optString("email", ""),
                         vatExempt = obj.optBoolean("vatExempt", false),
                         role = PartyRole.fromId(obj.optString("role", PartyRole.CLIENT.id)),
+                        id = obj.optString("id", "").trim(),
                     )
                 }
             }

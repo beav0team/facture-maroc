@@ -16,6 +16,9 @@ import java.util.Base64
 object InvoiceJson {
 
     fun clientToJson(client: InvoiceClient): JSONObject = JSONObject().apply {
+        // Absent when the party has none yet; a reader then falls back to the
+        // name, which is how every document before ids was matched.
+        if (client.id.isNotBlank()) put("id", client.id)
         put("name", client.name)
         put("address", client.address)
         put("ice", client.ice)
@@ -44,6 +47,7 @@ object InvoiceJson {
             // A record written before suppliers existed is a client: it was
             // offered in the client picker and nothing else.
             role = PartyRole.fromId(obj.optString("role", PartyRole.CLIENT.id)),
+            id = obj.optString("id", "").trim(),
         )
 
     fun lineToJson(line: InvoiceLine): JSONObject = JSONObject().apply {

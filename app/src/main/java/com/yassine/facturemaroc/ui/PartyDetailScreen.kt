@@ -83,7 +83,7 @@ fun PartyDetailScreen(
     val context = LocalContext.current
     val isClient = client.role == PartyRole.CLIENT
     val statement: ClientStatement = remember(records, client.name, isClient) {
-        if (isClient) ClientStatements.forClient(records, client.name) else ClientStatement(client.name, emptyList())
+        if (isClient) ClientStatements.forClient(records, client) else ClientStatement(client.name, emptyList())
     }
     val receipts = remember(purchases, client.name) {
         purchases

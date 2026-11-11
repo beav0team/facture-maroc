@@ -73,6 +73,14 @@ data class Purchase(
     val lines: List<PurchaseLine> = emptyList(),
     val note: String = "",
     val createdAt: Long = System.currentTimeMillis(),
+    /**
+     * Stable identity of the supplier, when one was picked from the directory.
+     *
+     * [supplierName] stays what the paper says: a receipt is evidence, and the
+     * name printed on it must not follow a later rename. The id is only the
+     * link back to the party for lists and totals.
+     */
+    val supplierId: String = "",
 ) {
     /** The whole receipt, HT. */
     val totalHt: Double get() = lines.sumOf { it.total }
@@ -85,6 +93,7 @@ data class Purchase(
         put("number", number)
         put("date", date)
         put("supplierName", supplierName)
+        if (supplierId.isNotBlank()) put("supplierId", supplierId)
         put("supplierIce", supplierIce)
         put("lines", JSONArray().apply { lines.forEach { put(it.toJson()) } })
         put("note", note)
@@ -116,6 +125,7 @@ data class Purchase(
                 lines = lines,
                 note = obj.optString("note", ""),
                 createdAt = obj.optLong("createdAt", 0L),
+                supplierId = obj.optString("supplierId", "").trim(),
             )
         }
     }

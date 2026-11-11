@@ -50,7 +50,9 @@ import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CreateNewFolder
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
@@ -317,6 +319,9 @@ fun HomeScreen(
     var inFolder by rememberSaveable { mutableStateOf<String?>(null) }
     var showAllArticles by rememberSaveable { mutableStateOf(false) }
     var folderEditorOpen by remember { mutableStateOf(false) }
+    /* The folder being moved or copied, by path. */
+    var movingFolder by remember { mutableStateOf<String?>(null) }
+    var copyingFolder by remember { mutableStateOf<String?>(null) }
     var renamingFolder by remember { mutableStateOf<String?>(null) }
     /*
      * The folder a *new* folder is created inside, chosen when the dialog
@@ -821,7 +826,7 @@ fun HomeScreen(
                     onOrder = { onNewOrder(it) },
                     onStatement = { client ->
                         scope.launch {
-                            val outcome = viewModel.shareStatement(client.name, records)
+                            val outcome = viewModel.shareStatement(client, records)
                             snackbar.showSnackbar(outcome.shareMessage())
                         }
                     },
@@ -887,6 +892,8 @@ fun HomeScreen(
                                 folderEditorOpen = true
                             },
                             onDeleteFolder = { deleteFolder = it },
+                            onMoveFolder = { movingFolder = it },
+                            onCopyFolder = { copyingFolder = it },
                         )
 
                         else -> Column(Modifier.fillMaxSize()) {
@@ -958,6 +965,58 @@ fun HomeScreen(
                 }
             }
         }
+    }
+
+    movingFolder?.let { path ->
+        FolderDestinationDialog(
+            title = "Déplacer « ${SavedItemStore.nameOf(path)} »",
+            intro = "Choisissez le dossier qui le contiendra. Ses sous-dossiers et ses " +
+                "articles suivent.",
+            folders = folders,
+            source = path,
+            onDismiss = { movingFolder = null },
+            onPick = { parent ->
+                val moved = viewModel.savedItems.moveFolder(path, parent)
+                movingFolder = null
+                scope.launch {
+                    snackbar.showSnackbar(
+                        if (moved == null) {
+                            "Déplacement impossible : ce dossier existe déjà là-bas."
+                        } else {
+                            "« ${SavedItemStore.nameOf(path)} » déplacé dans " +
+                                (SavedItemStore.display(moved.substringBeforeLast("/"))
+                                    .ifBlank { "la racine" }) + "."
+                        },
+                    )
+                }
+            },
+        )
+    }
+
+    copyingFolder?.let { path ->
+        FolderDestinationDialog(
+            title = "Copier « ${SavedItemStore.nameOf(path)} »",
+            intro = "Une copie du dossier, de ses sous-dossiers et de ses articles. " +
+                "Chaque article copié reçoit un nouveau nom et son propre stock.",
+            folders = folders,
+            source = path,
+            onDismiss = { copyingFolder = null },
+            onPick = { parent ->
+                val copied = viewModel.savedItems.copyFolder(path, parent)
+                copyingFolder = null
+                scope.launch {
+                    snackbar.showSnackbar(
+                        if (copied == null) {
+                            "Copie impossible : ce dossier existe déjà là-bas."
+                        } else {
+                            "« ${SavedItemStore.nameOf(path)} » copié dans " +
+                                (SavedItemStore.display(copied.substringBeforeLast("/"))
+                                    .ifBlank { "la racine" }) + "."
+                        },
+                    )
+                }
+            },
+        )
     }
 
     if (articleScanOpen) {
@@ -1144,11 +1203,11 @@ fun HomeScreen(
             onNotify = { message -> scope.launch { snackbar.showSnackbar(message) } },
             onStatement = if (
                 party.role == PartyRole.CLIENT &&
-                ClientStatements.hasStatement(records, party.name)
+                ClientStatements.hasStatement(records, party)
             ) {
                 {
                     scope.launch {
-                        val outcome = viewModel.shareStatement(party.name, records)
+                        val outcome = viewModel.shareStatement(party, records)
                         snackbar.showSnackbar(outcome.shareMessage())
                     }
                 }
@@ -2169,7 +2228,7 @@ private fun ClientsTab(
         }
 
         items(visible, key = { "${role.id}-${it.name.lowercase()}" }) { client ->
-            val summary = summaries[partyKey(role, client.name)] ?: PartySummary()
+            val summary = summaries[partyKey(client)] ?: PartySummary()
             ClientCard(
                 client = client,
                 summary = summary,
@@ -2179,7 +2238,7 @@ private fun ClientsTab(
                 onDocument = { if (role == PartyRole.CLIENT) onInvoice(client) else onOrder(client) },
                 onStatement = if (
                     role == PartyRole.CLIENT &&
-                    ClientStatements.hasStatement(records, client.name)
+                    ClientStatements.hasStatement(records, client)
                 ) {
                     { onStatement(client) }
                 } else {
@@ -2525,6 +2584,8 @@ private fun ArticlesFoldersGrid(
     onCreateFolder: () -> Unit,
     onRenameFolder: (String) -> Unit,
     onDeleteFolder: (String) -> Unit,
+    onMoveFolder: (String) -> Unit = {},
+    onCopyFolder: (String) -> Unit = {},
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -2577,6 +2638,8 @@ private fun ArticlesFoldersGrid(
                 onClick = { onOpenFolder(folder) },
                 onRename = { onRenameFolder(folder) },
                 onDelete = { onDeleteFolder(folder) },
+                onMove = { onMoveFolder(folder) },
+                onCopy = { onCopyFolder(folder) },
             )
         }
         item(key = "new-folder") {
@@ -2601,6 +2664,10 @@ private fun FolderTile(
     onClick: () -> Unit,
     onRename: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
+    /** Moves the folder, with everything it holds, under another one. */
+    onMove: (() -> Unit)? = null,
+    /** Duplicates the folder, its sub-folders and its articles. */
+    onCopy: (() -> Unit)? = null,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
 
@@ -2684,6 +2751,38 @@ private fun FolderTile(
                                 onRename()
                             },
                         )
+                        if (onMove != null) {
+                            DropdownMenuItem(
+                                text = { Text("Déplacer…") },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Filled.DriveFileMove,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                },
+                                onClick = {
+                                    menuOpen = false
+                                    onMove()
+                                },
+                            )
+                        }
+                        if (onCopy != null) {
+                            DropdownMenuItem(
+                                text = { Text("Copier…") },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Filled.ContentCopy,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                },
+                                onClick = {
+                                    menuOpen = false
+                                    onCopy()
+                                },
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text("Supprimer") },
                             leadingIcon = {
@@ -2838,6 +2937,57 @@ private fun FolderPickerDialog(
                         onClick = { onPick(path) },
                     )
                 }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Annuler") }
+        },
+    )
+}
+
+/**
+ * Where a folder goes: inside another folder, or at the root.
+ *
+ * The folder itself and everything under it are not offered — dropping a shelf
+ * into itself would detach its whole tree from the catalogue — and the current
+ * parent is marked, so "move" cannot look like it did nothing.
+ */
+@Composable
+private fun FolderDestinationDialog(
+    title: String,
+    intro: String,
+    folders: List<String>,
+    /** The folder being moved or copied; it and its subtree are excluded. */
+    source: String,
+    onDismiss: () -> Unit,
+    onPick: (String) -> Unit,
+) {
+    val parent = SavedItemStore.parentOf(source)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    intro,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                FolderChoice(
+                    label = "Racine (aucun parent)",
+                    selected = parent.isEmpty(),
+                    onClick = { onPick("") },
+                )
+                folders
+                    .filterNot { SavedItemStore.isIn(it, source) }
+                    .forEach { path ->
+                        FolderChoice(
+                            label = SavedItemStore.display(path),
+                            selected = path.equals(parent, ignoreCase = true),
+                            onClick = { onPick(path) },
+                        )
+                    }
             }
         },
         confirmButton = {

@@ -78,16 +78,48 @@ data class ClientStatement(
  */
 object ClientStatements {
 
+    /**
+     * The statement of a saved party, matched by id when both sides have one.
+     *
+     * This is what makes a rename safe: the invoices keep the name they were
+     * issued under, and the statement follows the party anyway.
+     */
+    fun forClient(
+        records: List<InvoiceRecord>,
+        client: InvoiceClient,
+        today: Date = Date(),
+    ): ClientStatement = build(records, client.name.trim(), today) { record ->
+        PartyIdentity.matches(record.data.client, client)
+    }
+
+    /**
+     * The statement of whoever is named [clientName].
+     *
+     * Used for documents whose party was never saved — a walk-in client typed
+     * on the invoice — and by tests. A saved party goes through the overload,
+     * or a rename would split the account.
+     */
     fun forClient(
         records: List<InvoiceRecord>,
         clientName: String,
         today: Date = Date(),
     ): ClientStatement {
         val wanted = clientName.trim()
+        return build(records, wanted, today) { record ->
+            record.data.client.name.trim().equals(wanted, ignoreCase = true)
+        }
+    }
+
+    private fun build(
+        records: List<InvoiceRecord>,
+        clientName: String,
+        today: Date,
+        belongs: (InvoiceRecord) -> Boolean,
+    ): ClientStatement {
         val matching = records.filter { record ->
             !record.isDraft &&
                 record.data.documentType in STATEMENT_DOCUMENTS &&
-                record.data.client.name.trim().equals(wanted, ignoreCase = true)
+                belongs(record)
         }
         val lines = matching
             // Oldest first: a statement is read like an account, and the
@@ -122,7 +154,7 @@ object ClientStatements {
                         PaymentDue.isOverdue(data.dueDate, data.paymentState, today),
                 )
             }
-        return ClientStatement(clientName = wanted, lines = lines)
+        return ClientStatement(clientName = clientName, lines = lines)
     }
 
     /**
@@ -131,8 +163,8 @@ object ClientStatements {
      * The client card asks this before offering the menu item: a client with
      * only a devis would otherwise get a button that produces nothing.
      */
-    fun hasStatement(records: List<InvoiceRecord>, clientName: String): Boolean =
-        forClient(records, clientName).lines.isNotEmpty()
+    fun hasStatement(records: List<InvoiceRecord>, client: InvoiceClient): Boolean =
+        forClient(records, client).lines.isNotEmpty()
 }
 
 /**

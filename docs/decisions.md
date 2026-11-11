@@ -199,14 +199,19 @@ ouvert que si le magasin touche l'icône. Le numéro est normalisé
 
 ## Known limitations
 
-### 2026-11-10 — Clients and suppliers are matched by name
-There is no `partyId`. A statement, a supplier's history and the "has this client
-bought before?" check all compare trimmed names, case-insensitively. Renaming a
-client therefore detaches their history: the invoices keep the old spelling and
-the new name starts a new account. Accepted for 0.11 because a rename is rare and
-an invented id would need a migration of every stored document to be worth
-anything. Fixed before 1.0 by writing `partyId` on issuance **and** keeping the
-name fallback for every document already issued.
+### 2026-11-11 — Parties have a stable id; the name stays the fallback
+`InvoiceClient.id` (and `Purchase.supplierId`) now identify a party, so renaming
+a client no longer detaches the invoices issued under the old name. The id is
+written on the party and carried in every document snapshot; a document issued
+before ids existed is stamped **once**, at launch, with the id of the party it
+names (`PartyIdentity`), and only when exactly one party carries that name in
+that role — an ambiguous name is left alone rather than attached to the wrong
+account. Anything that still has no id (a walk-in client typed on the invoice)
+keeps matching by trimmed, case-insensitive name: that fallback is permanent, not
+a migration step. The editor still refuses two parties with the same name and
+role, because the shop at the counter cannot tell them apart; the data tolerates
+it, since an import or a hand-edited file can produce it. Documents keep printing
+the name — no template, PDF or XML change.
 
 ## Closed since the roadmap was written
 

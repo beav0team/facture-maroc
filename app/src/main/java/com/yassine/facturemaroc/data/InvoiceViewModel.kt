@@ -191,6 +191,18 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         // links whatever the backup could not know about.
         val migrated = savedItems.migrateIdentities(invoices.invoices.value)
         if (migrated !== invoices.invoices.value) invoices.replaceAll(migrated)
+        /*
+         * Parties get a stable identity once, and documents written while a
+         * name was the only identity are stamped with it. Both steps are
+         * idempotent: a launch after a restore links what it can and leaves
+         * every document it cannot resolve matched by name, as before.
+         */
+        val identified = PartyIdentity.withIds(clients.clients.value)
+        if (identified != clients.clients.value) clients.replaceAll(identified)
+        val stamped = PartyIdentity.stamp(invoices.invoices.value, identified)
+        if (stamped !== invoices.invoices.value) invoices.replaceAll(stamped)
+        val linkedReceipts = PartyIdentity.stampPurchases(purchases.all(), identified)
+        if (linkedReceipts !== purchases.all()) purchases.replaceAll(linkedReceipts)
         // Quantities typed before the ledger existed become its opening lines,
         // so a later repair recomputes them instead of emptying the shelves.
         savedItems.seedLedger()
@@ -977,16 +989,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
      * an invoice.
      */
     suspend fun shareStatement(
-        clientName: String,
+        party: InvoiceClient,
         records: List<InvoiceRecord>,
     ): InvoicePdf.Outcome = withContext(Dispatchers.IO) {
-        val statement = ClientStatements.forClient(records, clientName)
+        val statement = ClientStatements.forClient(records, party)
         if (statement.isEmpty) return@withContext InvoicePdf.Outcome.NotWritten
         val client = records
-            .firstOrNull {
-                !it.isDraft &&
-                    it.data.client.name.trim().equals(clientName.trim(), ignoreCase = true)
-            }
+            .firstOrNull { !it.isDraft && PartyIdentity.matches(it.data.client, party) }
             ?.data?.client
             ?: InvoiceClient(name = statement.clientName)
         StatementPdf.share(

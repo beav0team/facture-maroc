@@ -31,7 +31,7 @@ fun sortParties(
     sort: PartySort,
 ): List<InvoiceClient> {
     fun summary(party: InvoiceClient): PartySummary =
-        summaries[partyKey(party.role, party.name)] ?: PartySummary()
+        summaries[partyKey(party)] ?: PartySummary()
 
     return when (sort) {
         PartySort.NAME -> parties.sortedWith(byName)
@@ -63,7 +63,7 @@ fun filterParties(
     if (role == PartyRole.SUPPLIER || filter == PartyFilter.ALL) return parties
 
     return parties.filter { party ->
-        val summary = summaries[partyKey(party.role, party.name)]
+        val summary = summaries[partyKey(party)]
         when (filter) {
             PartyFilter.ALL -> true
             PartyFilter.OWES -> (summary?.due ?: 0.0) > 0.004

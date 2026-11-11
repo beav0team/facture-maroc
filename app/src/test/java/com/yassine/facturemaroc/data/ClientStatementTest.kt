@@ -255,7 +255,7 @@ class ClientStatementTest {
         assertEquals(0.0, statement.credited, 0.001)
         assertEquals(0.0, statement.paid, 0.001)
         assertEquals(0.0, statement.balance, 0.001)
-        assertFalse(ClientStatements.hasStatement(listOf(record("f")), "Client inconnu"))
+        assertFalse(ClientStatements.hasStatement(listOf(record("f")), InvoiceClient(name = "Client inconnu")))
     }
 
     @Test
@@ -277,5 +277,39 @@ class ClientStatementTest {
             assertEquals(33.33, it.total, 0.0001)
             assertEquals(it.total, it.balance, 0.0)
         }
+    }
+
+    @Test
+    fun `a renamed client keeps the invoices issued under the old name`() {
+        // The bug this fixes: renaming « Karim » detached eight thousand dirhams
+        // of history, because the name was the identity.
+        val karim = InvoiceClient(name = "Karim", id = "c1")
+        val issued = InvoiceRecord(
+            id = "F-1",
+            data = InvoiceData(
+                number = "F-1",
+                date = "01/11/2026",
+                client = karim,
+                lines = listOf(InvoiceLine("Ligne", 1.0, 1_000.0, vatPercent = 0.0)),
+            ),
+            status = InvoiceStatus.ISSUED,
+            createdAt = 0,
+            updatedAt = 0,
+        )
+        val renamed = karim.copy(name = "Karim El Fassi")
+
+        // The document keeps the name it was issued under — it is evidence —
+        // and the statement follows the party anyway.
+        assertEquals("Karim", issued.data.client.name)
+        val statement = ClientStatements.forClient(listOf(issued), renamed)
+        assertEquals(1, statement.lines.size)
+        assertEquals(1_000.0, statement.balance, 0.001)
+    }
+
+    @Test
+    fun `a party without an id is still matched by name`() {
+        val records = listOf(record("emise", name = "Karim"))
+        assertFalse(ClientStatements.forClient(records, InvoiceClient(name = "Atlas")).lines.isNotEmpty())
+        assertTrue(ClientStatements.forClient(records, InvoiceClient(name = " karim ")).lines.isNotEmpty())
     }
 }

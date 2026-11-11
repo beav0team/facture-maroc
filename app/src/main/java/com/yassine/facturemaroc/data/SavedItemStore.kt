@@ -225,6 +225,121 @@ class SavedItemStore(
     }
 
     /**
+     * Moves [path] under [newParent], with everything it holds, and returns the
+     * new path.
+     *
+     * The tree moves as a tree: sub-folders keep their shape and every article
+     * keeps its place inside, because a shelf that lost its contents on the way
+     * would be the same as a delete. Refused when the destination is the folder
+     * itself or lives inside it — that would detach the subtree from the
+     * catalogue — and when a folder of that name is already there.
+     */
+    fun moveFolder(path: String, newParent: String): String? {
+        val known = _folders.value.firstOrNull { it.equals(path, ignoreCase = true) } ?: return null
+        val home = newParent.trim()
+        if (home.isNotEmpty() && _folders.value.none { it.equals(home, ignoreCase = true) }) {
+            return null
+        }
+        if (home.isNotEmpty() && isIn(home, known)) return null
+        // Dropping a folder where it already is would rewrite every row for
+        // nothing.
+        if (parentOf(known).equals(home, ignoreCase = true)) return null
+        val moved = join(home, nameOf(known))
+        if (_folders.value.any { it.equals(moved, ignoreCase = true) }) return null
+
+        persist(
+            _items.value.map { item -> item.copy(folder = rebase(item.folder, known, moved)) },
+            _folders.value.map { folder -> rebase(folder, known, moved) },
+        )
+        return moved
+    }
+
+    /**
+     * Copies [path] under [newParent], with its sub-folders and its articles.
+     *
+     * A copy is a real second shelf, not a shortcut: every article gets a new
+     * id, so editing the copy cannot touch the original, and its label is made
+     * unique because the label is the catalogue's key — two articles cannot
+     * share one without one silently replacing the other.
+     *
+     * The quantity comes with the copy, and so does its opening movement in the
+     * journal: a copy that carried a stock figure with no history would be
+     * reported as a drift on the next « Vérifier le stock ».
+     */
+    fun copyFolder(path: String, newParent: String): String? {
+        val known = _folders.value.firstOrNull { it.equals(path, ignoreCase = true) } ?: return null
+        val home = newParent.trim()
+        if (home.isNotEmpty() && _folders.value.none { it.equals(home, ignoreCase = true) }) {
+            return null
+        }
+        if (home.isNotEmpty() && isIn(home, known)) return null
+        /*
+         * The copy keeps the folder's name when that name is free under the
+         * destination — copying « 13 » into another shelf keeps it « 13 » — and
+         * gains « (copie) », then a number, when it would collide with the
+         * shelf it was copied from.
+         */
+        val base = nameOf(known)
+        var suffix = 0
+        var copied: String
+        do {
+            val name = when (suffix) {
+                0 -> base
+                1 -> "$base (copie)"
+                else -> "$base (copie $suffix)"
+            }
+            copied = join(home, name)
+            suffix++
+        } while (_folders.value.any { it.equals(copied, ignoreCase = true) } && suffix < 100)
+
+        val taken = _items.value.map { it.label.trim().lowercase() }.toMutableSet()
+        val clones = _items.value.filter { isIn(it.folder, known) }.map { item ->
+            val label = uniqueLabel(item.label, taken)
+            taken += label.trim().lowercase()
+            item.copy(
+                id = UUID.randomUUID().toString(),
+                label = label,
+                folder = rebase(item.folder, known, copied),
+            )
+        }
+        persist(
+            _items.value + clones,
+            _folders.value + _folders.value.filter { isIn(it, known) }
+                .map { folder -> rebase(folder, known, copied) },
+        )
+        // Written after the rows exist, so a failure leaves the catalogue
+        // without a copy rather than with articles the journal does not know.
+        clones.forEach { clone ->
+            val stock = clone.stock ?: 0
+            if (stock != 0) {
+                ledger.append(
+                    StockEntry(
+                        itemId = clone.id,
+                        delta = stock,
+                        reason = StockReason.ADJUSTMENT,
+                        note = "Stock initial (copie)",
+                        unitCost = clone.purchasePrice,
+                    ),
+                )
+            }
+        }
+        return copied
+    }
+
+    /** `Chaise` → `Chaise (copie)`, then `Chaise (copie 2)`, … */
+    private fun uniqueLabel(label: String, taken: Set<String>): String {
+        val base = label.trim()
+        val first = "$base (copie)"
+        if (first.lowercase() !in taken) return first
+        var n = 2
+        while (true) {
+            val candidate = "$base (copie $n)"
+            if (candidate.lowercase() !in taken) return candidate
+            n++
+        }
+    }
+
+    /**
      * Deletes [path] and everything below it, but keeps the articles.
      *
      * Deleting a folder that quietly deleted the work inside it would be the

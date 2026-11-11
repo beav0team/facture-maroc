@@ -43,6 +43,15 @@ data class InvoiceClient(
      * supplier in the directory afterwards.
      */
     val role: PartyRole = PartyRole.CLIENT,
+
+    /**
+     * Stable identity, so a rename keeps the history.
+     *
+     * Empty on a party typed before ids existed, and on a document that names a
+     * client nobody saved; the name is then still the key, which is how every
+     * document issued before 0.12 is matched. The store assigns one on save.
+     */
+    val id: String = "",
 ) {
     /** Legal ID fields that are non-empty, joined for printing. */
     val legalIdentifierList: List<String>

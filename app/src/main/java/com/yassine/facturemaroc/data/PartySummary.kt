@@ -46,26 +46,35 @@ fun List<InvoiceRecord>.partySummaries(
 ): Map<String, PartySummary> {
     val records = this
     return clients.associate { client ->
-        val key = partyKey(client.role, client.name)
         val summary = if (client.role == PartyRole.SUPPLIER) {
-            supplierSummary(records, purchases, client.name)
+            supplierSummary(records, purchases, client)
         } else {
-            clientSummary(records, client.name, today)
+            clientSummary(records, client, today)
         }
-        key to summary
+        partyKey(client) to summary
     }
 }
 
-/** How the summaries are keyed: role plus a case-insensitive name. */
+/**
+ * How a party's summary is keyed.
+ *
+ * The id when it has one — that is what survives a rename — and role plus
+ * lowercased name otherwise, which is how every party written before ids is
+ * still found.
+ */
+fun partyKey(client: InvoiceClient): String =
+    client.id.trim().ifBlank { partyKey(client.role, client.name) }
+
+/** The name-based key, kept for parties that were never saved. */
 fun partyKey(role: PartyRole, name: String): String =
     "${role.id}|${name.trim().lowercase()}"
 
 private fun clientSummary(
     records: List<InvoiceRecord>,
-    name: String,
+    client: InvoiceClient,
     today: Date,
 ): PartySummary {
-    val statement = ClientStatements.forClient(records, name, today)
+    val statement = ClientStatements.forClient(records, client, today)
     val newest = statement.lines.lastOrNull()?.date.orEmpty()
     return PartySummary(
         // Documents that still mean something: a settled invoice is history, but
@@ -80,14 +89,24 @@ private fun clientSummary(
 private fun supplierSummary(
     records: List<InvoiceRecord>,
     purchases: List<Purchase>,
-    name: String,
+    client: InvoiceClient,
 ): PartySummary {
-    val wanted = name.trim()
-    val receipts = purchases.filter { it.supplierName.trim().equals(wanted, ignoreCase = true) }
+    val wanted = client.name.trim()
+    val id = client.id.trim()
+    val receipts = purchases.filter {
+        if (id.isNotEmpty() && it.supplierId.isNotBlank()) {
+            it.supplierId == id
+        } else {
+            it.supplierName.trim().equals(wanted, ignoreCase = true)
+        }
+    }
     val orders = records.count { record ->
         !record.isDraft &&
             record.data.documentType == DocumentType.BON_DE_COMMANDE &&
-            record.data.supplier?.name?.trim()?.equals(wanted, ignoreCase = true) == true
+            PartyIdentity.matches(
+                record.data.supplier ?: InvoiceClient(name = "", role = PartyRole.SUPPLIER),
+                client,
+            )
     }
     val newestReceipt = receipts.maxByOrNull { it.createdAt }
     return PartySummary(

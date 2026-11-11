@@ -3,6 +3,8 @@ package com.yassine.facturemaroc.data
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -201,5 +203,84 @@ class SavedItemStoreTest {
 
         assertEquals(1, store.items.value.size)
         assertEquals(4, store.items.value.single().stock)
+    }
+
+    @Test
+    fun `a folder moves with everything it holds`() {
+        val store = open()
+        store.createFolder("Mobilier")
+        store.createFolder("Chaises", "Mobilier")
+        store.save(SavedItem(label = "Chaise", price = 350.0, folder = "Mobilier/Chaises"))
+        store.createFolder("Ventes")
+
+        val moved = store.moveFolder("Mobilier", "Ventes")
+
+        assertEquals("Ventes/Mobilier", moved)
+        assertEquals(
+            setOf("Ventes", "Ventes/Mobilier", "Ventes/Mobilier/Chaises"),
+            store.folders.value.toSet(),
+        )
+        // The article travelled with its shelf, keeping its id.
+        val chair = store.items.value.single()
+        assertEquals("Ventes/Mobilier/Chaises", chair.folder)
+    }
+
+    @Test
+    fun `a folder cannot be moved inside itself`() {
+        val store = open()
+        store.createFolder("Mobilier")
+        store.createFolder("Chaises", "Mobilier")
+
+        assertNull(store.moveFolder("Mobilier", "Mobilier/Chaises"))
+        assertNull(store.copyFolder("Mobilier", "Mobilier/Chaises"))
+        assertEquals(setOf("Mobilier", "Mobilier/Chaises"), store.folders.value.toSet())
+    }
+
+    @Test
+    fun `a folder cannot be moved onto a name that is taken`() {
+        val store = open()
+        store.createFolder("Mobilier")
+        store.createFolder("Ventes")
+        store.createFolder("Mobilier", "Ventes")
+
+        assertNull(store.moveFolder("Mobilier", "Ventes"))
+    }
+
+    @Test
+    fun `copying a folder duplicates its tree and its articles with new identities`() {
+        val store = open()
+        store.createFolder("13")
+        store.createFolder("175 70R13", "13")
+        store.save(
+            SavedItem(label = "Michelin 175/70 R13", price = 650.0, stock = 4, folder = "13/175 70R13"),
+        )
+        val original = store.items.value.single()
+
+        val copied = store.copyFolder("13", "")
+
+        assertEquals("13 (copie)", copied)
+        assertEquals(2, store.items.value.size)
+        val copy = store.items.value.first { it.id != original.id }
+        assertNotEquals(original.id, copy.id)
+        assertEquals("Michelin 175/70 R13 (copie)", copy.label)
+        assertEquals("13 (copie)/175 70R13", copy.folder)
+        // The quantity came with the copy, and its opening movement too, so the
+        // journal and the cached figure agree on the copy.
+        assertEquals(4, copy.stock)
+        assertEquals(4, store.ledger.balance(copy.id))
+    }
+
+    @Test
+    fun `copying the same folder twice numbers the copies`() {
+        val store = open()
+        store.createFolder("13")
+        store.save(SavedItem(label = "Pneu", price = 500.0, folder = "13"))
+
+        store.copyFolder("13", "")
+        // The first copy owns "13 (copie)", so the second one must not overwrite
+        // it: it becomes "13 (copie 2)".
+        assertEquals("13 (copie 2)", store.copyFolder("13", ""))
+        assertEquals(3, store.items.value.size)
+        assertEquals(3, store.items.value.map { it.label }.distinct().size)
     }
 }
