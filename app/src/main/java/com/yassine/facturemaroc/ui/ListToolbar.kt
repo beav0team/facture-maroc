@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.DropdownMenu
@@ -27,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /**
@@ -94,34 +96,69 @@ fun SortRow(
     }
 }
 
+
 /**
- * A row of single-choice chips: « Tous · Doit de l'argent · En retard ».
+ * A control that names the current value and opens a list of the others.
  *
- * [counts] prints the number behind each chip when there is one, so the shop
- * can see that four clients are late without opening the filter.
+ * Preferred to a row of chips wherever the options are not two or three: a
+ * catalogue with nineteen rims, or a directory with two hundred folders, cannot
+ * spend four rows of a 360 dp screen on filters. The label is part of the
+ * control ("Dossier : 13") so the state is read, not remembered.
  */
 @Composable
-fun ChoiceChipsRow(
+fun MenuPicker(
+    label: String,
+    value: String,
     options: List<String>,
     selected: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    counts: List<Int>? = null,
 ) {
-    Row(
-        modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        options.forEachIndexed { index, option ->
-            FilterChip(
-                selected = index == selected,
-                onClick = { onSelect(index) },
-                label = {
-                    val count = counts?.getOrNull(index) ?: 0
-                    Text(if (count > 0) "$option ($count)" else option)
-                },
-                shape = RoundedCornerShape(50),
+    var open by remember { mutableStateOf(false) }
+    Box(modifier) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.small)
+                .clickable { open = true }
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+        ) {
+            Text(
+                "$label : ",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Text(
+                value,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Icon(
+                Icons.Filled.ArrowDropDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            options.forEachIndexed { index, option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    leadingIcon = {
+                        if (index == selected) {
+                            Icon(Icons.Filled.Check, contentDescription = null)
+                        } else {
+                            Spacer(Modifier.size(24.dp))
+                        }
+                    },
+                    onClick = {
+                        open = false
+                        onSelect(index)
+                    },
+                )
+            }
         }
     }
 }
+

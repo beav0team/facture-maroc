@@ -5,6 +5,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -31,11 +33,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -98,6 +102,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarResult
@@ -118,6 +125,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -171,7 +179,6 @@ import com.yassine.facturemaroc.data.creditedInMonth
 import com.yassine.facturemaroc.data.vatCollectedInMonth
 import com.yassine.facturemaroc.data.vatByRateInMonth
 import com.yassine.facturemaroc.data.filterArticles
-import com.yassine.facturemaroc.data.filterToReorder
 import com.yassine.facturemaroc.data.labelTaken
 import com.yassine.facturemaroc.data.filterParties
 import com.yassine.facturemaroc.data.nameTaken
@@ -259,6 +266,37 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     /*
+     * The button that creates a document sits over the list, and a list of
+     * prices is exactly what it covers. It steps out of the way when the shop
+     * scrolls down to read, and comes back on the first gesture upwards — the
+     * action is never more than one flick away, and never on top of the number
+     * being read.
+     */
+    val directoryListState = rememberLazyListState()
+    val catalogueListState = rememberLazyListState()
+    val currentListState = when (tab) {
+        HomeTab.CLIENTS -> directoryListState
+        HomeTab.ARTICLES -> catalogueListState
+        else -> null
+    }
+    var fabVisible by remember { mutableStateOf(true) }
+    LaunchedEffect(currentListState) {
+        fabVisible = true
+        val state = currentListState ?: return@LaunchedEffect
+        var lastIndex = state.firstVisibleItemIndex
+        var lastOffset = state.firstVisibleItemScrollOffset
+        snapshotFlow { state.firstVisibleItemIndex to state.firstVisibleItemScrollOffset }
+            .collect { (index, offset) ->
+                val down = index > lastIndex || (index == lastIndex && offset > lastOffset + 8)
+                val up = index < lastIndex || (index == lastIndex && offset < lastOffset - 8)
+                if (down) fabVisible = false
+                if (up || (index == 0 && offset == 0)) fabVisible = true
+                lastIndex = index
+                lastOffset = offset
+            }
+    }
+
+    /*
      * Deleting an article is undoable rather than confirmed.
      *
      * A dialog asks the shop to prove it meant the tap; a snackbar gives the row
@@ -292,12 +330,6 @@ fun HomeScreen(
     /* The goods receipts list, and the receipt being written. */
     var purchasesOpen by remember { mutableStateOf(false) }
     var purchaseEditorOpen by remember { mutableStateOf(false) }
-    /*
-     * Whether the list is limited to the articles at or below their reorder
-     * threshold. It composes with the folder chips rather than replacing them:
-     * "what is low in Mobilier?" is the question a shop actually asks.
-     */
-    var reorderOnly by rememberSaveable { mutableStateOf(false) }
     /*
      * Which order the catalogue is shown in. Alphabetical by default, because a
      * shop usually looks for a name it knows; the other orders answer the two
@@ -466,12 +498,12 @@ fun HomeScreen(
             }
         }
     }
-    val articleMatches = remember(items, query, reorderOnly, articleSort) {
+    val articleMatches = remember(items, query, articleSort) {
         // One search rule, always the whole catalogue. Inside a folder the field
         // used to search that subtree only, so an article filed elsewhere read
         // as "it is gone".
         val matched = if (query.isBlank()) emptyList() else items.filter { SavedItemStore.matches(it, query) }
-        sortArticles(filterToReorder(matched, reorderOnly), articleSort)
+        sortArticles(matched, articleSort)
     }
     val subFolders = remember(folders, articleFolder) {
         // `""` is "Sans dossier", which has no shelves of its own. Without this,
@@ -488,7 +520,7 @@ fun HomeScreen(
      * catalogue under "Tous". The reorder filter composes with the folder
      * instead of replacing it — "what is low in Mobilier?" is a real question.
      */
-    val articleScopeItems = remember(items, articleFolder, showAllArticles, reorderOnly, articleSort) {
+    val articleScopeItems = remember(items, articleFolder, showAllArticles, articleSort) {
         val scoped = if (showAllArticles || articleFolder == null) {
             items
         } else {
@@ -497,7 +529,7 @@ fun HomeScreen(
             // this, every folder above the brand level opened empty.
             SavedItemStore.itemsIn(articleFolder, items, deep = true)
         }
-        sortArticles(filterToReorder(scoped, reorderOnly), articleSort)
+        sortArticles(scoped, articleSort)
     }
 
     // Up one level, not out of the app: each parent folder, then the shelf map,
@@ -672,6 +704,7 @@ fun HomeScreen(
             // The Stock tab is a hub of existing actions, not a list to add to:
             // a "+" there would create nothing, so it is not drawn.
             if (tab != HomeTab.STOCK) Box {
+                AnimatedVisibility(visible = fabVisible) {
                 FloatingActionButton(
                     onClick = {
                         when (tab) {
@@ -728,6 +761,7 @@ fun HomeScreen(
                         },
                     )
                 }
+                }
             }
         },
     ) { padding ->
@@ -749,18 +783,36 @@ fun HomeScreen(
             )
 
             if (tab == HomeTab.CLIENTS) {
-                Row(
+                // A role is a mode with two fixed values, not a filter: one
+                // connected control says "exactly one of these", where two
+                // loose pills read as optional filters.
+                SingleChoiceSegmentedButtonRow(
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                 ) {
                     PartyRole.entries.forEachIndexed { index, candidate ->
-                        ChoiceChip(
-                            label = candidate.plural,
+                        SegmentedButton(
                             selected = partyRole == candidate,
                             onClick = { partyRoleIndex = index },
-                        )
+                            shape = SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = PartyRole.entries.size,
+                            ),
+                            // No tick, and the app's blue rather than M3's
+                            // teal: colour means payment state elsewhere, so
+                            // the role switch must not borrow it. The tint
+                            // marks the current mode, nothing more.
+                            icon = {},
+                            colors = SegmentedButtonDefaults.colors(
+                                activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                inactiveContainerColor = MaterialTheme.colorScheme.surface,
+                                inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                        ) {
+                            Text(candidate.plural)
+                        }
                     }
                 }
             }
@@ -771,11 +823,9 @@ fun HomeScreen(
                     purchases = purchases,
                     reorderCount = items.count { it.needsReorder },
                     onReorder = {
-                        // One door: the Stock card lands on the same filter the
-                        // « À commander » chip drives, and on the list rather
-                        // than the shelf map, so the low articles are what is on
-                        // screen.
-                        reorderOnly = true
+                        // One door: the Stock card opens the catalogue list,
+                        // where « À commander » is the first section — nothing
+                        // to switch on.
                         showAllArticles = true
                         inFolder = null
                         tabIndex = HomeTab.ARTICLES.ordinal
@@ -832,6 +882,7 @@ fun HomeScreen(
                     },
                     onDelete = { deleteClient = it },
                     onNotify = { message -> scope.launch { snackbar.showSnackbar(message) } },
+                    listState = directoryListState,
                 )
 
                 HomeTab.ARTICLES -> {
@@ -898,51 +949,75 @@ fun HomeScreen(
 
                         else -> Column(Modifier.fillMaxSize()) {
                             if (items.isNotEmpty()) {
-                                SortRow(
-                                    label = articleSort.label,
-                                    options = articleSorts.map { it.label },
-                                    selected = articleSorts.indexOf(articleSort),
-                                    onSelect = { articleSortIndex = it },
-                                    modifier = Modifier.padding(horizontal = 12.dp),
-                                )
-                            }
-                            if (managingFolders || ItemField.STOCK in itemFields) {
-                                ArticleFilterChips(
-                                    // Inside a folder the useful filter is its
-                                    // own sub-folders; listing every shelf of the
-                                    // shop would repeat the map one level down.
-                                    folders = if (articleFolder != null) subFolders else folders,
-                                    // "Tous" is the whole catalogue; the way up
-                                    // to the folders is the back arrow.
-                                    selected = if (showAllArticles) null else articleFolder,
-                                    showFolders = managingFolders,
-                                    showUnfiled = articleFolder == null,
-                                    showFolderMenu = articleFolder == null,
-                                    onSelect = { path ->
-                                        if (path == null) {
-                                            showAllArticles = true
-                                            inFolder = null
-                                        } else {
-                                            inFolder = path
-                                            showAllArticles = false
-                                        }
-                                        // A chip is a new question; a search
-                                        // left over would answer another one.
-                                        query = ""
-                                    },
-                                    reorderCount = articleScopeItems.count { it.needsReorder },
-                                    reorderOnly = reorderOnly,
-                                    onToggleReorder = { reorderOnly = !reorderOnly },
-                                )
+                                Row(
+                                    Modifier.padding(horizontal = 12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    /*
+                                     * The folder is a place, not a filter that can be
+                                     * left on: the menu names where the shop is
+                                     * standing, and the breadcrumb above says the
+                                     * same thing. Only the top-level shelves are
+                                     * listed — the grid is the way to the rest.
+                                     */
+                                    val rootFolders = remember(folders) {
+                                        folders.filter { SavedItemStore.parentOf(it).isEmpty() }
+                                    }
+                                    val options = remember(rootFolders) {
+                                        listOf("Tous les dossiers", "Sans dossier") +
+                                            rootFolders.map { SavedItemStore.display(it) }
+                                    }
+                                    val current = when {
+                                        showAllArticles -> 0
+                                        articleFolder == null -> 0
+                                        articleFolder.isEmpty() -> 1
+                                        else -> options.indexOfFirst {
+                                            it == SavedItemStore.display(articleFolder)
+                                        }.takeIf { it >= 0 } ?: 0
+                                    }
+                                    MenuPicker(
+                                        label = "Dossier",
+                                        value = when {
+                                            showAllArticles || articleFolder == null -> "Tous"
+                                            articleFolder.isEmpty() -> "Sans dossier"
+                                            else -> SavedItemStore.display(articleFolder)
+                                        },
+                                        options = options,
+                                        selected = current,
+                                        onSelect = { index ->
+                                            when (index) {
+                                                0 -> {
+                                                    showAllArticles = true
+                                                    inFolder = null
+                                                }
+                                                1 -> {
+                                                    inFolder = ""
+                                                    showAllArticles = false
+                                                }
+                                                else -> {
+                                                    inFolder = rootFolders.getOrNull(index - 2)
+                                                    showAllArticles = false
+                                                }
+                                            }
+                                            query = ""
+                                        },
+                                    )
+                                    SortRow(
+                                        label = articleSort.label,
+                                        options = articleSorts.map { it.label },
+                                        selected = articleSorts.indexOf(articleSort),
+                                        onSelect = { articleSortIndex = it },
+                                    )
+                                }
                             }
                             Box(Modifier.weight(1f)) {
-                                ArticlesList(
+                                ArticleSections(
                                     items = articleScopeItems,
                                     showFolder = ItemField.FOLDER in itemFields,
                                     fields = itemFields,
                                     emptyTitle = when {
                                         items.isEmpty() -> "Aucun article enregistré"
-                                        reorderOnly -> "Aucun article à commander"
                                         else -> "Aucun article ici"
                                     },
                                     emptyMessage = when {
@@ -950,9 +1025,6 @@ fun HomeScreen(
                                             "Ajoutez ce que vous vendez souvent — une prestation, " +
                                                 "un produit, une pièce — et retrouvez-le en un geste " +
                                                 "sur chaque facture."
-                                        reorderOnly ->
-                                            "Tous les articles de cette sélection sont au-dessus " +
-                                                "de leur seuil de réapprovisionnement."
                                         else -> "Déplacez-y un article, ou créez-en un ici."
                                     },
                                     onOpen = onOpenItem,
@@ -963,6 +1035,7 @@ fun HomeScreen(
                                     marginOf = marginOf,
                                     stockOf = stockOf,
                                     scope = articleFolder,
+                                    listState = catalogueListState,
                                 )
                             }
                             ArticlesSummary(items = articleScopeItems, fields = itemFields)
@@ -2092,6 +2165,7 @@ private fun InvoiceCard(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ClientsTab(
     clients: List<InvoiceClient>,
@@ -2109,6 +2183,8 @@ private fun ClientsTab(
     onDelete: (InvoiceClient) -> Unit,
     /** What to say when a phone has no dialler or WhatsApp is not installed. */
     onNotify: (String) -> Unit,
+    /** Shared with the screen so the create button can step out of the way. */
+    listState: LazyListState = rememberLazyListState(),
 ) {
     val noun = role.label.lowercase()
     val saved = remember(clients, role) { clients.filter { it.role == role } }
@@ -2132,41 +2208,39 @@ private fun ClientsTab(
     }
 
     /*
-     * Two questions, two controls.
+     * Two questions, one control.
      *
      * The directory answers "who is in my book" in alphabetical order and "who
-     * owes me money" by balance. Both were reachable only by scrolling before.
-     * A supplier has no balance and cannot be late, so he is offered neither.
+     * owes me money" by balance. Filtering was a third: a pill that hid rows and
+     * could be left on by mistake. The list now sorts by what is urgent and the
+     * groups are drawn as sections, so nothing is hidden and the answer to "who
+     * owes me" is the first thing on screen.
      */
     var sortIndex by rememberSaveable { mutableIntStateOf(0) }
-    var filterIndex by rememberSaveable { mutableIntStateOf(0) }
     val sorts = if (role == PartyRole.CLIENT) {
         listOf(PartySort.NAME, PartySort.BALANCE, PartySort.RECENT)
     } else {
         listOf(PartySort.NAME, PartySort.RECENT)
     }
     val sort = sorts.getOrElse(sortIndex) { PartySort.NAME }
-    val filters = if (role == PartyRole.CLIENT) PartyFilter.entries.toList() else emptyList()
-    val filter = filters.getOrElse(filterIndex) { PartyFilter.ALL }
-    val filtersActive = filter != PartyFilter.ALL
 
-    val visible = remember(matches, summaries, sort, filter, role) {
-        sortParties(filterParties(matches, summaries, filter, role), summaries, sort)
+    val sorted = remember(matches, summaries, sort, role) {
+        sortParties(matches, summaries, sort)
     }
-    // The numbers written on the chips: how many would remain if tapped, from
-    // what the search already kept.
-    val owesCount = remember(matches, summaries, role) {
-        if (role == PartyRole.CLIENT) {
-            filterParties(matches, summaries, PartyFilter.OWES, role).size
+    // A supplier has no balance and cannot be late: one section, no headings.
+    val groups: Map<String, List<InvoiceClient>> = remember(sorted, summaries, role) {
+        if (role == PartyRole.SUPPLIER) {
+            emptyMap()
         } else {
-            0
-        }
-    }
-    val lateCount = remember(matches, summaries, role) {
-        if (role == PartyRole.CLIENT) {
-            filterParties(matches, summaries, PartyFilter.LATE, role).size
-        } else {
-            0
+            sorted.groupBy { party ->
+                val summary = summaries[partyKey(party)] ?: PartySummary()
+                when {
+                    summary.isLate -> "late"
+                    summary.owes -> "owes"
+                    summary.documents > 0 -> "settled"
+                    else -> "none"
+                }
+            }
         }
     }
 
@@ -2187,45 +2261,24 @@ private fun ClientsTab(
     }
 
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 104.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 104.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item(key = "count") {
-            SectionHeading(
-                if (role == PartyRole.CLIENT) "Clients enregistrés" else "Fournisseurs enregistrés",
-                trailing = "${visible.size}",
+        item(key = "toolbar") {
+            SortRow(
+                label = sort.label,
+                options = sorts.map { it.label },
+                selected = sortIndex,
+                onSelect = { sortIndex = it },
             )
         }
 
-        item(key = "toolbar") {
-            Column {
-                if (filters.isNotEmpty()) {
-                    ChoiceChipsRow(
-                        options = filters.map { it.label },
-                        selected = filterIndex,
-                        onSelect = { filterIndex = it },
-                        counts = listOf(matches.size, owesCount, lateCount),
-                    )
-                    Spacer(Modifier.height(4.dp))
-                }
-                SortRow(
-                    label = sort.label,
-                    options = sorts.map { it.label },
-                    selected = sortIndex,
-                    onSelect = { sortIndex = it },
-                )
-            }
-        }
-
-        if (visible.isEmpty()) {
-            item(key = "empty-filter") {
+        if (sorted.isEmpty()) {
+            item(key = "empty-search") {
                 Text(
-                    if (filtersActive) {
-                        "Aucun $noun ne correspond à ce filtre."
-                    } else {
-                        "Aucun résultat pour « ${query.trim()} »."
-                    },
+                    "Aucun $noun ne correspond à « ${query.trim()} ».",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
@@ -2233,38 +2286,95 @@ private fun ClientsTab(
             }
         }
 
-        items(visible, key = { "${role.id}-${it.name.lowercase()}" }) { client ->
-            val summary = summaries[partyKey(client)] ?: PartySummary()
-            ClientCard(
-                client = client,
-                summary = summary,
-                onNotify = onNotify,
-                onClick = { onOpen(client) },
-                onEdit = { onEdit(client) },
-                onDocument = { if (role == PartyRole.CLIENT) onInvoice(client) else onOrder(client) },
-                onStatement = if (
-                    role == PartyRole.CLIENT &&
-                    ClientStatements.hasStatement(records, client)
-                ) {
-                    { onStatement(client) }
-                } else {
-                    null
-                },
-                onDelete = { onDelete(client) },
+        if (role == PartyRole.SUPPLIER) {
+            items(sorted, key = { "party-${it.id.ifBlank { it.name }}" }) { client ->
+                PartyRow(client, summaries, onNotify, onOpen, onEdit, onDocument = onOrder,
+                    onStatement = null, onDelete = onDelete, role = role, onInvoice = onInvoice, onStatementAction = onStatement)
+            }
+        } else {
+            val order = listOf(
+                "late" to "En retard",
+                "owes" to "Doit de l'argent",
+                "settled" to "À jour",
+                "none" to "Aucune facture",
             )
+            order.forEach { (key, label) ->
+                val members = groups[key].orEmpty()
+                if (members.isEmpty()) return@forEach
+                stickyHeader(key = "head-$key") {
+                    PartySectionHeader(
+                        label = label,
+                        count = members.size,
+                        urgent = key == "late",
+                    )
+                }
+                items(members, key = { "party-${it.id.ifBlank { it.name }}" }) { client ->
+                    PartyRow(client, summaries, onNotify, onOpen, onEdit, onDocument = onInvoice,
+                        onStatement = onStatement, onDelete = onDelete, role = role,
+                        onInvoice = onInvoice, onStatementAction = onStatement)
+                }
+            }
         }
     }
 }
 
-/**
- * One party in the directory, saying what the shop would otherwise open the
- * page to find out.
- *
- * The « N documents » line counted rows and answered nothing. It is now the
- * money: what is owed, how much of it is late, or — for a supplier — what was
- * bought. The phone icons only exist when there is a number to dial, because a
- * button that opens nothing is a lie the shop learns to distrust.
- */
+/** One section of the directory: what it holds, and how many. */
+@Composable
+private fun PartySectionHeader(label: String, count: Int, urgent: Boolean) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            // Opaque and full width: a sticky header that lets rows show
+            // through is two texts printed on top of each other.
+            .background(MaterialTheme.colorScheme.background)
+            .padding(top = 8.dp, bottom = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            label.uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = if (urgent) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
+        Text(
+            "$count",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** One party row, wired the same way from the list and from a section. */
+@Composable
+private fun PartyRow(
+    client: InvoiceClient,
+    summaries: Map<String, PartySummary>,
+    onNotify: (String) -> Unit,
+    onOpen: (InvoiceClient) -> Unit,
+    onEdit: (InvoiceClient) -> Unit,
+    onDocument: (InvoiceClient) -> Unit,
+    onStatement: ((InvoiceClient) -> Unit)?,
+    onDelete: (InvoiceClient) -> Unit,
+    role: PartyRole,
+    onInvoice: (InvoiceClient) -> Unit,
+    onStatementAction: (InvoiceClient) -> Unit,
+) {
+    ClientCard(
+        client = client,
+        summary = summaries[partyKey(client)] ?: PartySummary(),
+        onNotify = onNotify,
+        onClick = { onOpen(client) },
+        onEdit = { onEdit(client) },
+        onDocument = { if (role == PartyRole.CLIENT) onInvoice(client) else onDocument(client) },
+        onStatement = onStatement?.let { action -> { action(client) } },
+        onDelete = { onDelete(client) },
+    )
+}
+
 @Composable
 private fun ClientCard(
     client: InvoiceClient,
@@ -2866,6 +2976,10 @@ private fun ArticlesSummary(items: List<SavedItem>, fields: Set<ItemField>) {
         Row(
             Modifier
                 .fillMaxWidth()
+                // A strip that wraps to three lines at 360 dp hides the list
+                // it is describing; it scrolls sideways instead, and every
+                // figure stays on one line.
+                .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 7.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -3046,21 +3160,6 @@ private fun FolderChoice(label: String, selected: Boolean, onClick: () -> Unit) 
 }
 
 /**
- * The folder filter above the Articles list.
- *
- * The tab lands on the whole catalogue, so a folder is a question the shop asks
- * of it — "what do I have in Mobilier?" — not a place it walks into. Only the
- * top-level folders earn a chip: a shop with thirty shelves would otherwise be
- * scrolling a row of chips instead of its articles, and the nested paths are
- * still one tap away in the menu.
- *
- * The chips wrap rather than scroll sideways: a filter nobody can see is a
- * filter nobody uses, and with the folders in a row the menu that reaches the
- * sub-folders sat off the right edge of the screen.
- *
- * `null` is "Tous", `""` is "Sans dossier", anything else is a path.
- */
-/**
  * The shelves, in one place.
  *
  * Three things a shop does with stock — receive it, count it, look up why a
@@ -3210,106 +3309,131 @@ private fun StockHubRow(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * The catalogue as two questions, not one list.
+ *
+ * A shop opens this screen with a job: resupply, or look something up. The
+ * sorted list answers the second; the first is a section at the top that is
+ * simply there, rather than a chip the shop has to switch on and can forget to
+ * switch off. Inside each section the chosen order still applies.
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ArticleFilterChips(
-    folders: List<String>,
-    selected: String?,
-    onSelect: (String?) -> Unit,
-    /** False when the shop hid the folder field: only "Tous" and stock filters remain. */
-    showFolders: Boolean = true,
-    /** False inside a folder, where "Sans dossier" would be a filter above it. */
-    showUnfiled: Boolean = true,
-    /** The "Tous les dossiers" menu only makes sense from the shelf map. */
-    showFolderMenu: Boolean = true,
-    /** How many articles are at or below their threshold. */
-    reorderCount: Int = 0,
-    reorderOnly: Boolean = false,
-    onToggleReorder: () -> Unit = {},
+private fun ArticleSections(
+    items: List<SavedItem>,
+    showFolder: Boolean,
+    fields: Set<ItemField>,
+    emptyTitle: String,
+    emptyMessage: String,
+    onOpen: (SavedItem) -> Unit,
+    onEdit: (SavedItem) -> Unit,
+    onDelete: (SavedItem) -> Unit,
+    onMove: (SavedItem) -> Unit,
+    onHistory: (SavedItem) -> Unit,
+    marginOf: (SavedItem) -> MarginHint?,
+    stockOf: (SavedItem) -> Int,
+    scope: String?,
+    listState: LazyListState = rememberLazyListState(),
 ) {
-    var menuOpen by remember { mutableStateOf(false) }
-    val topLevel = remember(folders) {
-        folders.filter { SavedItemStore.parentOf(it).isEmpty() }
+    if (items.isEmpty()) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+            EmptyState(icon = Icons.Filled.Inventory2, title = emptyTitle, message = emptyMessage)
+        }
+        return
     }
-    val nested = remember(folders) {
-        folders.filter { SavedItemStore.parentOf(it).isNotEmpty() }
-    }
-    // A nested folder chosen from the menu needs a chip of its own, or the row
-    // would show nothing selected while the list is filtered.
-    val activeNested = selected?.takeIf { path ->
-        path.isNotEmpty() && topLevel.none { it.equals(path, ignoreCase = true) }
-    }
+    val reorder = items.filter { it.needsReorder }
+    val rest = items.filterNot { it.needsReorder }
 
-    FlowRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 104.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        ChoiceChip(
-            label = "Tous",
-            selected = selected == null,
-            onClick = { onSelect(null) },
-        )
-        // A count in the label, because "à commander" with nothing behind it is
-        // a filter the shop cannot evaluate before tapping it.
-        if (reorderCount > 0 || reorderOnly) {
-            ChoiceChip(
-                label = if (reorderCount > 0) "À commander ($reorderCount)" else "À commander",
-                selected = reorderOnly,
-                onClick = onToggleReorder,
-            )
+        if (reorder.isNotEmpty()) {
+            stickyHeader(key = "head-reorder") {
+                ArticleSectionHeader("À commander", reorder.size, urgent = true)
+            }
+            items(reorder, key = { "reorder-${it.id.ifBlank { it.label }}" }) { item ->
+                ArticleRow(
+                    item, fields, showFolder, scope, marginOf, stockOf,
+                    onOpen, onEdit, onDelete, onMove, onHistory,
+                )
+            }
         }
-        if (showFolders) {
-            if (showUnfiled) {
-                ChoiceChip(
-                    label = "Sans dossier",
-                    selected = selected == "",
-                    onClick = { onSelect("") },
+        if (rest.isNotEmpty()) {
+            stickyHeader(key = "head-rest") {
+                ArticleSectionHeader(
+                    if (reorder.isEmpty()) "Articles" else "Tous les autres",
+                    rest.size,
+                    urgent = false,
                 )
             }
-            topLevel.forEach { path ->
-                ChoiceChip(
-                    label = path,
-                    selected = selected.equals(path, ignoreCase = true),
-                    onClick = { onSelect(path) },
+            items(rest, key = { "rest-${it.id.ifBlank { it.label }}" }) { item ->
+                ArticleRow(
+                    item, fields, showFolder, scope, marginOf, stockOf,
+                    onOpen, onEdit, onDelete, onMove, onHistory,
                 )
-            }
-            if (activeNested != null) {
-                ChoiceChip(
-                    label = SavedItemStore.display(activeNested),
-                    selected = true,
-                    onClick = {},
-                )
-            }
-            if (showFolderMenu && nested.isNotEmpty()) {
-                Box {
-                    ChoiceChip(
-                        label = "Tous les dossiers",
-                        selected = false,
-                        onClick = { menuOpen = true },
-                    )
-                    DropdownMenu(
-                        expanded = menuOpen,
-                        onDismissRequest = { menuOpen = false },
-                    ) {
-                        folders.forEach { path ->
-                            DropdownMenuItem(
-                                // The full path, because "Hiver" can exist under
-                                // two different folders.
-                                text = { Text(SavedItemStore.display(path)) },
-                                onClick = {
-                                    menuOpen = false
-                                    onSelect(path)
-                                },
-                            )
-                        }
-                    }
-                }
             }
         }
     }
+}
+
+/** A section heading that stays put while its rows scroll under it. */
+@Composable
+private fun ArticleSectionHeader(label: String, count: Int, urgent: Boolean) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(top = 8.dp, bottom = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            label.uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = if (urgent) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
+        Text(
+            "$count",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun ArticleRow(
+    item: SavedItem,
+    fields: Set<ItemField>,
+    showFolder: Boolean,
+    scope: String?,
+    marginOf: (SavedItem) -> MarginHint?,
+    stockOf: (SavedItem) -> Int,
+    onOpen: (SavedItem) -> Unit,
+    onEdit: (SavedItem) -> Unit,
+    onDelete: (SavedItem) -> Unit,
+    onMove: (SavedItem) -> Unit,
+    onHistory: (SavedItem) -> Unit,
+) {
+    ItemCard(
+        item = item,
+        showFolder = showFolder,
+        fields = fields,
+        onClick = { onOpen(item) },
+        onEdit = { onEdit(item) },
+        onDelete = { onDelete(item) },
+        onMove = { onMove(item) },
+        onHistory = { onHistory(item) },
+        marginOf = marginOf,
+        stockOf = stockOf,
+        scope = scope,
+    )
 }
 
 /**
