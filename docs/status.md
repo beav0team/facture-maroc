@@ -16,39 +16,48 @@ answering from memory.
 
 ---
 
-## FactureApp web — M3 à M8 partiels (2026-11-11)
+## FactureApp web — en ligne (2026-11-11)
 
-La webapp vendable vit dans `webapp/` et se construit dans `docs/app/` ; elle
-est servie sous `/app/`. L'app Android reste hors ligne et inchangée.
+La webapp vendable vit dans `webapp/`, se construit dans `docs/app/` et est
+servie sous `/app/`. L'app Android reste hors ligne et inchangée.
+
+**En production**
+
+- **https://factureapp.ma** (Cloudflare Pages, projet `factureapp`, branche
+  `master`, build `bash webapp/scripts/build.sh`, sortie `docs`). Liens
+  profonds de l'app à 200 ; GitHub Pages désactivé.
+- Supabase `njbfvskjexzlnvenmxml` (eu-north-1), schéma 0001 → 0004, RLS.
+- **Google OAuth publié en production** ; connexion Google et e-mail/mot de
+  passe vérifiées sur le site.
+- Données réelles : 3 comptes/boutiques (Atlas, Benzen, PNEUMATIQUE AGHARAS),
+  `documents = 0`, `archives = 0`, `platform_admins = 0`.
+- Les données de test (Atelier Essai, `essai@factureapp.ma`, 4 factures,
+  2 PDF) ont été supprimées et vérifiées.
 
 **Fait**
 
-- Éditeur de documents `/app/documents` : facture, devis, avoir, TVA par ligne,
-  remise ligne/globale, frais, acompte, arrondi au dirham, prix HT ou TTC,
-  choix du modèle, échéance et conditions.
-- Numérotation et quota atomiques en SQL (`0003_documents.sql`) : aperçu sans
-  consommation, numéro pris à l'émission, snapshot boutique figé, documents
-  émis immuables, avoir depuis une facture, 5 factures gratuites par mois.
-- PDF `pdf-lib` déterministe, deux modèles, filigrane plan gratuit, archivé
-  dans le bucket privé `archives` avec SHA-256 ; réimpression = octets
-  archivés. Partage WhatsApp / feuille de partage native.
-- Paiements multiples, reste dû, retard, relevé client imprimable
-  `/app/clients/:id/releve`.
-- Générateur public `/app/gratuit` sans compte, tarifs `/app/tarifs`, panneau
-  admin `/app/admin` (activation manuelle du Pro), import d'une sauvegarde
-  Android `/app/import` (clients, articles, numérotation ; documents en
-  brouillons).
-- 133 tests Vitest, 0 erreur `svelte-check`. Preuves RLS locales :
-  `rls_isolation.sql`, `rls_catalogue.sql`, `rls_documents.sql`.
+- Éditeur : facture, devis, avoir, TVA par ligne, remises, frais, acompte,
+  arrondi au dirham, HT/TTC, dates, modèle.
+- Numérotation et quota atomiques en SQL ; numéro pris à l'émission, snapshot
+  boutique figé, documents émis immuables, avoir depuis une facture, 5
+  factures gratuites par mois.
+- PDF `pdf-lib` déterministe, deux modèles, filigrane gratuit, archivé avec
+  SHA-256 ; réimpression depuis l'archive. Partage WhatsApp/natif.
+- Paiements multiples, reçu PDF, reste dû, retard, relevé client.
+- Générateur public, tarifs, admin, import de sauvegarde Android.
+- 133 tests Vitest, 0 erreur `svelte-check` ; preuves RLS locales.
 
 **Reste à faire pour vendre**
 
-- Publier l'écran de consentement Google (encore en mode « Testing ») et
-  configurer un SMTP : la connexion Google fonctionne pour le propriétaire,
-  pas encore pour un client non listé.
-- Paiement en ligne : l'activation Pro est manuelle (virement/espèces), assumé.
-- Sauvegarde quotidienne, monitoring, restauration testée (M8).
-- Déclaration CNDP et validation du texte de `privacy.html`.
+- **Nommer un administrateur plateforme** (`platform_admins` est vide) : sans
+  ça, `/app/admin` et l'activation Pro sont inaccessibles.
+- **Sauvegardes** : non installées. Le rôle `factureapp_backup` existe mais ne
+  se connecte pas (IPv6 absent, pooler sans rôles custom). Choisir entre export
+  JSON+PDF via `service_role` ou reset du mot de passe Postgres + `pg_dump`.
+- **SMTP** : celui de Supabase est limité ; configurer un fournisseur pour les
+  confirmations et réinitialisations.
+- **CNDP** et validation du texte de `privacy.html` (déjà réécrit).
+- Monitoring, disponibilité et test de restauration réels.
 
 ---
 
