@@ -41,8 +41,10 @@ gèle, les 577 tests JVM passent et le rendu PDF est inchangé.
   produit et article épuisé, balayage sans recomposition par image
   (`graphicsLayer` + `mutableFloatStateOf`, une animation par geste, retour
   haptique).
-- **Onglet Stock** (4ᵉ onglet) : réceptions, inventaire et journal du stock
-  sortent de la barre d'outils des Articles et des Paramètres.
+- **Onglet Stock** (4ᵉ onglet) : entrées et sorties seulement — achats et
+  réceptions, journal du stock. L'inventaire est passé dans Articles (icône de
+  la barre supérieure), parce que compter est un acte sur le catalogue ; les
+  réparations restent dans Paramètres → Diagnostic.
 - Fiche client **et fournisseur** (`PartyDetailScreen`) : identité, chiffres
   (solde dû et relevé pour un client, achats HT et nombre de réceptions pour un
   fournisseur), documents, et deux actions — Modifier, Nouveau document.

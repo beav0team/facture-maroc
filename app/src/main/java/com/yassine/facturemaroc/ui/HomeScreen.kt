@@ -646,6 +646,14 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    if (tab == HomeTab.ARTICLES && ItemField.STOCK in itemFields) {
+                        // Counting the shelves is an act on the catalogue: it
+                        // reads articles and writes their quantity, so it sits
+                        // beside them rather than in a tab of its own.
+                        IconButton(onClick = { stocktakeOpen = true }) {
+                            Icon(Icons.Filled.Checklist, contentDescription = "Inventaire")
+                        }
+                    }
                     if (tab == HomeTab.ARTICLES) {
                         // A barcode is a search key, but typing thirteen digits
                         // to find an article is not a shop gesture.
@@ -821,18 +829,7 @@ fun HomeScreen(
                 HomeTab.STOCK -> StockTab(
                     items = items,
                     purchases = purchases,
-                    reorderCount = items.count { it.needsReorder },
-                    onReorder = {
-                        // One door: the Stock card opens the catalogue list,
-                        // where « À commander » is the first section — nothing
-                        // to switch on.
-                        showAllArticles = true
-                        inFolder = null
-                        tabIndex = HomeTab.ARTICLES.ordinal
-                        query = ""
-                    },
                     onPurchases = { purchasesOpen = true },
-                    onStocktake = { stocktakeOpen = true },
                     onJournal = { stockJournalOpen = true },
                 )
 
@@ -3160,21 +3157,22 @@ private fun FolderChoice(label: String, selected: Boolean, onClick: () -> Unit) 
 }
 
 /**
- * The shelves, in one place.
+ * What moves, and what moved.
  *
- * Three things a shop does with stock — receive it, count it, look up why a
- * number changed — and a shortcut to what needs reordering. They used to live
- * as two icons in the Articles top bar plus one entry buried in Paramètres,
- * which put a daily workflow behind a gear.
+ * Stock answers one verb — entries and exits — so it holds exactly two doors:
+ * the goods receipts that add units, and the journal that records every
+ * movement with the document that caused it. Counting the shelves is an act on
+ * the catalogue, so it lives in Articles next to the articles it counts, and
+ * "what is low" is a section of that same list rather than a third door here.
+ *
+ * The repair tools stay in Paramètres → Diagnostic: rewriting a quantity from
+ * the journal is surgery, not daily work.
  */
 @Composable
 private fun StockTab(
     items: List<SavedItem>,
     purchases: List<Purchase>,
-    reorderCount: Int,
-    onReorder: () -> Unit,
     onPurchases: () -> Unit,
-    onStocktake: () -> Unit,
     onJournal: () -> Unit,
 ) {
     val counted = items.count { it.stock != null }
@@ -3192,39 +3190,12 @@ private fun StockTab(
             modifier = Modifier.semantics { heading() },
         )
         Text(
-            if (counted == 0) {
-                "Aucun article n'est compté pour l'instant."
-            } else {
-                "$counted article${if (counted > 1) "s" else ""} suivi${if (counted > 1) "s" else ""} sur l'étagère."
-            },
+            "Ce qui entre et ce qui sort. La quantité affichée dans les articles " +
+                "est la somme de ces mouvements.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-
-        if (reorderCount > 0) {
-            Card(
-                onClick = onReorder,
-                shape = MaterialTheme.shapes.medium,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        "$reorderCount article${if (reorderCount > 1) "s" else ""} à commander",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                    )
-                    Text(
-                        "Au seuil de réapprovisionnement ou en dessous.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f),
-                    )
-                }
-            }
-        }
+        Spacer(Modifier.height(4.dp))
 
         StockHubRow(
             icon = Icons.Filled.ShoppingCart,
@@ -3237,26 +3208,28 @@ private fun StockTab(
             onClick = onPurchases,
         )
         StockHubRow(
-            icon = Icons.Filled.Checklist,
-            title = "Inventaire",
-            subtitle = if (counted == 0) {
-                "Compter ce qui est sur l'étagère et corriger les écarts."
-            } else {
-                "Compter les $counted articles suivis et corriger les écarts."
-            },
-            onClick = onStocktake,
-        )
-        StockHubRow(
             icon = Icons.Filled.Description,
             title = "Journal du stock",
             subtitle = "Chaque entrée et sortie, avec le document qui l'a causée.",
             onClick = onJournal,
         )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            if (counted == 0) {
+                "Aucun article n'est compté pour l'instant : ajoutez-en un dans Articles, " +
+                    "puis comptez-le depuis le même onglet."
+            } else {
+                "$counted article${if (counted > 1) "s" else ""} suivi${if (counted > 1) "s" else ""} " +
+                    "sur l'étagère. Pour compter, ouvrez Articles → Inventaire."
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
         Spacer(Modifier.height(80.dp))
     }
 }
 
-/** One destination inside the Stock tab: an icon, what it does, a chevron. */
 @Composable
 private fun StockHubRow(
     icon: ImageVector,
