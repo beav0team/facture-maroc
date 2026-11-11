@@ -252,6 +252,14 @@ fun HomeScreen(
      * chips split it: a supplier is the same record shape, and a separate tab
      * would make two kinds of party look like two kinds of screen.
      */
+    /*
+     * Which kind of document the invoices tab shows. The index belongs to the
+     * picker: 0 is « Tous », 1..n is `DocumentType.entries[index - 1]`. Stored
+     * as an int so the choice survives a rotation like the selected tab does.
+     */
+    var invoiceTypeIndex by rememberSaveable { mutableIntStateOf(0) }
+    val invoiceType = DocumentType.entries.getOrNull(invoiceTypeIndex - 1)
+
     var partyRoleIndex by rememberSaveable { mutableIntStateOf(0) }
     val partyRole = PartyRole.entries[partyRoleIndex]
 
@@ -852,6 +860,10 @@ fun HomeScreen(
                 HomeTab.INVOICES -> InvoicesTab(
                     records = records,
                     query = query,
+                    typeFilter = invoiceType,
+                    onTypeFilter = { type ->
+                        invoiceTypeIndex = type?.let { DocumentType.entries.indexOf(it) + 1 } ?: 0
+                    },
                     onOpenRecord = onOpenRecord,
                     onShowDetail = { detailRecord = it },
                     onShare = { record ->
@@ -1694,6 +1706,10 @@ private data class MarginHint(val text: String, val negative: Boolean)
 private fun InvoicesTab(
     records: List<InvoiceRecord>,
     query: String,
+    /** Null shows every kind. A shop asks for its devis, or its bons, far
+     *  more often than for "everything". */
+    typeFilter: DocumentType? = null,
+    onTypeFilter: (DocumentType?) -> Unit = {},
     onOpenRecord: (InvoiceRecord) -> Unit,
     onShowDetail: (InvoiceRecord) -> Unit,
     onShare: (InvoiceRecord) -> Unit,
@@ -1705,9 +1721,14 @@ private fun InvoicesTab(
     onDelete: (InvoiceRecord) -> Unit,
     onPayment: (InvoiceRecord) -> Unit,
 ) {
-    val filtered = remember(records, query) {
+    val filtered = remember(records, query, typeFilter) {
         val q = query.trim().lowercase()
-        if (q.isBlank()) records else records.filter { record ->
+        val ofType = if (typeFilter == null) {
+            records
+        } else {
+            records.filter { it.data.documentType == typeFilter }
+        }
+        if (q.isBlank()) ofType else ofType.filter { record ->
             listOf(
                 record.title,
                 record.data.number,
@@ -1720,12 +1741,19 @@ private fun InvoicesTab(
     if (filtered.isEmpty()) {
         EmptyState(
             icon = Icons.Filled.ReceiptLong,
-            title = if (records.isEmpty()) "Aucune facture pour l'instant" else "Aucun résultat",
-            message = if (records.isEmpty()) {
-                "Appuyez sur + pour créer votre premier document. " +
-                    "Il sera gardé ici, brouillon puis facture émise."
-            } else {
-                "Essayez un nom de client, un numéro ou une date."
+            title = when {
+                records.isEmpty() -> "Aucune facture pour l'instant"
+                typeFilter != null -> "Aucun ${typeFilter.label.lowercase()}"
+                else -> "Aucun résultat"
+            },
+            message = when {
+                records.isEmpty() ->
+                    "Appuyez sur + pour créer votre premier document. " +
+                        "Il sera gardé ici, brouillon puis facture émise."
+                typeFilter != null ->
+                    "Aucun document de ce type pour l'instant. Choisissez « Tous » " +
+                        "pour revoir la liste entière."
+                else -> "Essayez un nom de client, un numéro ou une date."
             },
         )
         return
@@ -1743,6 +1771,18 @@ private fun InvoicesTab(
             item(key = "summary") {
                 MonthSummary(records = records)
             }
+        }
+
+        item(key = "type-filter") {
+            // The type is a question, not a place: one control names what is
+            // shown, and « Tous » puts everything back.
+            MenuPicker(
+                label = "Type",
+                value = typeFilter?.label ?: "Tous",
+                options = listOf("Tous les documents") + DocumentType.entries.map { it.label },
+                selected = typeFilter?.let { DocumentType.entries.indexOf(it) + 1 } ?: 0,
+                onSelect = { index -> onTypeFilter(DocumentType.entries.getOrNull(index - 1)) },
+            )
         }
 
         if (draftCount > 0) {
