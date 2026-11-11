@@ -4,6 +4,9 @@
   import { route, demarrerRouteur } from './lib/router.svelte'
   import Login from './routes/Login.svelte'
   import Accueil from './routes/Accueil.svelte'
+  import Clients from './routes/Clients.svelte'
+  import Articles from './routes/Articles.svelte'
+  import Parametres from './routes/Parametres.svelte'
   import Introuvable from './routes/Introuvable.svelte'
 
   onMount(() => {
@@ -18,6 +21,12 @@
   <Login />
 {:else if route.chemin === '/'}
   <Accueil />
+{:else if route.chemin === '/clients'}
+  <Clients />
+{:else if route.chemin === '/articles'}
+  <Articles />
+{:else if route.chemin === '/parametres'}
+  <Parametres />
 {:else}
   <Introuvable />
 {/if}

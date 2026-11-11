@@ -1,9 +1,31 @@
 <script lang="ts">
-  import { auth, creerBoutique, deconnexion } from '../lib/session.svelte'
+  import { auth, creerBoutique } from '../lib/session.svelte'
+  import Barre from '../lib/ui/Barre.svelte'
 
   let nom = $state('')
   let erreur = $state<string | null>(null)
   let enCours = $state(false)
+
+  const raccourcis = [
+    {
+      lien: '/app/clients',
+      titre: 'Clients',
+      texte: 'Les fiches clients et fournisseurs, avec ICE, IF et coordonnées.',
+      action: 'Ouvrir le carnet',
+    },
+    {
+      lien: '/app/articles',
+      titre: 'Articles',
+      texte: 'Produits et services, prix, dossiers et stock.',
+      action: 'Ouvrir le catalogue',
+    },
+    {
+      lien: '/app/parametres',
+      titre: 'Paramètres',
+      texte: 'Identifiants légaux, coordonnées bancaires et logo.',
+      action: 'Régler la boutique',
+    },
+  ]
 
   async function creer(event: SubmitEvent) {
     event.preventDefault()
@@ -18,20 +40,7 @@
 </script>
 
 <div class="page">
-  <header class="barre">
-    <a class="barre__marque" href="/app/">
-      <img src="/app/icons/icone.svg" alt="" width="28" height="28" />
-      <span>FactureApp</span>
-    </a>
-    <div class="barre__droite">
-      {#if auth.boutique}
-        <span class="etiquette">{auth.boutique.nom}</span>
-      {/if}
-      <button class="lien-discret" type="button" onclick={() => void deconnexion()}>
-        Se déconnecter
-      </button>
-    </div>
-  </header>
+  <Barre />
 
   <main class="contenu">
     {#if !auth.boutique}
@@ -71,12 +80,22 @@
         <h2>Aucun document pour l’instant</h2>
         <p class="bloc__texte">
           L’éditeur de factures arrive à la prochaine étape. En attendant, votre
-          compte et votre boutique sont prêts.
+          compte, votre boutique et vos catalogues sont prêts.
         </p>
         <div class="vide__actions">
           <button class="btn" type="button" disabled>Nouvelle facture</button>
           <span class="note">Bientôt disponible</span>
         </div>
+      </section>
+
+      <section class="grille">
+        {#each raccourcis as raccourci}
+          <a class="carte raccourci" href={raccourci.lien}>
+            <h3>{raccourci.titre}</h3>
+            <p class="bloc__texte">{raccourci.texte}</p>
+            <span class="raccourci__action">{raccourci.action} →</span>
+          </a>
+        {/each}
       </section>
 
       <section class="grille">
@@ -104,33 +123,6 @@
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
-  }
-
-  .barre {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 10px clamp(16px, 4vw, 32px);
-    background: var(--blanc);
-    border-bottom: 1px solid var(--trait);
-  }
-
-  .barre__marque {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--nuit);
-    font-family: var(--titre);
-    font-weight: 700;
-    font-size: 1.05rem;
-    text-decoration: none;
-  }
-
-  .barre__droite {
-    display: flex;
-    align-items: center;
-    gap: 14px;
   }
 
   .contenu {
@@ -200,7 +192,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-top: 6px;
+    margin-top: 4px;
   }
 
   .note {
@@ -210,43 +202,61 @@
 
   .grille {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .raccourci {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 120ms ease, transform 120ms ease;
+  }
+
+  .raccourci:hover {
+    border-color: var(--bleu);
+    transform: translateY(-1px);
+  }
+
+  .raccourci h3 {
+    font-size: 1.05rem;
+  }
+
+  .raccourci__action {
+    margin-top: auto;
+    padding-top: 8px;
+    color: var(--bleu);
+    font-weight: 600;
+    font-size: 0.9rem;
   }
 
   .info {
     padding: 20px;
   }
 
-  .info h3 {
-    font-size: 1rem;
-    margin-bottom: 12px;
-  }
-
-  dl {
-    margin: 0;
+  .info dl {
+    margin: 10px 0 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
 
-  dl div {
+  .info dl > div {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    border-bottom: 1px dashed var(--trait);
-    padding-bottom: 6px;
   }
 
-  dt {
+  .info dt {
     color: var(--ardoise);
-    font-size: 0.9rem;
   }
 
-  dd {
+  .info dd {
     margin: 0;
-    font-weight: 600;
     text-align: right;
-    overflow-wrap: anywhere;
+    font-weight: 600;
   }
 </style>

@@ -3,15 +3,19 @@
 Version web de Facture Maroc : facturation en ligne pour les commerces et TPE
 au Maroc. L'app Android reste hors ligne et n'est pas touchée par ce dossier.
 
-**État : M1.** Comptes, boutiques et isolation des données. L'éditeur de
-factures, les devis et les avoirs arrivent en M2.
+**État : M2.** Comptes, boutiques, moteur de facturation et catalogues
+(clients, articles, réglages, logo). L'éditeur de documents arrive en M3.
 
 | | |
 |---|---|
 | Connexion | e-mail / mot de passe, et Google |
 | Boutique | créée par son propriétaire à la première connexion |
-| Isolation | RLS Postgres, vérifiée par `supabase/tests/rls_isolation.sql` |
-| Factures | à venir (M2) |
+| Isolation | RLS Postgres, vérifiée par `supabase/tests/` |
+| Moteur | arithmétique, dates et numérotation portés depuis Kotlin ; fixtures partagées |
+| Clients | clients et fournisseurs, avec ICE, IF, RC, Patente, CNSS |
+| Articles | produits et services, prix, unité, dossier, stock et seuil |
+| Réglages | identifiants légaux, coordonnées bancaires, TVA, logo |
+| Factures | éditeur à venir (M3) |
 
 L'application est servie sous `https://factureapp.ma/app/`, à côté du site
 marketing qui reste à la racine de `docs/`.
@@ -47,13 +51,20 @@ et garder le mot de passe de la base.
 
 ### 2. Créer le schéma
 
-SQL Editor → coller le contenu de `supabase/migrations/0001_init.sql` → Run.
-Le script est idempotent, on peut le relancer.
+SQL Editor → coller le contenu de `supabase/migrations/0001_init.sql` → Run,
+puis `0002_catalogue.sql` → Run. Les deux scripts sont idempotents : on peut les
+relancer.
 
-Il crée `shops` et `memberships`, la fonction `is_shop_member()` utilisée par
-les politiques, et la fonction `create_shop_for_me()` qui insère la boutique et
-son appartenance « owner » dans la même transaction. Aucune écriture directe
-n'est autorisée sur les deux tables : tout passe par ces fonctions.
+Le premier crée `shops` et `memberships`, la fonction `is_shop_member()`
+utilisée par les politiques, et la fonction `create_shop_for_me()` qui insère la
+boutique et son appartenance « owner » dans la même transaction. Aucune
+écriture directe n'est autorisée sur les deux tables : tout passe par ces
+fonctions.
+
+Le second ajoute `clients` et `articles` (chacun filtré par `shop_id` via la
+RLS), les colonnes de réglages manquantes sur `shops`, et le bucket public
+`logos` avec ses politiques : lecture libre, écriture réservée aux membres de la
+boutique dont l'identifiant ouvre le chemin du fichier.
 
 ### 3. Activer Google
 
@@ -91,20 +102,21 @@ configuré » : pratique pour travailler sur l'interface.
 
 `supabase/tests/rls_isolation.sql` crée deux utilisateurs jetables, fait créer
 une boutique à chacun, et vérifie qu'aucun ne peut lire, modifier, insérer ou
-supprimer chez l'autre. Tout se passe dans une transaction terminée par
-`rollback` : aucune ligne ne survit, et les données existantes ne sont ni lues
-ni modifiées.
+supprimer chez l'autre. `rls_catalogue.sql` fait le même contrôle sur les
+clients et les articles, y compris une insertion avec un `shop_id` forgé. Tout
+se passe dans une transaction terminée par `rollback` : aucune ligne ne survit.
 
-SQL Editor → coller le fichier → Run. Sortie attendue :
+SQL Editor → coller un fichier → Run. Sortie attendue :
 
 ```
 NOTICE:  RLS : isolation vérifiée entre deux boutiques.
+NOTICE:  RLS catalogue : isolation clients/articles vérifiée.
 DO
 ROLLBACK
 ```
 
-Le test échoue si une politique est retirée. Il peut donc servir de garde-fou
-après toute modification du schéma.
+Les tests échouent si une politique est retirée. Ils servent de garde-fou après
+toute modification du schéma.
 
 ## Déploiement
 
@@ -122,20 +134,46 @@ route pour l'instant, donc rien ne casse.
 webapp/
 ├─ src/
 │  ├─ App.svelte              choix de l'écran selon session et route
+│  ├─ lib/catalogue.ts        filtres et validation clients/articles
 │  ├─ lib/chemin.ts           chemins /app, module pur testé par vitest
+│  ├─ lib/dates.ts            dates strictes, retards, jours restants
+│  ├─ lib/document.ts         types de document, TVA, moyens de paiement
+│  ├─ lib/invoice.ts          arithmétique portée depuis InvoiceData.kt
+│  ├─ lib/money.ts            arrondi et écriture des montants
+│  ├─ lib/numbering.ts        numéros et compteurs par type
 │  ├─ lib/router.svelte.ts    routeur minimal (pushState + clics)
 │  ├─ lib/session.svelte.ts   auth, boutique courante, messages d'erreur
+│  ├─ lib/storage.ts          bucket des logos
 │  ├─ lib/supabase.ts         client, ou null si non configuré
-│  └─ routes/                 Login, Accueil, Introuvable
+│  ├─ lib/ui/                 Barre, SansBoutique
+│  └─ routes/                 Login, Accueil, Clients, Articles, Paramètres
 ├─ supabase/
 │  ├─ migrations/0001_init.sql
-│  └─ tests/rls_isolation.sql
-└─ tests/chemin.test.ts
+│  ├─ migrations/0002_catalogue.sql
+│  ├─ tests/rls_isolation.sql
+│  └─ tests/rls_catalogue.sql
+└─ tests/                     money, dates, fixtures, catalogue, écrans
 ```
 
-## Limites connues de M1
+## Fixtures partagées
 
-- Pas encore d'éditeur de factures ; l'accueil l'annonce comme « bientôt ».
+`fixtures/factures.json` et `fixtures/numerotation.json` vivent à la racine du
+dépôt, hors de `webapp/`. Les blocs `attendu` sont produits par le moteur
+Kotlin, jamais écrits à la main :
+
+```bash
+./gradlew :app:testDebugUnitTest --tests 'com.yassine.facturemaroc.data.FixtureTest'
+```
+
+Le premier passage écrit les valeurs et échoue ; le second vérifie. Le test
+`webapp/tests/fixtures.test.ts` rejoue les mêmes fichiers : une divergence entre
+le site et l'application Android casse la suite.
+
+## Limites connues de M2
+
+- Pas encore d'éditeur de documents ; l'accueil l'annonce comme « bientôt ».
+- Les paliers de prix et les attributs libres d'un article sont stockés et
+  conservés, mais pas encore modifiables dans l'interface web.
 - « Mot de passe oublié » envoie le lien de réinitialisation, mais l'écran qui
   permet de choisir un nouveau mot de passe n'existe pas encore.
 - Le plan gratuit (5 factures par mois) est affiché, pas encore appliqué :

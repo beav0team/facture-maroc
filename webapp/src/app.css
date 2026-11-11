@@ -130,7 +130,9 @@ a {
   color: var(--ardoise);
 }
 
-.champ > input {
+.champ > input,
+.champ > select,
+.champ > textarea {
   min-height: 44px;
   padding: 0 12px;
   border: 1px solid var(--trait);
@@ -140,10 +142,35 @@ a {
   font: inherit;
 }
 
-.champ > input:focus {
+.champ > textarea {
+  padding: 10px 12px;
+  min-height: 84px;
+  resize: vertical;
+}
+
+.champ > input:focus,
+.champ > select:focus,
+.champ > textarea:focus {
   border-color: var(--bleu);
   outline: none;
   box-shadow: 0 0 0 3px rgb(30 63 210 / 15%);
+}
+
+.champ--case {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.champ--case > label {
+  font-weight: 500;
+  color: var(--nuit);
+}
+
+.champ--case input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--bleu);
 }
 
 .alerte {

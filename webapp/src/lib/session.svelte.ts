@@ -4,8 +4,23 @@ import { supabase } from './supabase'
 export type Boutique = {
   id: string
   nom: string
+  adresse: string | null
+  telephone: string | null
+  email: string | null
   ice: string | null
   if_fiscal: string | null
+  rc: string | null
+  patente: string | null
+  cnss: string | null
+  banque: string | null
+  rib: string | null
+  rib_titulaire: string | null
+  clause_retard: string | null
+  tva_defaut: number
+  tva_non_applicable: boolean
+  prix_ttc: boolean
+  conditions_paiement: string
+  logo_path: string | null
   created_at: string
 }
 
@@ -55,7 +70,7 @@ export async function chargerBoutique(): Promise<void> {
   // RLS: this query can only return shops the user is a member of.
   const { data, error } = await supabase
     .from('shops')
-    .select('id,nom,ice,if_fiscal,created_at')
+    .select('*')
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle()
@@ -139,6 +154,18 @@ export async function creerBoutique(nom: string): Promise<string | null> {
   auth.chargement = true
   const { error } = await supabase.rpc('create_shop_for_me', { p_nom: nom })
   auth.chargement = false
+  if (error) return error.message
+  await chargerBoutique()
+  return null
+}
+
+/** Saves the shop's own fields. RLS allows a member; the form sends all of them. */
+export async function enregistrerBoutique(
+  champs: Partial<Omit<Boutique, 'id' | 'created_at'>>,
+): Promise<string | null> {
+  if (!supabase) return 'Supabase n’est pas configuré.'
+  if (!auth.boutique) return 'Aucune boutique à enregistrer.'
+  const { error } = await supabase.from('shops').update(champs).eq('id', auth.boutique.id)
   if (error) return error.message
   await chargerBoutique()
   return null
