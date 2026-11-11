@@ -1,1 +1,8 @@
-/app/* /app/index.html 200
+# SPA de FactureApp : toute URL sous /app/ sert la coquille de l'application.
+#
+# La cible est /app/ et non /app/index.html : Cloudflare Pages normalise
+# /index.html vers / avec un 308, et cette normalisation s'applique aussi à la
+# cible d'une réécriture 200. Une règle vers /app/index.html ne sert donc pas
+# la coquille et renvoie 404 (ou boucle). Vérifié sur le déploiement du
+# 2026-11-11 : /app/documents doit répondre 200 sans redirection.
+/app/* /app/ 200
