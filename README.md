@@ -174,15 +174,16 @@ envoyée.
   voit et qu’on garde.
 
 Politique complète : [`docs/privacy.html`](docs/privacy.html) — publiée sur
-GitHub Pages à l’adresse
+Cloudflare Pages à l’adresse
 `https://factureapp.ma/privacy.html`.
 
 Le site public — présentation, captures, questions fréquentes et inscription des
 testeurs — est publié depuis `docs/` :
-`https://factureapp.ma/`. Il est en HTML et CSS seuls, sans
-construction ni JavaScript, et n’appelle **aucune ressource externe**, polices
+`https://factureapp.ma/`. Les pages marketing sont en HTML et CSS seuls, sans
+construction ni JavaScript, et n’appellent **aucune ressource externe**, polices
 comprises : une page qui promet l’absence de réseau ne peut pas charger Google
-Fonts.
+Fonts. L’application web, servie sous `/app/`, est un bundle séparé et utilise
+Supabase pour les comptes et les documents.
 
 Trois pages éditoriales s’y ajoutent : [`docs/a-propos.html`](docs/a-propos.html),
 [`docs/contact.html`](docs/contact.html) et le guide
