@@ -52,7 +52,15 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   affiche « Nouveau mot de passe » (deux saisies, refus si différentes), puis
   `updateUser` remplace l'ancien. Un lien expiré ou déjà servi le dit, il ne
   laisse pas l'écran vide.
-- 142 tests Vitest, 0 erreur `svelte-check` ; preuves RLS locales.
+- **Le plan affiché est le vrai** : l'étiquette de l'accueil était la chaîne
+  figée « Plan gratuit · 5 factures / mois » ; elle vient maintenant de
+  `quota_boutique` (« Plan Pro », sinon le quota réel) et se relit au retour
+  sur l'onglet.
+- **Boutique de l'administrateur** : `chargerBoutique()` lit `memberships`
+  (scopé à `auth.uid()`), plus `shops` — un administrateur plateforme voyait la
+  plus ancienne boutique du site (« Atlas ») au lieu de la sienne, puisque
+  « admin lit boutiques » lui ouvre toutes les boutiques.
+- 147 tests Vitest, 0 erreur `svelte-check` ; preuves RLS locales.
 
 **Reste à faire pour vendre**
 
