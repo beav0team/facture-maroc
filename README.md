@@ -5,8 +5,8 @@ Factures, devis, bons de commande, tickets, avoirs, proformas, acomptes,
 régularisations, factures simplifiées et factures à l'export — avec ICE, IF, RC,
 patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
-Aperçu **0.12.0-beta.4** (versionCode 22) · Android 8.0+ (minSdk 26) · Français.
-La version publiée sur le Play Store reste la **0.11.1** (versionCode 18).
+Version **0.12.0** (versionCode 23) · Android 8.0+ (minSdk 26) · Français.
+Sur le Play Store : **0.11.1** (versionCode 18) tant que la 0.12.0 n'y est pas téléversée.
 
 État du produit : [`docs/status.md`](docs/status.md) · Décisions :
 [`docs/decisions.md`](docs/decisions.md) · Checklist de version :

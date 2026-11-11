@@ -9,13 +9,13 @@ et les réponses aux formulaires.
 | Élément | Valeur |
 |---|---|
 | Paquet | `com.yassine.facturemaroc` |
-| Version | `0.11.1` (`versionCode` 18) — corrections de l'audit du 10 novembre |
+| Version | `0.12.0` (`versionCode` 23) — refonte de l'interface : listes, stock, identifiants clients |
 | Cible | API 36, minimum API 26 |
 | Permissions | `CAMERA` seule, facultative |
 | Modèles de document | 6 (Classique, Moderne, Facture Maroc, Épuré, Bandeau, Ticket 80 mm) |
 | Fichier | `app/build/outputs/bundle/release/app-release.aab` |
-| Taille | AAB 0.11.1 : 15 734 173 octets (~15,0 Mo) ; APK release : 24 252 499 octets (~23,1 Mo) |
-| SHA-256 (AAB) | `3f23b89ab37ece14eb4af079030cf11527d92e5bf11ad6a5aac79bbbfda5c509` |
+| Taille | AAB 0.12.0 : 15 931 094 octets (~15,2 Mo) ; APK release : 24 301 795 octets (~23,2 Mo) |
+| SHA-256 (AAB) | `d8902c2ac3260eb961777626a7aa0dd9c3caf8394aa9e15312a7bf7a74af8b4e` |
 | Signature | clé de `~/.android/tyre-inventory.jks` (alias `inventory`) |
 
 L'AAB se reconstruit avec `./gradlew :app:bundleRelease`. **Ne jamais téléverser
@@ -35,9 +35,10 @@ un APK** : Play n'accepte que les App Bundles pour une nouvelle application.
 - **Description courte** et **description complète** : copier depuis
   `listing-fr.md` (bloc de citation, sections « Description complète »).
 - **Icône** : `icon-512.png`. **Bannière** : `feature-graphic-1024x500.png`.
-- **Captures d'écran téléphone** : les quatre de `screenshots/`
-  (`01-factures`, `02-builder`, `03-clients`, `04-articles`). Play exige au
-  moins deux captures 16:9 ou 9:16 ; les nôtres sont en 1080 × 2160.
+- **Captures d'écran téléphone** : les sept de `screenshots/`
+  (`01-factures`, `02-clients`, `03-client`, `04-articles`, `05-articles-dossier`,
+  `06-stock`, `07-reglages`), toutes en 1080 × 2160 et prises sur la version
+  0.12.0. Play exige au moins deux captures 9:16.
 - **Catégorie** : Business. **Coordonnées** : e-mail de contact obligatoire
   (public et vérifié par Google) — à saisir, il ne peut pas être deviné.
 - **Politique de confidentialité** : `https://factureapp.ma/privacy.html`
@@ -99,3 +100,17 @@ d'envoi). À faire juste après le premier téléversement réussi.
 - **Production** : téléverser l'AAB, décrire la version, envoyer en revue.
   Comptez de quelques heures à quelques jours ; une première application est
   relue plus lentement.
+
+## 7. Nouveautés (texte à coller dans Play, 480 signes)
+
+```
+Listes repensées : vos clients sont rangés par urgence (en retard, doit de
+l'argent, à jour), votre catalogue par rayons, et vos factures se filtrent par
+type (devis, bon de commande, avoir…).
+
+Le stock devient une liste : quantité réelle, valeur, et « Reçu / Sorti /
+Corriger » sur chaque ligne. Un réglage permet de ne plus déduire le stock à
+l'émission.
+
+Renommer un client ne détache plus ses factures.
+```

@@ -6,8 +6,8 @@ answering from memory.
 
 | | |
 |---|---|
-| Version Play | **0.11.1** (versionCode 18) — 19 corrections d'audit |
-| Aperçu | **0.12.0-beta.4** (versionCode 22) — GitHub, parcourue sur Waydroid |
+| Version Play | **0.11.1** (versionCode 18) en ligne ; **0.12.0** (23) prête à téléverser |
+| Aperçu | **0.12.0-beta.4** (versionCode 22) — GitHub ; la 0.12.0 (23) est la même base pour le Play |
 | Last commit | Audit du 2026-11-10 : paiements, stockage, catalogue, rapports, avoirs, sauvegarde Android |
 | Branch | `master` (tag `v0.11.1` à poser après le build R8) |
 | Tests | **629 JVM**, **20 instrumented** (les deux suites vertes) |

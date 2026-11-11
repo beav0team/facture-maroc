@@ -20,13 +20,18 @@ depuis le 30 octobre 2026 ; seule l’adresse e-mail de contact reste à saisir.
 Facture Maroc est l’application de facturation conçue pour les commerçants, artisans et prestataires marocains. Créez une facture, un devis, un bon de commande, un reçu ou un relevé client en quelques gestes, puis partagez un PDF propre et professionnel.
 
 TOUT AU MÊME ENDROIT
-• Trois onglets : Factures, Clients, Articles.
+• Quatre onglets : Factures, Clients, Articles, Stock.
+• Filtre par type de document : facture, devis, bon de commande, ticket, avoir, proforma, acompte, régularisation, simplifiée, export — brouillons compris.
 • Vos coordonnées et mentions légales (ICE, IF, RC, patente, CNSS) enregistrées une fois.
 • Vos clients réutilisables en un tap, avec leur adresse et leur ICE.
 • Votre catalogue d’articles et de services : dossiers, code-barres, prix d’achat, seuil de réapprovisionnement, paliers de prix par quantité et attributs libres (référence, marque, dimensions…).
+• Fiche client avec solde dû, retard, documents et relevé ; appel ou message WhatsApp en un tap.
 
 STOCK ET MARGE
+• Liste du stock : chaque article compté, sa quantité réelle, sa valeur et ce qu’il faut réapprovisionner en tête.
+• Reçu, sorti et correction sur la ligne même, écrits dans le journal.
 • Journal des mouvements et historique par article : chaque vente, avoir, achat et correction est conservé.
+• Réglage : déduire ou non le stock à l’émission d’une facture.
 • Inventaire : saisie du comptage réel, écart motivé et résumé de la valeur.
 • Bons de réception fournisseurs qui entrent le stock et mettent à jour le prix d’achat.
 • Valorisation au coût moyen pondéré (défaut) ou FIFO, réglable.
