@@ -82,10 +82,18 @@ export async function chargerBoutique(): Promise<void> {
     return
   }
 
-  // RLS: this query can only return shops the user is a member of.
+  /*
+   * Read the membership, never `shops` directly. A platform admin may select
+   * every shop (policy « admin lit boutiques »), so the old
+   * `shops … order by created_at limit 1` handed the admin the oldest shop on
+   * the platform — the account opened as « Atlas » instead of its own shop.
+   * `memberships` is scoped to `user_id = auth.uid()`, so this returns the shop
+   * the user actually owns, admin or not.
+   */
   const { data, error } = await supabase
-    .from('shops')
-    .select('*')
+    .from('memberships')
+    .select('shop_id, shops(*)')
+    .eq('user_id', auth.user.id)
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle()
@@ -94,7 +102,7 @@ export async function chargerBoutique(): Promise<void> {
     auth.erreur = error.message
     return
   }
-  auth.boutique = (data as Boutique | null) ?? null
+  auth.boutique = ((data as { shops?: Boutique | null } | null)?.shops ?? null) as Boutique | null
 }
 
 export async function connexion(email: string, motDePasse: string): Promise<string | null> {
