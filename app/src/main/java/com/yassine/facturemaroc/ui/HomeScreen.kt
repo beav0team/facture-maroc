@@ -3199,18 +3199,18 @@ private fun StockTab(
 
         StockHubRow(
             icon = Icons.Filled.ShoppingCart,
-            title = "Achats et réceptions",
+            title = "Réceptions",
             subtitle = when (purchases.size) {
-                0 -> "Un bon de commande reçu augmente le stock."
-                1 -> "1 bon de commande enregistré."
-                else -> "${purchases.size} bons de commande enregistrés."
+                0 -> "Une livraison reçue augmente le stock."
+                1 -> "1 réception enregistrée."
+                else -> "${purchases.size} réceptions enregistrées."
             },
             onClick = onPurchases,
         )
         StockHubRow(
             icon = Icons.Filled.Description,
-            title = "Journal du stock",
-            subtitle = "Chaque entrée et sortie, avec le document qui l'a causée.",
+            title = "Mouvements",
+            subtitle = "Chaque entrée et sortie du stock, avec le document qui l'a causée.",
             onClick = onJournal,
         )
         Spacer(Modifier.height(8.dp))
@@ -3799,7 +3799,7 @@ private fun ItemCard(
                     // app lost something.
                     if (item.tracksStock) {
                         DropdownMenuItem(
-                            text = { Text("Historique du stock") },
+                            text = { Text("Historique de l'article") },
                             leadingIcon = { Icon(Icons.Filled.History, contentDescription = null) },
                             onClick = {
                                 menuOpen = false

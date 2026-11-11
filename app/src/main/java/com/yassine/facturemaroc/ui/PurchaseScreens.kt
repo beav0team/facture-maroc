@@ -70,7 +70,7 @@ fun PurchasesDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Achats et réceptions") },
+        title = { Text("Réceptions") },
         text = {
             Column(
                 Modifier

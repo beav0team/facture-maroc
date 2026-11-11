@@ -118,7 +118,7 @@ fun StockJournalDialog(
     val labels = remember(items) { items.associate { it.id to it.label } }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Journal du stock") },
+        title = { Text("Mouvements du stock") },
         text = {
             Column(
                 Modifier

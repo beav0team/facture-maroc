@@ -45,6 +45,21 @@ object DocumentStatus {
         // so a second label would be noise.
         if (data.isCredit) return DocumentStatusLine("", StatusTone.NEUTRAL)
 
+        /*
+         * A quote is not an unpaid invoice: nothing was sold yet, so "Impayée"
+         * or "Échéance" would chase a customer who never bought anything. It
+         * says what it is, and until when it holds.
+         */
+        if (data.documentType == DocumentType.DEVIS) {
+            val until = data.validityDate?.trim().orEmpty()
+            return DocumentStatusLine(
+                // Short on purpose: the row has room for about twenty
+                // characters beside a capped amount column.
+                if (until.isEmpty()) "Devis" else "Devis · valable ${shortDate(until)}",
+                StatusTone.NEUTRAL,
+            )
+        }
+
         val overdueDays = PaymentDue.daysUntil(data.dueDatePrinted, today)
             ?.takeIf { data.paymentState != PaymentState.PAID && it < 0 }
             ?.let { -it }
