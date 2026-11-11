@@ -480,6 +480,10 @@
       erreur = 'Le montant encaissé doit être supérieur à zéro.'
       return
     }
+    if (montant > solde.reste + 0.001) {
+      erreur = `Le montant dépasse le reste dû (${dirhams(solde.reste)}).`
+      return
+    }
     erreur = null
     encaissement = true
     const res = await api.encaisser(saisie.id, montant, paiementDate || aujourdHui(), paiementMoyen, paiementReference)
