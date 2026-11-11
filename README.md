@@ -12,6 +12,21 @@ Sur le Play Store : **0.11.1** (versionCode 18) tant que la 0.12.0 n'y est pas t
 [`docs/decisions.md`](docs/decisions.md) · Checklist de version :
 [`docs/release-checklist.md`](docs/release-checklist.md).
 
+## FactureApp — la version web
+
+Le même moteur de facturation dans le navigateur, sur
+**[factureapp.ma/app](https://factureapp.ma/app/)** : comptes, boutiques,
+numérotation automatique, PDF archivé, paiements et relevés clients. Gratuit
+jusqu'à 5 factures émises par mois ; plan Pro à 990 DH par an.
+
+La webapp vit dans [`webapp/`](webapp/) (Vite + Svelte 5 + TypeScript +
+Supabase) et se construit dans `docs/app/`. L'application Android reste
+**hors ligne** : c'est le produit de terrain, la webapp est le produit vendu
+(Google Play ne permet pas l'enregistrement marchand au Maroc).
+
+Un générateur de facture marocaine sans compte est disponible sur
+`/app/gratuit`.
+
 <img src="play_store/screenshots/01-factures.png" width="260" alt="Écran Factures">
 
 ## Ce que fait l’application

@@ -11,7 +11,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.119.0"
+    "@supabase/supabase-js": "^2.119.0",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

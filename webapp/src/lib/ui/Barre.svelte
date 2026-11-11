@@ -4,10 +4,16 @@
 
   const liens = [
     { chemin: '/', libelle: 'Accueil' },
+    { chemin: '/documents', libelle: 'Documents' },
     { chemin: '/clients', libelle: 'Clients' },
     { chemin: '/articles', libelle: 'Articles' },
     { chemin: '/parametres', libelle: 'Paramètres' },
   ]
+
+  function actif(chemin: string): boolean {
+    if (chemin === '/') return route.chemin === '/'
+    return route.chemin === chemin || route.chemin.startsWith(`${chemin}/`)
+  }
 
   const href = (chemin: string) => (chemin === '/' ? '/app/' : `/app${chemin}`)
 </script>
@@ -22,8 +28,8 @@
     {#each liens as lien}
       <a
         href={href(lien.chemin)}
-        class:actif={route.chemin === lien.chemin}
-        aria-current={route.chemin === lien.chemin ? 'page' : undefined}>{lien.libelle}</a
+        class:actif={actif(lien.chemin)}
+        aria-current={actif(lien.chemin) ? 'page' : undefined}>{lien.libelle}</a
       >
     {/each}
   </nav>

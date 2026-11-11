@@ -55,8 +55,76 @@ vi.mock('../src/lib/supabase', () => {
     },
   ]
 
+  const documents = [
+    {
+      id: 'd1',
+      shop_id: 'b1',
+      type: 'facture',
+      statut: 'emis',
+      numero: 'F-20261111-0001',
+      date_emission: '11/11/2026',
+      date_validite: null,
+      echeance: '11/12/2026',
+      client_id: 'c1',
+      client_snapshot: { nom: 'Garage Atlas', ice: '001234567000012' },
+      reference: '',
+      incoterm: '',
+      tva_non_applicable: false,
+      taux_tva: 20,
+      arrondi_dirham: false,
+      conditions_paiement: '30j',
+      clause_retard: '',
+      note_client: '',
+      note_remerciement: '',
+      surcharge_libelle: '',
+      surcharge_montant: 0,
+      surcharge_pourcent: 0,
+      remise_pourcent: 0,
+      remise_montant: 0,
+      acompte_montant: 0,
+      acompte_reference: '',
+      design: 'classique',
+      total_ht: 100,
+      remise: 0,
+      surcharge: 0,
+      tva: 20,
+      total_ttc: 120,
+      net_a_payer: 120,
+      shop_snapshot: null,
+      emis_le: '2026-11-11T10:00:00Z',
+      created_at: '2026-11-11T10:00:00Z',
+      updated_at: '2026-11-11T10:00:00Z',
+    },
+  ]
+
+  const paiements = [
+    {
+      id: 'p1',
+      document_id: 'd1',
+      montant: 20,
+      date_paiement: '11/11/2026',
+      moyen: 'cash',
+      reference: '',
+      created_at: '2026-11-11T11:00:00Z',
+      documents: { shop_id: 'b1' },
+    },
+  ]
+
+  const tables: Record<string, unknown> = { clients, articles, documents, payments: paiements }
+
   return {
-    supabase: { from: (table: string) => chain(table === 'clients' ? clients : articles) },
+    supabase: {
+      from: (table: string) => chain(tables[table] ?? []),
+      rpc: (nom: string) => {
+        const data =
+          nom === 'quota_boutique'
+            ? { plan: 'gratuit', paid_until: null, utilise: 1, limite: 5 }
+            : nom === 'apercu_numero'
+              ? 'F-20261111-0002'
+              : null
+        return { then: (resoudre: (valeur: unknown) => void) => resoudre({ data, error: null }) }
+      },
+    },
   }
 })
 
@@ -82,6 +150,9 @@ vi.mock('../src/lib/session.svelte', () => ({
       prix_ttc: false,
       conditions_paiement: '30j',
       logo_path: null,
+      prefixes: {},
+      numerotation_annuelle: false,
+      design_defaut: 'classique',
       created_at: '2026-11-10T00:00:00Z',
     },
     user: { email: 'atelier@atlas.ma' },
@@ -117,6 +188,8 @@ afterEach(() => {
 const { default: Clients } = await import('../src/routes/Clients.svelte')
 const { default: Articles } = await import('../src/routes/Articles.svelte')
 const { default: Parametres } = await import('../src/routes/Parametres.svelte')
+const { default: Documents } = await import('../src/routes/Documents.svelte')
+const { default: DocumentEditeur } = await import('../src/routes/DocumentEditeur.svelte')
 
 describe('écran Clients', () => {
   it('affiche la fiche chargée et ses coordonnées', async () => {
@@ -171,5 +244,40 @@ describe('écran Articles', () => {
     service?.click()
     flushSync()
     expect(cible.querySelector('#a-stock')).toBeNull()
+  })
+})
+
+describe('écran Documents', () => {
+  it('liste la facture, son client, son reste dû et le quota', async () => {
+    const cible = await rendre(Documents)
+    expect(cible.textContent).toContain('F-20261111-0001')
+    expect(cible.textContent).toContain('Garage Atlas')
+    expect(cible.textContent).toContain('120,00 DH')
+    expect(cible.textContent).toContain('100,00 DH restant')
+    expect(cible.textContent).toContain('1 / 5 factures ce mois')
+    expect(cible.textContent).toContain('Nouveau document')
+  })
+})
+
+describe('éditeur de document', () => {
+  it('ouvre un brouillon vide avec le numéro réservé', async () => {
+    const cible = await rendre(DocumentEditeur)
+    expect(cible.textContent).toContain('Nouveau document')
+    expect(cible.textContent).toContain('F-20261111-0002')
+    expect(cible.textContent).toContain('Aucune ligne')
+    expect(cible.textContent).toContain('Total TTC')
+    const emettre = [...cible.querySelectorAll('button')].find((b) => b.textContent?.includes('Émettre'))
+    expect(emettre).toBeTruthy()
+  })
+
+  it('ajoute une ligne et recalcule le total', async () => {
+    const cible = await rendre(DocumentEditeur)
+    const ajouter = [...cible.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Ajouter une ligne'),
+    )
+    ajouter?.click()
+    flushSync()
+    expect(cible.querySelector('input[aria-label="Désignation"]')).toBeTruthy()
+    expect(cible.textContent).toContain('0,00 DH')
   })
 })

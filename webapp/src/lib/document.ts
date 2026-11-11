@@ -74,6 +74,18 @@ export function typeDepuisId(id: string | null | undefined): TypeDocument {
   return ORDRE_TYPES.find((type) => type === id) ?? 'facture'
 }
 
+/** The two paper layouts, chosen per document and defaulted by the shop. */
+export type DesignDocument = 'classique' | 'facture_maroc'
+
+export const DESIGNS: Record<DesignDocument, string> = {
+  classique: 'Classique',
+  facture_maroc: 'Facture Maroc',
+}
+
+export function designDepuisId(id: string | null | undefined): DesignDocument {
+  return id === 'facture_maroc' ? 'facture_maroc' : 'classique'
+}
+
 export type MethodePaiement = 'cash' | 'check' | 'transfer' | 'card'
 
 export const METHODES_PAIEMENT: Record<MethodePaiement, string> = {

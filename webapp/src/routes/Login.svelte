@@ -189,6 +189,12 @@
       Pas encore de compte ? C’est gratuit jusqu’à 5 factures par mois, sans carte
       bancaire.
     </p>
+
+    <p class="connexion__liens">
+      <a href="/app/gratuit">Essayer sans compte</a>
+      <span aria-hidden="true">·</span>
+      <a href="/app/tarifs">Voir les tarifs</a>
+    </p>
   </main>
 </div>
 
@@ -289,6 +295,14 @@
     text-align: center;
     border-top: 1px solid var(--trait);
     padding-top: 14px;
+  }
+
+  .connexion__liens {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: var(--ardoise);
   }
 
   code {

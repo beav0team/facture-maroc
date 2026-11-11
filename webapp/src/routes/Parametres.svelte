@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { DESIGNS, ORDRE_TYPES, TYPES_DOCUMENT, type DesignDocument } from '../lib/document'
+  import { prefixeValide } from '../lib/numbering'
   import { analyserMontant } from '../lib/money'
   import { auth, chargerBoutique, enregistrerBoutique } from '../lib/session.svelte'
   import { BUCKET_LOGOS, cheminLogo, urlLogo } from '../lib/storage'
@@ -25,6 +27,9 @@
     tva_non_applicable: boolean
     prix_ttc: boolean
     conditions_paiement: string
+    numerotation_annuelle: boolean
+    design_defaut: 'classique' | 'facture_maroc'
+    prefixes: Record<string, string>
   }
 
   const conditions = [
@@ -53,6 +58,9 @@
     tva_non_applicable: false,
     prix_ttc: false,
     conditions_paiement: '30j',
+    numerotation_annuelle: false,
+    design_defaut: 'classique',
+    prefixes: {},
   })
   let erreur = $state<string | null>(null)
   let message = $state<string | null>(null)
@@ -85,6 +93,9 @@
       tva_non_applicable: boutique.tva_non_applicable,
       prix_ttc: boutique.prix_ttc,
       conditions_paiement: boutique.conditions_paiement,
+      numerotation_annuelle: Boolean(boutique.numerotation_annuelle),
+      design_defaut: boutique.design_defaut ?? 'classique',
+      prefixes: { ...(boutique.prefixes ?? {}) },
     }
     logo = urlLogo(boutique.logo_path)
   }
@@ -111,6 +122,14 @@
       return
     }
 
+    for (const type of ORDRE_TYPES) {
+      const prefixe = saisie.prefixes[type]?.trim() ?? ''
+      if (prefixe !== '' && !prefixeValide(prefixe.replace(/-+$/, ''))) {
+        erreur = `Le préfixe « ${prefixe} » du document « ${TYPES_DOCUMENT[type].libelle} » contient un caractère interdit.`
+        return
+      }
+    }
+
     enregistrement = true
     const probleme = await enregistrerBoutique({
       nom,
@@ -130,6 +149,9 @@
       tva_non_applicable: saisie.tva_non_applicable,
       prix_ttc: saisie.prix_ttc,
       conditions_paiement: saisie.conditions_paiement,
+      numerotation_annuelle: saisie.numerotation_annuelle,
+      design_defaut: saisie.design_defaut,
+      prefixes: prefixesPropres(),
     })
     enregistrement = false
 
@@ -211,6 +233,23 @@
   }
 
   const ribChiffres = $derived(saisie.rib.replace(/\D/g, '').length)
+
+  function prefixesPropres(): Record<string, string> {
+    const sortie: Record<string, string> = {}
+    for (const [type, valeur] of Object.entries(saisie.prefixes)) {
+      const propre = valeur.trim()
+      if (propre !== '') sortie[type] = propre
+    }
+    return sortie
+  }
+
+  function majPrefixe(type: string, valeur: string) {
+    saisie.prefixes = { ...saisie.prefixes, [type]: valeur }
+  }
+
+  function majDesign(valeur: string) {
+    saisie.design_defaut = (valeur === 'facture_maroc' ? 'facture_maroc' : 'classique') as DesignDocument
+  }
 </script>
 
 <div class="page">
@@ -343,6 +382,45 @@
         </section>
 
         <section class="carte bloc">
+          <h2>Numérotation</h2>
+          <p class="bloc__texte">
+            Chaque type de document a sa propre série. Le numéro complet ressemble
+            à <strong>F-20261111-0001</strong> : préfixe, date du jour, rang. Laissez
+            vide pour reprendre le préfixe par défaut.
+          </p>
+          <div class="grille-champs grille-champs--prefixes">
+            {#each ORDRE_TYPES as type}
+              <div class="champ">
+                <label for={`b-prefixe-${type}`}>
+                  {TYPES_DOCUMENT[type].libelle}
+                  <span class="aide">({TYPES_DOCUMENT[type].prefixe})</span>
+                </label>
+                <input
+                  id={`b-prefixe-${type}`}
+                  value={saisie.prefixes[type] ?? ''}
+                  placeholder={TYPES_DOCUMENT[type].prefixe}
+                  oninput={(e) => majPrefixe(type, e.currentTarget.value)}
+                />
+              </div>
+            {/each}
+          </div>
+          <div class="grille-champs">
+            <div class="champ">
+              <label for="b-design">Modèle par défaut</label>
+              <select id="b-design" value={saisie.design_defaut} onchange={(e) => majDesign(e.currentTarget.value)}>
+                {#each Object.entries(DESIGNS) as [idDesign, libelle]}
+                  <option value={idDesign}>{libelle}</option>
+                {/each}
+              </select>
+            </div>
+            <label class="champ champ--case">
+              <input type="checkbox" bind:checked={saisie.numerotation_annuelle} />
+              <span>Repartir de 0001 chaque année</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="carte bloc">
           <h2>Coordonnées bancaires</h2>
           <p class="bloc__texte">
             Imprimées sur les documents à payer par virement. Laissez vide pour un
@@ -376,6 +454,16 @@
           </button>
         </div>
       </form>
+
+      <section class="carte bloc">
+        <h2>Sauvegarde Android</h2>
+        <p class="bloc__texte">
+          Reprenez les clients, les articles et la numérotation de l’application
+          hors ligne. Les documents arrivent en brouillons : un numéro déjà
+          imprimé n’est jamais réutilisé.
+        </p>
+        <a class="btn btn--discret" href="/app/import">Importer une sauvegarde</a>
+      </section>
     {/if}
   </main>
 </div>

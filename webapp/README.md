@@ -3,8 +3,9 @@
 Version web de Facture Maroc : facturation en ligne pour les commerces et TPE
 au Maroc. L'app Android reste hors ligne et n'est pas touchée par ce dossier.
 
-**État : M2.** Comptes, boutiques, moteur de facturation et catalogues
-(clients, articles, réglages, logo). L'éditeur de documents arrive en M3.
+**État : M3 à M7 faits, M8 partiel.** Comptes, boutiques, moteur de
+facturation, catalogues, éditeur de documents, PDF archivé, paiements,
+relevés, générateur public, tarifs, admin et import Android.
 
 | | |
 |---|---|
@@ -15,7 +16,12 @@ au Maroc. L'app Android reste hors ligne et n'est pas touchée par ce dossier.
 | Clients | clients et fournisseurs, avec ICE, IF, RC, Patente, CNSS |
 | Articles | produits et services, prix, unité, dossier, stock et seuil |
 | Réglages | identifiants légaux, coordonnées bancaires, TVA, logo |
-| Factures | éditeur à venir (M3) |
+| Documents | facture, devis, avoir ; TVA par ligne, remises, acompte, arrondi |
+| Émission | numéro et snapshot boutique pris en SQL, document immuable |
+| PDF | deux modèles, filigrane gratuit, archivé avec SHA-256 |
+| Paiements | encaissements multiples, reste dû, retard, relevé client |
+| Public | `/app/gratuit` sans compte, `/app/tarifs`, `/app/admin` |
+| Import | sauvegarde JSON de l'app Android (clients, articles, compteurs) |
 
 L'application est servie sous `https://factureapp.ma/app/`, à côté du site
 marketing qui reste à la racine de `docs/`.
@@ -51,9 +57,9 @@ et garder le mot de passe de la base.
 
 ### 2. Créer le schéma
 
-SQL Editor → coller le contenu de `supabase/migrations/0001_init.sql` → Run,
-puis `0002_catalogue.sql` → Run. Les deux scripts sont idempotents : on peut les
-relancer.
+SQL Editor → coller, dans cet ordre, `0001_init.sql`, `0002_catalogue.sql`,
+`0003_documents.sql` puis `0004_import.sql` → Run. Les quatre scripts sont
+idempotents : on peut les relancer.
 
 Le premier crée `shops` et `memberships`, la fonction `is_shop_member()`
 utilisée par les politiques, et la fonction `create_shop_for_me()` qui insère la
@@ -65,6 +71,16 @@ Le second ajoute `clients` et `articles` (chacun filtré par `shop_id` via la
 RLS), les colonnes de réglages manquantes sur `shops`, et le bucket public
 `logos` avec ses politiques : lecture libre, écriture réservée aux membres de la
 boutique dont l'identifiant ouvre le chemin du fichier.
+
+Le troisième ajoute les documents, leurs lignes, les paiements, les archives,
+les abonnements et la numérotation. Aucun client n'écrit directement dans
+`documents` : tout passe par `enregistrer_brouillon()`, `emettre_document()`
+(numéro, snapshot boutique, quota), `creer_avoir()` et `apercu_numero()`. Le
+bucket privé `archives` reçoit le PDF émis sous `<document_id>/…`.
+
+Le quatrième ajoute `importer_compteurs()`, la seule écriture de numérotation
+ouverte à une boutique, pour reprendre les compteurs d'une sauvegarde Android
+sans jamais les faire reculer.
 
 ### 3. Activer Google
 
@@ -103,14 +119,18 @@ configuré » : pratique pour travailler sur l'interface.
 `supabase/tests/rls_isolation.sql` crée deux utilisateurs jetables, fait créer
 une boutique à chacun, et vérifie qu'aucun ne peut lire, modifier, insérer ou
 supprimer chez l'autre. `rls_catalogue.sql` fait le même contrôle sur les
-clients et les articles, y compris une insertion avec un `shop_id` forgé. Tout
-se passe dans une transaction terminée par `rollback` : aucune ligne ne survit.
+clients et les articles, y compris une insertion avec un `shop_id` forgé.
+`rls_documents.sql` couvre la numérotation (l'aperçu ne consomme pas), le quota
+de 5, l'immuabilité d'un document émis, l'avoir, les paiements et l'import des
+compteurs. Tout se passe dans une transaction terminée par `rollback` : aucune
+ligne ne survit.
 
 SQL Editor → coller un fichier → Run. Sortie attendue :
 
 ```
 NOTICE:  RLS : isolation vérifiée entre deux boutiques.
 NOTICE:  RLS catalogue : isolation clients/articles vérifiée.
+NOTICE:  Documents : numérotation, quota, émission et avoir vérifiés.
 DO
 ROLLBACK
 ```
@@ -134,25 +154,34 @@ route pour l'instant, donc rien ne casse.
 webapp/
 ├─ src/
 │  ├─ App.svelte              choix de l'écran selon session et route
+│  ├─ lib/archive.ts          upload du PDF émis et re-téléchargement
 │  ├─ lib/catalogue.ts        filtres et validation clients/articles
 │  ├─ lib/chemin.ts           chemins /app, module pur testé par vitest
 │  ├─ lib/dates.ts            dates strictes, retards, jours restants
 │  ├─ lib/document.ts         types de document, TVA, moyens de paiement
+│  ├─ lib/documents.ts        lignes de base lues par le moteur, statuts
+│  ├─ lib/documentsApi.ts     appels Supabase des documents
+│  ├─ lib/importAndroid.ts    lecture du backup JSON Android
 │  ├─ lib/invoice.ts          arithmétique portée depuis InvoiceData.kt
 │  ├─ lib/money.ts            arrondi et écriture des montants
 │  ├─ lib/numbering.ts        numéros et compteurs par type
+│  ├─ lib/pdf.ts              rendu pdf-lib déterministe (deux modèles)
+│  ├─ lib/prix.ts             prix HT/TTC, porté de PriceBasis.kt
 │  ├─ lib/router.svelte.ts    routeur minimal (pushState + clics)
 │  ├─ lib/session.svelte.ts   auth, boutique courante, messages d'erreur
 │  ├─ lib/storage.ts          bucket des logos
 │  ├─ lib/supabase.ts         client, ou null si non configuré
 │  ├─ lib/ui/                 Barre, SansBoutique
-│  └─ routes/                 Login, Accueil, Clients, Articles, Paramètres
+│  └─ routes/                 Login, Accueil, Documents, éditeur, Clients,
+│                             Articles, Paramètres, Relevé, Générateur,
+│                             Tarifs, Admin, Import
 ├─ supabase/
-│  ├─ migrations/0001_init.sql
-│  ├─ migrations/0002_catalogue.sql
+│  ├─ migrations/0001_init.sql … 0004_import.sql
 │  ├─ tests/rls_isolation.sql
-│  └─ tests/rls_catalogue.sql
-└─ tests/                     money, dates, fixtures, catalogue, écrans
+│  ├─ tests/rls_catalogue.sql
+│  └─ tests/rls_documents.sql
+└─ tests/                     money, dates, fixtures, catalogue, écrans,
+                              documents, prix, pdf, import
 ```
 
 ## Fixtures partagées
@@ -169,14 +198,17 @@ Le premier passage écrit les valeurs et échoue ; le second vérifie. Le test
 `webapp/tests/fixtures.test.ts` rejoue les mêmes fichiers : une divergence entre
 le site et l'application Android casse la suite.
 
-## Limites connues de M2
+## Limites connues
 
-- Pas encore d'éditeur de documents ; l'accueil l'annonce comme « bientôt ».
+- Le paiement en ligne n'existe pas : le plan Pro est activé manuellement dans
+  `/app/admin` après virement ou espèces. C'est assumé pour le lancement.
 - Les paliers de prix et les attributs libres d'un article sont stockés et
   conservés, mais pas encore modifiables dans l'interface web.
 - « Mot de passe oublié » envoie le lien de réinitialisation, mais l'écran qui
   permet de choisir un nouveau mot de passe n'existe pas encore.
-- Le plan gratuit (5 factures par mois) est affiché, pas encore appliqué :
-  il n'y a pas de factures à compter.
 - Une seule boutique par utilisateur dans l'interface. Le schéma en autorise
   plusieurs, `chargerBoutique()` prend la plus ancienne.
+- L'import Android ramène les documents en brouillons : un numéro déjà imprimé
+  n'est jamais réémis par la webapp.
+- Sauvegarde/restauration et monitoring restent à faire (M8) : voir
+  `scripts/sauvegarde.sh` pour le dump Postgres.

@@ -60,6 +60,8 @@ export type Facture = {
   remisePourcent?: number // discountPercent
   remiseMontant?: number // discountFixed
   tauxTva?: number // vatPercent
+  /** Web only: round the TTC to the dirham, the difference landing in HT. */
+  arrondiDirham?: boolean
   methodePaiement?: MethodePaiement
   type?: TypeDocument // documentType
   dateValidite?: string | null // validityDate
@@ -208,16 +210,23 @@ export function calculer(f: Facture): Totaux {
   let tvaExacte = 0
   for (const [taux, net] of nets) tvaExacte += (net * taux) / 100
 
-  const total = arrondi(sousTotalExact - remiseExacte + surchargeExacte + tvaExacte)
+  let total = arrondi(sousTotalExact - remiseExacte + surchargeExacte + tvaExacte)
+  let totalHtAffiche = totalHt
+  if (f.arrondiDirham) {
+    // The customer pays whole dirhams; the centimes move to HT, never to VAT.
+    const totalArrondi = Math.round(total)
+    totalHtAffiche = arrondi(totalHt + (totalArrondi - total))
+    total = totalArrondi
+  }
   // Derived from the total so HT + TVA = TTC to the centime on every document.
-  const tva = arrondi(total - totalHt - surcharge)
+  const tva = arrondi(total - totalHtAffiche - surcharge)
 
   // --- VAT recap, highest rate first --------------------------------------
   const brut = [...nets.entries()].sort((a, b) => b[0] - a[0])
   const bases: Array<[number, number]> = brut.map(([taux, net]) => [taux, arrondi(net)])
 
   const sommeBases = bases.reduce((somme, [, base]) => somme + base, 0)
-  const ecartBase = arrondi(arrondi(totalHt + surcharge) - sommeBases)
+  const ecartBase = arrondi(arrondi(totalHtAffiche + surcharge) - sommeBases)
   if (ecartBase !== 0 && bases.length > 0) {
     const index = indiceDuMax(bases.map(([, base]) => base))
     const base = bases[index]
@@ -268,7 +277,7 @@ export function calculer(f: Facture): Totaux {
     remise,
     remiseEnMontant: remiseFixe > 0,
     afficheRemise: remise > 0,
-    totalHt,
+    totalHt: totalHtAffiche,
     surcharge,
     tva,
     total,

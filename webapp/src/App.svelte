@@ -7,26 +7,57 @@
   import Clients from './routes/Clients.svelte'
   import Articles from './routes/Articles.svelte'
   import Parametres from './routes/Parametres.svelte'
+  import Documents from './routes/Documents.svelte'
+  import DocumentEditeur from './routes/DocumentEditeur.svelte'
+  import Releve from './routes/Releve.svelte'
+  import Generateur from './routes/Generateur.svelte'
+  import Tarifs from './routes/Tarifs.svelte'
+  import Admin from './routes/Admin.svelte'
+  import Import from './routes/Import.svelte'
   import Introuvable from './routes/Introuvable.svelte'
 
   onMount(() => {
     demarrerRouteur()
     void demarrer()
   })
+
+  const PREFIXE_DOCUMENT = '/documents/'
+  const ROUTE_RELEVE = /^\/clients\/([^/]+)\/releve$/
+  const releve = $derived(ROUTE_RELEVE.exec(route.chemin))
 </script>
 
 {#if !auth.pret}
   <div class="chargement">Chargement…</div>
+{:else if route.chemin === '/gratuit'}
+  <Generateur />
+{:else if route.chemin === '/tarifs'}
+  <Tarifs />
 {:else if !auth.user}
   <Login />
-{:else if route.chemin === '/'}
-  <Accueil />
-{:else if route.chemin === '/clients'}
-  <Clients />
-{:else if route.chemin === '/articles'}
-  <Articles />
-{:else if route.chemin === '/parametres'}
-  <Parametres />
 {:else}
-  <Introuvable />
+  {#key route.chemin}
+    {#if route.chemin === '/'}
+      <Accueil />
+    {:else if route.chemin === '/documents'}
+      <Documents />
+    {:else if route.chemin === '/documents/nouveau'}
+      <DocumentEditeur id={null} />
+    {:else if route.chemin.startsWith(PREFIXE_DOCUMENT)}
+      <DocumentEditeur id={route.chemin.slice(PREFIXE_DOCUMENT.length)} />
+    {:else if route.chemin === '/clients'}
+      <Clients />
+    {:else if releve?.[1]}
+      <Releve id={releve[1]} />
+    {:else if route.chemin === '/articles'}
+      <Articles />
+    {:else if route.chemin === '/parametres'}
+      <Parametres />
+    {:else if route.chemin === '/admin'}
+      <Admin />
+    {:else if route.chemin === '/import'}
+      <Import />
+    {:else}
+      <Introuvable />
+    {/if}
+  {/key}
 {/if}

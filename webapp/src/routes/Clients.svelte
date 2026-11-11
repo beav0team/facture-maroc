@@ -316,6 +316,9 @@
                 {/if}
               </div>
               <div class="fiche__actions">
+                {#if client.role === 'client'}
+                  <a class="btn btn--discret" href={`/app/clients/${client.id}/releve`}>Relevé</a>
+                {/if}
                 <button class="btn btn--discret" type="button" onclick={() => ouvrirEdition(client)}>
                   Modifier
                 </button>

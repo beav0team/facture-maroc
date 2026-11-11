@@ -21,6 +21,9 @@ export type Boutique = {
   prix_ttc: boolean
   conditions_paiement: string
   logo_path: string | null
+  prefixes: Record<string, string> | null
+  numerotation_annuelle: boolean
+  design_defaut: 'classique' | 'facture_maroc'
   created_at: string
 }
 

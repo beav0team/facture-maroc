@@ -8,6 +8,12 @@
 
   const raccourcis = [
     {
+      lien: '/app/documents',
+      titre: 'Documents',
+      texte: 'Factures, devis, bons de commande — numérotés à l’émission.',
+      action: 'Ouvrir les documents',
+    },
+    {
       lien: '/app/clients',
       titre: 'Clients',
       texte: 'Les fiches clients et fournisseurs, avec ICE, IF et coordonnées.',
@@ -73,18 +79,18 @@
           <p class="entete__surtitre">Bonjour</p>
           <h1>{auth.boutique.nom}</h1>
         </div>
-        <p class="etiquette">Plan gratuit · 5 factures / mois</p>
+        <a class="etiquette" href="/app/tarifs">Plan gratuit · 5 factures / mois</a>
       </section>
 
       <section class="carte vide">
-        <h2>Aucun document pour l’instant</h2>
+        <h2>Prêt à facturer</h2>
         <p class="bloc__texte">
-          L’éditeur de factures arrive à la prochaine étape. En attendant, votre
-          compte, votre boutique et vos catalogues sont prêts.
+          Créez une facture ou un devis : le numéro est réservé à l’émission, la
+          boutique est figée sur le document et rien ne se réécrit après coup.
         </p>
         <div class="vide__actions">
-          <button class="btn" type="button" disabled>Nouvelle facture</button>
-          <span class="note">Bientôt disponible</span>
+          <a class="btn" href="/app/documents/nouveau">Nouvelle facture</a>
+          <a class="btn btn--discret" href="/app/documents">Voir les documents</a>
         </div>
       </section>
 
@@ -193,11 +199,6 @@
     align-items: center;
     gap: 12px;
     margin-top: 4px;
-  }
-
-  .note {
-    color: var(--ardoise);
-    font-size: 0.85rem;
   }
 
   .grille {
