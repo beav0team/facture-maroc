@@ -38,17 +38,17 @@ est servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   admin `/app/admin` (activation manuelle du Pro), import d'une sauvegarde
   Android `/app/import` (clients, articles, numérotation ; documents en
   brouillons).
-- 132 tests Vitest, 0 erreur `svelte-check`. Preuves RLS locales :
+- 133 tests Vitest, 0 erreur `svelte-check`. Preuves RLS locales :
   `rls_isolation.sql`, `rls_catalogue.sql`, `rls_documents.sql`.
 
 **Reste à faire pour vendre**
 
-- Projet Supabase réel, identifiants Google OAuth, migration Cloudflare du
-  domaine ; sans `.env` l'app affiche « Supabase n'est pas configuré ».
+- Publier l'écran de consentement Google (encore en mode « Testing ») et
+  configurer un SMTP : la connexion Google fonctionne pour le propriétaire,
+  pas encore pour un client non listé.
 - Paiement en ligne : l'activation Pro est manuelle (virement/espèces), assumé.
 - Sauvegarde quotidienne, monitoring, restauration testée (M8).
-- Déclaration CNDP et réécriture de `privacy.html` : la promesse de
-  confidentialité actuelle n'est pas encore vraie pour la webapp.
+- Déclaration CNDP et validation du texte de `privacy.html`.
 
 ---
 
