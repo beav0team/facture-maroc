@@ -41,10 +41,16 @@ gèle, les 577 tests JVM passent et le rendu PDF est inchangé.
   produit et article épuisé, balayage sans recomposition par image
   (`graphicsLayer` + `mutableFloatStateOf`, une animation par geste, retour
   haptique).
-- **Onglet Stock** (4ᵉ onglet) : entrées et sorties seulement — achats et
-  réceptions, journal du stock. L'inventaire est passé dans Articles (icône de
-  la barre supérieure), parce que compter est un acte sur le catalogue ; les
-  réparations restent dans Paramètres → Diagnostic.
+- **Onglet Stock** : la liste des rayons. Chaque article compté avec sa
+  quantité réelle (lue dans le journal, jamais dans le cache), la valeur du
+  stock au coût unitaire, et « À commander » en tête. Une ligne s'ouvre sur la
+  fiche ; son menu écrit un mouvement — Reçu, Sorti, Corriger — chacun
+  enregistré comme une entrée du journal (`SavedItemStore.moveStock`). Les
+  réceptions de plusieurs articles et le journal complet sont dans la barre de
+  l'onglet. Un écart entre le cache et le journal s'affiche en rouge avec le
+  chemin de réparation (Paramètres → Diagnostic).
+- L'inventaire (compter les rayons) est dans Articles, près de la liste qu'il
+  compte.
 - Fiche client **et fournisseur** (`PartyDetailScreen`) : identité, chiffres
   (solde dû et relevé pour un client, achats HT et nombre de réceptions pour un
   fournisseur), documents, et deux actions — Modifier, Nouveau document.

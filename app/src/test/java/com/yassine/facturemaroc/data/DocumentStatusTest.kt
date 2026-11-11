@@ -98,4 +98,24 @@ class DocumentStatusTest {
         assertEquals(StatusTone.OVERDUE, line.tone)
         assertEquals("9 j de retard", line.text)
     }
+
+    @Test
+    fun `a quote is not an unpaid invoice`() {
+        // Nothing was sold yet: "Impayée" would chase a customer who never
+        // bought anything.
+        val quote = DocumentStatus.of(
+            record(type = DocumentType.DEVIS).let {
+                it.copy(data = it.data.copy(validityDate = "17/11/2026"))
+            },
+            today,
+        )
+        assertEquals("Devis · valable 17/11", quote.text)
+        assertEquals(StatusTone.NEUTRAL, quote.tone)
+    }
+
+    @Test
+    fun `a quote with no validity still says what it is`() {
+        val quote = DocumentStatus.of(record(type = DocumentType.DEVIS), today)
+        assertEquals("Devis", quote.text)
+    }
 }

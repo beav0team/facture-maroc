@@ -415,6 +415,45 @@ class SavedItemStore(
         }
     }
 
+    /**
+     * Moves one article's quantity by [delta], as a movement in the journal.
+     *
+     * Returns the new quantity, or null when the article is not counted, the
+     * movement is empty, or the journal could not be written — in which case
+     * nothing at all changed, cache included. This is the single door the stock
+     * tab's receive / issue / correct actions go through, so a hand movement and
+     * a delivery cannot end up recorded in two different shapes.
+     */
+    fun moveStock(
+        itemId: String,
+        delta: Int,
+        reason: StockReason,
+        reference: String = "",
+        note: String = "",
+        unitCost: Double = 0.0,
+    ): Int? {
+        if (delta == 0) return null
+        val item = _items.value.firstOrNull { it.id == itemId } ?: return null
+        val current = item.stock ?: return null
+        val written = ledger.append(
+            StockEntry(
+                itemId = itemId,
+                delta = delta,
+                reason = reason,
+                reference = reference,
+                note = note,
+                unitCost = unitCost,
+            ),
+        )
+        if (!written) return null
+        val updated = current + delta
+        persist(
+            _items.value.map { if (it.id == itemId) it.copy(stock = updated) else it },
+            _folders.value,
+        )
+        return updated
+    }
+
     /** One article's movements, newest first, for its history screen. */
     fun entriesFor(itemId: String): List<StockEntry> = ledger.entriesFor(itemId)
 

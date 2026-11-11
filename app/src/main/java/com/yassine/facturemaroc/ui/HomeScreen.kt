@@ -171,7 +171,10 @@ import com.yassine.facturemaroc.data.PurchaseOutcome
 import com.yassine.facturemaroc.data.SavedItem
 import com.yassine.facturemaroc.data.SavedItemStore
 import com.yassine.facturemaroc.data.StatusTone
+import com.yassine.facturemaroc.data.StockLine
 import com.yassine.facturemaroc.data.StockMovement
+import com.yassine.facturemaroc.data.StockReason
+import com.yassine.facturemaroc.data.StockOverview
 import com.yassine.facturemaroc.data.XmlExportOutcome
 import com.yassine.facturemaroc.data.billedInMonth
 import com.yassine.facturemaroc.data.billedTotalInMonth
@@ -187,6 +190,7 @@ import com.yassine.facturemaroc.data.partySummaries
 import com.yassine.facturemaroc.data.sortParties
 import com.yassine.facturemaroc.data.outstanding
 import com.yassine.facturemaroc.data.sortArticles
+import com.yassine.facturemaroc.data.stockOverview
 import com.yassine.facturemaroc.data.summarizeArticles
 import com.yassine.facturemaroc.data.visibleItemFields
 import com.yassine.facturemaroc.invoice.InvoiceXml
@@ -327,6 +331,8 @@ fun HomeScreen(
     var stocktakeOpen by remember { mutableStateOf(false) }
     /* Every article's movements in one list, opened from the Stock tab. */
     var stockJournalOpen by remember { mutableStateOf(false) }
+    /* The article being received, issued or corrected, and how. */
+    var stockMove by remember { mutableStateOf<Pair<SavedItem, StockReason>?>(null) }
     /* The goods receipts list, and the receipt being written. */
     var purchasesOpen by remember { mutableStateOf(false) }
     var purchaseEditorOpen by remember { mutableStateOf(false) }
@@ -473,9 +479,17 @@ fun HomeScreen(
      * Diagnostic repairs — and a list that shows the cache while the journal says
      * otherwise is a list that lies quietly.
      */
-    val stockOf: (SavedItem) -> Int = remember(items) {
-        val balances = viewModel.savedItems.ledger.balances()
-        return@remember { item: SavedItem -> balances[item.id] ?: (item.stock ?: 0) }
+    val ledgerBalances = remember(items) { viewModel.savedItems.ledger.balances() }
+    val stockOf: (SavedItem) -> Int = remember(ledgerBalances) {
+        return@remember { item: SavedItem -> ledgerBalances[item.id] ?: (item.stock ?: 0) }
+    }
+    /* The Stock tab's whole picture: quantities, value, what to reorder, drift. */
+    val shelves = remember(items, ledgerBalances, unitCosts) {
+        stockOverview(
+            items = items,
+            balances = ledgerBalances,
+            unitCosts = unitCosts.filterValues { it != null }.mapValues { it.value!! },
+        )
     }
     val marginOf: (SavedItem) -> MarginHint? = remember(unitCosts, shop) {
         { item ->
@@ -646,6 +660,17 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    if (tab == HomeTab.STOCK) {
+                        // The two things the shelf list cannot express: a
+                        // delivery of several articles at once, and the journal
+                        // of everything that ever moved.
+                        IconButton(onClick = { purchasesOpen = true }) {
+                            Icon(Icons.Filled.ShoppingCart, contentDescription = "Réceptions")
+                        }
+                        IconButton(onClick = { stockJournalOpen = true }) {
+                            Icon(Icons.Filled.Description, contentDescription = "Mouvements")
+                        }
+                    }
                     if (tab == HomeTab.ARTICLES) {
                         // A barcode is a search key, but typing thirteen digits
                         // to find an article is not a shop gesture.
@@ -819,10 +844,9 @@ fun HomeScreen(
 
             when (tab) {
                 HomeTab.STOCK -> StockTab(
-                    items = items,
-                    purchases = purchases,
-                    onPurchases = { purchasesOpen = true },
-                    onJournal = { stockJournalOpen = true },
+                    overview = shelves,
+                    onOpen = onOpenItem,
+                    onMove = { item, reason -> stockMove = item to reason },
                 )
 
                 HomeTab.INVOICES -> InvoicesTab(
@@ -1109,6 +1133,40 @@ fun HomeScreen(
                             "« ${SavedItemStore.nameOf(path)} » copié dans " +
                                 (SavedItemStore.display(copied.substringBeforeLast("/"))
                                     .ifBlank { "la racine" }) + "."
+                        },
+                    )
+                }
+            },
+        )
+    }
+
+    stockMove?.let { (item, reason) ->
+        StockMoveDialog(
+            item = item,
+            reason = reason,
+            current = stockOf(item),
+            lastCost = viewModel.unitCostOf(item.id) ?: 0.0,
+            defaultNote = when (reason) {
+                StockReason.PURCHASE -> "Réception"
+                StockReason.STOCKTAKE -> "Comptage"
+                else -> "Sortie manuelle"
+            },
+            onDismiss = { stockMove = null },
+            onConfirm = { delta, note, cost ->
+                val updated = viewModel.savedItems.moveStock(
+                    itemId = item.id,
+                    delta = delta,
+                    reason = reason,
+                    note = note,
+                    unitCost = cost,
+                )
+                stockMove = null
+                scope.launch {
+                    snackbar.showSnackbar(
+                        if (updated == null) {
+                            "Le mouvement n'a pas pu être enregistré."
+                        } else {
+                            "« ${item.label} » : $updated en stock."
                         },
                     )
                 }
@@ -3178,88 +3236,110 @@ private fun FolderChoice(label: String, selected: Boolean, onClick: () -> Unit) 
 }
 
 /**
- * What moves, and what moved.
+ * The shelves.
  *
- * Stock answers one verb — entries and exits — so it holds exactly two doors:
- * the goods receipts that add units, and the journal that records every
- * movement with the document that caused it. Counting the shelves is an act on
- * the catalogue, so it lives in Articles next to the articles it counts, and
- * "what is low" is a section of that same list rather than a third door here.
- *
- * The repair tools stay in Paramètres → Diagnostic: rewriting a quantity from
- * the journal is surgery, not daily work.
+ * Every counted article with what is really on it, emptiest first: the shop
+ * opens this tab to answer "what do I have, and what do I need to buy", and the
+ * answer is a list, not a menu of doors. Receiving, issuing and correcting are
+ * actions on a row, each written as one movement in the journal — the same
+ * journal the invoices write to — so the quantity here and on the article page
+ * cannot part ways.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StockTab(
-    items: List<SavedItem>,
-    purchases: List<Purchase>,
-    onPurchases: () -> Unit,
-    onJournal: () -> Unit,
+    overview: StockOverview,
+    onOpen: (SavedItem) -> Unit,
+    onMove: (SavedItem, StockReason) -> Unit,
 ) {
-    val counted = items.count { it.stock != null }
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
+    Column(Modifier.fillMaxSize()) {
         Text(
             "Stock",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.semantics { heading() },
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .semantics { heading() },
         )
         Text(
-            "Ce qui entre et ce qui sort. La quantité affichée dans les articles " +
-                "est la somme de ces mouvements.",
+            buildString {
+                append("${overview.lines.size} article")
+                if (overview.lines.size > 1) append("s")
+                append(" · ${overview.units} unité")
+                if (overview.units > 1) append("s")
+                if (overview.value > 0.0) append(" · ${Money.dirhams(overview.value)} de valeur")
+            },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
         )
-        Spacer(Modifier.height(4.dp))
 
-        StockHubRow(
-            icon = Icons.Filled.ShoppingCart,
-            title = "Réceptions",
-            subtitle = when (purchases.size) {
-                0 -> "Une livraison reçue augmente le stock."
-                1 -> "1 réception enregistrée."
-                else -> "${purchases.size} réceptions enregistrées."
-            },
-            onClick = onPurchases,
-        )
-        StockHubRow(
-            icon = Icons.Filled.Description,
-            title = "Mouvements",
-            subtitle = "Chaque entrée et sortie du stock, avec le document qui l'a causée.",
-            onClick = onJournal,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            if (counted == 0) {
-                "Aucun article n'est compté pour l'instant : ajoutez-en un dans Articles, " +
-                    "puis comptez-le depuis le même onglet."
-            } else {
-                "$counted article${if (counted > 1) "s" else ""} suivi${if (counted > 1) "s" else ""} " +
-                    "sur l'étagère. Pour compter, ouvrez Articles → Inventaire."
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 4.dp),
-        )
-        Spacer(Modifier.height(80.dp))
+        if (overview.drift > 0) {
+            // The cache and the journal disagree. Saying so here is the whole
+            // point of keeping a journal; the repair itself stays in Diagnostic.
+            Text(
+                "${overview.drift} quantité(s) affichée(s) ne correspondent plus au journal — " +
+                    "Paramètres → Diagnostic pour recalculer.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+            )
+        }
+
+        if (overview.lines.isEmpty()) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                EmptyState(
+                    icon = Icons.Filled.Inventory2,
+                    title = "Aucun article compté",
+                    message = "Ajoutez un article dans l'onglet Articles et activez « Suivi en " +
+                        "stock » : il apparaîtra ici avec sa quantité.",
+                )
+            }
+            return@Column
+        }
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 104.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            val reorder = overview.lines.filter { it.reorder }
+            val rest = overview.lines.filterNot { it.reorder }
+
+            if (reorder.isNotEmpty()) {
+                stickyHeader(key = "stock-head-reorder") {
+                    ArticleSectionHeader("À commander", reorder.size, urgent = true)
+                }
+                items(reorder, key = { "stock-${it.item.id}" }) { line ->
+                    StockRow(line, onOpen, onMove)
+                }
+            }
+            if (rest.isNotEmpty()) {
+                stickyHeader(key = "stock-head-rest") {
+                    ArticleSectionHeader(
+                        if (reorder.isEmpty()) "Sur l'étagère" else "Le reste",
+                        rest.size,
+                        urgent = false,
+                    )
+                }
+                items(rest, key = { "stock-${it.item.id}" }) { line ->
+                    StockRow(line, onOpen, onMove)
+                }
+            }
+        }
     }
 }
 
+/** One shelf row: what it is, how many, and the three things you can do to it. */
 @Composable
-private fun StockHubRow(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
+private fun StockRow(
+    line: StockLine,
+    onOpen: (SavedItem) -> Unit,
+    onMove: (SavedItem, StockReason) -> Unit,
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
     Card(
-        onClick = onClick,
+        onClick = { onOpen(line.item) },
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -3267,40 +3347,186 @@ private fun StockHubRow(
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
+            Modifier.padding(start = 14.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                Modifier
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    line.item.label,
+                    style = MaterialTheme.typography.titleSmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+                Text(
+                    listOfNotNull(
+                        line.item.folder.takeIf { it.isNotBlank() }?.let { SavedItemStore.display(it) },
+                        line.value.takeIf { it > 0.0 }?.let { Money.dirhams(it) },
+                    ).joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
-            Icon(
-                Icons.Filled.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    "${line.onShelf}",
+                    style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"),
+                    fontWeight = FontWeight.Bold,
+                    color = when {
+                        line.onShelf < 0 || line.reorder -> MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.onSurface
+                    },
+                )
+                Text(
+                    when {
+                        line.onShelf < 0 -> "à recevoir"
+                        line.onShelf == 0 -> "épuisé"
+                        else -> "en stock"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Box {
+                IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(40.dp)) {
+                    Icon(
+                        Icons.Filled.MoreVert,
+                        contentDescription = "Actions sur « ${line.item.label} »",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text("Reçu…") },
+                        leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                        onClick = {
+                            menuOpen = false
+                            onMove(line.item, StockReason.PURCHASE)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Sorti…") },
+                        leadingIcon = { Icon(Icons.Filled.Remove, contentDescription = null) },
+                        onClick = {
+                            menuOpen = false
+                            onMove(line.item, StockReason.ADJUSTMENT)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Corriger…") },
+                        leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                        onClick = {
+                            menuOpen = false
+                            onMove(line.item, StockReason.STOCKTAKE)
+                        },
+                    )
+                }
+            }
         }
     }
+}
+
+/**
+ * One movement, asked for in three fields.
+ *
+ * Receiving asks for a quantity and a unit cost (a delivery is also a price);
+ * issuing asks for a quantity; correcting asks for the number actually on the
+ * shelf, because that is what the shop counted. All three end up as one
+ * [StockEntry] — the note is what makes the journal readable six months later.
+ */
+@Composable
+private fun StockMoveDialog(
+    item: SavedItem,
+    reason: StockReason,
+    current: Int,
+    lastCost: Double,
+    defaultNote: String,
+    onDismiss: () -> Unit,
+    onConfirm: (delta: Int, note: String, unitCost: Double) -> Unit,
+) {
+    val receiving = reason == StockReason.PURCHASE
+    val correcting = reason == StockReason.STOCKTAKE
+    var quantity by remember {
+        mutableStateOf(if (correcting) current.toString() else "1")
+    }
+    var cost by remember {
+        mutableStateOf((if (lastCost > 0.0) lastCost else item.purchasePrice).trimZeros())
+    }
+    var note by remember { mutableStateOf(defaultNote) }
+
+    val typed = quantity.toIntOrNull() ?: 0
+    val delta = if (correcting) typed - current else typed
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                when {
+                    receiving -> "Reçu"
+                    correcting -> "Corriger"
+                    else -> "Sorti"
+                },
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    "${item.label} — ${if (correcting) "compté actuellement" else "en stock"} : $current",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = quantity,
+                    onValueChange = { input -> quantity = input.filter { it.isDigit() }.take(6) },
+                    label = {
+                        Text(
+                            when {
+                                receiving -> "Quantité reçue"
+                                correcting -> "Quantité comptée"
+                                else -> "Quantité sortie"
+                            },
+                        )
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+                if (receiving) {
+                    OutlinedTextField(
+                        value = cost,
+                        onValueChange = { input ->
+                            cost = input.filter { it.isDigit() || it == '.' || it == ',' }.take(10)
+                        },
+                        label = { Text("Prix d'achat HT") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    )
+                }
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it.take(80) },
+                    label = { Text("Motif (facultatif)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(
+                        delta,
+                        note.trim(),
+                        cost.replace(',', '.').toDoubleOrNull() ?: 0.0,
+                    )
+                },
+                enabled = delta != 0,
+            ) { Text("Enregistrer") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
+    )
 }
 
 /**
