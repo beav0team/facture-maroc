@@ -908,11 +908,16 @@ fun HomeScreen(
                             }
                             if (managingFolders || ItemField.STOCK in itemFields) {
                                 ArticleFilterChips(
-                                    folders = folders,
+                                    // Inside a folder the useful filter is its
+                                    // own sub-folders; listing every shelf of the
+                                    // shop would repeat the map one level down.
+                                    folders = if (articleFolder != null) subFolders else folders,
                                     // "Tous" is the whole catalogue; the way up
                                     // to the folders is the back arrow.
                                     selected = if (showAllArticles) null else articleFolder,
                                     showFolders = managingFolders,
+                                    showUnfiled = articleFolder == null,
+                                    showFolderMenu = articleFolder == null,
                                     onSelect = { path ->
                                         if (path == null) {
                                             showAllArticles = true
@@ -925,7 +930,7 @@ fun HomeScreen(
                                         // left over would answer another one.
                                         query = ""
                                     },
-                                    reorderCount = items.count { it.needsReorder },
+                                    reorderCount = articleScopeItems.count { it.needsReorder },
                                     reorderOnly = reorderOnly,
                                     onToggleReorder = { reorderOnly = !reorderOnly },
                                 )
@@ -957,6 +962,7 @@ fun HomeScreen(
                                     onHistory = { historyItem = it },
                                     marginOf = marginOf,
                                     stockOf = stockOf,
+                                    scope = articleFolder,
                                 )
                             }
                             ArticlesSummary(items = articleScopeItems, fields = itemFields)
@@ -2963,31 +2969,60 @@ private fun FolderDestinationDialog(
     onPick: (String) -> Unit,
 ) {
     val parent = SavedItemStore.parentOf(source)
+    var query by remember { mutableStateOf("") }
+    /*
+     * A shop with 155 folders — one per tyre size and brand — cannot find a
+     * destination by scrolling a flat list. The field filters on the displayed
+     * path, so "19 › 225" lands on one shelf instead of eleven screens down.
+     */
+    val destinations = remember(folders, source, query) {
+        val q = query.trim()
+        folders
+            .filterNot { SavedItemStore.isIn(it, source) }
+            .filter { q.isBlank() || SavedItemStore.display(it).contains(q, ignoreCase = true) }
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
+            Column {
                 Text(
                     intro,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(8.dp))
-                FolderChoice(
-                    label = "Racine (aucun parent)",
-                    selected = parent.isEmpty(),
-                    onClick = { onPick("") },
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    label = { Text("Filtrer les dossiers") },
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
-                folders
-                    .filterNot { SavedItemStore.isIn(it, source) }
-                    .forEach { path ->
+                Spacer(Modifier.height(4.dp))
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    FolderChoice(
+                        label = "Racine (aucun parent)",
+                        selected = parent.isEmpty(),
+                        onClick = { onPick("") },
+                    )
+                    destinations.forEach { path ->
                         FolderChoice(
                             label = SavedItemStore.display(path),
                             selected = path.equals(parent, ignoreCase = true),
                             onClick = { onPick(path) },
                         )
                     }
+                    if (destinations.isEmpty()) {
+                        Text(
+                            "Aucun dossier ne correspond à « ${query.trim()} ».",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 8.dp),
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -3183,6 +3218,10 @@ private fun ArticleFilterChips(
     onSelect: (String?) -> Unit,
     /** False when the shop hid the folder field: only "Tous" and stock filters remain. */
     showFolders: Boolean = true,
+    /** False inside a folder, where "Sans dossier" would be a filter above it. */
+    showUnfiled: Boolean = true,
+    /** The "Tous les dossiers" menu only makes sense from the shelf map. */
+    showFolderMenu: Boolean = true,
     /** How many articles are at or below their threshold. */
     reorderCount: Int = 0,
     reorderOnly: Boolean = false,
@@ -3223,11 +3262,13 @@ private fun ArticleFilterChips(
             )
         }
         if (showFolders) {
-            ChoiceChip(
-                label = "Sans dossier",
-                selected = selected == "",
-                onClick = { onSelect("") },
-            )
+            if (showUnfiled) {
+                ChoiceChip(
+                    label = "Sans dossier",
+                    selected = selected == "",
+                    onClick = { onSelect("") },
+                )
+            }
             topLevel.forEach { path ->
                 ChoiceChip(
                     label = path,
@@ -3242,7 +3283,7 @@ private fun ArticleFilterChips(
                     onClick = {},
                 )
             }
-            if (nested.isNotEmpty()) {
+            if (showFolderMenu && nested.isNotEmpty()) {
                 Box {
                     ChoiceChip(
                         label = "Tous les dossiers",
@@ -3298,6 +3339,8 @@ private fun ArticlesList(
     marginOf: (SavedItem) -> MarginHint? = { null },
     /** What the stock journal says is on the shelf. */
     stockOf: (SavedItem) -> Int = { it.stock ?: 0 },
+    /** The folder the shop is standing in; its name is not repeated on every row. */
+    scope: String? = null,
 ) {
     if (items.isEmpty()) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
@@ -3327,6 +3370,7 @@ private fun ArticlesList(
                 onHistory = { onHistory(item) },
                 marginOf = marginOf,
                 stockOf = stockOf,
+                scope = scope,
             )
         }
     }
@@ -3374,14 +3418,26 @@ private fun ItemCard(
     marginOf: (SavedItem) -> MarginHint? = { null },
     /** What the journal says is on the shelf, rather than the cached field. */
     stockOf: (SavedItem) -> Int = { it.stock ?: 0 },
+    /** The folder being browsed: its path is stripped from the row's subtitle. */
+    scope: String? = null,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val onShelf = stockOf(item)
     val emptyOnShelf = !item.tracksStock || onShelf <= 0
+    /*
+     * Inside a folder the row does not repeat where the shop already is:
+     * "13 › 155 70R13 › Barum" became "155 70R13 › Barum", which is the part
+     * that tells two rows apart.
+     */
+    val folderLabel = remember(item.folder, scope) {
+        val full = SavedItemStore.display(item.folder)
+        val prefix = scope?.takeIf { it.isNotBlank() }?.let { SavedItemStore.display(it) }
+        if (prefix != null && full.startsWith("$prefix › ")) full.removePrefix("$prefix › ") else full
+    }
     val subtitle = listOf(
         // A hidden field is not shown, but it is still on the article: the
         // switch turns the label off, never the data.
-        if (showFolder && ItemField.FOLDER in fields) SavedItemStore.display(item.folder) else "",
+        if (showFolder && ItemField.FOLDER in fields) folderLabel else "",
         if (ItemField.UNIT in fields) item.unit else "",
     )
         .filter { it.isNotBlank() }
@@ -3550,7 +3606,10 @@ private fun ItemCard(
                 }
             }
             Column(
-                modifier = Modifier.widthIn(min = 88.dp),
+                // A ceiling as well as a floor: with only a minimum, a wide
+                // price and its margin squeezed the article's name into
+                // "Barum Bravuris …" while the numbers had room to spare.
+                modifier = Modifier.widthIn(min = 88.dp, max = 132.dp),
                 horizontalAlignment = Alignment.End,
             ) {
                 Text(
@@ -3558,6 +3617,8 @@ private fun ItemCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 // The margin is only shown when the shop kept the purchase
                 // price on the card and a cost is really known: an invented

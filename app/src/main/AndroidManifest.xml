@@ -53,9 +53,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FactureMaroc">
 
+        <!--
+            Portrait only. A shop fills this in at the counter with one hand,
+            and the document previews are laid out for a phone held upright;
+            rotating to landscape re-flowed every list and put the primary
+            action out of thumb reach.
+        -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
