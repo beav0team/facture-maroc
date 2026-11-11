@@ -97,7 +97,11 @@
       })
     }
     document.addEventListener('visibilitychange', rafraichirQuota)
-    return () => document.removeEventListener('visibilitychange', rafraichirQuota)
+    return () => {
+      document.removeEventListener('visibilitychange', rafraichirQuota)
+      // A blob URL lives until it is revoked, even after the screen is gone.
+      if (pdfApercu) URL.revokeObjectURL(pdfApercu.url)
+    }
   })
 
   async function demarrer() {
@@ -450,12 +454,27 @@
     })
   }
 
-  async function telecharger() {
+  /**
+   * A PDF the browser draws inside a dialog, plus two real links to download or
+   * open it. The old button started a download programmatically after several
+   * awaits; a browser that has lost the user gesture by then does nothing at
+   * all, and the label said "Aperçu" while nothing appeared. The links here are
+   * ordinary `<a download>` clicks, which survive every blocker.
+   */
+  let pdfApercu = $state<{ url: string; nom: string; octets: number } | null>(null)
+
+  function fermerPdf() {
+    if (pdfApercu) URL.revokeObjectURL(pdfApercu.url)
+    pdfApercu = null
+  }
+
+  async function ouvrirPdf() {
     travailPdf = true
     erreur = null
     try {
       let blob: Blob | null = null
       if (saisie.id && estEmis) {
+        // A reprint is the archived bytes, never a fresh rendering.
         const archive = await telechargerArchive(saisie.id)
         if (archive.donnees) blob = archive.donnees
       }
@@ -467,10 +486,22 @@
         }
         blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' })
       }
-      telechargerBlob(blob, nomFichier(saisie.facture.numero || 'apercu'))
+      fermerPdf()
+      pdfApercu = {
+        url: URL.createObjectURL(blob),
+        nom: nomFichier(saisie.facture.numero || 'apercu'),
+        octets: blob.size,
+      }
+    } catch (e) {
+      // `creerPdf` can fail on one odd value; the button used to go quiet.
+      erreur = `Le PDF n’a pas pu être préparé : ${e instanceof Error ? e.message : String(e)}`
     } finally {
       travailPdf = false
     }
+  }
+
+  function taillePdf(n: number): string {
+    return n < 1024 ? `${n} o` : `${Math.round(n / 1024)} ko`
   }
 
   async function partager() {
@@ -490,6 +521,8 @@
       const telephone = (saisie.facture.client.telephone ?? '').replace(/\D/g, '')
       const url = `https://wa.me/${telephone}?text=${encodeURIComponent(resume)}`
       window.open(url, '_blank', 'noopener')
+    } catch (e) {
+      erreur = `Le partage a échoué : ${e instanceof Error ? e.message : String(e)}`
     } finally {
       travailPdf = false
     }
@@ -591,8 +624,8 @@
           {/if}
         </div>
         <div class="entete__actions">
-          <button class="btn btn--discret" type="button" onclick={() => void telecharger()} disabled={travailPdf}>
-            {travailPdf ? 'PDF…' : estEmis ? 'Télécharger le PDF' : 'Aperçu PDF'}
+          <button class="btn btn--discret" type="button" onclick={() => void ouvrirPdf()} disabled={travailPdf}>
+            {travailPdf ? 'PDF…' : estEmis ? 'PDF du document' : 'Aperçu PDF'}
           </button>
           {#if estEmis}
             <button class="btn btn--discret" type="button" onclick={() => void partager()} disabled={travailPdf}>
@@ -615,7 +648,7 @@
       {#if quotaBloque && modifiable}
         <p class="alerte" role="alert">
           Le quota de 5 factures gratuites est atteint pour ce mois.
-          <a href="/app/tarifs">Passer au plan Pro</a> pour émettre cette saisie.facture.
+          <a href="/app/tarifs">Passer au plan Pro</a> pour émettre cette facture.
         </p>
       {/if}
       {#if message}<p class="alerte alerte--info" role="status">{message}</p>{/if}
@@ -979,7 +1012,86 @@
   </main>
 </div>
 
+{#if pdfApercu}
+  <div class="voile">
+    <div class="apercu-pdf" role="dialog" aria-modal="true" aria-labelledby="titre-apercu">
+      <header class="apercu-pdf__entete">
+        <div>
+          <h2 id="titre-apercu">{pdfApercu.nom}</h2>
+          <p class="note">
+            {taillePdf(pdfApercu.octets)} ·
+            {estEmis ? 'archive du document émis' : 'brouillon, non archivé'}
+          </p>
+        </div>
+        <button class="lien-discret" type="button" onclick={fermerPdf}>Fermer</button>
+      </header>
+      <iframe class="apercu-pdf__cadre" src={pdfApercu.url} title="Aperçu du PDF"></iframe>
+      <footer class="apercu-pdf__actions">
+        <a class="btn" href={pdfApercu.url} download={pdfApercu.nom}>Télécharger</a>
+        <a class="btn btn--discret" href={pdfApercu.url} target="_blank" rel="noopener">
+          Ouvrir dans un onglet
+        </a>
+        {#if estEmis}
+          <button class="btn btn--discret" type="button" onclick={() => void partager()} disabled={travailPdf}>
+            Partager
+          </button>
+        {/if}
+      </footer>
+    </div>
+  </div>
+{/if}
+
 <style>
+  .voile {
+    position: fixed;
+    inset: 0;
+    background: rgb(11 27 77 / 45%);
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    z-index: 30;
+  }
+
+  .apercu-pdf {
+    width: min(900px, 100%);
+    height: min(90dvh, 900px);
+    background: var(--blanc);
+    border-radius: var(--rayon);
+    box-shadow: var(--ombre);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .apercu-pdf__entete {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--trait);
+  }
+
+  .apercu-pdf__entete h2 {
+    font-size: 1.05rem;
+  }
+
+  .apercu-pdf__cadre {
+    flex: 1;
+    width: 100%;
+    border: 0;
+    background: var(--papier);
+  }
+
+  .apercu-pdf__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--trait);
+    flex-wrap: wrap;
+  }
+
   .page {
     min-height: 100dvh;
     display: flex;
