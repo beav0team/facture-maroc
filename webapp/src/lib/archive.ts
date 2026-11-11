@@ -27,8 +27,14 @@ export function nomFichier(numero: string): string {
   return `${propre === '' ? 'document' : propre}.pdf`
 }
 
-export function cheminArchive(documentId: string, numero: string): string {
-  return `${documentId}/${nomFichier(numero)}`
+/**
+ * The first path segment is the **shop** id, not the document id: the bucket
+ * policy in 0003 grants access with `is_shop_member(split_part(name,'/',1))`.
+ * Keying by document id made that check compare a document UUID to shop ids,
+ * so every archive upload was refused (400) and the table stayed empty.
+ */
+export function cheminArchive(shopId: string, documentId: string): string {
+  return `${shopId}/${documentId}.pdf`
 }
 
 async function logoDeBoutique(boutique: SnapshotBoutique) {
@@ -52,6 +58,7 @@ async function logoDeBoutique(boutique: SnapshotBoutique) {
  * The screen offers to regenerate the archive instead.
  */
 export async function archiverDocument(params: {
+  shopId: string
   documentId: string
   facture: Facture
   boutique: SnapshotBoutique
@@ -73,7 +80,7 @@ export async function archiverDocument(params: {
     logo,
   })
   const sha256 = await sha256Hex(bytes)
-  const chemin = cheminArchive(params.documentId, params.facture.numero)
+  const chemin = cheminArchive(params.shopId, params.documentId)
 
   const envoi = await supabase.storage.from(BUCKET_ARCHIVES).upload(chemin, bytes, {
     contentType: 'application/pdf',
@@ -87,15 +94,17 @@ export async function archiverDocument(params: {
   return { donnees: { chemin, sha256, taille: bytes.byteLength, bytes }, erreur: null }
 }
 
-/** The archived bytes, for a reprint. */
-export async function telechargerArchive(documentId: string, numero: string): Promise<Resultat<Blob>> {
+/** The archived bytes, for a reprint. No archive row means no archived file. */
+export async function telechargerArchive(documentId: string): Promise<Resultat<Blob>> {
   if (!supabase) return { donnees: null, erreur: 'Supabase n’est pas configuré.' }
 
   const archive = await chargerArchive(documentId)
   if (archive.erreur) return { donnees: null, erreur: archive.erreur }
+  if (!archive.donnees) return { donnees: null, erreur: 'Aucune archive pour ce document.' }
 
-  const chemin = archive.donnees?.storage_path ?? cheminArchive(documentId, numero)
-  const { data, error } = await supabase.storage.from(BUCKET_ARCHIVES).download(chemin)
+  const { data, error } = await supabase.storage
+    .from(BUCKET_ARCHIVES)
+    .download(archive.donnees.storage_path)
   if (error || !data) return { donnees: null, erreur: messageErreur(error) }
   return { donnees: data, erreur: null }
 }

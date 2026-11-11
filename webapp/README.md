@@ -76,7 +76,7 @@ Le troisième ajoute les documents, leurs lignes, les paiements, les archives,
 les abonnements et la numérotation. Aucun client n'écrit directement dans
 `documents` : tout passe par `enregistrer_brouillon()`, `emettre_document()`
 (numéro, snapshot boutique, quota), `creer_avoir()` et `apercu_numero()`. Le
-bucket privé `archives` reçoit le PDF émis sous `<document_id>/…`.
+bucket privé `archives` reçoit le PDF émis sous `<shop_id>/<document_id>.pdf` (le premier segment est la boutique, ce que vérifie la politique Storage).
 
 Le quatrième ajoute `importer_compteurs()`, la seule écriture de numérotation
 ouverte à une boutique, pour reprendre les compteurs d'une sauvegarde Android

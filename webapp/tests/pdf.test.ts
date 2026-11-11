@@ -126,9 +126,10 @@ describe('assainir', () => {
 })
 
 describe('chemins d’archive', () => {
-  it('range le PDF sous l’identifiant du document', () => {
+  it('range le PDF sous la boutique puis le document', () => {
     expect(nomFichier('F-20261111-0001')).toBe('F-20261111-0001.pdf')
     expect(nomFichier('')).toBe('document.pdf')
-    expect(cheminArchive('abc', 'F/2026')).toBe('abc/F-2026.pdf')
+    // Premier segment = boutique : c'est ce que vérifie la politique Storage.
+    expect(cheminArchive('boutique', 'document')).toBe('boutique/document.pdf')
   })
 })

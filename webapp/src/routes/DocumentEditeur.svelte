@@ -379,6 +379,7 @@
     if (docRes.donnees) {
       documentRow = docRes.donnees
       const archive = await archiverDocument({
+        shopId: docRes.donnees.shop_id,
         documentId,
         facture: saisie.facture,
         boutique: docRes.donnees.shop_snapshot ?? snapshotBoutique(boutique ?? {}),
@@ -440,7 +441,7 @@
     try {
       let blob: Blob | null = null
       if (saisie.id && estEmis) {
-        const archive = await telechargerArchive(saisie.id, saisie.facture.numero)
+        const archive = await telechargerArchive(saisie.id)
         if (archive.donnees) blob = archive.donnees
       }
       if (!blob) {
