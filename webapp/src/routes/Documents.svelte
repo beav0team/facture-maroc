@@ -40,6 +40,16 @@
 
   onMount(() => {
     void charger()
+    /*
+     * A Pro activation is written from `/app/admin`, in another tab. The quota
+     * is read once at mount, so a shop that already had this screen open kept
+     * seeing « Plan gratuit » after paying. Refresh when the tab comes back.
+     */
+    const auRetour = () => {
+      if (document.visibilityState === 'visible') void charger()
+    }
+    document.addEventListener('visibilitychange', auRetour)
+    return () => document.removeEventListener('visibilitychange', auRetour)
   })
 
   async function charger() {

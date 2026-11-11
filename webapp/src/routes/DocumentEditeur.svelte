@@ -83,6 +83,21 @@
 
   onMount(() => {
     void demarrer()
+    /*
+     * Only the quota is refreshed here: `demarrer()` resets the form, and
+     * re-running it would erase a half-typed invoice. The plan decides the
+     * watermark and the 5-invoice limit, so it must not wait for a reload.
+     */
+    const rafraichirQuota = () => {
+      if (document.visibilityState !== 'visible') return
+      const shop = auth.boutique
+      if (!shop) return
+      void api.chargerQuota(shop.id).then((res) => {
+        if (res.donnees) quota = res.donnees
+      })
+    }
+    document.addEventListener('visibilitychange', rafraichirQuota)
+    return () => document.removeEventListener('visibilitychange', rafraichirQuota)
   })
 
   async function demarrer() {
