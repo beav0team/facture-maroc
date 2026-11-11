@@ -27,6 +27,7 @@
   } from '../lib/documents'
   import * as api from '../lib/documentsApi'
   import { archiverDocument, nomFichier, telechargerArchive, telechargerBlob } from '../lib/archive'
+  import { reprendreBrouillon } from '../lib/brouillonPublic'
   import { calculer, totalLigne, type Ligne } from '../lib/invoice'
   import { analyserDate } from '../lib/dates'
   import { analyserMontant, arrondi, dirhams, montant, quantiteValeur } from '../lib/money'
@@ -105,6 +106,16 @@
 
     if (!id) {
       saisie = brouillonVide('facture', shop.tva_defaut ?? 20, shop.design_defaut ?? 'classique')
+      const reprise = reprendreBrouillon()
+      if (reprise) {
+        saisie.facture.client = { nom: reprise.client }
+        saisie.facture.tauxTva = reprise.taux
+        saisie.facture.lignes = reprise.lignes.map((ligne) => ({ ...ligne, tauxTva: reprise.taux }))
+        message =
+          reprise.boutique === '' || reprise.boutique === shop.nom
+            ? 'Le brouillon du générateur gratuit a été repris.'
+            : `Le brouillon du générateur gratuit a été repris. Vérifiez le nom de la boutique (« ${reprise.boutique} »).`
+      }
       await rafraichirNumero()
       chargement = false
       return
@@ -493,6 +504,31 @@
     if (saisie.id) paiements = (await api.chargerPaiementsDocument(saisie.id)).donnees ?? []
     message = 'Paiement annulé.'
   }
+
+  async function telechargerRecu(paiement: PaiementRow) {
+    if (!boutique) return
+    const shop = documentRow?.shop_snapshot ?? snapshotBoutique(boutique)
+    travailPdf = true
+    try {
+      const { creerRecuPdf } = await import('../lib/pdf')
+      const bytes = await creerRecuPdf({
+        facture,
+        boutique: shop,
+        paiement: {
+          montant: Number(paiement.montant),
+          date: paiement.date_paiement,
+          moyen: paiement.moyen,
+          reference: paiement.reference,
+        },
+      })
+      telechargerBlob(
+        new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }),
+        nomFichier(`recu-${facture.numero || 'document'}-${paiement.date_paiement.replace(/\//g, '-')}`),
+      )
+    } finally {
+      travailPdf = false
+    }
+  }
 </script>
 
 <div class="page">
@@ -861,6 +897,9 @@
                       </div>
                       <button class="lien-discret lien-discret--danger" type="button" onclick={() => void annulerPaiement(paiement.id)}>
                         Annuler
+                      </button>
+                      <button class="lien-discret" type="button" onclick={() => void telechargerRecu(paiement)}>
+                        Reçu
                       </button>
                     </li>
                   {/each}

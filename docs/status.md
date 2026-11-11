@@ -38,7 +38,7 @@ est servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   admin `/app/admin` (activation manuelle du Pro), import d'une sauvegarde
   Android `/app/import` (clients, articles, numérotation ; documents en
   brouillons).
-- 127 tests Vitest, 0 erreur `svelte-check`. Preuves RLS locales :
+- 132 tests Vitest, 0 erreur `svelte-check`. Preuves RLS locales :
   `rls_isolation.sql`, `rls_catalogue.sql`, `rls_documents.sql`.
 
 **Reste à faire pour vendre**

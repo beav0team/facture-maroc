@@ -555,3 +555,127 @@ export async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const tampon = await crypto.subtle.digest('SHA-256', bytes as unknown as ArrayBuffer)
   return [...new Uint8Array(tampon)].map((octet) => octet.toString(16).padStart(2, '0')).join('')
 }
+
+export type RecuOptions = {
+  facture: Facture
+  boutique: SnapshotBoutique
+  paiement: { montant: number; date: string; moyen: string; reference?: string }
+}
+
+/**
+ * The receipt for one payment. Short on purpose: it proves a sum was received
+ * against a numbered document, it is not a second invoice.
+ */
+export async function creerRecuPdf(options: RecuOptions): Promise<Uint8Array> {
+  const { facture, boutique, paiement } = options
+  const pdf = await PDFDocument.create()
+  const normal = await pdf.embedFont(StandardFonts.Helvetica)
+  const gras = await pdf.embedFont(StandardFonts.HelveticaBold)
+
+  const date = analyserDate(paiement.date) ?? analyserDate(facture.date) ?? new Date(2000, 0, 1)
+  pdf.setTitle(`Reçu ${facture.numero}`.trim())
+  pdf.setAuthor(texteOuVide(boutique.nom))
+  pdf.setCreator('FactureApp')
+  pdf.setProducer('FactureApp')
+  pdf.setCreationDate(date)
+  pdf.setModificationDate(date)
+
+  const page = pdf.addPage([PAGE_L, PAGE_H])
+  let y = PAGE_H - MARGE
+
+  page.drawText(assainir(boutique.nom), { x: MARGE, y, size: 16, font: gras, color: ENCRE })
+  y -= 16
+  const coordonnees = [texteOuVide(boutique.adresse), [boutique.telephone, boutique.email].filter(Boolean).join(' · ')]
+  for (const ligne of coordonnees) {
+    if (!ligne) continue
+    page.drawText(assainir(ligne), { x: MARGE, y, size: 8.5, font: normal, color: ARDOISE })
+    y -= 11
+  }
+  const legal = [
+    boutique.ice ? `ICE ${boutique.ice}` : '',
+    boutique.if_fiscal ? `IF ${boutique.if_fiscal}` : '',
+    boutique.rc ? `RC ${boutique.rc}` : '',
+  ]
+    .filter(Boolean)
+    .join('  ·  ')
+  if (legal) {
+    page.drawText(assainir(legal), { x: MARGE, y, size: 8, font: normal, color: ARDOISE })
+  }
+
+  page.drawText('REÇU', {
+    x: PAGE_L - MARGE - gras.widthOfTextAtSize('REÇU', 22),
+    y: PAGE_H - 56,
+    size: 22,
+    font: gras,
+    color: BLEU,
+  })
+  const dateTexte = assainir(`Date : ${paiement.date}`)
+  page.drawText(dateTexte, {
+    x: PAGE_L - MARGE - normal.widthOfTextAtSize(dateTexte, 9),
+    y: PAGE_H - 76,
+    size: 9,
+    font: normal,
+    color: ARDOISE,
+  })
+
+  page.drawLine({
+    start: { x: MARGE, y: PAGE_H - 116 },
+    end: { x: PAGE_L - MARGE, y: PAGE_H - 116 },
+    thickness: 1,
+    color: TRAIT,
+  })
+
+  y = PAGE_H - 150
+  page.drawText('Reçu de', { x: MARGE, y, size: 8, font: gras, color: ARDOISE })
+  y -= 16
+  page.drawText(assainir(facture.client.nom || 'Client'), { x: MARGE, y, size: 13, font: gras, color: ENCRE })
+  y -= 30
+
+  page.drawText('la somme de', { x: MARGE, y, size: 8, font: gras, color: ARDOISE })
+  y -= 22
+  page.drawText(assainir(`${dh(paiement.montant)} DH`), { x: MARGE, y, size: 24, font: gras, color: ENCRE })
+  y -= 30
+
+  const moyens: Record<string, string> = {
+    cash: 'Espèces',
+    check: 'Chèque',
+    transfer: 'Virement bancaire',
+    card: 'Carte bancaire',
+  }
+  const phrases = [
+    `au titre de la facture ${facture.numero || '—'} du ${facture.date}.`,
+    `Moyen de paiement : ${moyens[paiement.moyen] ?? paiement.moyen}.`,
+  ]
+  if (paiement.reference?.trim()) phrases.push(`Référence : ${paiement.reference.trim()}.`)
+  for (const phrase of phrases) {
+    for (const ligne of couper(phrase, normal, 11, LARGEUR_UTILE - 20)) {
+      page.drawText(ligne, { x: MARGE, y, size: 11, font: normal, color: ENCRE })
+      y -= 16
+    }
+  }
+
+  y -= 50
+  page.drawLine({
+    start: { x: PAGE_L - MARGE - 170, y: y + 20 },
+    end: { x: PAGE_L - MARGE, y: y + 20 },
+    thickness: 0.8,
+    color: TRAIT,
+  })
+  page.drawText('Signature et cachet', {
+    x: PAGE_L - MARGE - 170,
+    y,
+    size: 8,
+    font: normal,
+    color: ARDOISE,
+  })
+
+  page.drawText(`FactureApp · ${assainir(boutique.nom)}`, {
+    x: MARGE,
+    y: MARGE - 12,
+    size: 7.5,
+    font: normal,
+    color: ARDOISE,
+  })
+
+  return pdf.save({ useObjectStreams: false })
+}

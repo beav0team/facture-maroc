@@ -3,6 +3,7 @@
   import { calculer, totalLigne, type Facture, type Ligne } from '../lib/invoice'
   import { analyserMontant, dirhams } from '../lib/money'
   import { nomFichier, telechargerBlob } from '../lib/archive'
+  import { memoriserBrouillon } from '../lib/brouillonPublic'
 
   let nomBoutique = $state('')
   let nomClient = $state('')
@@ -22,6 +23,22 @@
 
   function ajouter() {
     lignes = [...lignes, { description: '', quantite: 1, prixUnitaire: 0 }]
+  }
+
+  /** Keeps the draft for the sign-up: the editor picks it up once. */
+  function preparerCompte() {
+    memoriserBrouillon({
+      boutique: nomBoutique,
+      client: nomClient,
+      taux,
+      lignes: lignes
+        .filter((ligne) => ligne.description.trim() !== '')
+        .map((ligne) => ({
+          description: ligne.description,
+          quantite: ligne.quantite,
+          prixUnitaire: ligne.prixUnitaire,
+        })),
+    })
   }
 
   function supprimer(index: number) {
@@ -174,7 +191,7 @@
           <button class="btn" type="button" onclick={() => void telecharger()} disabled={travail}>
             {travail ? 'Génération…' : 'Télécharger le PDF'}
           </button>
-          <a class="lien" href="/app/">Créer un compte pour numéroter et archiver</a>
+          <a class="lien" href="/app/" onclick={preparerCompte}>Créer un compte pour numéroter et archiver</a>
         </section>
       </aside>
     </div>
@@ -188,7 +205,7 @@
           n’importe quel appareil.
         </p>
       </div>
-      <a class="btn" href="/app/">Ouvrir mon compte</a>
+      <a class="btn" href="/app/" onclick={preparerCompte}>Ouvrir mon compte</a>
     </section>
   </main>
 </div>

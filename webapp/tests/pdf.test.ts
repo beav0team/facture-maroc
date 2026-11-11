@@ -6,7 +6,7 @@
 // not throw, and a watermark only on the free plan.
 
 import { describe, expect, it } from 'vitest'
-import { assainir, creerPdf, sha256Hex } from '../src/lib/pdf'
+import { assainir, creerPdf, creerRecuPdf, sha256Hex } from '../src/lib/pdf'
 import { cheminArchive, nomFichier } from '../src/lib/archive'
 import type { Facture } from '../src/lib/invoice'
 import type { SnapshotBoutique } from '../src/lib/documents'
@@ -59,6 +59,16 @@ describe('PDF', () => {
     const bytes = await creerPdf({ facture, boutique })
     expect(octets(bytes).startsWith('%PDF-')).toBe(true)
     expect(octets(bytes)).toContain('%%EOF')
+  })
+
+  it('un reçu tient sur une page et reste valide', async () => {
+    const bytes = await creerRecuPdf({
+      facture,
+      boutique,
+      paiement: { montant: 99.5, date: '12/11/2026', moyen: 'cash', reference: 'Caisse' },
+    })
+    expect(octets(bytes).startsWith('%PDF-')).toBe(true)
+    expect(octets(bytes)).toContain('/Count 1')
   })
 
   it('produit exactement les mêmes octets pour le même document', async () => {
