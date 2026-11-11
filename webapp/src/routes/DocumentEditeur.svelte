@@ -461,7 +461,7 @@
    * all, and the label said "Aperçu" while nothing appeared. The links here are
    * ordinary `<a download>` clicks, which survive every blocker.
    */
-  let pdfApercu = $state<{ url: string; nom: string; octets: number } | null>(null)
+  let pdfApercu = $state<{ url: string; nom: string; octets: number; archive: boolean } | null>(null)
 
   function fermerPdf() {
     if (pdfApercu) URL.revokeObjectURL(pdfApercu.url)
@@ -473,10 +473,14 @@
     erreur = null
     try {
       let blob: Blob | null = null
+      let depuisArchive = false
       if (saisie.id && estEmis) {
         // A reprint is the archived bytes, never a fresh rendering.
         const archive = await telechargerArchive(saisie.id)
-        if (archive.donnees) blob = archive.donnees
+        if (archive.donnees) {
+          blob = archive.donnees
+          depuisArchive = true
+        }
       }
       if (!blob) {
         const bytes = await genererPdfBytes()
@@ -491,6 +495,7 @@
         url: URL.createObjectURL(blob),
         nom: nomFichier(saisie.facture.numero || 'apercu'),
         octets: blob.size,
+        archive: depuisArchive,
       }
     } catch (e) {
       // `creerPdf` can fail on one odd value; the button used to go quiet.
@@ -1020,7 +1025,13 @@
           <h2 id="titre-apercu">{pdfApercu.nom}</h2>
           <p class="note">
             {taillePdf(pdfApercu.octets)} ·
-            {estEmis ? 'archive du document émis' : 'brouillon, non archivé'}
+            {#if !estEmis}
+              brouillon, non archivé
+            {:else if pdfApercu.archive}
+              archive du document émis
+            {:else}
+              PDF reconstruit : ce document n’a pas d’archive
+            {/if}
           </p>
         </div>
         <button class="lien-discret" type="button" onclick={fermerPdf}>Fermer</button>
