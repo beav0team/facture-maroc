@@ -1,0 +1,5 @@
+Listes repensées : clients rangés par urgence (en retard, doit de l'argent, à jour), factures filtrées par type (devis, bon de commande, avoir…), catalogue par rayons avec « à commander » en tête.
+
+Le stock devient une liste : quantité réelle, valeur, et Reçu / Sorti / Corriger sur chaque ligne. Un réglage permet de ne plus déduire le stock à l'émission d'une facture.
+
+Renommer un client ne détache plus ses factures déjà émises.
