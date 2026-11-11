@@ -60,7 +60,15 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   (scopé à `auth.uid()`), plus `shops` — un administrateur plateforme voyait la
   plus ancienne boutique du site (« Atlas ») au lieu de la sienne, puisque
   « admin lit boutiques » lui ouvre toutes les boutiques.
-- 147 tests Vitest, 0 erreur `svelte-check` ; preuves RLS locales.
+- **Console d'administration** (`0005_admin.sql`) : boutiques avec leur
+  propriétaire et leurs compteurs, comptes avec e-mail et dernière connexion,
+  chiffres de la plateforme, abonnement Pro avec date libre et note,
+  nomination d'un administrateur par e-mail, retrait (le dernier ne peut pas
+  partir). Tout passe par des fonctions `security definer` réservées à
+  `est_admin_plateforme()` : le navigateur ne voit jamais `auth.users` ni le
+  service_role.
+- 168 tests Vitest, 0 erreur `svelte-check` ; preuves RLS locales (quatre
+  suites, dont `rls_admin.sql`).
 
 **Reste à faire pour vendre**
 
