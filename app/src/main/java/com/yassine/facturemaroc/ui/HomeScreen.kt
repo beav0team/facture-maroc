@@ -646,14 +646,6 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    if (tab == HomeTab.ARTICLES && ItemField.STOCK in itemFields) {
-                        // Counting the shelves is an act on the catalogue: it
-                        // reads articles and writes their quantity, so it sits
-                        // beside them rather than in a tab of its own.
-                        IconButton(onClick = { stocktakeOpen = true }) {
-                            Icon(Icons.Filled.Checklist, contentDescription = "Inventaire")
-                        }
-                    }
                     if (tab == HomeTab.ARTICLES) {
                         // A barcode is a search key, but typing thirteen digits
                         // to find an article is not a shop gesture.
@@ -1035,7 +1027,36 @@ fun HomeScreen(
                                     listState = catalogueListState,
                                 )
                             }
-                            ArticlesSummary(items = articleScopeItems, fields = itemFields)
+                            /*
+                             * Counting lives with the list, not in the app bar:
+                             * it is something you do *to* these articles, and
+                             * the strip already says how many there are. The
+                             * header keeps two icons — scan and settings.
+                             */
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                // Left of the strip, not right: the create
+                                // button floats over the right-hand corner.
+                                if (ItemField.STOCK in itemFields) {
+                                    TextButton(
+                                        onClick = { stocktakeOpen = true },
+                                        contentPadding = PaddingValues(horizontal = 10.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Checklist,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Inventaire", style = MaterialTheme.typography.labelMedium)
+                                    }
+                                }
+                                Box(Modifier.weight(1f)) {
+                                    ArticlesSummary(items = articleScopeItems, fields = itemFields)
+                                }
+                            }
                         }
                     }
                 }
