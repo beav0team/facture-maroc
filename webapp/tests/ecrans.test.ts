@@ -305,5 +305,10 @@ describe('éditeur de document', () => {
     // 2 × 500 HT, TVA 20 % : le total doit suivre la saisie, pas rester à zéro.
     expect(cible.textContent).toContain('1\u202F000,00 DH')
     expect(cible.textContent).toContain('1\u202F200,00 DH')
+
+    // La désignation saisie survit au remplacement du tableau de lignes par les
+    // handlers numériques : elle est dans l'état, pas seulement dans le DOM.
+    const designation = cible.querySelector<HTMLInputElement>('input[aria-label="Désignation"]')
+    expect(designation?.value).toBe('Prestation')
   })
 })

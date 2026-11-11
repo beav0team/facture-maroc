@@ -61,18 +61,17 @@
   let paiementReference = $state('')
   let encaissement = $state(false)
 
-  const facture = $derived(saisie.facture)
-  const totaux = $derived(calculer(facture))
+  const totaux = $derived(calculer(saisie.facture))
   const estEmis = $derived(saisie.statut === 'emis')
   const modifiable = $derived(!estEmis)
   const boutique = $derived(auth.boutique)
   const prixTtc = $derived(Boolean(boutique?.prix_ttc))
-  const tauxDocument = $derived(Math.max(facture.tauxTva ?? 20, 0))
-  const quotaBloque = $derived(quotaAtteint(quota) && facture.type === 'facture')
-  const titre = $derived(estEmis ? facture.numero || 'Document' : saisie.id ? 'Modifier le brouillon' : 'Nouveau document')
+  const tauxDocument = $derived(Math.max(saisie.facture.tauxTva ?? 20, 0))
+  const quotaBloque = $derived(quotaAtteint(quota) && saisie.facture.type === 'facture')
+  const titre = $derived(estEmis ? saisie.facture.numero || 'Document' : saisie.id ? 'Modifier le brouillon' : 'Nouveau document')
 
   function tauxDeLigne(ligne: Ligne): number {
-    if (ligne.exoneree || facture.tvaNonApplicable || facture.client.exonereTva) return 0
+    if (ligne.exoneree || saisie.facture.tvaNonApplicable || saisie.facture.client.exonereTva) return 0
     return Math.max(ligne.tauxTva ?? tauxDocument, 0)
   }
 
@@ -142,17 +141,17 @@
   async function rafraichirNumero() {
     const shop = auth.boutique
     if (!shop || estEmis) return
-    const res = await api.apercuNumero(shop.id, facture.type ?? 'facture')
+    const res = await api.apercuNumero(shop.id, saisie.facture.type ?? 'facture')
     if (res.donnees) numeroApercu = res.donnees
   }
 
   function changerType(type: TypeDocument) {
     if (!modifiable) return
     saisie.facture = {
-      ...facture,
+      ...saisie.facture,
       type,
-      dateValidite: type === 'devis' ? facture.dateValidite : null,
-      echeance: type === 'avoir' ? null : facture.echeance,
+      dateValidite: type === 'devis' ? saisie.facture.dateValidite : null,
+      echeance: type === 'avoir' ? null : saisie.facture.echeance,
     }
     void rafraichirNumero()
   }
@@ -160,7 +159,7 @@
   function choisirClient(valeur: string) {
     clientSelection = valeur
     if (valeur === '') {
-      saisie.facture.client = { nom: facture.client.nom }
+      saisie.facture.client = { nom: saisie.facture.client.nom }
       reajusterPrix()
       return
     }
@@ -186,12 +185,12 @@
   function reajusterPrix() {
     const shop = auth.boutique
     if (!shop?.prix_ttc) return
-    const taux = shop.tva_non_applicable || facture.client.exonereTva ? 0 : shop.tva_defaut
-    saisie.facture.lignes = reevaluerLignesTtc(facture.lignes, taux)
+    const taux = shop.tva_non_applicable || saisie.facture.client.exonereTva ? 0 : shop.tva_defaut
+    saisie.facture.lignes = reevaluerLignesTtc(saisie.facture.lignes, taux)
   }
 
   function modifierLigne(index: number, modif: Partial<Ligne>) {
-    const lignes = [...facture.lignes]
+    const lignes = [...saisie.facture.lignes]
     const courante = lignes[index]
     if (!courante) return
     lignes[index] = { ...courante, ...modif }
@@ -200,19 +199,19 @@
 
   function ajouterLigne() {
     saisie.facture.lignes = [
-      ...facture.lignes,
+      ...saisie.facture.lignes,
       { description: '', quantite: 1, prixUnitaire: 0, tauxTva: tauxDocument || undefined },
     ]
   }
 
   function supprimerLigne(index: number) {
-    saisie.facture.lignes = facture.lignes.filter((_, position) => position !== index)
+    saisie.facture.lignes = saisie.facture.lignes.filter((_, position) => position !== index)
   }
 
   function ajouterArticle(index: number, articleId: string) {
     const article = articles.find((a) => a.id === articleId)
     if (!article) return
-    const ligne = ligneDepuisArticle(article, prixTtc, tauxDeLigne(facture.lignes[index] ?? { description: '', quantite: 1, prixUnitaire: 0 }))
+    const ligne = ligneDepuisArticle(article, prixTtc, tauxDeLigne(saisie.facture.lignes[index] ?? { description: '', quantite: 1, prixUnitaire: 0 }))
     modifierLigne(index, ligne)
   }
 
@@ -232,7 +231,7 @@
     if (enCoursDeSaisie(texte)) return
     const valeur = analyserMontant(texte)
     if (valeur === null || valeur < 0) return
-    const ligne = facture.lignes[index]
+    const ligne = saisie.facture.lignes[index]
     if (!ligne) return
     if (prixTtc) {
       modifierLigne(index, { prixTtc: valeur, prixUnitaire: horsTva(valeur, tauxDeLigne(ligne)) })
@@ -249,7 +248,7 @@
 
   function majTauxLigne(index: number, texte: string) {
     if (enCoursDeSaisie(texte)) return
-    const ligne = facture.lignes[index]
+    const ligne = saisie.facture.lignes[index]
     if (!ligne) return
     const valeur = texte === '' ? null : analyserMontant(texte)
     if (valeur === null && texte !== '') return
@@ -258,7 +257,7 @@
   }
 
   function exonerver(index: number, exoneree: boolean) {
-    const ligne = facture.lignes[index]
+    const ligne = saisie.facture.lignes[index]
     if (!ligne) return
     modifierLigne(index, avecExoneration(ligne, exoneree, tauxDocument))
   }
@@ -316,15 +315,15 @@
   async function enregistrer(naviguer = true): Promise<string | null> {
     const shop = auth.boutique
     if (!shop) return null
-    if (facture.client.nom.trim() === '') {
+    if (saisie.facture.client.nom.trim() === '') {
       erreur = 'Le nom du client est obligatoire.'
       return null
     }
-    if (facture.lignes.length === 0) {
+    if (saisie.facture.lignes.length === 0) {
       erreur = 'Ajoutez au moins une ligne.'
       return null
     }
-    if (facture.lignes.some((ligne) => ligne.description.trim() === '')) {
+    if (saisie.facture.lignes.some((ligne) => ligne.description.trim() === '')) {
       erreur = 'Chaque ligne doit avoir une désignation.'
       return null
     }
@@ -334,8 +333,8 @@
     enregistrement = true
     const res = await api.enregistrerBrouillon(
       saisie.id,
-      enteteDeFacture(shop.id, facture, saisie.design, totaux),
-      lignesDeFacture(facture.lignes),
+      enteteDeFacture(shop.id, saisie.facture, saisie.design, totaux),
+      lignesDeFacture(saisie.facture.lignes),
     )
     enregistrement = false
 
@@ -370,7 +369,7 @@
     }
 
     saisie.statut = 'emis'
-    saisie.facture = { ...facture, numero: res.donnees.numero, date: res.donnees.date_emission }
+    saisie.facture = { ...saisie.facture, numero: res.donnees.numero, date: res.donnees.date_emission }
     message = `Document émis : ${res.donnees.numero}`
 
     // The archive is the copy that will be reprinted. It is written now, from
@@ -427,7 +426,7 @@
     if (!shop) return null
     const { creerPdf } = await import('../lib/pdf')
     return creerPdf({
-      facture,
+      facture: saisie.facture,
       boutique: shop,
       design: saisie.design,
       totaux,
@@ -441,7 +440,7 @@
     try {
       let blob: Blob | null = null
       if (saisie.id && estEmis) {
-        const archive = await telechargerArchive(saisie.id, facture.numero)
+        const archive = await telechargerArchive(saisie.id, saisie.facture.numero)
         if (archive.donnees) blob = archive.donnees
       }
       if (!blob) {
@@ -452,7 +451,7 @@
         }
         blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' })
       }
-      telechargerBlob(blob, nomFichier(facture.numero || 'apercu'))
+      telechargerBlob(blob, nomFichier(saisie.facture.numero || 'apercu'))
     } finally {
       travailPdf = false
     }
@@ -464,15 +463,15 @@
     try {
       const bytes = await genererPdfBytes()
       if (!bytes) return
-      const nom = nomFichier(facture.numero || 'document')
-      const libelle = TYPES_DOCUMENT[facture.type ?? 'facture'].libelle
-      const resume = `${libelle} ${facture.numero || ''} du ${facture.date} — ${dirhams(totaux.netAPayer)}. Bonjour ${facture.client.nom || ''}, votre document est joint. Merci.`
+      const nom = nomFichier(saisie.facture.numero || 'document')
+      const libelle = TYPES_DOCUMENT[saisie.facture.type ?? 'facture'].libelle
+      const resume = `${libelle} ${saisie.facture.numero || ''} du ${saisie.facture.date} — ${dirhams(totaux.netAPayer)}. Bonjour ${saisie.facture.client.nom || ''}, votre document est joint. Merci.`
       const fichier = new File([new Uint8Array(bytes)], nom, { type: 'application/pdf' })
       if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [fichier] })) {
         await navigator.share({ files: [fichier], title: nom, text: resume })
         return
       }
-      const telephone = (facture.client.telephone ?? '').replace(/\D/g, '')
+      const telephone = (saisie.facture.client.telephone ?? '').replace(/\D/g, '')
       const url = `https://wa.me/${telephone}?text=${encodeURIComponent(resume)}`
       window.open(url, '_blank', 'noopener')
     } finally {
@@ -481,7 +480,7 @@
   }
 
   const solde = $derived(situationDeReglement({ net_a_payer: totaux.netAPayer }, paiements))
-  const payable = $derived(Boolean(TYPES_DOCUMENT[facture.type ?? 'facture'].payable))
+  const payable = $derived(Boolean(TYPES_DOCUMENT[saisie.facture.type ?? 'facture'].payable))
 
   function aujourdHui(): string {
     const date = new Date()
@@ -533,7 +532,7 @@
     try {
       const { creerRecuPdf } = await import('../lib/pdf')
       const bytes = await creerRecuPdf({
-        facture,
+        facture: saisie.facture,
         boutique: shop,
         paiement: {
           montant: Number(paiement.montant),
@@ -544,7 +543,7 @@
       })
       telechargerBlob(
         new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }),
-        nomFichier(`recu-${facture.numero || 'document'}-${paiement.date_paiement.replace(/\//g, '-')}`),
+        nomFichier(`recu-${saisie.facture.numero || 'document'}-${paiement.date_paiement.replace(/\//g, '-')}`),
       )
     } finally {
       travailPdf = false
@@ -566,7 +565,7 @@
       <section class="entete">
         <div>
           <p class="surtitre">
-            {TYPES_DOCUMENT[facture.type ?? 'facture'].libelle}
+            {TYPES_DOCUMENT[saisie.facture.type ?? 'facture'].libelle}
             {#if estEmis}<span class="etiquette etiquette--emis">Émis</span>{/if}
             {#if !estEmis && numeroApercu}<span class="etiquette">{numeroApercu}</span>{/if}
           </p>
@@ -600,7 +599,7 @@
       {#if quotaBloque && modifiable}
         <p class="alerte" role="alert">
           Le quota de 5 factures gratuites est atteint pour ce mois.
-          <a href="/app/tarifs">Passer au plan Pro</a> pour émettre cette facture.
+          <a href="/app/tarifs">Passer au plan Pro</a> pour émettre cette saisie.facture.
         </p>
       {/if}
       {#if message}<p class="alerte alerte--info" role="status">{message}</p>{/if}
@@ -613,7 +612,7 @@
             <div class="grille-champs">
               <div class="champ">
                 <label for="d-type">Type de document</label>
-                <select id="d-type" value={facture.type ?? 'facture'} disabled={!modifiable} onchange={(e) => changerType((e.currentTarget.value as TypeDocument))}>
+                <select id="d-type" value={saisie.facture.type ?? 'facture'} disabled={!modifiable} onchange={(e) => changerType((e.currentTarget.value as TypeDocument))}>
                   {#each ORDRE_TYPES as type}
                     <option value={type}>{TYPES_DOCUMENT[type].libelle}</option>
                   {/each}
@@ -671,7 +670,7 @@
               {/if}
             </div>
 
-            {#if facture.lignes.length === 0}
+            {#if saisie.facture.lignes.length === 0}
               <p class="vide-texte">Aucune ligne. Ajoutez un article ou une prestation.</p>
             {:else}
               <div class="lignes" class:lignes--lecture={!modifiable}>
@@ -684,7 +683,7 @@
                   <span>Total HT</span>
                   <span></span>
                 </div>
-                {#each facture.lignes as ligne, index (index)}
+                {#each saisie.facture.lignes as ligne, index (index)}
                   <div class="ligne">
                     <div class="ligne__designation">
                       {#if modifiable}
@@ -763,12 +762,12 @@
             <div class="grille-champs">
               <div class="champ">
                 <label for="d-echeance">Échéance</label>
-                <input id="d-echeance" bind:value={saisie.facture.echeance} disabled={!modifiable || facture.type === 'avoir'} placeholder="JJ/MM/AAAA" />
+                <input id="d-echeance" bind:value={saisie.facture.echeance} disabled={!modifiable || saisie.facture.type === 'avoir'} placeholder="JJ/MM/AAAA" />
                 {#if saisie.facture.echeance && !analyserDate(saisie.facture.echeance)}
                   <span class="note note--erreur">Date invalide.</span>
                 {/if}
               </div>
-              {#if facture.type === 'devis'}
+              {#if saisie.facture.type === 'devis'}
                 <div class="champ">
                   <label for="d-validite">Valable jusqu’au</label>
                   <input id="d-validite" bind:value={saisie.facture.dateValidite} disabled={!modifiable} placeholder="JJ/MM/AAAA" />
@@ -776,7 +775,7 @@
               {/if}
               <div class="champ">
                 <label for="d-conditions">Conditions de paiement</label>
-                <select id="d-conditions" value={facture.conditionsPaiement ?? '30j'} disabled={!modifiable} onchange={(e) => changerConditions(e.currentTarget.value)}>
+                <select id="d-conditions" value={saisie.facture.conditionsPaiement ?? '30j'} disabled={!modifiable} onchange={(e) => changerConditions(e.currentTarget.value)}>
                   {#each Object.entries(CONDITIONS_PAIEMENT) as [idCondition, meta]}
                     <option value={idCondition}>{meta.libelle}</option>
                   {/each}
@@ -796,7 +795,7 @@
               </div>
               <div class="champ">
                 <label for="d-taux">TVA par défaut</label>
-                <select id="d-taux" value={String(facture.tauxTva ?? 20)} disabled={!modifiable} onchange={(e) => majTauxDocument(e.currentTarget.value)}>
+                <select id="d-taux" value={String(saisie.facture.tauxTva ?? 20)} disabled={!modifiable} onchange={(e) => majTauxDocument(e.currentTarget.value)}>
                   {#each TAUX_TVA as taux}
                     <option value={String(taux)}>{taux} %</option>
                   {/each}
@@ -818,15 +817,15 @@
             <div class="grille-champs">
               <div class="champ">
                 <label for="d-remise">Remise globale (%)</label>
-                <input id="d-remise" value={facture.remisePourcent ?? 0} disabled={!modifiable} inputmode="decimal" oninput={(e) => majRemiseGlobale(e.currentTarget.value)} />
+                <input id="d-remise" value={saisie.facture.remisePourcent ?? 0} disabled={!modifiable} inputmode="decimal" oninput={(e) => majRemiseGlobale(e.currentTarget.value)} />
               </div>
               <div class="champ">
                 <label for="d-remise-montant">Remise globale (DH)</label>
-                <input id="d-remise-montant" value={facture.remiseMontant ?? 0} disabled={!modifiable} inputmode="decimal" oninput={(e) => majRemiseMontant(e.currentTarget.value)} />
+                <input id="d-remise-montant" value={saisie.facture.remiseMontant ?? 0} disabled={!modifiable} inputmode="decimal" oninput={(e) => majRemiseMontant(e.currentTarget.value)} />
               </div>
               <div class="champ">
                 <label for="d-surcharge">Frais (DH)</label>
-                <input id="d-surcharge" value={facture.surchargeMontant ?? 0} disabled={!modifiable} inputmode="decimal" oninput={(e) => majSurchargeMontant(e.currentTarget.value)} />
+                <input id="d-surcharge" value={saisie.facture.surchargeMontant ?? 0} disabled={!modifiable} inputmode="decimal" oninput={(e) => majSurchargeMontant(e.currentTarget.value)} />
               </div>
               <div class="champ">
                 <label for="d-surcharge-libelle">Libellé des frais</label>
@@ -834,7 +833,7 @@
               </div>
               <div class="champ">
                 <label for="d-acompte">Acompte (DH)</label>
-                <input id="d-acompte" value={facture.acompte ?? 0} disabled={!modifiable} inputmode="decimal" oninput={(e) => majAcompte(e.currentTarget.value)} />
+                <input id="d-acompte" value={saisie.facture.acompte ?? 0} disabled={!modifiable} inputmode="decimal" oninput={(e) => majAcompte(e.currentTarget.value)} />
               </div>
               <div class="champ">
                 <label for="d-acompte-ref">Référence de l’acompte</label>
