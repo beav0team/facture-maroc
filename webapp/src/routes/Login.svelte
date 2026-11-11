@@ -4,13 +4,28 @@
 
   type Mode = 'connexion' | 'inscription'
 
+  /** Google/Supabase can send the failure back in the query or the hash. */
+  function erreurDuRetour(): string | null {
+    const requete = new URLSearchParams(location.search)
+    const hash = new URLSearchParams(location.hash.replace(/^#/, ''))
+    const code = hash.get('error') ?? requete.get('error')
+    if (!code) return null
+    const description = hash.get('error_description') ?? requete.get('error_description')
+    if (code === 'access_denied') return 'Connexion annulée.'
+    return description?.trim() || 'La connexion a échoué. Réessaie.'
+  }
+
   const params = new URLSearchParams(location.search)
+  const retour = erreurDuRetour()
   let mode = $state<Mode>(params.get('mode') === 'signup' ? 'inscription' : 'connexion')
   let email = $state('')
   let motDePasse = $state('')
   let enCours = $state(false)
-  let erreur = $state<string | null>(null)
+  let erreur = $state<string | null>(retour)
   let info = $state<string | null>(null)
+
+  // Ne pas laisser l'erreur dans l'URL : un rechargement la rejouerait.
+  if (retour) history.replaceState({}, '', location.pathname)
 
   async function soumettre(event: SubmitEvent) {
     event.preventDefault()
@@ -73,7 +88,7 @@
       <p class="alerte">
         Supabase n’est pas configuré sur cet environnement. Renseigne
         <code>VITE_SUPABASE_URL</code> et <code>VITE_SUPABASE_ANON_KEY</code> dans
-        <code>webapp/.env</code>, puis relance <code>npm run dev</code>.
+        <code>webapp/.env</code>, puis relance <code>pnpm dev</code>.
       </p>
     {/if}
 
@@ -127,7 +142,7 @@
 
     <p class="ou"><span>ou par e-mail</span></p>
 
-    <form onsubmit={soumettre} novalidate>
+    <form onsubmit={soumettre}>
       <div class="champ">
         <label for="email">Adresse e-mail</label>
         <input
@@ -152,8 +167,8 @@
         />
       </div>
 
-      {#if erreur}<p class="alerte">{erreur}</p>{/if}
-      {#if info}<p class="alerte alerte--info">{info}</p>{/if}
+      {#if erreur}<p class="alerte" role="alert">{erreur}</p>{/if}
+      {#if info}<p class="alerte alerte--info" role="status">{info}</p>{/if}
 
       <button class="btn" type="submit" disabled={enCours || !estConfigure}>
         {enCours

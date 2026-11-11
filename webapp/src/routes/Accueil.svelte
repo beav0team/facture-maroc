@@ -52,7 +52,7 @@
               autocomplete="organization"
             />
           </div>
-          {#if erreur}<p class="alerte">{erreur}</p>{/if}
+          {#if erreur}<p class="alerte" role="alert">{erreur}</p>{/if}
           <button class="btn" type="submit" disabled={enCours || nom.trim().length === 0}>
             {enCours ? 'Création…' : 'Créer ma boutique'}
           </button>
