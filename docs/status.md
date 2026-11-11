@@ -67,6 +67,11 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   partir). Tout passe par des fonctions `security definer` réservées à
   `est_admin_plateforme()` : le navigateur ne voit jamais `auth.users` ni le
   service_role.
+- **Aperçu PDF** : le bouton ouvre une fenêtre où le navigateur dessine le PDF,
+  avec « Télécharger » (`<a download>`) et « Ouvrir dans un onglet ». Le
+  document émis ouvre l'archive ; sans archive, la fenêtre le dit et propose le
+  rendu reconstruit. Une erreur de rendu s'affiche au lieu de laisser le bouton
+  muet.
 - 168 tests Vitest, 0 erreur `svelte-check` ; preuves RLS locales (quatre
   suites, dont `rls_admin.sql`).
 
