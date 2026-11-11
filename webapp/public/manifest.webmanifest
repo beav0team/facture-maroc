@@ -1,0 +1,26 @@
+{
+  "name": "FactureApp",
+  "short_name": "FactureApp",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "/app/",
+  "scope": "/app/",
+  "display": "standalone",
+  "background_color": "#F6F8FE",
+  "theme_color": "#1E3FD2",
+  "description": "Factures conformes pour les commerces et TPE au Maroc.",
+  "icons": [
+    {
+      "src": "/app/icons/icone.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/app/icons/icone-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
