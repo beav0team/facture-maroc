@@ -885,7 +885,11 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         // saying "this moved stock" when it did not would credit the shelf on
         // deletion, so the flag is only ever written after the movement returned
         // something it actually changed.
-        val moved = savedItems.applyStockMovement(pending.data).isNotEmpty()
+        // The shop can keep its stock elsewhere: then issuing a document is a
+        // paper act and moves nothing, and `stockApplied` stays false so a later
+        // deletion does not credit a shelf that was never debited.
+        val moved = _shop.value.deductStockOnIssue &&
+            savedItems.applyStockMovement(pending.data).isNotEmpty()
         invoices.upsert(
             InvoiceRecord(
                 id = draftId,
@@ -1047,7 +1051,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         // it by returning null and verify() will show the hole afterwards.
         archive.record(issued, xml)
         // An XML export is an issue: the file left the shop, so the stock does too.
-        val moved = savedItems.applyStockMovement(issued).isNotEmpty()
+        val moved = _shop.value.deductStockOnIssue &&
+            savedItems.applyStockMovement(issued).isNotEmpty()
         invoices.upsert(
             InvoiceRecord(
                 id = draftId,

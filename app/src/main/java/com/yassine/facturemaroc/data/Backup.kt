@@ -527,6 +527,9 @@ object Backup {
         put("showItemStock", shop.showItemStock)
         put("showItemFolder", shop.showItemFolder)
         put("costMethod", shop.costMethod.id)
+        // Absent from a backup written before the switch existed, and then the
+        // shop was deducting: true is what that file's owner was doing.
+        put("deductStockOnIssue", shop.deductStockOnIssue)
     }
 
     private fun shopFromJson(obj: JSONObject): ShopSettings = ShopSettings(
@@ -548,6 +551,7 @@ object Backup {
         showItemStock = obj.optBoolean("showItemStock", true),
         showItemFolder = obj.optBoolean("showItemFolder", true),
         costMethod = CostMethod.fromId(obj.optString("costMethod", CostMethod.DEFAULT.id)),
+        deductStockOnIssue = obj.optBoolean("deductStockOnIssue", true),
     )
 }
 

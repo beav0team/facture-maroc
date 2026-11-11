@@ -228,6 +228,9 @@ fun ShopDetailsScreen(
         mutableStateOf(settings.showItemFolder)
     }
     var costMethod by remember(settings.costMethod) { mutableStateOf(settings.costMethod) }
+    var deductStock by remember(settings.deductStockOnIssue) {
+        mutableStateOf(settings.deductStockOnIssue)
+    }
     /*
      * What the About block prints. Read from the package manager rather than a
      * constant: the version in the manifest is the one installed, and a build
@@ -407,6 +410,7 @@ fun ShopDetailsScreen(
                 showItemStock = showItemStock,
                 showItemFolder = showItemFolder,
                 costMethod = costMethod,
+                deductStockOnIssue = deductStock,
             ),
         )
         // Only when the shop really asked for a different number. Rewinding on
@@ -1110,6 +1114,42 @@ fun ShopDetailsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                }
+            }
+
+            if (openGroup == SettingsGroup.CATALOGUE) {
+                item(key = "stock-on-issue") {
+                    SettingsSection(
+                        title = "Stock et facturation",
+                        subtitle = "Ce qu'une facture émise fait à l'étagère.",
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    "Déduire le stock à l'émission",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                                Text(
+                                    if (deductStock) {
+                                        "Chaque facture émise retire ses articles de l'étagère. " +
+                                            "Supprimer un brouillon ne touche à rien ; supprimer une " +
+                                            "facture émise les remet."
+                                    } else {
+                                        "Les factures ne touchent pas au stock : les quantités ne " +
+                                            "changent que par les réceptions et les corrections. À " +
+                                            "n'activer que si le stock est tenu ailleurs."
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Switch(checked = deductStock, onCheckedChange = { deductStock = it })
+                        }
                     }
                 }
             }

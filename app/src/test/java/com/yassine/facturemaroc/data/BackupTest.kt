@@ -486,4 +486,32 @@ class BackupTest {
 
         assertTrue(error is Backup.TooLargeException)
     }
+
+    @Test
+    fun `a shop that does not deduct stock says so in the backup`() {
+        // The switch changes what issuing a document does, so it has to travel:
+        // a restore on a new phone that silently started deducting again would
+        // move quantities the shop never agreed to.
+        val quiet = shop.copy(deductStockOnIssue = false)
+        val json = Backup.build(
+            shop = quiet,
+            design = design,
+            logo = logo,
+            clients = clients,
+            items = items,
+            invoices = invoices,
+            counters = counters,
+            folders = folders,
+            exportedAt = 1_234L,
+        )
+
+        assertFalse(Backup.parse(json).shop.deductStockOnIssue)
+    }
+
+    @Test
+    fun `an older backup without the switch still deducts`() {
+        val json = mutated { getJSONObject("shop").remove("deductStockOnIssue") }
+
+        assertTrue(Backup.parse(json).shop.deductStockOnIssue)
+    }
 }

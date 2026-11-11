@@ -84,6 +84,16 @@ data class ShopSettings(
      * movements only — an issued line carries the cost frozen on it.
      */
     val costMethod: CostMethod = CostMethod.DEFAULT,
+    /**
+     * Whether issuing a document takes its articles off the shelf.
+     *
+     * On by default, which is what the app has always done. A shop that keeps
+     * its stock in another system — or one whose invoices are mostly services —
+     * can turn it off; the documents then never touch a quantity, and no
+     * movement is written, so deleting an invoice cannot credit a shelf that was
+     * never debited.
+     */
+    val deductStockOnIssue: Boolean = true,
 ) {
     /** Legal ID fields that are non-empty, joined for printing. */
     val legalIdentifierList: List<String>

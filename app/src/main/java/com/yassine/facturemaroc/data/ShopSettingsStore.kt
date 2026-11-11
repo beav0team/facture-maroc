@@ -59,6 +59,7 @@ class ShopSettingsStore(private val context: Context) {
             // Absent from an install that predates costing: weighted average is
             // the default, and no file has to be migrated.
             costMethod = CostMethod.fromId(prefs.getString("costMethod", CostMethod.DEFAULT.id)),
+            deductStockOnIssue = prefs.getBoolean("deductStockOnIssue", true),
         )
     }
 
@@ -92,6 +93,7 @@ class ShopSettingsStore(private val context: Context) {
                 putBoolean("showItemStock", settings.showItemStock)
                 putBoolean("showItemFolder", settings.showItemFolder)
                 putString("costMethod", settings.costMethod.id)
+                putBoolean("deductStockOnIssue", settings.deductStockOnIssue)
                 apply()
             }
         }
