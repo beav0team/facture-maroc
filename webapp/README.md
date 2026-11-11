@@ -155,13 +155,38 @@ toute modification du schéma.
 
 ## Déploiement
 
-`docs/` est servi tel quel par Cloudflare Pages (build command vide, output
-`docs`). `docs/_redirects` renvoie `/app/*` vers `/app/index.html` pour que le
-routeur survive à un rechargement.
+Le site est servi par **Cloudflare Pages** sur `https://factureapp.ma` : le
+marketing à la racine de `docs/`, l'application sous `/app/`.
 
-GitHub Pages, l'hébergeur actuel, ignore `_redirects` : seul `/app/` répond
-tant que la bascule vers Cloudflare n'est pas faite. Le routeur n'a qu'une
-route pour l'instant, donc rien ne casse.
+Réglages du projet Pages (`factureapp`) :
+
+| Champ | Valeur |
+|---|---|
+| Branche de production | `site-m3` (puis `master` après fusion) |
+| Commande de build | `bash webapp/scripts/build.sh` |
+| Dossier de sortie | `docs` |
+| Variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `NODE_VERSION=22` |
+
+Pièges vérifiés en production le 2026-11-11 :
+
+- **`_redirects` ne doit jamais contenir `/app/* /app/ 200`.** Pages applique
+  les règles même quand un fichier existe : le catch-all réécrivait aussi
+  `/app/assets/index-*.js` vers la coquille HTML, donc l'app recevait du HTML
+  à la place de son JavaScript. `docs/_redirects` liste les routes une par une.
+- **La cible d'une réécriture 200 est `/app/`, pas `/app/index.html`** : Pages
+  normalise `/index.html` vers `/` avec un 308, et cette normalisation
+  s'applique aussi à la cible.
+- **`VITE_*` est figé au build.** Sans les variables dans Pages, le bundle
+  affiche « Supabase n'est pas configuré » même si le reste du site marche.
+- **`pnpm install --frozen-lockfile` exige le lockfile à jour** : le pin
+  `packageManager` ajoute un document au `pnpm-lock.yaml`. Lancer
+  `pnpm install` une fois après avoir changé ce champ.
+
+Le 2026-11-11, les enregistrements A de GitHub Pages ont été remplacés par le
+CNAME `factureapp.pages.dev` via Cloudflare ; le domaine répond sur Pages et
+les liens profonds (`/app/documents/<uuid>`) renvoient 200.
+
+GitHub Pages ignore `_redirects` : ne pas y revenir pour l'app.
 
 ## Structure
 
