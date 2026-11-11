@@ -13,22 +13,29 @@
   /*
    * The header badge used to be the literal « Plan gratuit · 5 factures / mois »
    * for every shop, so a shop that had paid still read the free plan on the
-   * first screen after login. It now comes from `quota_boutique`, and the value
-   * is re-read when the tab comes back (an activation happens elsewhere).
+   * first screen after login. It now comes from `quota_boutique`.
+   *
+   * A `$effect` rather than `onMount`: after `signInWithPassword` the app swaps
+   * to this screen before `chargerBoutique()` has resolved, so a mount-time
+   * fetch sees `auth.boutique === null` and would never retry.
    */
+  const boutiqueId = $derived(auth.boutique?.id ?? null)
+
+  $effect(() => {
+    if (boutiqueId) void chargerQuota(boutiqueId)
+  })
+
   onMount(() => {
-    void chargerQuota()
+    // An activation is written from /app/admin, in another tab.
     const auRetour = () => {
-      if (document.visibilityState === 'visible') void chargerQuota()
+      if (document.visibilityState === 'visible' && boutiqueId) void chargerQuota(boutiqueId)
     }
     document.addEventListener('visibilitychange', auRetour)
     return () => document.removeEventListener('visibilitychange', auRetour)
   })
 
-  async function chargerQuota() {
-    const shop = auth.boutique
-    if (!shop) return
-    const res = await api.chargerQuota(shop.id)
+  async function chargerQuota(id: string) {
+    const res = await api.chargerQuota(id)
     if (res.donnees) quota = res.donnees
   }
 
