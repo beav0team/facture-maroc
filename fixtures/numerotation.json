@@ -1,0 +1,79 @@
+{
+  "note": "Cas de numérotation partagés entre InvoiceNumber (Kotlin) et webapp/src/lib/numbering.ts. Les blocs « attendu » sont générés par FixtureTest.",
+  "prochain": [
+    {
+      "attendu": 1,
+      "stocke": 5,
+      "remiseAZero": true,
+      "anneeStockee": 2025,
+      "anneeCourante": 2026
+    },
+    {
+      "attendu": 5,
+      "stocke": 5,
+      "remiseAZero": false,
+      "anneeStockee": 2025,
+      "anneeCourante": 2026
+    },
+    {
+      "attendu": 5,
+      "stocke": 5,
+      "remiseAZero": true,
+      "anneeStockee": 0,
+      "anneeCourante": 2026
+    },
+    {
+      "attendu": 5,
+      "stocke": 5,
+      "remiseAZero": true,
+      "anneeStockee": 2026,
+      "anneeCourante": 2026
+    },
+    {
+      "attendu": 1,
+      "stocke": 0,
+      "remiseAZero": true,
+      "anneeStockee": 2026,
+      "anneeCourante": 2026
+    }
+  ],
+  "format": [
+    {
+      "date": "2026-11-10",
+      "prefixe": "F",
+      "valeur": 42,
+      "attendu": "F-20261110-0042"
+    },
+    {
+      "date": "2026-11-10",
+      "prefixe": "F-",
+      "valeur": 42,
+      "attendu": "F-20261110-0042"
+    },
+    {
+      "date": "2026-11-10",
+      "prefixe": "",
+      "valeur": 0,
+      "attendu": "20261110-0001"
+    },
+    {
+      "date": "2026-01-02",
+      "prefixe": "   ",
+      "valeur": 1,
+      "attendu": "20260102-0001"
+    },
+    {
+      "date": "2026-11-10",
+      "prefixe": "BC",
+      "valeur": 9999,
+      "attendu": "BC-20261110-9999"
+    },
+    {
+      "date": "2026-11-10",
+      "prefixe": "F",
+      "valeur": 10000,
+      "attendu": "F-20261110-10000"
+    }
+  ],
+  "version": 1
+}

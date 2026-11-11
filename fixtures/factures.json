@@ -1,0 +1,1095 @@
+{
+  "note": "Scénarios partagés entre le moteur Kotlin (InvoiceData) et le moteur TypeScript (webapp/src/lib/invoice.ts). Les blocs « attendu » sont produits par le moteur Kotlin, jamais écrits à la main : FixtureTest les génère quand ils manquent, puis les vérifie. Ne pas éditer un « attendu » pour faire passer un test.",
+  "cas": [
+    {
+      "facture": {
+        "lignes": [{
+          "prixUnitaire": 100,
+          "description": "Table",
+          "quantite": 2
+        }],
+        "remiseMontant": 50
+      },
+      "attendu": {
+        "sousTotal": 200,
+        "surcharge": 0,
+        "netAPayer": 180,
+        "baseTva": 150,
+        "remiseEnMontant": true,
+        "reste": 180,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 30,
+          "base": 150
+        }],
+        "paye": 0,
+        "remise": 50,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 180,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 30,
+          "base": 150
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": true,
+        "totalHt": 150,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 30
+      },
+      "nom": "remise fixe avant TVA"
+    },
+    {
+      "facture": {
+        "lignes": [{
+          "prixUnitaire": 200,
+          "description": "Table",
+          "quantite": 1
+        }],
+        "remiseMontant": 500
+      },
+      "attendu": {
+        "sousTotal": 200,
+        "surcharge": 0,
+        "netAPayer": 0,
+        "baseTva": 0,
+        "remiseEnMontant": true,
+        "reste": 0,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 0,
+          "base": 0
+        }],
+        "paye": 0,
+        "remise": 200,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 0,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 0,
+          "base": 0
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": true,
+        "totalHt": 0,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 0
+      },
+      "nom": "remise supérieure aux biens : jamais de crédit"
+    },
+    {
+      "facture": {
+        "lignes": [{
+          "prixUnitaire": 100,
+          "description": "Table",
+          "quantite": 2
+        }],
+        "remisePourcent": 10,
+        "remiseMontant": 50
+      },
+      "attendu": {
+        "sousTotal": 200,
+        "surcharge": 0,
+        "netAPayer": 180,
+        "baseTva": 150,
+        "remiseEnMontant": true,
+        "reste": 180,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 30,
+          "base": 150
+        }],
+        "paye": 0,
+        "remise": 50,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 180,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 30,
+          "base": 150
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": true,
+        "totalHt": 150,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 30
+      },
+      "nom": "la remise en montant prend le pas sur le pourcentage"
+    },
+    {
+      "facture": {
+        "lignes": [
+          {
+            "prixUnitaire": 100,
+            "exoneree": true,
+            "description": "Conseil",
+            "quantite": 1
+          },
+          {
+            "prixUnitaire": 200,
+            "description": "Produit",
+            "quantite": 1
+          }
+        ],
+        "remiseMontant": 30
+      },
+      "attendu": {
+        "sousTotal": 300,
+        "surcharge": 0,
+        "netAPayer": 306,
+        "baseTva": 180,
+        "remiseEnMontant": true,
+        "reste": 306,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 36,
+          "base": 180
+        }],
+        "paye": 0,
+        "remise": 30,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 306,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [
+          {
+            "taux": 20,
+            "montant": 36,
+            "base": 180
+          },
+          {
+            "taux": 0,
+            "montant": 0,
+            "base": 90
+          }
+        ],
+        "etatPaiement": "unpaid",
+        "afficheRemise": true,
+        "totalHt": 270,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 36
+      },
+      "nom": "remise fixe partagée : une ligne exonérée ne réduit pas la taxe"
+    },
+    {
+      "facture": {"lignes": [
+        {
+          "prixUnitaire": 950,
+          "description": "Chaise",
+          "quantite": 2,
+          "remiseMontant": 100
+        },
+        {
+          "prixUnitaire": 100,
+          "description": "Livraison",
+          "quantite": 1
+        }
+      ]},
+      "attendu": {
+        "sousTotal": 1900,
+        "surcharge": 0,
+        "netAPayer": 2280,
+        "baseTva": 1900,
+        "remiseEnMontant": false,
+        "reste": 2280,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 380,
+          "base": 1900
+        }],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 2280,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 380,
+          "base": 1900
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 1900,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 380
+      },
+      "nom": "remise en montant sur une ligne"
+    },
+    {
+      "facture": {"lignes": [{
+        "prixUnitaire": 950,
+        "description": "Chaise",
+        "quantite": 1,
+        "remiseMontant": 1200
+      }]},
+      "attendu": {
+        "sousTotal": 0,
+        "surcharge": 0,
+        "netAPayer": 0,
+        "baseTva": 0,
+        "remiseEnMontant": false,
+        "reste": 0,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 0,
+          "base": 0
+        }],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 0,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 0,
+          "base": 0
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 0,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 0
+      },
+      "nom": "remise de ligne supérieure à la ligne : zéro"
+    },
+    {
+      "facture": {"lignes": [{
+        "prixUnitaire": 950,
+        "remisePourcent": 50,
+        "description": "Chaise",
+        "quantite": 1,
+        "remiseMontant": 100
+      }]},
+      "attendu": {
+        "sousTotal": 850,
+        "surcharge": 0,
+        "netAPayer": 1020,
+        "baseTva": 850,
+        "remiseEnMontant": false,
+        "reste": 1020,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 170,
+          "base": 850
+        }],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 1020,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 170,
+          "base": 850
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 850,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 170
+      },
+      "nom": "remise de ligne en montant prioritaire sur le pourcentage"
+    },
+    {
+      "facture": {
+        "lignes": [{
+          "prixUnitaire": 100,
+          "description": "Table",
+          "quantite": 2
+        }],
+        "surchargePourcent": 5
+      },
+      "attendu": {
+        "sousTotal": 200,
+        "surcharge": 10,
+        "netAPayer": 252,
+        "baseTva": 210,
+        "remiseEnMontant": false,
+        "reste": 252,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 42,
+          "base": 210
+        }],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 252,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 42,
+          "base": 210
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 200,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 42
+      },
+      "nom": "surcharge en pourcentage"
+    },
+    {
+      "facture": {
+        "lignes": [{
+          "prixUnitaire": 100,
+          "description": "Table",
+          "quantite": 2
+        }],
+        "remisePourcent": 20,
+        "surchargePourcent": 10
+      },
+      "attendu": {
+        "sousTotal": 200,
+        "surcharge": 16,
+        "netAPayer": 211.2,
+        "baseTva": 176,
+        "remiseEnMontant": false,
+        "reste": 211.2,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 35.2,
+          "base": 176
+        }],
+        "paye": 0,
+        "remise": 40,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 211.2,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 35.2,
+          "base": 176
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": true,
+        "totalHt": 160,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 35.2
+      },
+      "nom": "surcharge en pourcentage calculée après la remise"
+    },
+    {
+      "facture": {
+        "lignes": [{
+          "prixUnitaire": 100,
+          "description": "Table",
+          "quantite": 2
+        }],
+        "surchargePourcent": 5,
+        "surchargeMontant": 100
+      },
+      "attendu": {
+        "sousTotal": 200,
+        "surcharge": 10,
+        "netAPayer": 252,
+        "baseTva": 210,
+        "remiseEnMontant": false,
+        "reste": 252,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 42,
+          "base": 210
+        }],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 252,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 42,
+          "base": 210
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 200,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 42
+      },
+      "nom": "surcharge en pourcentage prioritaire sur le montant"
+    },
+    {
+      "facture": {
+        "lignes": [
+          {
+            "prixUnitaire": 950,
+            "description": "Chaise",
+            "quantite": 2,
+            "remiseMontant": 100
+          },
+          {
+            "prixUnitaire": 450,
+            "description": "Montage",
+            "tauxTva": 10,
+            "quantite": 3
+          },
+          {
+            "prixUnitaire": 300,
+            "exoneree": true,
+            "description": "Conseil",
+            "quantite": 1
+          }
+        ],
+        "surchargePourcent": 2.5,
+        "remiseMontant": 200
+      },
+      "attendu": {
+        "sousTotal": 3450,
+        "surcharge": 81.25,
+        "netAPayer": 3813.8,
+        "baseTva": 3048.64,
+        "remiseEnMontant": true,
+        "reste": 3813.8,
+        "lignesTvaImprimees": [
+          {
+            "taux": 20,
+            "montant": 355.38,
+            "base": 1776.9
+          },
+          {
+            "taux": 10,
+            "montant": 127.17,
+            "base": 1271.74
+          }
+        ],
+        "paye": 0,
+        "remise": 200,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 3813.8,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [
+          {
+            "taux": 20,
+            "montant": 355.38,
+            "base": 1776.9
+          },
+          {
+            "taux": 10,
+            "montant": 127.17,
+            "base": 1271.74
+          },
+          {
+            "taux": 0,
+            "montant": 0,
+            "base": 282.61
+          }
+        ],
+        "etatPaiement": "unpaid",
+        "afficheRemise": true,
+        "totalHt": 3250,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 482.55
+      },
+      "nom": "mix de taux, remise fixe et surcharge en pourcentage"
+    },
+    {
+      "facture": {"lignes": [
+        {
+          "prixUnitaire": 80,
+          "description": "Câble",
+          "tauxTva": 20,
+          "quantite": 2.5
+        },
+        {
+          "prixUnitaire": 200,
+          "description": "Service",
+          "tauxTva": 10,
+          "quantite": 1.5
+        },
+        {
+          "prixUnitaire": 50,
+          "exoneree": true,
+          "description": "Dossier",
+          "quantite": 1
+        }
+      ]},
+      "attendu": {
+        "sousTotal": 550,
+        "surcharge": 0,
+        "netAPayer": 620,
+        "baseTva": 500,
+        "remiseEnMontant": false,
+        "reste": 620,
+        "lignesTvaImprimees": [
+          {
+            "taux": 20,
+            "montant": 40,
+            "base": 200
+          },
+          {
+            "taux": 10,
+            "montant": 30,
+            "base": 300
+          }
+        ],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 620,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [
+          {
+            "taux": 20,
+            "montant": 40,
+            "base": 200
+          },
+          {
+            "taux": 10,
+            "montant": 30,
+            "base": 300
+          },
+          {
+            "taux": 0,
+            "montant": 0,
+            "base": 50
+          }
+        ],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 550,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 70
+      },
+      "nom": "trois taux et quantité décimale"
+    },
+    {
+      "facture": {
+        "lignes": [
+          {
+            "prixUnitaire": 80,
+            "description": "Câble",
+            "tauxTva": 20,
+            "quantite": 2.5
+          },
+          {
+            "prixUnitaire": 200,
+            "description": "Service",
+            "tauxTva": 10,
+            "quantite": 1.5
+          },
+          {
+            "prixUnitaire": 50,
+            "exoneree": true,
+            "description": "Dossier",
+            "quantite": 1
+          }
+        ],
+        "tvaNonApplicable": true
+      },
+      "attendu": {
+        "sousTotal": 550,
+        "surcharge": 0,
+        "netAPayer": 550,
+        "baseTva": 0,
+        "remiseEnMontant": false,
+        "reste": 550,
+        "lignesTvaImprimees": [],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 0,
+        "estSoldee": false,
+        "total": 550,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 0,
+        "lignesTva": [{
+          "taux": 0,
+          "montant": 0,
+          "base": 550
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 550,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 0
+      },
+      "nom": "TVA non applicable : auto-entrepreneur"
+    },
+    {
+      "facture": {
+        "lignes": [
+          {
+            "prixUnitaire": 80,
+            "description": "Câble",
+            "tauxTva": 20,
+            "quantite": 2.5
+          },
+          {
+            "prixUnitaire": 200,
+            "description": "Service",
+            "tauxTva": 10,
+            "quantite": 1.5
+          }
+        ],
+        "clientExonere": true
+      },
+      "attendu": {
+        "sousTotal": 500,
+        "surcharge": 0,
+        "netAPayer": 500,
+        "baseTva": 0,
+        "remiseEnMontant": false,
+        "reste": 500,
+        "lignesTvaImprimees": [{
+          "taux": 0,
+          "montant": 0,
+          "base": 0
+        }],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 0,
+        "estSoldee": false,
+        "total": 500,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 0,
+        "lignesTva": [{
+          "taux": 0,
+          "montant": 0,
+          "base": 500
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 500,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 0
+      },
+      "nom": "client exonéré de TVA"
+    },
+    {
+      "facture": {
+        "lignes": [
+          {
+            "prixUnitaire": 80,
+            "description": "Câble",
+            "tauxTva": 20,
+            "quantite": 2.5
+          },
+          {
+            "prixUnitaire": 200,
+            "description": "Service",
+            "tauxTva": 10,
+            "quantite": 1.5
+          },
+          {
+            "prixUnitaire": 50,
+            "exoneree": true,
+            "description": "Dossier",
+            "quantite": 1
+          }
+        ],
+        "acompte": 100
+      },
+      "attendu": {
+        "sousTotal": 550,
+        "surcharge": 0,
+        "netAPayer": 520,
+        "baseTva": 500,
+        "remiseEnMontant": false,
+        "reste": 520,
+        "lignesTvaImprimees": [
+          {
+            "taux": 20,
+            "montant": 40,
+            "base": 200
+          },
+          {
+            "taux": 10,
+            "montant": 30,
+            "base": 300
+          }
+        ],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 620,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [
+          {
+            "taux": 20,
+            "montant": 40,
+            "base": 200
+          },
+          {
+            "taux": 10,
+            "montant": 30,
+            "base": 300
+          },
+          {
+            "taux": 0,
+            "montant": 0,
+            "base": 50
+          }
+        ],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 550,
+        "acompteApplique": 100,
+        "estAvoir": false,
+        "tva": 70
+      },
+      "nom": "acompte : réduit le net à payer, pas la taxe"
+    },
+    {
+      "facture": {
+        "lignes": [{
+          "prixUnitaire": 100,
+          "description": "Table",
+          "quantite": 2
+        }],
+        "paiements": [
+          100,
+          50
+        ]
+      },
+      "attendu": {
+        "sousTotal": 200,
+        "surcharge": 0,
+        "netAPayer": 240,
+        "baseTva": 200,
+        "remiseEnMontant": false,
+        "reste": 90,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 40,
+          "base": 200
+        }],
+        "paye": 150,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 240,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 40,
+          "base": 200
+        }],
+        "etatPaiement": "partial",
+        "afficheRemise": false,
+        "totalHt": 200,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 40
+      },
+      "nom": "paiements partiels"
+    },
+    {
+      "facture": {
+        "lignes": [{
+          "prixUnitaire": 100,
+          "description": "Table",
+          "quantite": 2
+        }],
+        "paiements": [
+          150,
+          150
+        ]
+      },
+      "attendu": {
+        "sousTotal": 200,
+        "surcharge": 0,
+        "netAPayer": 240,
+        "baseTva": 200,
+        "remiseEnMontant": false,
+        "reste": 0,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 40,
+          "base": 200
+        }],
+        "paye": 240,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": true,
+        "total": 240,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 40,
+          "base": 200
+        }],
+        "etatPaiement": "paid",
+        "afficheRemise": false,
+        "totalHt": 200,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 40
+      },
+      "nom": "paiements qui dépassent le dû : plafonnés"
+    },
+    {
+      "facture": {"lignes": [{
+        "prixUnitaire": 83.325,
+        "description": "Table",
+        "quantite": 1
+      }]},
+      "attendu": {
+        "sousTotal": 83.33,
+        "surcharge": 0,
+        "netAPayer": 99.99,
+        "baseTva": 83.33,
+        "remiseEnMontant": false,
+        "reste": 99.99,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 16.66,
+          "base": 83.33
+        }],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 99.99,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 16.66,
+          "base": 83.33
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 83.33,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 16.66
+      },
+      "nom": "prix saisi TTC : 99,99 reste 99,99"
+    },
+    {
+      "facture": {"lignes": [
+        {
+          "prixUnitaire": 83.325,
+          "description": "A",
+          "quantite": 1
+        },
+        {
+          "prixUnitaire": 83.325,
+          "description": "B",
+          "quantite": 1
+        },
+        {
+          "prixUnitaire": 83.325,
+          "description": "C",
+          "quantite": 1
+        }
+      ]},
+      "attendu": {
+        "sousTotal": 249.99,
+        "surcharge": 0,
+        "netAPayer": 299.97,
+        "baseTva": 249.99,
+        "remiseEnMontant": false,
+        "reste": 299.97,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 49.98,
+          "base": 249.99
+        }],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 299.97,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 49.98,
+          "base": 249.99
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 249.99,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 49.98
+      },
+      "nom": "trois lignes arrondies : le total ne suit pas la somme des colonnes"
+    },
+    {
+      "facture": {
+        "lignes": [
+          {
+            "prixUnitaire": 100,
+            "description": "Produit",
+            "tauxTva": 10,
+            "quantite": 1
+          },
+          {
+            "prixUnitaire": 100,
+            "description": "Produit 2",
+            "tauxTva": 20,
+            "quantite": 1
+          }
+        ],
+        "surchargeMontant": 50
+      },
+      "attendu": {
+        "sousTotal": 200,
+        "surcharge": 50,
+        "netAPayer": 290,
+        "baseTva": 250,
+        "remiseEnMontant": false,
+        "reste": 290,
+        "lignesTvaImprimees": [
+          {
+            "taux": 20,
+            "montant": 30,
+            "base": 150
+          },
+          {
+            "taux": 10,
+            "montant": 10,
+            "base": 100
+          }
+        ],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 290,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [
+          {
+            "taux": 20,
+            "montant": 30,
+            "base": 150
+          },
+          {
+            "taux": 10,
+            "montant": 10,
+            "base": 100
+          }
+        ],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 200,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 40
+      },
+      "nom": "surcharge sur un document mixte : elle suit le taux du document"
+    },
+    {
+      "facture": {
+        "lignes": [{
+          "prixUnitaire": 120,
+          "description": "Retour",
+          "quantite": 1
+        }],
+        "type": "avoir",
+        "echeance": "01/01/2020"
+      },
+      "attendu": {
+        "sousTotal": 120,
+        "surcharge": 0,
+        "netAPayer": 144,
+        "baseTva": 120,
+        "remiseEnMontant": false,
+        "reste": 144,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 24,
+          "base": 120
+        }],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 144,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [{
+          "taux": 20,
+          "montant": 24,
+          "base": 120
+        }],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 120,
+        "acompteApplique": 0,
+        "estAvoir": true,
+        "tva": 24
+      },
+      "nom": "avoir : pas d'échéance imprimée"
+    },
+    {
+      "facture": {"lignes": []},
+      "attendu": {
+        "sousTotal": 0,
+        "surcharge": 0,
+        "netAPayer": 0,
+        "baseTva": 0,
+        "remiseEnMontant": false,
+        "reste": 0,
+        "lignesTvaImprimees": [{
+          "taux": 20,
+          "montant": 0,
+          "base": 0
+        }],
+        "paye": 0,
+        "remise": 0,
+        "tauxSurchargeTva": 20,
+        "estSoldee": false,
+        "total": 0,
+        "echeanceImprimee": null,
+        "tauxTvaEffectif": 20,
+        "lignesTva": [],
+        "etatPaiement": "unpaid",
+        "afficheRemise": false,
+        "totalHt": 0,
+        "acompteApplique": 0,
+        "estAvoir": false,
+        "tva": 0
+      },
+      "nom": "document vide"
+    }
+  ],
+  "version": 1
+}
