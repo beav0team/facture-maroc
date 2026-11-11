@@ -58,8 +58,14 @@ et garder le mot de passe de la base.
 ### 2. Créer le schéma
 
 SQL Editor → coller, dans cet ordre, `0001_init.sql`, `0002_catalogue.sql`,
-`0003_documents.sql` puis `0004_import.sql` → Run. Les quatre scripts sont
-idempotents : on peut les relancer.
+`0003_documents.sql`, `0004_import.sql` puis `0005_admin.sql` → Run. Les cinq
+scripts sont idempotents : on peut les relancer.
+
+`0005_admin.sql` ajoute la console d'administration : lecture des boutiques
+avec leur propriétaire, des comptes avec leur e-mail, des chiffres de la
+plateforme, et les écritures correspondantes (abonnement, nomination et
+retrait d'un administrateur). Tout est `security definer` et réservé aux
+administrateurs : un onglet n'a jamais besoin du service_role.
 
 Le premier crée `shops` et `memberships`, la fonction `is_shop_member()`
 utilisée par les politiques, et la fonction `create_shop_for_me()` qui insère la
@@ -137,7 +143,10 @@ supprimer chez l'autre. `rls_catalogue.sql` fait le même contrôle sur les
 clients et les articles, y compris une insertion avec un `shop_id` forgé.
 `rls_documents.sql` couvre la numérotation (l'aperçu ne consomme pas), le quota
 de 5, l'immuabilité d'un document émis, l'avoir, les paiements et l'import des
-compteurs. Tout se passe dans une transaction terminée par `rollback` : aucune
+compteurs. `rls_admin.sql` vérifie qu'un compte ordinaire ne lit ni les
+boutiques ni les comptes et ne peut pas écrire un abonnement, qu'une date de
+fin passée est refusée, et que le dernier administrateur ne peut pas se
+retirer. Tout se passe dans une transaction terminée par `rollback` : aucune
 ligne ne survit.
 
 SQL Editor → coller un fichier → Run. Sortie attendue :
@@ -216,12 +225,13 @@ webapp/
 │                             Articles, Paramètres, Relevé, Générateur,
 │                             Tarifs, Admin, Import
 ├─ supabase/
-│  ├─ migrations/0001_init.sql … 0004_import.sql
+│  ├─ migrations/0001_init.sql … 0005_admin.sql
 │  ├─ tests/rls_isolation.sql
 │  ├─ tests/rls_catalogue.sql
-│  └─ tests/rls_documents.sql
+│  ├─ tests/rls_documents.sql
+│  └─ tests/rls_admin.sql
 └─ tests/                     money, dates, fixtures, catalogue, écrans,
-                              documents, prix, pdf, import
+                              documents, prix, pdf, import, admin
 ```
 
 ## Fixtures partagées
