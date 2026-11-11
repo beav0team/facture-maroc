@@ -1,0 +1,22 @@
+# SPA de FactureApp — routes explicites, jamais /app/*.
+#
+# Cloudflare Pages applique une règle de _redirects même quand un fichier
+# existe. Une règle attrape-tout `/app/* /app/ 200` réécrivait donc aussi
+# `/app/assets/index-*.js` vers la coquille HTML : l'application recevait du
+# HTML à la place de son JavaScript. On liste uniquement les routes du routeur.
+#
+# `:splat` n'est pas nécessaire : la coquille est la même pour toutes les
+# routes, le routeur lit ensuite `location.pathname`.
+#
+# La cible est /app/ et non /app/index.html : Pages normalise /index.html vers /
+# avec un 308, et cette normalisation s'applique aussi à la cible.
+/app/documents /app/ 200
+/app/documents/* /app/ 200
+/app/clients /app/ 200
+/app/clients/* /app/ 200
+/app/articles /app/ 200
+/app/parametres /app/ 200
+/app/admin /app/ 200
+/app/import /app/ 200
+/app/gratuit /app/ 200
+/app/tarifs /app/ 200

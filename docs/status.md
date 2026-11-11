@@ -16,6 +16,42 @@ answering from memory.
 
 ---
 
+## FactureApp web — M3 à M8 partiels (2026-11-11)
+
+La webapp vendable vit dans `webapp/` et se construit dans `docs/app/` ; elle
+est servie sous `/app/`. L'app Android reste hors ligne et inchangée.
+
+**Fait**
+
+- Éditeur de documents `/app/documents` : facture, devis, avoir, TVA par ligne,
+  remise ligne/globale, frais, acompte, arrondi au dirham, prix HT ou TTC,
+  choix du modèle, échéance et conditions.
+- Numérotation et quota atomiques en SQL (`0003_documents.sql`) : aperçu sans
+  consommation, numéro pris à l'émission, snapshot boutique figé, documents
+  émis immuables, avoir depuis une facture, 5 factures gratuites par mois.
+- PDF `pdf-lib` déterministe, deux modèles, filigrane plan gratuit, archivé
+  dans le bucket privé `archives` avec SHA-256 ; réimpression = octets
+  archivés. Partage WhatsApp / feuille de partage native.
+- Paiements multiples, reste dû, retard, relevé client imprimable
+  `/app/clients/:id/releve`.
+- Générateur public `/app/gratuit` sans compte, tarifs `/app/tarifs`, panneau
+  admin `/app/admin` (activation manuelle du Pro), import d'une sauvegarde
+  Android `/app/import` (clients, articles, numérotation ; documents en
+  brouillons).
+- 132 tests Vitest, 0 erreur `svelte-check`. Preuves RLS locales :
+  `rls_isolation.sql`, `rls_catalogue.sql`, `rls_documents.sql`.
+
+**Reste à faire pour vendre**
+
+- Projet Supabase réel, identifiants Google OAuth, migration Cloudflare du
+  domaine ; sans `.env` l'app affiche « Supabase n'est pas configuré ».
+- Paiement en ligne : l'activation Pro est manuelle (virement/espèces), assumé.
+- Sauvegarde quotidienne, monitoring, restauration testée (M8).
+- Déclaration CNDP et réécriture de `privacy.html` : la promesse de
+  confidentialité actuelle n'est pas encore vraie pour la webapp.
+
+---
+
 ## In progress — refonte de l'interface (2026-11-10)
 
 Publié sur **GitHub** `v0.12.0-beta.4` (APK R8 + AAB + mapping) ;

@@ -202,6 +202,33 @@ mouvement et laisse `stockApplied` à faux, pour qu'une suppression ne crédite
 jamais une étagère qui n'a pas été débitée. Le choix voyage dans la sauvegarde ;
 un fichier antérieur, sans la clé, restaure en déduisant.
 
+### 2026-11-11 — La webapp est le produit vendu, l'app Android reste le terrain
+Google Play ne permet pas l'enregistrement marchand au Maroc : la monétisation
+passe par `factureapp.ma/app`. L'app Android reste hors ligne, gratuite sur le
+Play, et sert d'entonnoir. Les deux partagent le même moteur (fixtures Kotlin).
+
+### 2026-11-11 — Les documents émis sont écrits en SQL, jamais par le client
+Le numéro, le snapshot boutique et le quota du plan gratuit sont décidés dans
+`emettre_document()`. Aucun privilège `insert/update` n'est accordé sur
+`documents` : un onglet ne peut pas contourner la numérotation. Un brouillon peut
+être supprimé, un document émis seulement corrigé par un avoir.
+
+### 2026-11-11 — Le PDF archivé est la vérité, pas un rendu à la demande
+À l'émission, le PDF est rendu avec `pdf-lib`, haché en SHA-256 et stocké dans le
+bucket privé `archives`. Une réimpression télécharge ces octets. Les paiements
+ultérieurs ne réécrivent pas l'archive : ils vivent dans `payments` et sur le
+relevé.
+
+### 2026-11-11 — Le plan Pro s'active à la main, sans paiement en ligne
+Le lancement encaisse par virement ou espèces, puis l'admin met
+`subscriptions.paid_until`. Payzone/YouCan Pay viendront plus tard ; aucune
+commission n'est prélevée sur les factures.
+
+### 2026-11-11 — L'import Android ramène des brouillons
+Un numéro déjà imprimé n'est jamais réémis par la webapp. L'import reprend les
+clients, les articles et les compteurs, puis recrée les documents en brouillons
+avec leur numéro Android dans `reference`.
+
 ## Open
 
 1. **Auto-entrepreneur number** — print it on documents?

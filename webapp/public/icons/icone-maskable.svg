@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FactureApp">
+  <rect width="512" height="512" fill="#1E3FD2"/>
+  <rect x="176" y="146" width="160" height="220" rx="20" fill="#F6F8FE"/>
+  <rect x="206" y="226" width="100" height="16" rx="8" fill="#1E3FD2"/>
+  <rect x="206" y="262" width="100" height="12" rx="6" fill="#4D5B7C"/>
+  <rect x="206" y="292" width="64" height="12" rx="6" fill="#4D5B7C"/>
+  <rect x="206" y="322" width="100" height="12" rx="6" fill="#F7C948"/>
+</svg>
