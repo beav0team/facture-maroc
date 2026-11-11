@@ -82,6 +82,21 @@ Le quatrième ajoute `importer_compteurs()`, la seule écriture de numérotation
 ouverte à une boutique, pour reprendre les compteurs d'une sauvegarde Android
 sans jamais les faire reculer.
 
+### 2 bis. Nommer un administrateur
+
+Le panneau `/app/admin` (activation manuelle du plan Pro) est réservé aux
+utilisateurs présents dans `platform_admins`. Après la première connexion,
+récupérer l'identifiant dans Authentication → Users, puis dans SQL Editor :
+
+```sql
+insert into public.platform_admins (user_id)
+values ('<uuid-de-l-utilisateur>')
+on conflict do nothing;
+```
+
+La fonction `est_admin_plateforme()` lit cette table ; aucun membre de
+boutique ne peut s'y ajouter lui-même (aucun privilège d'écriture).
+
 ### 3. Activer Google
 
 1. Google Cloud Console → APIs & Services → Credentials → Create credentials
@@ -210,5 +225,8 @@ le site et l'application Android casse la suite.
   plusieurs, `chargerBoutique()` prend la plus ancienne.
 - L'import Android ramène les documents en brouillons : un numéro déjà imprimé
   n'est jamais réémis par la webapp.
+- Les écritures supposent une connexion : la v1 est « en ligne ». La file
+  hors ligne (outbox) du plan n'est pas encore branchée ; l'app Android reste le
+  produit de terrain pour les coupures.
 - Sauvegarde/restauration et monitoring restent à faire (M8) : voir
   `scripts/sauvegarde.sh` pour le dump Postgres.
