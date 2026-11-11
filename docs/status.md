@@ -7,10 +7,10 @@ answering from memory.
 | | |
 |---|---|
 | Version Play | **0.11.1** (versionCode 18) — 19 corrections d'audit |
-| Aperçu | **0.12.0-beta.3** (versionCode 21) — GitHub, non parcourue sur appareil |
+| Aperçu | **0.12.0-beta.4** (versionCode 22) — GitHub, parcourue sur Waydroid |
 | Last commit | Audit du 2026-11-10 : paiements, stockage, catalogue, rapports, avoirs, sauvegarde Android |
 | Branch | `master` (tag `v0.11.1` à poser après le build R8) |
-| Tests | **597 JVM**, **20 instrumented** |
+| Tests | **629 JVM**, **20 instrumented** (les deux suites vertes) |
 | Last audit | 2026-11-10 |
 | Target | Morocco only, MAD only, French UI |
 
@@ -18,7 +18,7 @@ answering from memory.
 
 ## In progress — refonte de l'interface (2026-11-10)
 
-Publié sur **GitHub** `v0.12.0-beta.3` (APK R8 + AAB + mapping) ;
+Publié sur **GitHub** `v0.12.0-beta.4` (APK R8 + AAB + mapping) ;
 la 0.11.1 reste la version Play et le téléchargement « Latest ». L'aperçu n'a
 pas été parcouru sur un appareil : l'émulateur de la machine de développement
 gèle, les 577 tests JVM passent et le rendu PDF est inchangé.
@@ -79,6 +79,12 @@ gèle, les 577 tests JVM passent et le rendu PDF est inchangé.
 - **Dossiers** : déplacer un dossier avec tout son contenu sous un autre, et le
   copier (sous-dossiers + articles, chaque copie recevant un id, un nom unique
   et son stock d'ouverture dans le journal).
+- **Factures** : sélecteur de type (facture, devis, bon de commande, avoir…),
+  appliqué aux brouillons comme aux documents émis.
+- **Stock** : liste des rayons (quantité lue dans le journal, valeur au coût
+  unitaire), Reçu / Sorti / Corriger par ligne, écart cache/journal signalé.
+- **Réglage** « Déduire le stock à l'émission », actif par défaut, transporté
+  par la sauvegarde.
 - Paramètres : index de cinq groupes avec recherche insensible aux accents
   (Boutique, Facturation, Catalogue et stock, Données, Diagnostic), valeur
   courante affichée sous chaque groupe (« TVA 20 % », « Version … »), retour =

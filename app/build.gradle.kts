@@ -19,8 +19,8 @@ android {
         applicationId = "com.yassine.facturemaroc"
         minSdk = 26
         targetSdk = 36
-        versionCode = 21
-        versionName = "0.12.0-beta.3"
+        versionCode = 22
+        versionName = "0.12.0-beta.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

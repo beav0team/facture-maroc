@@ -193,6 +193,15 @@ garde zéro permission réseau** : elle ne charge aucune donnée, et le lien n'e
 ouvert que si le magasin touche l'icône. Le numéro est normalisé
 (`06 12 34 56 78` → `+212612345678`) et un numéro étranger garde son pays.
 
+### 2026-11-11 — Le stock peut ne pas être déduit à l'émission
+Un magasin peut tenir son stock ailleurs, ou facturer surtout des prestations.
+Le réglage « Déduire le stock à l'émission » (Catalogue et stock → Stock et
+facturation) est **actif par défaut** : une installation existante ne change pas
+de comportement. Désactivé, émettre une facture ou exporter un XML n'écrit aucun
+mouvement et laisse `stockApplied` à faux, pour qu'une suppression ne crédite
+jamais une étagère qui n'a pas été débitée. Le choix voyage dans la sauvegarde ;
+un fichier antérieur, sans la clé, restaure en déduisant.
+
 ## Open
 
 1. **Auto-entrepreneur number** — print it on documents?

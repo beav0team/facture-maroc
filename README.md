@@ -5,7 +5,7 @@ Factures, devis, bons de commande, tickets, avoirs, proformas, acomptes,
 régularisations, factures simplifiées et factures à l'export — avec ICE, IF, RC,
 patente, CNSS, TVA, montants en toutes lettres et mode auto-entrepreneur.
 
-Aperçu **0.12.0-beta.1** (versionCode 19) · Android 8.0+ (minSdk 26) · Français.
+Aperçu **0.12.0-beta.4** (versionCode 22) · Android 8.0+ (minSdk 26) · Français.
 La version publiée sur le Play Store reste la **0.11.1** (versionCode 18).
 
 État du produit : [`docs/status.md`](docs/status.md) · Décisions :
@@ -197,7 +197,7 @@ wrapper Gradle fourni.
 
 ```bash
 export JAVA_HOME="$HOME/.local/jdk"      # ou votre JDK 21
-./gradlew testDebugUnitTest             # 597 tests JVM
+./gradlew testDebugUnitTest             # 629 tests JVM
 ./gradlew assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew bundleRelease                 # app/build/outputs/bundle/release/app-release.aab
 ./gradlew assembleRelease               # app/build/outputs/apk/release/app-release.apk
@@ -215,7 +215,7 @@ s’installent par-dessus l’application existante. Une rotation de mot de pass
 
 ## Tests
 
-**597 tests JVM**, plus vingt tests instrumentés :
+**629 tests JVM**, plus vingt tests instrumentés :
 
 | Suite | Ce qu’elle protège |
 |---|---|
