@@ -1,0 +1,30 @@
+# Cloudflare Pages _headers — sécurité et cache
+
+# Pages HTML : pas de cache long, pas d'indexation pour l'app SPA
+/app/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Assets hashés (JS, CSS, polices) : cache immuable 1 an
+/app/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+# Assets marketing hashés
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+# Manifest, favicon : cache long
+/app/manifest.webmanifest
+  Cache-Control: public, max-age=31536000, immutable
+
+/app/icons/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# HSTS forcé (Cloudflare l'active aussi côté edge)
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload

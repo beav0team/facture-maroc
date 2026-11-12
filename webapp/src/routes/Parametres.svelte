@@ -9,6 +9,8 @@
   import Barre from '../lib/ui/Barre.svelte'
   import SansBoutique from '../lib/ui/SansBoutique.svelte'
 
+  let exportation = $state(false)
+
   type Saisie = {
     nom: string
     adresse: string
@@ -202,7 +204,6 @@
       return
     }
 
-    // The old file is best-effort: a failure here must not undo the new logo.
     if (ancien && ancien !== chemin) {
       void supabase.storage.from(BUCKET_LOGOS).remove([ancien])
     }
@@ -263,7 +264,7 @@
         <div>
           <h1>Paramètres de la boutique</h1>
           <p class="entete__texte">
-            Ces informations s’impriment sur vos documents. Modifier la boutique ne
+            Ces informations s'impriment sur vos documents. Modifier la boutique ne
             réécrit pas une facture déjà émise.
           </p>
         </div>
@@ -301,7 +302,7 @@
 
         <section class="carte bloc">
           <h2>Identifiants légaux</h2>
-          <p class="bloc__texte">Imprimés sous votre adresse. Laissez vide ce qui ne s’applique pas.</p>
+          <p class="bloc__texte">Imprimés sous votre adresse. Laissez vide ce qui ne s'applique pas.</p>
           <div class="grille-champs">
             <div class="champ">
               <label for="b-ice">ICE</label>
@@ -459,9 +460,9 @@
       <section class="carte bloc">
         <h2>Sauvegarde Android</h2>
         <p class="bloc__texte">
-          Reprenez les clients, les articles et la numérotation de l’application
+          Reprenez les clients, les articles et la numérotation de l'application
           hors ligne. Les documents arrivent en brouillons : un numéro déjà
-          imprimé n’est jamais réutilisé.
+          imprimé n'est jamais réutilisé.
         </p>
         <a class="btn btn--discret" href="/app/import">Importer une sauvegarde</a>
       </section>

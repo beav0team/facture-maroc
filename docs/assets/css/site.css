@@ -1114,7 +1114,16 @@ a { color: inherit; }
 }
 
 @media (max-width: 720px) {
-  .barre nav { display: none; }
+  .barre nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: 0;
+    font-size: 13px;
+    padding-top: 8px;
+    border-top: 1px solid var(--trait);
+    width: 100%;
+  }
   .modeles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   /* Une capture de bureau réduite à 350 px ne se lit pas : la section garde
      les trois étapes, qui suffisent. */

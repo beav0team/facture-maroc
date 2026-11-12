@@ -236,6 +236,11 @@
           5 factures gratuites par mois, l’archivage du PDF émis et l’accès depuis
           n’importe quel appareil.
         </p>
+        <p class="texte">
+          <strong>Rétractation :</strong> le plan Pro peut être résilié dans les
+          7 jours suivant l’activation, à condition qu’aucune facture n’ait été
+          émise. Le remboursement est intégral, sous 14 jours.
+        </p>
       </div>
       <a class="btn" href="/app/?mode=signup" onclick={preparerCompte}>Ouvrir mon compte</a>
     </section>

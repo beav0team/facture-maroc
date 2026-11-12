@@ -56,6 +56,12 @@
         <a href={contact}>contact@factureapp.ma</a> avec le nom de votre
         boutique : l’activation se fait sous 24 heures ouvrées et dure un an.
       </p>
+      <p class="texte">
+        <strong>Rétractation :</strong> vous pouvez renoncer au plan Pro dans les
+        7 jours suivant l’activation, à condition qu’aucune facture n’ait été
+        émise pendant cette période. Le remboursement est alors intégral, par le
+        même moyen que le paiement, sous 14 jours.
+      </p>
       {#if auth.user}
         <p class="texte">Connecté{ auth.user.email ? ` en tant que ${auth.user.email}` : '' }.</p>
       {:else}
