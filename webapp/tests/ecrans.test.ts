@@ -190,6 +190,8 @@ const { default: Articles } = await import('../src/routes/Articles.svelte')
 const { default: Parametres } = await import('../src/routes/Parametres.svelte')
 const { default: Documents } = await import('../src/routes/Documents.svelte')
 const { default: DocumentEditeur } = await import('../src/routes/DocumentEditeur.svelte')
+const { default: ParametresFacturation } = await import('../src/routes/parametres/Facturation.svelte')
+const { default: ParametresBoutique } = await import('../src/routes/parametres/Boutique.svelte')
 
 describe('écran Clients', () => {
   it('affiche la fiche chargée et ses coordonnées', async () => {
@@ -214,12 +216,58 @@ describe('écran Clients', () => {
 })
 
 describe('écran Paramètres', () => {
-  it('remplit le formulaire avec la boutique chargée', async () => {
+  it('présente les cinq groupes avec leur valeur courante', async () => {
     const cible = await rendre(Parametres)
-    expect(cible.textContent).toContain('Paramètres de la boutique')
+
+    for (const titre of [
+      'Boutique et logo',
+      'Facturation',
+      'Numérotation',
+      'Coordonnées bancaires',
+      'Données',
+    ]) {
+      expect(cible.textContent).toContain(titre)
+    }
+    // The summaries come from the shop row, not from a hard-coded label.
+    expect(cible.textContent).toContain('TVA 20 %')
+    expect(cible.textContent).toContain('espèces uniquement')
+    expect(cible.querySelector('#b-nom')).toBeNull()
+  })
+
+  it('le groupe Boutique remplit son formulaire', async () => {
+    const cible = await rendre(ParametresBoutique)
     const nom = cible.querySelector<HTMLInputElement>('#b-nom')
     expect(nom?.value).toBe('Atelier Atlas')
-    expect(cible.querySelector('#b-tva')).toBeTruthy()
+    expect(cible.querySelector('#b-ice')).toBeTruthy()
+    expect(cible.querySelector('#b-tva')).toBeNull()
+  })
+
+  it('enregistrer un groupe ne touche pas aux champs des autres', async () => {
+    // The old single form PATCHed the whole shop row. Split into five screens,
+    // a group that sent its own local slice would blank every field it does not
+    // show: this test is the guard against that.
+    const { enregistrerBoutique } = await import('../src/lib/session.svelte')
+    vi.mocked(enregistrerBoutique).mockClear()
+
+    const cible = await rendre(ParametresFacturation)
+    const formulaire = cible.querySelector('form')
+    expect(formulaire).toBeTruthy()
+    formulaire?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))
+    await new Promise((resoudre) => setTimeout(resoudre, 0))
+
+    expect(enregistrerBoutique).toHaveBeenCalledTimes(1)
+    const champs = vi.mocked(enregistrerBoutique).mock.calls[0]?.[0] as Record<string, unknown>
+    expect(Object.keys(champs).sort()).toEqual([
+      'clause_retard',
+      'conditions_paiement',
+      'design_defaut',
+      'montant_lettres',
+      'prix_ttc',
+      'tva_defaut',
+      'tva_non_applicable',
+    ])
+    expect(champs).not.toHaveProperty('nom')
+    expect(champs).not.toHaveProperty('prefixes')
   })
 })
 

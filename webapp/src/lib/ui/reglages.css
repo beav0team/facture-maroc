@@ -1,0 +1,185 @@
+/* Shared chrome for the settings screens.
+ *
+ * Global on purpose: a scoped <style> in ReglagesPage cannot reach the markup
+ * the group pages pass as children. Every rule stays under `.reglages` so it
+ * cannot leak into the rest of the app. */
+
+.reglages {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.reglages .contenu {
+  width: min(880px, 100%);
+  margin: 0 auto;
+  padding: clamp(24px, 5vw, 48px) clamp(16px, 4vw, 24px) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.reglages .retour {
+  align-self: flex-start;
+  font-size: 0.9rem;
+  color: var(--ardoise);
+  text-decoration: none;
+}
+.reglages .retour:hover {
+  color: var(--nuit);
+  text-decoration: underline;
+}
+
+.reglages .entete h1 {
+  font-size: clamp(1.5rem, 3vw, 1.9rem);
+}
+
+.reglages .entete__texte {
+  color: var(--ardoise);
+  margin-top: 6px;
+  max-width: 60ch;
+}
+
+.reglages .pile {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.reglages .bloc {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reglages .bloc h2 {
+  font-size: 1.1rem;
+}
+
+.reglages .bloc__texte {
+  color: var(--ardoise);
+  font-size: 0.92rem;
+}
+
+.reglages .grille-champs {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.reglages .champ--large {
+  grid-column: 1 / -1;
+}
+
+/* Prefix fields are one glyph or two: two columns even at 390 px. */
+.reglages .grille-champs--prefixes {
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  /* Labels wrap to two lines ("Bon de commande (BC)") while others do not:
+     bottom-aligning the cells keeps the inputs on one line. */
+  align-items: end;
+}
+
+.reglages .aide {
+  color: var(--ardoise);
+  font-size: 0.85rem;
+}
+
+/* The prefix fields are usually empty: the default series shows as a hint, not
+ * as a value. Without a lighter colour a placeholder reads as a filled field. */
+.reglages input::placeholder {
+  color: color-mix(in srgb, var(--ardoise) 55%, transparent);
+}
+
+.reglages .aide--alerte {
+  color: var(--rouge);
+}
+
+/* The save bar stays reachable at the bottom of a long form on a phone, which
+ * is what the old single-page form got wrong: one button, four screens down.
+ * Opaque, with a hairline: a translucent bar let the field it covered show
+ * through and read as a broken layout. */
+.reglages .barre-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--papier);
+  border-top: 1px solid var(--trait);
+  box-shadow: 0 -8px 16px rgb(11 27 77 / 4%);
+}
+
+/* A checkbox that sits on the first line of a label that wraps, instead of
+ * floating in the middle of a two-line sentence. */
+.reglages .champ--case {
+  align-items: flex-start;
+}
+
+.reglages .champ--case input {
+  margin-top: 2px;
+  flex: none;
+}
+
+.reglages .barre-actions .etat {
+  font-size: 0.85rem;
+  color: var(--ardoise);
+}
+
+/* ---------- index ---------- */
+
+.reglages .index {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 32px;
+}
+
+.reglages .index__lien {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid var(--trait);
+  transition: border-color 0.15s linear, box-shadow 0.15s linear;
+}
+.reglages .index__lien:hover {
+  border-color: var(--bleu);
+  box-shadow: var(--ombre);
+}
+
+.reglages .index__texte {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.reglages .index__titre {
+  font: 600 1.02rem/1.2 var(--titre);
+}
+
+.reglages .index__resume {
+  color: var(--ardoise);
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reglages .index__fleche {
+  margin-left: auto;
+  color: var(--ardoise);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+@media (max-width: 520px) {
+  .reglages .index__resume {
+    white-space: normal;
+  }
+}

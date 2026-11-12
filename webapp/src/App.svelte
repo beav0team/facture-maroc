@@ -7,6 +7,11 @@
   import Clients from './routes/Clients.svelte'
   import Articles from './routes/Articles.svelte'
   import Parametres from './routes/Parametres.svelte'
+  import ParametresBoutique from './routes/parametres/Boutique.svelte'
+  import ParametresFacturation from './routes/parametres/Facturation.svelte'
+  import ParametresNumerotation from './routes/parametres/Numerotation.svelte'
+  import ParametresBanque from './routes/parametres/Banque.svelte'
+  import ParametresDonnees from './routes/parametres/Donnees.svelte'
   import Documents from './routes/Documents.svelte'
   import DocumentEditeur from './routes/DocumentEditeur.svelte'
   import Releve from './routes/Releve.svelte'
@@ -55,6 +60,16 @@
       <Articles />
     {:else if route.chemin === '/parametres'}
       <Parametres />
+    {:else if route.chemin === '/parametres/boutique'}
+      <ParametresBoutique />
+    {:else if route.chemin === '/parametres/facturation'}
+      <ParametresFacturation />
+    {:else if route.chemin === '/parametres/numerotation'}
+      <ParametresNumerotation />
+    {:else if route.chemin === '/parametres/banque'}
+      <ParametresBanque />
+    {:else if route.chemin === '/parametres/donnees'}
+      <ParametresDonnees />
     {:else if route.chemin === '/admin'}
       <Admin />
     {:else if route.chemin === '/import'}

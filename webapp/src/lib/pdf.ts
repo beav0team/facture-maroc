@@ -16,6 +16,7 @@ import type { DesignDocument } from './document'
 import type { SnapshotBoutique } from './documents'
 import { analyserDate } from './dates'
 import { calculer, libelleTotal, totalLigne, type Facture, type Totaux } from './invoice'
+import { arreteEnLettres, montantEnLettres } from './lettres'
 import { montant } from './money'
 
 const PAGE_L = 595.28
@@ -49,6 +50,8 @@ export type OptionsPdf = {
   logo?: LogoPdf | null
   /** `true` prints the deposit/payment block even when nothing was paid. */
   montrerReglement?: boolean
+  /** Prints "ARRÊTÉE LA PRÉSENTE FACTURE À LA SOMME DE : …" under the totals. */
+  montantLettres?: boolean
 }
 
 /**
@@ -686,6 +689,20 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
     y -= 12
   }
 
+  // Le montant arrêté en toutes lettres : usage constant au Maroc, attendu par
+  // les administrations. Il se lit sous le net à payer, jamais dans la colonne
+  // des totaux. Découpé à la largeur du texte, pas du bloc des montants : la
+  // phrase est longue.
+  if (options.montantLettres) {
+    y -= 4
+    const phrase = arreteEnLettres(totaux.netAPayer, facture.type ?? 'facture')
+    for (const ligne of couper(phrase, normal, 8, PAGE_L - 2 * MARGE)) {
+      page.drawText(ligne, { x: MARGE, y, size: 8, font: normal, color: ENCRE })
+      y -= 10
+    }
+    y -= 4
+  }
+
   // ---------------------------------------------------------------- footer
   let yPied = Math.min(y - 16, 150)
   const blocs: Array<[string, string]> = []
@@ -827,6 +844,12 @@ async function creerPdfTicket(options: OptionsPdf): Promise<Uint8Array> {
   rangees.push([totaux.estAvoir ? 'Net à créditer' : 'Net à payer', dh(totaux.netAPayer), true])
   if (document.tvaNonApplicable) rangees.push(['TVA non applicable', '', false])
 
+  // The roll is 80 mm wide: the sentence has to be wrapped, and its height
+  // counted in the page height below, or it would print over the footer.
+  const lignesLettres = options.montantLettres
+    ? couper(arreteEnLettres(totaux.netAPayer, document.type ?? 'facture'), normal, 7, L - 2 * M)
+    : []
+
   const hLogo = logo ? 40 : 0
   const hLignes = lignes.reduce((total, ligne) => total + ligne.hauteur, 0)
   const hauteur =
@@ -839,6 +862,7 @@ async function creerPdfTicket(options: OptionsPdf): Promise<Uint8Array> {
     hLignes +
     2 + 12 +
     rangees.length * 10 +
+    (lignesLettres.length > 0 ? lignesLettres.length * 9 + 8 : 0) +
     8 +
     M
   const PAGE_T = Math.max(260, hauteur)
@@ -980,6 +1004,22 @@ async function creerPdfTicket(options: OptionsPdf): Promise<Uint8Array> {
     y -= 10
   }
 
+  if (lignesLettres.length > 0) {
+    y -= 4
+    page.drawLine({
+      start: { x: M, y: y + 2 },
+      end: { x: L - M, y: y + 2 },
+      thickness: 0.7,
+      color: TRAIT,
+      dashArray: [2, 2],
+    })
+    y -= 8
+    for (const ligne of lignesLettres) {
+      page.drawText(ligne, { x: M, y, size: 7, font: normal, color: ENCRE })
+      y -= 9
+    }
+  }
+
   const pied = `FactureApp · ${assainir(boutique.nom)}`
   const piedTaille = 5.5
   const piedLargeur = Math.min(normal.widthOfTextAtSize(pied, piedTaille), utile)
@@ -1051,6 +1091,8 @@ export type RecuOptions = {
   facture: Facture
   boutique: SnapshotBoutique
   paiement: { montant: number; date: string; moyen: string; reference?: string }
+  /** "Reçu la somme de …" in words, when the shop prints amounts in letters. */
+  montantLettres?: boolean
 }
 
 /**
@@ -1125,7 +1167,18 @@ export async function creerRecuPdf(options: RecuOptions): Promise<Uint8Array> {
   page.drawText('la somme de', { x: MARGE, y, size: 8, font: gras, color: ARDOISE })
   y -= 22
   page.drawText(assainir(`${dh(paiement.montant)} DH`), { x: MARGE, y, size: 24, font: gras, color: ENCRE })
-  y -= 30
+  y -= 22
+
+  // The amount alone, not the invoice's "ARRÊTÉE LA PRÉSENTE FACTURE" opening:
+  // a receipt states a sum received, it does not close a document.
+  if (options.montantLettres) {
+    for (const ligne of couper(montantEnLettres(paiement.montant), normal, 9.5, LARGEUR_UTILE - 20)) {
+      page.drawText(ligne, { x: MARGE, y, size: 9.5, font: normal, color: ARDOISE })
+      y -= 13
+    }
+    y -= 8
+  }
+  y -= 10
 
   const moyens: Record<string, string> = {
     cash: 'Espèces',

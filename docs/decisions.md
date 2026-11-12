@@ -372,3 +372,23 @@ Every guide uses the same shape: an H1 that repeats the question, a 40–60 word
 direct answer, a table of the facts, the legal reference, a last-updated date and
 a named author. No bulk-generated content: six written pages beat six hundred
 empty ones.
+
+### 2026-11-12 — The amount in words is a per-shop setting, on by default
+Moroccan administrations expect the sum spelled out under the totals, so a shop
+that never opened the setting must already print it: the column is
+`not null default true`, and a snapshot taken before migration 0007 reads as
+"printed". It is a setting and not a document field because it never varies
+from one invoice to the next; it *is* frozen into `shop_snapshot` at emission,
+so changing it later cannot alter a document already issued. The receipt prints
+the amount alone — "DEUX MILLE TROIS CENT QUARANTE-NEUF DIRHAMS…" — without the
+"ARRÊTÉE LA PRÉSENTE FACTURE" opening, because a receipt records a sum received
+and does not close a document.
+
+### 2026-11-12 — Settings become an index and five pages
+The single form saved the whole `shops` row and grew to four screens on a phone
+with one button at the very bottom. Split into Boutique, Facturation,
+Numérotation, Banque and Données, each with its own save. The risk of the split
+is silent data loss — a group PATCHing a row built from its own fields blanks
+everything it does not show — so all five screens share one `Saisie` and the
+save projects only that group's keys; a test asserts the exact key list for
+Facturation and that `nom` and `prefixes` are absent from it.

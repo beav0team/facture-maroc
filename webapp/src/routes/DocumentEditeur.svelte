@@ -452,6 +452,9 @@
       design: saisie.design,
       totaux,
       filigrane: filigrane(),
+      // The snapshot carries the setting frozen at emission; a snapshot taken
+      // before 0007 has no field and defaults to "printed".
+      montantLettres: shop.montant_lettres ?? true,
     })
   }
 
@@ -595,6 +598,7 @@
           moyen: paiement.moyen,
           reference: paiement.reference,
         },
+        montantLettres: shop.montant_lettres ?? true,
       })
       telechargerBlob(
         new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }),

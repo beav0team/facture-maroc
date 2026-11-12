@@ -16,6 +16,11 @@
 /app/clients/* /app/ 200
 /app/articles /app/ 200
 /app/parametres /app/ 200
+/app/parametres/boutique /app/ 200
+/app/parametres/facturation /app/ 200
+/app/parametres/numerotation /app/ 200
+/app/parametres/banque /app/ 200
+/app/parametres/donnees /app/ 200
 /app/admin /app/ 200
 /app/import /app/ 200
 /app/gratuit /app/ 200

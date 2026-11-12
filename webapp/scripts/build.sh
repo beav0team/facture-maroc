@@ -15,6 +15,13 @@ cd "$(dirname "$0")/.."
 # lien vers l'application ou avec un prix recopié fait échouer le déploiement.
 node scripts/check-site.mjs
 
-corepack enable
+# `corepack enable` only when pnpm is missing (the Cloudflare build image).
+# Run unconditionally, it replaces a working local pnpm with a shim that points
+# at a file pnpm 12 does not ship (`bin/pnpm.cjs`) — the build then dies before
+# installing anything.
+if ! command -v pnpm >/dev/null 2>&1; then
+  corepack enable
+fi
+
 pnpm install --frozen-lockfile
 pnpm build

@@ -26,6 +26,8 @@ export type Boutique = {
   prefixes: Record<string, string> | null
   numerotation_annuelle: boolean
   design_defaut: DesignDocument
+  /** Print the amount in words under the totals (migration 0007). */
+  montant_lettres: boolean
   created_at: string
 }
 

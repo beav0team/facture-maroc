@@ -99,6 +99,9 @@
           logo_path: null,
         },
         filigrane: 'FACTUREAPP · GRATUIT',
+        // No shop to read here: the free generator always prints the words, so
+        // a visitor sees the real document, not a reduced one.
+        montantLettres: true,
       })
       telechargerBlob(new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }), nomFichier('apercu-factureapp'))
     } finally {

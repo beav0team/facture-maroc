@@ -121,6 +121,41 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   horizontal, un en-tête trop haut ou un lien de nav non rendu. Il a été
   vérifié contre l’ancien CSS (13 échecs) avant d’être gardé. Il tourne en
   local, pas dans `build.sh` : l’image de build Cloudflare n’a pas de navigateur.
+- **Paramètres en index + cinq pages** (2026-11-12) : le formulaire unique
+  devient un index qui résume chaque groupe (`TVA 20 % · Classique · montant en
+  lettres`, `RIB •••• 1234`…) et cinq pages — Boutique et logo, Facturation,
+  Numérotation, Coordonnées bancaires, Données — une sauvegarde par page.
+  `lib/reglages.svelte.ts` garde une seule `Saisie` et `enregistrerGroupe()`
+  n’envoie que les clés du groupe : découpé autrement, chaque écran aurait
+  écrit son propre slice et vidé les champs qu’il n’affiche pas (test dédié,
+  « un groupe n’enregistre que ses propres clés »). Le logo reste instantané et
+  l’écran le dit. Cinq routes ajoutées à `docs/_redirects` ; `docs/avis.html`
+  gagne la ligne sur le montant en lettres.
+- **Montant arrêté en toutes lettres** (2026-11-12) : `lib/lettres.ts` est le
+  portage fidèle de `AmountWords.kt` (accords de *cent*, *vingt*, *mille*,
+  *million*, 80-99 qui plantait), 26 tests dont un lecteur inverse qui relit
+  le français et le compare au montant — la suite Kotlin fait de même. Réglage
+  par boutique `montant_lettres` (migration `0007_lettres.sql`, `default true`,
+  appliquée en production le 2026-11-12), figé dans `shop_snapshot` à
+  l’émission. Imprimé sous le net à payer en A4 (découpé à la largeur de page),
+  dans le ticket 80 mm (hauteur comptée, le pied ne se chevauche plus) et sur le
+  reçu de paiement, qui porte la somme seule : un reçu constate un encaissement,
+  il n’« arrête » pas un document. Le générateur public l’imprime toujours.
+- **Export des données** (2026-11-12) : bouton dans Paramètres → Données, un
+  fichier `factureapp-<boutique>-<jour>.json` (boutique, clients, articles,
+  documents, lignes, paiements, compteurs). Pas de ZIP : les PDF restent
+  téléchargeables document par document et le fichier le dit. Les lignes et les
+  paiements n’ont pas de `shop_id` — ils pendent au document — donc ils sont
+  lus par lots de 150 `document_id in (…)` ; la première version les filtrait
+  par `shop_id` et l’export échouait en production (`column
+  document_lines.shop_id does not exist`), attrapé en le lançant sur la
+  boutique de test. Vérifié en bout de chaîne : 4 documents, 6 lignes, aucune
+  orpheline.
+- **`build.sh` n’appelle `corepack enable` que si `pnpm` manque** : lancé sans
+  condition, il remplaçait un `pnpm` local qui marche par un shim pointant sur
+  `bin/pnpm.cjs`, fichier que pnpm 12 ne livre pas — le build mourait avant
+  d’installer quoi que ce soit. Node local est passé en 24.22.3 (22.14 ne
+  satisfaisait plus `undici@8`, requis par la suite de tests).
 
 **En production**
 

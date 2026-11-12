@@ -35,6 +35,8 @@ export type SnapshotBoutique = {
   tva_non_applicable: boolean
   prix_ttc: boolean
   logo_path: string | null
+  /** Frozen at emission so a later setting change cannot alter a live preview. */
+  montant_lettres?: boolean
 }
 
 /** What the customer was when the document was written. */
@@ -155,6 +157,7 @@ export function snapshotBoutique(boutique: Partial<SnapshotBoutique>): SnapshotB
     tva_non_applicable: Boolean(boutique.tva_non_applicable),
     prix_ttc: Boolean(boutique.prix_ttc),
     logo_path: boutique.logo_path ?? null,
+    montant_lettres: boutique.montant_lettres ?? true,
   }
 }
 
