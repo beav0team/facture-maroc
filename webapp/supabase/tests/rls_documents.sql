@@ -43,7 +43,7 @@ begin
   -- renseignés tout de suite, comme une boutique réelle les remplit avant de
   -- facturer.
   perform set_config('role', v_owner, true);
-  update public.shops set ice = '001234567000012', if_fiscal = '12345678' where id = v_shop_a;
+  update public.shops set ice = '001234567000062', if_fiscal = '12345678' where id = v_shop_a;
   perform set_config('request.jwt.claims', json_build_object('sub', v_a, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
 
@@ -64,7 +64,7 @@ begin
       'shop_id', v_shop_a,
       'type', 'facture',
       'date_emission', '10/11/2026',
-      'client_snapshot', jsonb_build_object('nom', 'Garage Atlas', 'ice', '001234567000012'),
+      'client_snapshot', jsonb_build_object('nom', 'Garage Atlas', 'ice', '001234567000062'),
       'conditions_paiement', '30j',
       'remise_pourcent', 10,
       'total_ht', 900, 'remise', 90, 'tva', 162, 'total_ttc', 972, 'net_a_payer', 972
@@ -225,7 +225,7 @@ begin
     null,
     jsonb_build_object(
       'shop_id', v_shop_a, 'type', 'avoir', 'reference', v_result ->> 'numero',
-      'client_snapshot', jsonb_build_object('nom', 'Garage Atlas', 'ice', '001234567000012')
+      'client_snapshot', jsonb_build_object('nom', 'Garage Atlas', 'ice', '001234567000062')
     ),
     jsonb_build_array(jsonb_build_object('libelle', 'Annulation', 'quantite', 1, 'prix_unitaire', 100, 'tva_taux', 20, 'total_ht', 100))
   );
@@ -377,6 +377,33 @@ begin
     raise exception 'un ICE client à cinq chiffres est passé';
   end if;
 
+  -- Un ICE client à quinze chiffres mais avec une clé de contrôle erronée.
+  -- Le modulo 97 sur les 15 chiffres doit donner 0.
+  v_id := public.enregistrer_brouillon(
+    null,
+    jsonb_build_object('shop_id', v_shop_a, 'type', 'facture',
+                       'client_snapshot', jsonb_build_object('nom', 'Client ICE clé', 'ice', '001534931000017')),
+    jsonb_build_array(jsonb_build_object('libelle', 'Service', 'quantite', 1, 'prix_unitaire', 100, 'tva_taux', 20, 'total_ht', 100))
+  );
+  v_bloque := false;
+  begin
+    perform public.emettre_document(v_id);
+  exception
+    when sqlstate '22023' then v_bloque := true;
+  end;
+  if not v_bloque then
+    raise exception 'un ICE client avec une clé de contrôle erronée est passé';
+  end if;
+
+  -- Un ICE client valide (clé de contrôle correcte) passe.
+  v_id := public.enregistrer_brouillon(
+    null,
+    jsonb_build_object('shop_id', v_shop_a, 'type', 'facture',
+                       'client_snapshot', jsonb_build_object('nom', 'Client ICE valide', 'ice', '001534931000016')),
+    jsonb_build_array(jsonb_build_object('libelle', 'Service', 'quantite', 1, 'prix_unitaire', 100, 'tva_taux', 20, 'total_ht', 100))
+  );
+  perform public.emettre_document(v_id);
+
   -- Un client professionnel sans ICE n'est pas bloqué : la boutique ne peut
   -- pas inventer un numéro que son client ne lui a pas envoyé.
   v_id := public.enregistrer_brouillon(
@@ -435,7 +462,7 @@ begin
   perform public.emettre_document(v_id);
 
   perform set_config('role', v_owner, true);
-  update public.shops set ice = '001234567000012' where id = v_shop_a;
+  update public.shops set ice = '001234567000062' where id = v_shop_a;
 
   raise notice 'Documents : numérotation, quota, émission, avoir et contrôles vérifiés.';
 end;

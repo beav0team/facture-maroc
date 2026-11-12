@@ -37,6 +37,7 @@
   import { aller } from '../lib/router.svelte'
   import { auth } from '../lib/session.svelte'
   import { supabase } from '../lib/supabase'
+  import { lienWeliproIce, validerIceCleControle } from '../lib/validation'
   import type { Article, ClientEnregistre } from '../lib/catalogue'
   import Barre from '../lib/ui/Barre.svelte'
   import SansBoutique from '../lib/ui/SansBoutique.svelte'
@@ -400,12 +401,15 @@
       return 'Un document de correction doit porter le numéro de la facture qu’il corrige.'
     }
 
-    // Un ICE est une suite de quinze chiffres : treize sont une faute de
-    // frappe que le client découvrira au contrôle. Le vendeur, lui, doit
-    // pouvoir l'empêcher ici.
+    // Un ICE mal formé (chiffre faux ou transposition) est bloqué ici : la
+    // clé de contrôle (modulo 97) doit être cohérente. Un ICE bien formé peut
+    // quand même ne pas exister : Welipro permet de le confirmer.
     const iceClient = (facture.client.ice ?? '').replace(/[\s-]/g, '')
-    if (iceClient !== '' && !/^\d{15}$/.test(iceClient)) {
-      return 'L’ICE du client doit comporter 15 chiffres.'
+    if (iceClient !== '') {
+      const cleValide = validerIceCleControle(iceClient)
+      if (cleValide === false) {
+        return 'L’ICE du client est mal formé : vérifiez les 15 chiffres.'
+      }
     }
 
     return null
