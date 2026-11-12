@@ -14,6 +14,7 @@ import {
   lignesDeFacture,
   quotaAtteint,
   statutDocument,
+  typeCompteDansQuota,
   texteQuota,
   type DocumentRow,
   type LigneRow,
@@ -244,9 +245,21 @@ describe('quota', () => {
 
   it('écrit le quota comme un humain le lit', () => {
     expect(texteQuota({ plan: 'gratuit', paid_until: null, utilise: 2, limite: 5 })).toBe(
-      '2 / 5 factures ce mois',
+      '2 / 5 documents ce mois',
     )
     expect(texteQuota({ plan: 'pro', paid_until: null, utilise: 0, limite: null })).toBe('Plan Pro')
+  })
+})
+
+describe('typeCompteDansQuota', () => {
+  it('compte tout ce qui facture, jamais un devis ni un avoir', () => {
+    for (const type of ['facture', 'ticket', 'acompte', 'regul', 'simplifiee', 'export'] as const) {
+      expect(typeCompteDansQuota(type), type).toBe(true)
+    }
+    for (const type of ['devis', 'bon_commande', 'proforma', 'avoir'] as const) {
+      expect(typeCompteDansQuota(type), type).toBe(false)
+    }
+    expect(typeCompteDansQuota(undefined)).toBe(false)
   })
 })
 

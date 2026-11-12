@@ -22,7 +22,8 @@
       <p class="texte">
         Pas de commission sur vos factures, pas d’engagement. Le plan gratuit
         permet de travailler tout de suite ; le plan Pro retire la limite de
-        cinq factures par mois.
+        cinq documents facturés par mois (factures, tickets, factures d’acompte,
+        régularisations, exports — les devis et les avoirs ne sont pas comptés).
       </p>
     </section>
 

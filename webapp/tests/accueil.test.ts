@@ -71,6 +71,6 @@ describe('Accueil — étiquette du plan', () => {
   it('affiche le quota réel quand la boutique est gratuite', async () => {
     etat.quota = { plan: 'gratuit', paid_until: null, utilise: 2, limite: 5 }
     const body = await rendre()
-    expect(body.textContent).toContain('Plan gratuit · 2 / 5 factures ce mois')
+    expect(body.textContent).toContain('Plan gratuit · 2 / 5 documents ce mois')
   })
 })

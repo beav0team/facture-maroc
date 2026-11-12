@@ -138,6 +138,28 @@ export type QuotaBoutique = {
 
 export const LIMITE_GRATUITE = 5
 
+/**
+ * Les documents qui facturent : comptés par le quota gratuit.
+ *
+ * Doit rester aligné sur `public.type_comptable()` (migration 0009). L'avoir
+ * est exclu : corriger une facture est une obligation, pas une vente, et le
+ * quota ne doit jamais empêcher une correction. Devis, bon de commande et
+ * proforma ne facturent rien.
+ */
+export const TYPES_COMPTABLES: TypeDocument[] = [
+  'facture',
+  'ticket',
+  'acompte',
+  'regul',
+  'simplifiee',
+  'export',
+]
+
+export function typeCompteDansQuota(type: TypeDocument | undefined): boolean {
+  if (!type) return false
+  return TYPES_COMPTABLES.includes(type)
+}
+
 /** The printing fields of a shop row, in snapshot shape. */
 export function snapshotBoutique(boutique: Partial<SnapshotBoutique>): SnapshotBoutique {
   return {
@@ -427,7 +449,7 @@ export function texteQuota(quota: QuotaBoutique | null | undefined): string {
   if (!quota) return ''
   if (quota.plan === 'pro') return 'Plan Pro'
   const limite = quota.limite ?? LIMITE_GRATUITE
-  return `${quota.utilise} / ${limite} factures ce mois`
+  return `${quota.utilise} / ${limite} documents ce mois`
 }
 
 /** A draft as the editor holds it: the engine document plus its page setup. */

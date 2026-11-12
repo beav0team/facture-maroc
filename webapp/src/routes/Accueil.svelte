@@ -11,7 +11,7 @@
   let quota = $state<QuotaBoutique | null>(null)
 
   /*
-   * The header badge used to be the literal « Plan gratuit · 5 factures / mois »
+   * The header badge used to be the literal « Plan gratuit · 5 documents / mois »
    * for every shop, so a shop that had paid still read the free plan on the
    * first screen after login. It now comes from `quota_boutique`.
    *
@@ -117,7 +117,7 @@
         {:else if quota}
           <a class="etiquette" href="/app/tarifs">Plan gratuit · {texteQuota(quota)}</a>
         {:else}
-          <a class="etiquette" href="/app/tarifs">Plan gratuit · 5 factures / mois</a>
+          <a class="etiquette" href="/app/tarifs">Plan gratuit · 5 documents / mois</a>
         {/if}
       </section>
 

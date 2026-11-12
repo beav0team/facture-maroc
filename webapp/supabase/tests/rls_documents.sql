@@ -202,7 +202,36 @@ begin
     raise exception 'la sixième facture gratuite est passée';
   end if;
 
-  -- Le devis reste gratuit : seules les factures comptent.
+  -- Un ticket compte aussi : c'était la fuite de la 0009 (quota limité aux
+  -- factures, tickets illimités au comptoir).
+  v_id := public.enregistrer_brouillon(
+    null,
+    jsonb_build_object('shop_id', v_shop_a, 'type', 'ticket', 'client_snapshot', jsonb_build_object('nom', 'Client ticket')),
+    jsonb_build_array(jsonb_build_object('libelle', 'Service', 'quantite', 1, 'prix_unitaire', 100, 'tva_taux', 20, 'total_ht', 100))
+  );
+  v_bloque := false;
+  begin
+    perform public.emettre_document(v_id);
+  exception
+    when sqlstate 'P0001' then v_bloque := true;
+  end;
+  if not v_bloque then
+    raise exception 'un ticket est passé alors que le quota est atteint';
+  end if;
+
+  -- Un avoir reste possible même quota atteint : corriger une facture est une
+  -- obligation, pas une vente.
+  v_id := public.enregistrer_brouillon(
+    null,
+    jsonb_build_object(
+      'shop_id', v_shop_a, 'type', 'avoir', 'reference', v_result ->> 'numero',
+      'client_snapshot', jsonb_build_object('nom', 'Garage Atlas', 'ice', '001234567000012')
+    ),
+    jsonb_build_array(jsonb_build_object('libelle', 'Annulation', 'quantite', 1, 'prix_unitaire', 100, 'tva_taux', 20, 'total_ht', 100))
+  );
+  perform public.emettre_document(v_id);
+
+  -- Le devis reste gratuit : il ne facture rien.
   v_id2 := public.enregistrer_brouillon(
     null,
     jsonb_build_object('shop_id', v_shop_a, 'type', 'devis', 'client_snapshot', jsonb_build_object('nom', 'Client devis')),

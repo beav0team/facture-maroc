@@ -21,6 +21,7 @@
     saisieDeDocument,
     situationDeReglement,
     snapshotBoutique,
+    typeCompteDansQuota,
     type DocumentRow,
     type PaiementRow,
     type QuotaBoutique,
@@ -68,7 +69,7 @@
   const boutique = $derived(auth.boutique)
   const prixTtc = $derived(Boolean(boutique?.prix_ttc))
   const tauxDocument = $derived(Math.max(saisie.facture.tauxTva ?? 20, 0))
-  const quotaBloque = $derived(quotaAtteint(quota) && saisie.facture.type === 'facture')
+  const quotaBloque = $derived(quotaAtteint(quota) && typeCompteDansQuota(saisie.facture.type))
   const titre = $derived(estEmis ? saisie.facture.numero || 'Document' : saisie.id ? 'Modifier le brouillon' : 'Nouveau document')
 
   function tauxDeLigne(ligne: Ligne): number {
@@ -427,7 +428,9 @@
   async function emettre() {
     if (!modifiable) return
     if (quotaBloque) {
-      erreur = 'Le quota de 5 factures gratuites est atteint pour ce mois.'
+      erreur =
+        'Le quota de 5 documents gratuits est atteint pour ce mois (factures, tickets, ' +
+        'factures d’acompte). Les devis et les avoirs restent libres.'
       return
     }
 
@@ -479,7 +482,9 @@
         design: saisie.design,
       })
       if (archive.erreur) {
-        message = `Document émis : ${res.donnees.numero}. Le PDF n’a pas pu être archivé (${archive.erreur}).`
+        message =
+          `Document émis : ${res.donnees.numero}. Le PDF n’a pas pu être archivé ` +
+          `(${archive.erreur}). Ouvrez l’aperçu du PDF pour réessayer.`
       } else {
         message = `Document émis : ${res.donnees.numero}. PDF archivé.`
       }
@@ -533,6 +538,7 @@
    * ordinary `<a download>` clicks, which survive every blocker.
    */
   let pdfApercu = $state<{ url: string; nom: string; octets: number; archive: boolean } | null>(null)
+  let archivage = $state(false)
 
   function fermerPdf() {
     if (pdfApercu) URL.revokeObjectURL(pdfApercu.url)
@@ -573,6 +579,38 @@
       erreur = `Le PDF n’a pas pu être préparé : ${e instanceof Error ? e.message : String(e)}`
     } finally {
       travailPdf = false
+    }
+  }
+
+  /**
+   * Réarchiver un document émis qui n’a pas de PDF.
+   *
+   * L’émission ne se rejoue pas : le numéro est pris et le document est déjà
+   * une preuve. Seul le fichier manque, et il se redessine à l’identique —
+   * le rendu est déterministe et repart du snapshot figé à l’émission. Sans
+   * cette action, un envoi Storage raté laissait le document sans archive pour
+   * toujours, alors que la base affirme le contraire.
+   */
+  async function rearchiver() {
+    if (!saisie.id || !documentRow || saisie.statut !== 'emis') return
+    archivage = true
+    erreur = null
+    try {
+      const archive = await archiverDocument({
+        shopId: documentRow.shop_id,
+        documentId: saisie.id,
+        facture: saisie.facture,
+        boutique: documentRow.shop_snapshot ?? snapshotBoutique(boutique ?? {}),
+        design: documentRow.design,
+      })
+      if (archive.erreur || !archive.donnees) {
+        erreur = `Archivage impossible : ${archive.erreur ?? 'réponse vide'}`
+        return
+      }
+      message = `PDF archivé (${taillePdf(archive.donnees.taille)}, empreinte ${archive.donnees.sha256.slice(0, 12)}…).`
+      await ouvrirPdf()
+    } finally {
+      archivage = false
     }
   }
 
@@ -724,7 +762,8 @@
 
       {#if quotaBloque && modifiable}
         <p class="alerte" role="alert">
-          Le quota de 5 factures gratuites est atteint pour ce mois.
+          Le quota de 5 documents gratuits est atteint pour ce mois (factures,
+          tickets, factures d’acompte). Les devis et les avoirs restent libres.
           <a href="/app/tarifs">Passer au plan Pro</a> pour émettre cette facture.
         </p>
       {/if}
@@ -1137,6 +1176,11 @@
           Ouvrir dans un onglet
         </a>
         {#if estEmis}
+          {#if !pdfApercu.archive}
+            <button class="btn btn--discret" type="button" onclick={() => void rearchiver()} disabled={archivage}>
+              {archivage ? 'Archivage…' : 'Archiver ce PDF'}
+            </button>
+          {/if}
           <button class="btn btn--discret" type="button" onclick={() => void partager()} disabled={travailPdf}>
             Partager
           </button>

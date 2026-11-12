@@ -186,7 +186,7 @@
     </form>
 
     <p class="connexion__pied">
-      Pas encore de compte ? C’est gratuit jusqu’à 5 factures par mois, sans carte
+      Pas encore de compte ? C’est gratuit jusqu’à 5 documents facturés par mois, sans carte
       bancaire.
     </p>
 

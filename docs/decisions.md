@@ -439,3 +439,43 @@ deduction right. The trade-off of putting the rule in the database is that a
 shop with an empty ICE can no longer issue anything until it fills the field —
 the error names the settings page, and no production shop has issued a document
 yet.
+
+### 2026-11-12 — Les contrôles d'émission sont désormais en production
+La migration `0008_emission_controles.sql` a été collée dans le SQL Editor
+Supabase et appliquée avec succès (« success, no rows returned »). `emettre_document()`
+refuse donc dorénavant, côté base de données : date invalide ou future,
+boutique sans ICE ni IF sur un document comptable, avoir ou régularisation sans
+référence, et ICE client mal formé (non quinze chiffres). Un message d'erreur
+français pointe Paramètres → Boutique. Le projet buildé (`docs/app/`) est en
+ligne sur factureapp.ma depuis le déploiement suivant.
+
+### 2026-11-12 — Le quota gratuit compte tous les documents facturés
+Migration `0009_quota.sql` ajoute `type_comptable()` — la liste unique des
+documents qui ouvrent une créance ou un droit à déduction (facture, ticket,
+acompte, regul, simplifiee, export) — et l'utilise dans `quota_boutique()`
+et `emettre_document()`. Jusqu'ici le quota ne comptait que `facture` : une
+boutique gratuite pouvait épuiser ses cinq factures puis continuer à
+facturer en tickets, le document le plus courant au comptoir, sans jamais
+passer au plan Pro. L'avoir est exclu : corriger une facture est une
+obligation, pas une vente, et le quota ne doit jamais bloquer une correction.
+Devis, bon de commande et proforma restent libres. `0009_quota.sql` est prêt
+mais **non encore appliqué en production** — à coller dans le SQL Editor
+après la 0008, quand le client donne son feu vert.
+
+### 2026-11-12 — Réarchivage d'un PDF manquant
+Si l'envoi Storage échoue à l'émission, le document est numéroté et immuable
+mais sans archive, alors que la base affirme le contraire. Le prévisualiseur
+d'un document émis propose désormais « Archiver ce PDF » ; le rendu est
+déterministe (même snapshot figé, même fonction), donc le retry écrit les
+mêmes octets. L'empreinte SHA-256 s'affiche à côté pour vérifier qu'il
+s'agit bien du fichier émis.
+
+### 2026-11-12 — Export et import JSON en boucle complète
+« Exporter mes données » existait sans chemin retour. « Restaurer un export »
+(`lib/restauration.ts`) relit un `factureapp-….json`, valide qu'il s'agit bien
+d'un export FactureApp (refuse en entier un fichier étranger ou une version
+future), fusionne clients et articles par nom normalisé, remet les documents
+en brouillons sans réémettre leur numéro (l'ancien reste en référence), et ne
+restaure pas les paiements ni les PDF archivés. Les compteurs de numérotation
+reprennent la série. Le ticket imprime en outre ICE, IF et RC du client, comme
+l'A4, via `identifiantsClient()`.

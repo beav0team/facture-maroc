@@ -181,6 +181,36 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   PostgreSQL 17 avec un schéma `auth` de substitution : les quatre suites sont
   vertes. **Migration non encore appliquée en production** — à coller dans le
   SQL Editor Supabase.
+- **Quota élargi à tous les documents facturés** (migration `0009_quota.sql`) :
+  Le quota gratuit ne comptait que `type = 'facture'` : une boutique pouvait
+  émettre ses cinq factures puis continuer à facturer en tickets,
+  factures d’acompte, régularisations, simplifiées et exports — la fuite la
+  large, le ticket étant le document le courant au comptoir. `type_comptable()`
+  est la seule liste des documents qui facturent ; l’avoir en est exclu (corriger
+  une facture est une obligation, pas une vente). `quota_boutique()`, l’éditeur
+  et l’affichage du plan comptent désormais tickets, acomptes, régularisations,
+  simplifiés et exports dans les 5 gratuits par mois. Devis et avoirs restent
+  illimités. Les pages de la vitrine passent de « 5 factures par mois » à « 5
+  documents facturés par mois » ; le badge du plan dit « 2 / 5 documents ce
+  mois ». **Migration non encore appliquée en production** — à coller dans le
+  SQL Editor Supabase après la 0008.
+- **Réarchivage d’un PDF manquant** (editor) : si l’upload Storage échoue à
+  l’émission, le document est numéroté et immuable mais sans archive. Le
+  prévisualiseur d’un document émis propose désormais « Archiver ce PDF » ; le
+  rendu est déterministe (même snapshot, même fonction), donc le retry écrit
+  les mêmes octets. L’empreinte SHA-256 s’affiche à côté pour vérifier qu’il
+  s’agit bien du fichier émis.
+- **Export et import JSON en boucle complète** (`lib/restauration.ts`) :
+  « Exporter mes données » existait mais il n’y avait pas le chemin retour.
+  « Restaurer un export » relit un `factureapp-….json`, valide qu’il s’agit
+  bien d’un export FactureApp (refuse en entier un fichier étranger ou une
+  version future), fusionne clients et articles par nom normalisé, remet les
+  documents en brouillons sans réémettre leur numéro (l’ancien numéro reste en
+  référence), et ne restaure pas les paiements ni les PDF archivés. Les
+  compteurs de numérotation reprennent la série. Tests dédiés : 10.
+- **Ticket : identifiants du client** : le ticket 80 mm imprimait déjà ICE,
+  IF, RC du vendeur ; il imprime maintenant ICE, IF, RC du client, comme
+  l’A4, via `identifiantsClient()`.
 - `docs/status.md` note pour la boutique : après la 0008, une boutique sans ICE
   ou IF ne peut plus émettre de facture jusqu’à ce qu’elle les renseigne dans
   Paramètres → Boutique. Aucune boutique réelle n’a de document émis à ce
@@ -211,7 +241,8 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   arrondi au dirham, HT/TTC, dates, modèle.
 - Numérotation et quota atomiques en SQL ; numéro pris à l'émission, snapshot
   boutique figé, documents émis immuables, avoir depuis une facture, 5
-  factures gratuites par mois.
+  documents facturés gratuits par mois (tickets, acomptes, régularisations,
+  exports compris ; devis et avoirs illimités).
 - PDF `pdf-lib` déterministe, six modèles, archivé avec SHA-256 ;
   réimpression depuis l’archive. Partage WhatsApp/natif.
 - Paiements multiples, reçu PDF, reste dû, retard, relevé client.
@@ -242,7 +273,15 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   document émis ouvre l'archive ; sans archive, la fenêtre le dit et propose le
   rendu reconstruit. Une erreur de rendu s'affiche au lieu de laisser le bouton
   muet.
-- 209 tests Vitest, 0 erreur `svelte-check` ; preuves RLS locales (quatre
+- **Réarchivage** : un document émis dont l’archive est manquante propose
+  « Archiver ce PDF » depuis son aperçu ; le rendu est déterministe, donc le
+  retry écrit les mêmes octets.
+- **Restauration d’export** : « Paramètres → Données » peut relire un
+  `factureapp-….json` écrit par « Exporter mes données » : clients et articles
+  fusionnés par nom, documents remis en brouillons sans réémettre leur numéro,
+  compteurs de numérotation repris. Les paiements et les PDF archivés ne
+  reviennent pas.
+- 223 tests Vitest, 0 erreur `svelte-check` ; preuves RLS locales (quatre
   suites, dont `rls_admin.sql`).
 
 **Reste à faire pour vendre**

@@ -28,7 +28,7 @@ export const OFFRES: Offre[] = [
     periode: 'pour toujours',
     texte: 'Pour essayer et facturer quelques clients.',
     points: [
-      '5 factures émises par mois',
+      '5 documents facturés par mois (factures, tickets, acomptes)',
       'Clients, articles et devis illimités',
       'PDF archivé, sans filigrane',
       'Accès depuis téléphone et ordinateur',
@@ -43,7 +43,7 @@ export const OFFRES: Offre[] = [
     periode: 'par an',
     texte: 'Pour un commerce qui facture tous les jours.',
     points: [
-      'Factures illimitées',
+      'Documents facturés illimités',
       'Un an, sans reconduction automatique',
       'Support par e-mail',
     ],

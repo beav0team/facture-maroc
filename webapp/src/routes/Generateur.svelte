@@ -235,7 +235,7 @@
         <h2>Ce générateur ne garde rien</h2>
         <p class="texte">
           Un compte FactureApp donne la numérotation automatique, le quota de
-          5 factures gratuites par mois, l’archivage du PDF émis et l’accès depuis
+          5 documents gratuits par mois, l’archivage du PDF émis et l’accès depuis
           n’importe quel appareil.
         </p>
         <p class="texte">

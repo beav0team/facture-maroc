@@ -53,9 +53,11 @@ async function logoDeBoutique(boutique: SnapshotBoutique) {
 /**
  * Renders the document, uploads the bytes and records the hash.
  *
- * Called once, at emission. A failure here is reported but never rolls back
- * the issue: the number is already taken and the document is already evidence.
- * The screen offers to regenerate the archive instead.
+ * Called at emission, and again if that upload failed: a failure is reported
+ * but never rolls back the issue — the number is already taken and the
+ * document is already evidence. The preview offers "Archiver ce PDF" for an
+ * issued document whose archive is missing, and the render is deterministic,
+ * so the retry writes the same bytes the first attempt would have.
  */
 export async function archiverDocument(params: {
   shopId: string

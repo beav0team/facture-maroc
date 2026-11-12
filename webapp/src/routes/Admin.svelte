@@ -244,7 +244,7 @@
         <header class="bloc__entete">
           <div>
             <h2 id="titre-boutiques">Boutiques</h2>
-            <p class="note">Le plan décide du quota (5 factures par mois).</p>
+            <p class="note">Le plan décide du quota (5 documents facturés par mois).</p>
           </div>
         </header>
 

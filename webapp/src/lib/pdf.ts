@@ -777,10 +777,15 @@ async function creerPdfTicket(options: OptionsPdf): Promise<Uint8Array> {
   const coordsLignes = coordonnees.flatMap((ligne) => couper(ligne, normal, 6.5, utile))
 
   const client = document.client
+  // Le ticket porte les mêmes identifiants que l'A4 : un contrôle au comptoir
+  // ne doit pas dépendre du format choisi. Une ligne par famille, parce que le
+  // rouleau fait 80 mm et que rien n'y est découpé automatiquement.
+  const clientIdentifiants = identifiantsClient(client, ' · ')
   const clientLignes = [
     client.nom || 'Client',
     texteOuVide(client.adresse),
-    [client.telephone, client.ice ? `ICE ${client.ice}` : ''].filter(Boolean).join(' · '),
+    texteOuVide(client.telephone),
+    clientIdentifiants,
   ].filter(Boolean)
 
   const descW = utile - 54
@@ -1044,6 +1049,20 @@ export function libelleRecapTva(tva: { taux: number; base: number }): string {
  */
 export function montantArrete(totaux: Totaux, type: TypeDocument): string {
   return arreteEnLettres(totaux.total, type)
+}
+
+/** Les identifiants légaux du client, dans l'ordre où un contrôle les lit. */
+export function identifiantsClient(
+  client: { ice?: string | null; ifFiscal?: string | null; rc?: string | null },
+  separateur = '  ·  ',
+): string {
+  return [
+    client.ice ? `ICE ${client.ice}` : '',
+    client.ifFiscal ? `IF ${client.ifFiscal}` : '',
+    client.rc ? `RC ${client.rc}` : '',
+  ]
+    .filter(Boolean)
+    .join(separateur)
 }
 
 /** Les identifiants légaux du vendeur, tels qu'ils s'impriment. */

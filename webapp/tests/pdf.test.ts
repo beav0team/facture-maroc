@@ -11,6 +11,7 @@ import {
   assainir,
   creerPdf,
   creerRecuPdf,
+  identifiantsClient,
   identifiantsVendeur,
   libelleRecapTva,
   mentionReference,
@@ -149,6 +150,13 @@ describe('PDF', () => {
     expect(libelleRecapTva({ taux: 20, base: 1000 })).toContain('1 000,00')
     // Une exonération n'a pas de base à imprimer.
     expect(libelleRecapTva({ taux: 0, base: 0 })).toBe('TVA 0 %')
+  })
+
+  it('le ticket porte aussi les identifiants du client', () => {
+    expect(
+      identifiantsClient({ ice: '001234567000012', ifFiscal: '123', rc: '456' }, ' · '),
+    ).toBe('ICE 001234567000012 · IF 123 · RC 456')
+    expect(identifiantsClient({}, ' · ')).toBe('')
   })
 
   it('le ticket porte les cinq identifiants du vendeur', () => {
