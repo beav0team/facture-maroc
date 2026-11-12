@@ -31,6 +31,12 @@ const SAFRAN = rgb(0.969, 0.788, 0.282)
 const BLANC = rgb(1, 1, 1)
 const ROUGE = rgb(0.702, 0.149, 0.118)
 
+/** The one accent the templates derive their rules and tints from. */
+const ACCENT = BLEU
+const TEINTE = rgb(0.925, 0.945, 1)
+
+type Couleur = ReturnType<typeof rgb>
+
 export type LogoPdf = { bytes: Uint8Array; type: 'png' | 'jpg' }
 
 export type OptionsPdf = {
@@ -95,8 +101,12 @@ export function couper(texte: string, police: PDFFont, taille: number, largeur: 
 }
 
 export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
-  const { facture, boutique } = options
   const design = options.design ?? 'classique'
+  // The roll is a different page, not a different drawing: it gets its own
+  // renderer instead of pretending to be A4 with a narrow margin.
+  if (design === 'ticket') return creerPdfTicket(options)
+
+  const { facture, boutique } = options
   const totaux = options.totaux ?? calculer(facture)
 
   const pdf = await PDFDocument.create()
@@ -119,64 +129,57 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
   let y = PAGE_H - MARGE
 
   // ---------------------------------------------------------------- header
-  function entete(pageCourante: PDFPage, premiere: boolean): number {
-    if (design === 'facture_maroc') {
-      pageCourante.drawRectangle({ x: 0, y: PAGE_H - 108, width: PAGE_L, height: 108, color: ENCRE })
-      pageCourante.drawRectangle({ x: 0, y: PAGE_H - 112, width: PAGE_L, height: 4, color: SAFRAN })
-      if (logo) {
-        pageCourante.drawImage(logo, { x: MARGE, y: PAGE_H - 92, width: 46, height: 46, opacity: 0.95 })
-        pageCourante.drawText(assainir(boutique.nom), {
-          x: MARGE + 56,
-          y: PAGE_H - 62,
-          size: 15,
-          font: gras,
-          color: BLANC,
-        })
-      } else {
-        pageCourante.drawText(assainir(boutique.nom), {
-          x: MARGE,
-          y: PAGE_H - 56,
-          size: 17,
-          font: gras,
-          color: BLANC,
-        })
-      }
-      const legal = [
-        boutique.ice ? `ICE ${boutique.ice}` : '',
-        boutique.if_fiscal ? `IF ${boutique.if_fiscal}` : '',
-        boutique.rc ? `RC ${boutique.rc}` : '',
-        boutique.patente ? `Patente ${boutique.patente}` : '',
-      ]
-        .filter(Boolean)
-        .join('  ·  ')
-      if (legal) {
-        pageCourante.drawText(assainir(legal), {
-          x: MARGE + (logo ? 56 : 0),
-          y: PAGE_H - 78,
-          size: 8,
-          font: normal,
-          color: rgb(0.85, 0.9, 1),
-        })
-      }
-      pageCourante.drawText(assainir(libelleDocument(facture).toUpperCase()), {
-        x: PAGE_L - MARGE - gras.widthOfTextAtSize(assainir(libelleDocument(facture).toUpperCase()), 18),
-        y: PAGE_H - 52,
-        size: 18,
-        font: gras,
-        color: SAFRAN,
-      })
-      const numero = assainir(facture.numero || 'Brouillon')
-      pageCourante.drawText(numero, {
-        x: PAGE_L - MARGE - normal.widthOfTextAtSize(numero, 10),
-        y: PAGE_H - 72,
-        size: 10,
-        font: normal,
-        color: BLANC,
-      })
-      return PAGE_H - 132
-    }
+  const titre = assainir(libelleDocument(facture).toUpperCase())
+  const numeroTexte = assainir(facture.numero || 'Brouillon')
+  const legalBoutique = [
+    boutique.ice ? `ICE ${boutique.ice}` : '',
+    boutique.if_fiscal ? `IF ${boutique.if_fiscal}` : '',
+    boutique.rc ? `RC ${boutique.rc}` : '',
+    boutique.patente ? `Patente ${boutique.patente}` : '',
+    boutique.cnss ? `CNSS ${boutique.cnss}` : '',
+  ]
+    .filter(Boolean)
+    .join('  ·  ')
 
-    // Classique: white page, rule under the header.
+  /** L'adresse, le contact et les identifiants, avec la taille de chacun. */
+  function lignesBoutique(): Array<{ texte: string; taille: number }> {
+    const lignes: Array<{ texte: string; taille: number }> = []
+    const adresse = texteOuVide(boutique.adresse)
+    if (adresse) lignes.push({ texte: adresse, taille: 8.5 })
+    const contact = [boutique.telephone, boutique.email].filter(Boolean).join(' · ')
+    if (contact) lignes.push({ texte: contact, taille: 8 })
+    if (legalBoutique) lignes.push({ texte: legalBoutique, taille: 7.5 })
+    return lignes
+  }
+
+  /** En-tête compact des pages 2 et suivantes, commun aux modèles A4. */
+  function enteteSuite(pageCourante: PDFPage, couleur: Couleur): number {
+    pageCourante.drawText(assainir(`${libelleDocument(facture)} · suite`), {
+      x: MARGE,
+      y: PAGE_H - 52,
+      size: 9,
+      font: italique,
+      color: ARDOISE,
+    })
+    pageCourante.drawText(numeroTexte, {
+      x: PAGE_L - MARGE - normal.widthOfTextAtSize(numeroTexte, 9),
+      y: PAGE_H - 52,
+      size: 9,
+      font: normal,
+      color: ARDOISE,
+    })
+    pageCourante.drawLine({
+      start: { x: MARGE, y: PAGE_H - 62 },
+      end: { x: PAGE_L - MARGE, y: PAGE_H - 62 },
+      thickness: 1,
+      color: couleur,
+    })
+    return PAGE_H - 84
+  }
+
+  /** Classique : la boutique à gauche, l'identité du document à droite. */
+  function enteteClassique(pageCourante: PDFPage, premiere: boolean): number {
+    if (!premiere) return enteteSuite(pageCourante, TRAIT)
     if (logo) pageCourante.drawImage(logo, { x: MARGE, y: PAGE_H - 88, width: 48, height: 48 })
     const decalage = logo ? 58 : 0
     pageCourante.drawText(assainir(boutique.nom), {
@@ -187,38 +190,18 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
       color: ENCRE,
     })
     let ligneY = PAGE_H - 70
-    const coordonnees = [texteOuVide(boutique.adresse), [boutique.telephone, boutique.email].filter(Boolean).join(' · ')]
-    for (const ligne of coordonnees) {
-      if (!ligne) continue
-      pageCourante.drawText(assainir(ligne), {
-        x: MARGE + decalage,
-        y: ligneY,
-        size: 8.5,
-        font: normal,
-        color: ARDOISE,
-      })
-      ligneY -= 11
+    for (const { texte, taille } of lignesBoutique()) {
+      for (const morceau of couper(texte, normal, taille, 330)) {
+        pageCourante.drawText(morceau, {
+          x: MARGE + decalage,
+          y: ligneY,
+          size: taille,
+          font: normal,
+          color: ARDOISE,
+        })
+        ligneY -= taille + 3
+      }
     }
-    const legal = [
-      boutique.ice ? `ICE ${boutique.ice}` : '',
-      boutique.if_fiscal ? `IF ${boutique.if_fiscal}` : '',
-      boutique.rc ? `RC ${boutique.rc}` : '',
-      boutique.patente ? `Patente ${boutique.patente}` : '',
-      boutique.cnss ? `CNSS ${boutique.cnss}` : '',
-    ]
-      .filter(Boolean)
-      .join('  ·  ')
-    if (legal) {
-      pageCourante.drawText(assainir(legal), {
-        x: MARGE + decalage,
-        y: ligneY,
-        size: 8,
-        font: normal,
-        color: ARDOISE,
-      })
-    }
-
-    const titre = assainir(libelleDocument(facture).toUpperCase())
     pageCourante.drawText(titre, {
       x: PAGE_L - MARGE - gras.widthOfTextAtSize(titre, 20),
       y: PAGE_H - 54,
@@ -226,9 +209,8 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
       font: gras,
       color: BLEU,
     })
-    const numero = assainir(facture.numero || 'Brouillon')
-    pageCourante.drawText(numero, {
-      x: PAGE_L - MARGE - normal.widthOfTextAtSize(numero, 10),
+    pageCourante.drawText(numeroTexte, {
+      x: PAGE_L - MARGE - normal.widthOfTextAtSize(numeroTexte, 10),
       y: PAGE_H - 70,
       size: 10,
       font: normal,
@@ -248,16 +230,235 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
       thickness: 1,
       color: TRAIT,
     })
-    if (!premiere) {
-      pageCourante.drawText(assainir(`${libelleDocument(facture)} · suite`), {
-        x: MARGE,
-        y: PAGE_H - 114,
-        size: 8,
-        font: italique,
+    return PAGE_H - 120
+  }
+
+  /** Moderne : titre largement à droite, filet d'accent sous l'en-tête. */
+  function enteteModerne(pageCourante: PDFPage, premiere: boolean): number {
+    if (!premiere) return enteteSuite(pageCourante, ACCENT)
+    if (logo) pageCourante.drawImage(logo, { x: MARGE, y: PAGE_H - 82, width: 34, height: 34 })
+    const x = MARGE + (logo ? 44 : 0)
+    pageCourante.drawText(assainir(boutique.nom), {
+      x,
+      y: PAGE_H - 52,
+      size: 17,
+      font: gras,
+      color: ENCRE,
+    })
+    let ligneY = PAGE_H - 66
+    for (const { texte, taille } of lignesBoutique()) {
+      pageCourante.drawText(assainir(texte), {
+        x,
+        y: ligneY,
+        size: Math.min(taille, 8),
+        font: normal,
         color: ARDOISE,
       })
+      ligneY -= taille + 2
     }
-    return PAGE_H - 120
+    pageCourante.drawText(titre, {
+      x: PAGE_L - MARGE - gras.widthOfTextAtSize(titre, 24),
+      y: PAGE_H - 54,
+      size: 24,
+      font: gras,
+      color: ACCENT,
+    })
+    pageCourante.drawText(numeroTexte, {
+      x: PAGE_L - MARGE - normal.widthOfTextAtSize(numeroTexte, 10),
+      y: PAGE_H - 72,
+      size: 10,
+      font: normal,
+      color: ENCRE,
+    })
+    const dateDoc = `Date ${assainir(facture.date)}`
+    pageCourante.drawText(dateDoc, {
+      x: PAGE_L - MARGE - normal.widthOfTextAtSize(dateDoc, 9),
+      y: PAGE_H - 86,
+      size: 9,
+      font: normal,
+      color: ARDOISE,
+    })
+    pageCourante.drawLine({
+      start: { x: MARGE, y: PAGE_H - 98 },
+      end: { x: PAGE_L - MARGE, y: PAGE_H - 98 },
+      thickness: 0.6,
+      color: TRAIT,
+    })
+    pageCourante.drawLine({
+      start: { x: MARGE, y: PAGE_H - 103 },
+      end: { x: PAGE_L - MARGE, y: PAGE_H - 103 },
+      thickness: 2.5,
+      color: ACCENT,
+    })
+    return PAGE_H - 124
+  }
+
+  /** Facture Maroc : le bandeau sombre, la bande safran, le titre en safran. */
+  function enteteMaroc(pageCourante: PDFPage, premiere: boolean): number {
+    if (!premiere) return enteteSuite(pageCourante, ACCENT)
+    pageCourante.drawRectangle({ x: 0, y: PAGE_H - 108, width: PAGE_L, height: 108, color: ENCRE })
+    pageCourante.drawRectangle({ x: 0, y: PAGE_H - 112, width: PAGE_L, height: 4, color: SAFRAN })
+    if (logo) {
+      pageCourante.drawImage(logo, { x: MARGE, y: PAGE_H - 92, width: 46, height: 46, opacity: 0.95 })
+      pageCourante.drawText(assainir(boutique.nom), {
+        x: MARGE + 56,
+        y: PAGE_H - 62,
+        size: 15,
+        font: gras,
+        color: BLANC,
+      })
+    } else {
+      pageCourante.drawText(assainir(boutique.nom), {
+        x: MARGE,
+        y: PAGE_H - 56,
+        size: 17,
+        font: gras,
+        color: BLANC,
+      })
+    }
+    const legal = [
+      boutique.ice ? `ICE ${boutique.ice}` : '',
+      boutique.if_fiscal ? `IF ${boutique.if_fiscal}` : '',
+      boutique.rc ? `RC ${boutique.rc}` : '',
+      boutique.patente ? `Patente ${boutique.patente}` : '',
+    ]
+      .filter(Boolean)
+      .join('  ·  ')
+    if (legal) {
+      pageCourante.drawText(assainir(legal), {
+        x: MARGE + (logo ? 56 : 0),
+        y: PAGE_H - 78,
+        size: 8,
+        font: normal,
+        color: rgb(0.85, 0.9, 1),
+      })
+    }
+    pageCourante.drawText(titre, {
+      x: PAGE_L - MARGE - gras.widthOfTextAtSize(titre, 18),
+      y: PAGE_H - 52,
+      size: 18,
+      font: gras,
+      color: SAFRAN,
+    })
+    pageCourante.drawText(numeroTexte, {
+      x: PAGE_L - MARGE - normal.widthOfTextAtSize(numeroTexte, 10),
+      y: PAGE_H - 72,
+      size: 10,
+      font: normal,
+      color: BLANC,
+    })
+    return PAGE_H - 132
+  }
+
+  /** Épuré : un trait d'accent, des capitales, presque pas de filets. */
+  function enteteEpure(pageCourante: PDFPage, premiere: boolean): number {
+    if (!premiere) return enteteSuite(pageCourante, ACCENT)
+    pageCourante.drawRectangle({ x: MARGE, y: PAGE_H - 48, width: 26, height: 3, color: ACCENT })
+    if (logo) pageCourante.drawImage(logo, { x: MARGE, y: PAGE_H - 96, width: 32, height: 32 })
+    const x = MARGE + (logo ? 40 : 0)
+    pageCourante.drawText(assainir(boutique.nom), {
+      x,
+      y: PAGE_H - 80,
+      size: 15,
+      font: gras,
+      color: ENCRE,
+    })
+    let ligneY = PAGE_H - 92
+    for (const { texte, taille } of lignesBoutique()) {
+      pageCourante.drawText(assainir(texte), {
+        x,
+        y: ligneY,
+        size: Math.min(taille, 7.5),
+        font: normal,
+        color: ARDOISE,
+      })
+      ligneY -= taille
+    }
+    pageCourante.drawText(titre, {
+      x: PAGE_L - MARGE - gras.widthOfTextAtSize(titre, 10),
+      y: PAGE_H - 44,
+      size: 10,
+      font: gras,
+      color: ACCENT,
+    })
+    const dateDoc = assainir(facture.date)
+    pageCourante.drawText(numeroTexte, {
+      x: PAGE_L - MARGE - normal.widthOfTextAtSize(numeroTexte, 8.5),
+      y: PAGE_H - 60,
+      size: 8.5,
+      font: normal,
+      color: ENCRE,
+    })
+    pageCourante.drawText(dateDoc, {
+      x: PAGE_L - MARGE - normal.widthOfTextAtSize(dateDoc, 8),
+      y: PAGE_H - 72,
+      size: 8,
+      font: normal,
+      color: ARDOISE,
+    })
+    pageCourante.drawLine({
+      start: { x: MARGE, y: PAGE_H - 112 },
+      end: { x: PAGE_L - MARGE, y: PAGE_H - 112 },
+      thickness: 0.8,
+      color: TRAIT,
+    })
+    return PAGE_H - 132
+  }
+
+  /** Bandeau : toute la largeur en haut, texte blanc, tableau teinté. */
+  function enteteBandeau(pageCourante: PDFPage, premiere: boolean): number {
+    if (!premiere) return enteteSuite(pageCourante, ACCENT)
+    pageCourante.drawRectangle({ x: 0, y: PAGE_H - 86, width: PAGE_L, height: 86, color: ACCENT })
+    if (logo) pageCourante.drawImage(logo, { x: MARGE, y: PAGE_H - 72, width: 38, height: 38 })
+    const x = MARGE + (logo ? 48 : 0)
+    pageCourante.drawText(assainir(boutique.nom), {
+      x,
+      y: PAGE_H - 46,
+      size: 16,
+      font: gras,
+      color: BLANC,
+    })
+    let ligneY = PAGE_H - 58
+    for (const { texte, taille } of lignesBoutique()) {
+      pageCourante.drawText(assainir(texte), {
+        x,
+        y: ligneY,
+        size: Math.min(taille, 7.5),
+        font: normal,
+        color: rgb(0.87, 0.9, 1),
+      })
+      ligneY -= taille + 1.5
+    }
+    pageCourante.drawText(titre, {
+      x: PAGE_L - MARGE - gras.widthOfTextAtSize(titre, 18),
+      y: PAGE_H - 46,
+      size: 18,
+      font: gras,
+      color: BLANC,
+    })
+    pageCourante.drawText(numeroTexte, {
+      x: PAGE_L - MARGE - normal.widthOfTextAtSize(numeroTexte, 9),
+      y: PAGE_H - 62,
+      size: 9,
+      font: normal,
+      color: rgb(0.87, 0.9, 1),
+    })
+    return PAGE_H - 110
+  }
+
+  function entete(pageCourante: PDFPage, premiere: boolean): number {
+    switch (design) {
+      case 'moderne':
+        return enteteModerne(pageCourante, premiere)
+      case 'facture_maroc':
+        return enteteMaroc(pageCourante, premiere)
+      case 'epure':
+        return enteteEpure(pageCourante, premiere)
+      case 'bandeau':
+        return enteteBandeau(pageCourante, premiere)
+      default:
+        return enteteClassique(pageCourante, premiere)
+    }
   }
 
   y = entete(page, true)
@@ -318,26 +519,52 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
 
   // ---------------------------------------------------------------- lines
   const colonnes = { designation: MARGE, quantite: 330, unite: 365, prix: 400, tva: 470, total: PAGE_L - MARGE }
+
+  // Chaque modèle traite l'en-tête du tableau à sa façon : l'un le remplit,
+  // l'autre le souligne, le troisième s'en passe. La géométrie, elle, ne bouge
+  // pas — les colonnes doivent s'aligner avec les lignes dessinées plus bas.
+  const fondTete =
+    design === 'facture_maroc' ? rgb(0.94, 0.956, 1)
+    : design === 'bandeau' ? TEINTE
+    : design === 'classique' ? rgb(0.965, 0.973, 1)
+    : null
+  const couleurTete =
+    design === 'moderne' || design === 'bandeau' ? ACCENT
+    : design === 'facture_maroc' ? BLEU
+    : design === 'epure' ? ARDOISE
+    : ENCRE
+  const tailleTete = design === 'epure' ? 7.5 : 8
+
   function enteteLignes(pageCourante: PDFPage, position: number): number {
-    pageCourante.drawRectangle({
-      x: MARGE,
-      y: position - 4,
-      width: LARGEUR_UTILE,
-      height: 18,
-      color: design === 'facture_maroc' ? rgb(0.94, 0.956, 1) : rgb(0.965, 0.973, 1),
-    })
-    pageCourante.drawText('Désignation', { x: colonnes.designation + 4, y: position, size: 8, font: gras, color: ENCRE })
-    pageCourante.drawText('Qté', { x: colonnes.quantite, y: position, size: 8, font: gras, color: ENCRE })
-    pageCourante.drawText('P.U. HT', { x: colonnes.prix, y: position, size: 8, font: gras, color: ENCRE })
-    pageCourante.drawText('TVA', { x: colonnes.tva, y: position, size: 8, font: gras, color: ENCRE })
+    if (fondTete) {
+      pageCourante.drawRectangle({
+        x: MARGE,
+        y: position - 4,
+        width: LARGEUR_UTILE,
+        height: 18,
+        color: fondTete,
+      })
+    }
+    pageCourante.drawText('Désignation', { x: colonnes.designation + 4, y: position, size: tailleTete, font: gras, color: couleurTete })
+    pageCourante.drawText('Qté', { x: colonnes.quantite, y: position, size: tailleTete, font: gras, color: couleurTete })
+    pageCourante.drawText('P.U. HT', { x: colonnes.prix, y: position, size: tailleTete, font: gras, color: couleurTete })
+    pageCourante.drawText('TVA', { x: colonnes.tva, y: position, size: tailleTete, font: gras, color: couleurTete })
     const total = 'Total HT'
     pageCourante.drawText(total, {
-      x: colonnes.total - gras.widthOfTextAtSize(total, 8),
+      x: colonnes.total - gras.widthOfTextAtSize(total, tailleTete),
       y: position,
-      size: 8,
+      size: tailleTete,
       font: gras,
-      color: ENCRE,
+      color: couleurTete,
     })
+    if (design === 'moderne' || design === 'epure') {
+      pageCourante.drawLine({
+        start: { x: MARGE, y: position - 6 },
+        end: { x: PAGE_L - MARGE, y: position - 6 },
+        thickness: design === 'moderne' ? 1.2 : 0.8,
+        color: design === 'moderne' ? ACCENT : TRAIT,
+      })
+    }
     return position - 20
   }
 
@@ -424,11 +651,12 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
   for (const tva of totaux.lignesTvaImprimees) {
     ligneTotal(`TVA ${tva.taux} %`, dh(tva.montant))
   }
+  const accentFilet = design === 'moderne' || design === 'epure' || design === 'bandeau'
   page.drawLine({
-    start: { x: xEtiquette, y: y + 4 },
-    end: { x: xValeur, y: y + 4 },
-    thickness: 0.8,
-    color: TRAIT,
+    start: { x: xEtiquette, y: y + 10 },
+    end: { x: xValeur, y: y + 10 },
+    thickness: accentFilet ? 1.2 : 0.8,
+    color: accentFilet ? ACCENT : TRAIT,
   })
   ligneTotal(totaux.estAvoir ? 'Total avoir' : 'Total TTC', dh(totaux.total), true)
   if (totaux.acompte > 0) {
@@ -441,7 +669,7 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
     totaux.estAvoir ? 'Net à créditer' : 'Net à payer',
     dh(totaux.netAPayer),
     true,
-    design === 'facture_maroc' ? BLEU : ENCRE,
+    design === 'classique' ? ENCRE : design === 'facture_maroc' ? BLEU : ACCENT,
   )
 
   // ---------------------------------------------------------------- footer
@@ -516,6 +744,254 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
 
   const bytes = await pdf.save({ useObjectStreams: false })
   return bytes
+}
+
+/** 80 mm roll. One column, no table: the receipt a till actually prints. */
+async function creerPdfTicket(options: OptionsPdf): Promise<Uint8Array> {
+  const { facture, boutique } = options
+  const totaux = options.totaux ?? calculer(facture)
+  const L = 226.77
+  const M = 14
+  const utile = L - M * 2
+
+  const pdf = await PDFDocument.create()
+  const normal = await pdf.embedFont(StandardFonts.Helvetica)
+  const gras = await pdf.embedFont(StandardFonts.HelveticaBold)
+  const document = facture
+
+  const date = analyserDate(document.date) ?? new Date(2000, 0, 1)
+  pdf.setTitle(`${libelleDocument(document)} ${document.numero}`.trim())
+  pdf.setAuthor(texteOuVide(boutique.nom))
+  pdf.setSubject('Document commercial')
+  pdf.setCreator('FactureApp')
+  pdf.setProducer('FactureApp')
+  pdf.setCreationDate(date)
+  pdf.setModificationDate(date)
+
+  const logo = options.logo ? await embarquerLogo(pdf, options.logo) : null
+
+  const nomLignes = couper(texteOuVide(boutique.nom) || 'Boutique', gras, 11, utile)
+  const coordonnees = [
+    texteOuVide(boutique.adresse),
+    boutique.telephone ?? '',
+    [
+      boutique.ice ? `ICE ${boutique.ice}` : '',
+      boutique.if_fiscal ? `IF ${boutique.if_fiscal}` : '',
+      boutique.rc ? `RC ${boutique.rc}` : '',
+    ]
+      .filter(Boolean)
+      .join(' · '),
+  ].filter(Boolean)
+  const coordsLignes = coordonnees.flatMap((ligne) => couper(ligne, normal, 6.5, utile))
+
+  const client = document.client
+  const clientLignes = [
+    client.nom || 'Client',
+    texteOuVide(client.adresse),
+    [client.telephone, client.ice ? `ICE ${client.ice}` : ''].filter(Boolean).join(' · '),
+  ].filter(Boolean)
+
+  const descW = utile - 54
+  const lignes = document.lignes.map((ligne) => {
+    const desc = couper(ligne.description || '—', normal, 7.5, descW)
+    return { ligne, desc, hauteur: desc.length * 9 + 10 }
+  })
+
+  const rangees: Array<[string, string, boolean]> = []
+  if (totaux.afficheRemise) {
+    rangees.push(['Sous-total', dh(totaux.sousTotal), false])
+    rangees.push(['Remise', `-${dh(totaux.remise)}`, false])
+  }
+  rangees.push(['Total HT', dh(totaux.totalHt), false])
+  if (totaux.surcharge > 0) {
+    rangees.push([texteOuVide(document.surchargeLibelle) || 'Frais', dh(totaux.surcharge), false])
+  }
+  for (const tva of totaux.lignesTvaImprimees) rangees.push([`TVA ${tva.taux} %`, dh(tva.montant), false])
+  rangees.push([totaux.estAvoir ? 'Total avoir' : 'Total TTC', dh(totaux.total), true])
+  if (totaux.acompte > 0) rangees.push(['Acompte', `-${dh(totaux.acompte)}`, false])
+  if (totaux.paye > 0) rangees.push(['Déjà payé', `-${dh(totaux.paye)}`, false])
+  rangees.push([totaux.estAvoir ? 'Net à créditer' : 'Net à payer', dh(totaux.netAPayer), true])
+
+  const hLogo = logo ? 40 : 0
+  const hLignes = lignes.reduce((total, ligne) => total + ligne.hauteur, 0)
+  const hauteur =
+    M +
+    hLogo +
+    nomLignes.length * 13 + 2 +
+    coordsLignes.length * 8 + 6 + 14 +
+    10 + 14 +
+    clientLignes.length * 9 + 2 + 12 +
+    hLignes +
+    2 + 12 +
+    rangees.length * 10 +
+    8 +
+    M
+  const PAGE_T = Math.max(260, hauteur)
+
+  const page = pdf.addPage([L, PAGE_T])
+  let y = PAGE_T - M
+
+  if (logo) {
+    const largeur = 34
+    page.drawImage(logo, { x: (L - largeur) / 2, y: y - largeur, width: largeur, height: largeur })
+    y -= hLogo
+  }
+
+  for (const ligne of nomLignes) {
+    page.drawText(ligne, {
+      x: (L - gras.widthOfTextAtSize(ligne, 11)) / 2,
+      y,
+      size: 11,
+      font: gras,
+      color: ENCRE,
+    })
+    y -= 13
+  }
+  y -= 2
+  for (const ligne of coordsLignes) {
+    page.drawText(ligne, {
+      x: (L - normal.widthOfTextAtSize(ligne, 6.5)) / 2,
+      y,
+      size: 6.5,
+      font: normal,
+      color: ARDOISE,
+    })
+    y -= 8
+  }
+
+  y -= 6
+  page.drawLine({
+    start: { x: M, y },
+    end: { x: L - M, y },
+    thickness: 0.7,
+    color: TRAIT,
+    dashArray: [2, 2],
+  })
+  y -= 14
+
+  page.drawText(assainir(libelleDocument(document).toUpperCase()), {
+    x: M,
+    y,
+    size: 7.5,
+    font: gras,
+    color: ACCENT,
+  })
+  const numero = assainir(document.numero || 'Brouillon')
+  page.drawText(numero, {
+    x: L - M - normal.widthOfTextAtSize(numero, 7.5),
+    y,
+    size: 7.5,
+    font: normal,
+    color: ENCRE,
+  })
+  y -= 10
+  page.drawText(assainir(document.date), { x: M, y, size: 7, font: normal, color: ARDOISE })
+  y -= 14
+
+  for (let index = 0; index < clientLignes.length; index += 1) {
+    page.drawText(assainir(clientLignes[index] ?? ''), {
+      x: M,
+      y,
+      size: index === 0 ? 8.5 : 7,
+      font: index === 0 ? gras : normal,
+      color: index === 0 ? ENCRE : ARDOISE,
+    })
+    y -= 9
+  }
+
+  y -= 2
+  page.drawLine({
+    start: { x: M, y },
+    end: { x: L - M, y },
+    thickness: 0.7,
+    color: TRAIT,
+    dashArray: [2, 2],
+  })
+  y -= 12
+
+  for (const { ligne, desc } of lignes) {
+    const montantLigne = dh(totalLigne(ligne))
+    page.drawText(desc[0] ?? '', { x: M, y, size: 7.5, font: normal, color: ENCRE })
+    page.drawText(montantLigne, {
+      x: L - M - normal.widthOfTextAtSize(montantLigne, 7.5),
+      y,
+      size: 7.5,
+      font: normal,
+      color: ENCRE,
+    })
+    y -= 9
+    for (let d = 1; d < desc.length; d += 1) {
+      page.drawText(desc[d] ?? '', { x: M, y, size: 7, font: normal, color: ARDOISE })
+      y -= 9
+    }
+    const quantite = `${assainir(montant(ligne.quantite).replace(',00', ''))}${ligne.unite ? ` ${ligne.unite}` : ''}`
+    page.drawText(assainir(`${quantite} × ${dh(ligne.prixUnitaire)}`), {
+      x: M,
+      y,
+      size: 6.5,
+      font: normal,
+      color: ARDOISE,
+    })
+    y -= 10
+  }
+
+  y -= 2
+  page.drawLine({
+    start: { x: M, y },
+    end: { x: L - M, y },
+    thickness: 0.7,
+    color: TRAIT,
+    dashArray: [2, 2],
+  })
+  y -= 12
+
+  for (const [libelle, valeur, fort] of rangees) {
+    const police = fort ? gras : normal
+    const taille = fort ? 8 : 7.5
+    page.drawText(assainir(libelle), {
+      x: M,
+      y,
+      size: taille,
+      font: police,
+      color: fort ? ENCRE : ARDOISE,
+    })
+    page.drawText(valeur, {
+      x: L - M - police.widthOfTextAtSize(valeur, taille),
+      y,
+      size: taille,
+      font: police,
+      color: fort ? (libelle.startsWith('Net') ? ACCENT : ENCRE) : ENCRE,
+    })
+    y -= 10
+  }
+
+  const pied = `FactureApp · ${assainir(boutique.nom)}`
+  const piedTaille = 5.5
+  const piedLargeur = Math.min(normal.widthOfTextAtSize(pied, piedTaille), utile)
+  page.drawText(pied, {
+    x: (L - piedLargeur) / 2,
+    y: M,
+    size: piedTaille,
+    font: normal,
+    color: ARDOISE,
+  })
+
+  if (options.filigrane) {
+    const texte = assainir(options.filigrane)
+    const taille = 16
+    const largeur = gras.widthOfTextAtSize(texte, taille)
+    page.drawText(texte, {
+      x: (L - largeur * 0.7) / 2,
+      y: PAGE_T / 2,
+      size: taille,
+      font: gras,
+      color: ROUGE,
+      opacity: 0.08,
+      rotate: degrees(35),
+    })
+  }
+
+  return pdf.save({ useObjectStreams: false })
 }
 
 function libelleDocument(facture: Facture): string {

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { DESIGNS, ORDRE_TYPES, TYPES_DOCUMENT, type DesignDocument } from '../lib/document'
+  import { DESIGNS, ORDRE_TYPES, TYPES_DOCUMENT, designDepuisId, type DesignDocument } from '../lib/document'
   import { prefixeValide } from '../lib/numbering'
   import { analyserMontant } from '../lib/money'
   import { auth, chargerBoutique, enregistrerBoutique } from '../lib/session.svelte'
@@ -28,7 +28,7 @@
     prix_ttc: boolean
     conditions_paiement: string
     numerotation_annuelle: boolean
-    design_defaut: 'classique' | 'facture_maroc'
+    design_defaut: DesignDocument
     prefixes: Record<string, string>
   }
 
@@ -94,7 +94,7 @@
       prix_ttc: boutique.prix_ttc,
       conditions_paiement: boutique.conditions_paiement,
       numerotation_annuelle: Boolean(boutique.numerotation_annuelle),
-      design_defaut: boutique.design_defaut ?? 'classique',
+      design_defaut: designDepuisId(boutique.design_defaut),
       prefixes: { ...(boutique.prefixes ?? {}) },
     }
     logo = urlLogo(boutique.logo_path)
@@ -248,7 +248,7 @@
   }
 
   function majDesign(valeur: string) {
-    saisie.design_defaut = (valeur === 'facture_maroc' ? 'facture_maroc' : 'classique') as DesignDocument
+    saisie.design_defaut = designDepuisId(valeur)
   }
 </script>
 
@@ -412,6 +412,7 @@
                   <option value={idDesign}>{libelle}</option>
                 {/each}
               </select>
+              <span class="aide">Cinq modèles A4 et un ticket de caisse 80 mm. Chaque document garde le modèle avec lequel il a été émis.</span>
             </div>
             <label class="champ champ--case">
               <input type="checkbox" bind:checked={saisie.numerotation_annuelle} />

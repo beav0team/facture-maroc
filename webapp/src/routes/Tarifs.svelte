@@ -1,41 +1,8 @@
 <script lang="ts">
   import { auth } from '../lib/session.svelte'
+  import { CONTACT_PRO, OFFRES } from '../lib/offres'
 
-  const contact = 'mailto:contact@factureapp.ma?subject=Passage%20au%20plan%20Pro%20FactureApp'
-
-  const offres = [
-    {
-      nom: 'Gratuit',
-      prix: '0 DH',
-      periode: 'pour toujours',
-      texte: 'Pour essayer et facturer quelques clients.',
-      points: [
-        '5 factures émises par mois',
-        'Clients, articles et devis illimités',
-        'PDF archivé avec filigrane',
-        'Accès depuis téléphone et ordinateur',
-      ],
-      action: 'Commencer',
-      lien: '/app/',
-      principal: false,
-    },
-    {
-      nom: 'Pro',
-      prix: '990 DH',
-      periode: 'par an',
-      texte: 'Pour un commerce qui facture tous les jours.',
-      points: [
-        'Factures illimitées',
-        'PDF sans filigrane',
-        'Tous les types de documents',
-        'Relevés clients et suivi des paiements',
-        'Support par e-mail',
-      ],
-      action: 'Passer au Pro',
-      lien: contact,
-      principal: true,
-    },
-  ]
+  const contact = CONTACT_PRO
 </script>
 
 <div class="page">
@@ -60,7 +27,7 @@
     </section>
 
     <div class="offres">
-      {#each offres as offre}
+      {#each OFFRES as offre}
         <article class="carte offre" class:offre--principale={offre.principal}>
           <div class="offre__entete">
             <h2>{offre.nom}</h2>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { TAUX_TVA } from '../lib/document'
+  import { DESIGNS, TAUX_TVA, designDepuisId, type DesignDocument } from '../lib/document'
   import { calculer, totalLigne, type Facture, type Ligne } from '../lib/invoice'
   import { analyserMontant, dirhams } from '../lib/money'
   import { nomFichier, telechargerBlob } from '../lib/archive'
@@ -8,6 +8,7 @@
   let nomBoutique = $state('')
   let nomClient = $state('')
   let taux = $state(20)
+  let modele = $state<DesignDocument>('classique')
   let lignes = $state<Ligne[]>([{ description: '', quantite: 1, prixUnitaire: 0 }])
   let travail = $state(false)
   let erreur = $state<string | null>(null)
@@ -78,6 +79,7 @@
       const { creerPdf } = await import('../lib/pdf')
       const bytes = await creerPdf({
         facture,
+        design: modele,
         boutique: {
           nom: nomBoutique.trim() || 'Votre boutique',
           adresse: null,
@@ -146,6 +148,7 @@
                 {/each}
               </select>
             </div>
+
           </div>
         </section>
 
@@ -189,11 +192,19 @@
             {/each}
             <div class="totaux__fort"><dt>Total TTC</dt><dd>{dirhams(totaux.total)}</dd></div>
           </dl>
+          <div class="champ">
+            <label for="g-modele">Modèle du PDF</label>
+            <select id="g-modele" value={modele} onchange={(e) => (modele = designDepuisId(e.currentTarget.value))}>
+              {#each Object.entries(DESIGNS) as [idModele, libelle]}
+                <option value={idModele}>{libelle}</option>
+              {/each}
+            </select>
+          </div>
           {#if erreur}<p class="alerte" role="alert">{erreur}</p>{/if}
           <button class="btn" type="button" onclick={() => void telecharger()} disabled={travail}>
             {travail ? 'Génération…' : 'Télécharger le PDF'}
           </button>
-          <a class="lien" href="/app/" onclick={preparerCompte}>Créer un compte pour numéroter et archiver</a>
+          <a class="lien" href="/app/?mode=signup" onclick={preparerCompte}>Créer un compte pour numéroter et archiver</a>
         </section>
       </aside>
     </div>
@@ -207,7 +218,7 @@
           n’importe quel appareil.
         </p>
       </div>
-      <a class="btn" href="/app/" onclick={preparerCompte}>Ouvrir mon compte</a>
+      <a class="btn" href="/app/?mode=signup" onclick={preparerCompte}>Ouvrir mon compte</a>
     </section>
   </main>
 </div>

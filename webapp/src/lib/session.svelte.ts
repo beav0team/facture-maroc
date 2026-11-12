@@ -1,4 +1,5 @@
 import type { User } from '@supabase/supabase-js'
+import type { DesignDocument } from './document'
 import { supabase } from './supabase'
 import { messageRecuperation, typeRecuperation } from './recuperation'
 
@@ -24,7 +25,7 @@ export type Boutique = {
   logo_path: string | null
   prefixes: Record<string, string> | null
   numerotation_annuelle: boolean
-  design_defaut: 'classique' | 'facture_maroc'
+  design_defaut: DesignDocument
   created_at: string
 }
 

@@ -11,6 +11,10 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Vérifie le site marketing avant de compiler : une page sans navigation, sans
+# lien vers l'application ou avec un prix recopié fait échouer le déploiement.
+node scripts/check-site.mjs
+
 corepack enable
 pnpm install --frozen-lockfile
 pnpm build

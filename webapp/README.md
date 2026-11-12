@@ -18,7 +18,7 @@ relevés, générateur public, tarifs, admin et import Android.
 | Réglages | identifiants légaux, coordonnées bancaires, TVA, logo |
 | Documents | facture, devis, avoir ; TVA par ligne, remises, acompte, arrondi |
 | Émission | numéro et snapshot boutique pris en SQL, document immuable |
-| PDF | deux modèles, filigrane gratuit, archivé avec SHA-256 |
+| PDF | six modèles (cinq A4 + ticket 80 mm), filigrane gratuit, archivé avec SHA-256 |
 | Paiements | encaissements multiples, reste dû, retard, relevé client |
 | Public | `/app/gratuit` sans compte, `/app/tarifs`, `/app/admin` |
 | Import | sauvegarde JSON de l'app Android (clients, articles, compteurs) |
@@ -214,7 +214,7 @@ webapp/
 │  ├─ lib/invoice.ts          arithmétique portée depuis InvoiceData.kt
 │  ├─ lib/money.ts            arrondi et écriture des montants
 │  ├─ lib/numbering.ts        numéros et compteurs par type
-│  ├─ lib/pdf.ts              rendu pdf-lib déterministe (deux modèles)
+│  ├─ lib/pdf.ts              rendu pdf-lib déterministe (six modèles)
 │  ├─ lib/prix.ts             prix HT/TTC, porté de PriceBasis.kt
 │  ├─ lib/router.svelte.ts    routeur minimal (pushState + clics)
 │  ├─ lib/session.svelte.ts   auth, boutique courante, messages d'erreur

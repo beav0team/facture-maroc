@@ -74,16 +74,33 @@ export function typeDepuisId(id: string | null | undefined): TypeDocument {
   return ORDRE_TYPES.find((type) => type === id) ?? 'facture'
 }
 
-/** The two paper layouts, chosen per document and defaulted by the shop. */
-export type DesignDocument = 'classique' | 'facture_maroc'
+/**
+ * The paper layouts, chosen per document and defaulted by the shop.
+ *
+ * The ids are what the database stores and what an already-issued document
+ * keeps: renaming one would orphan the documents archived under it. `ticket`
+ * is the only one that does not print on A4 — it comes out on an 80 mm roll.
+ */
+export type DesignDocument =
+  | 'classique'
+  | 'moderne'
+  | 'facture_maroc'
+  | 'epure'
+  | 'bandeau'
+  | 'ticket'
 
+/** Picker order. The label is what the shop reads; the id never changes. */
 export const DESIGNS: Record<DesignDocument, string> = {
   classique: 'Classique',
+  moderne: 'Moderne',
   facture_maroc: 'Facture Maroc',
+  epure: 'Épuré',
+  bandeau: 'Bandeau',
+  ticket: 'Ticket (80 mm)',
 }
 
 export function designDepuisId(id: string | null | undefined): DesignDocument {
-  return id === 'facture_maroc' ? 'facture_maroc' : 'classique'
+  return id && id in DESIGNS ? (id as DesignDocument) : 'classique'
 }
 
 export type MethodePaiement = 'cash' | 'check' | 'transfer' | 'card'

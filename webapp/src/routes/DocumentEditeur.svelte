@@ -7,6 +7,7 @@
     ORDRE_TYPES,
     TAUX_TVA,
     TYPES_DOCUMENT,
+    designDepuisId,
     type ConditionsPaiement,
     type DesignDocument,
     type MethodePaiement,
@@ -328,7 +329,7 @@
   }
 
   function changerDesign(valeur: string) {
-    saisie.design = (valeur === 'facture_maroc' ? 'facture_maroc' : 'classique') as DesignDocument
+    saisie.design = designDepuisId(valeur)
   }
 
   async function enregistrer(naviguer = true): Promise<string | null> {
@@ -846,6 +847,7 @@
                     <option value={idDesign}>{libelle}</option>
                   {/each}
                 </select>
+                <span class="aide">« Ticket (80 mm) » sort sur un rouleau de caisse ; les autres sur A4.</span>
               </div>
               <div class="champ">
                 <label for="d-taux">TVA par défaut</label>
@@ -1110,7 +1112,7 @@
   }
 
   .contenu {
-    width: min(1100px, 100%);
+    width: min(1200px, 100%);
     margin: 0 auto;
     padding: clamp(20px, 4vw, 40px) clamp(16px, 4vw, 24px);
     display: flex;
@@ -1247,14 +1249,32 @@
     display: none;
   }
 
+  .champ .aide {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--ardoise);
+  }
+
   .ligne__designation {
     display: flex;
     gap: 6px;
     min-width: 0;
   }
 
+  /* Le sélecteur d'article prenait toute la largeur (width: 100% venant de
+     `.ligne select`) et écrasait la désignation : la ligne affichait un menu
+     et un champ de vingt pixels. Le menu garde une largeur fixe, le texte
+     prend le reste. */
+  .ligne__designation select {
+    flex: 0 0 96px;
+    width: 96px;
+  }
+
   .ligne__designation input {
     flex: 1;
+    width: auto;
     min-width: 0;
   }
 
@@ -1430,7 +1450,7 @@
       border: 0;
       background: none;
       padding: 0;
-      grid-template-columns: minmax(0, 1fr) 64px 92px 64px 64px 100px 74px;
+      grid-template-columns: minmax(0, 1.4fr) 56px 88px 56px 56px 96px 70px;
     }
 
     .ligne--entete {

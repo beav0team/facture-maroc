@@ -6,7 +6,9 @@
 // not throw, and a watermark only on the free plan.
 
 import { describe, expect, it } from 'vitest'
+import { PDFDocument } from 'pdf-lib'
 import { assainir, creerPdf, creerRecuPdf, sha256Hex } from '../src/lib/pdf'
+import { DESIGNS, type DesignDocument } from '../src/lib/document'
 import { cheminArchive, nomFichier } from '../src/lib/archive'
 import type { Facture } from '../src/lib/invoice'
 import type { SnapshotBoutique } from '../src/lib/documents'
@@ -96,9 +98,32 @@ describe('PDF', () => {
     expect(await sha256Hex(gratuit)).not.toBe(await sha256Hex(libre))
   })
 
-  it('le modèle facture_maroc rend aussi un PDF', async () => {
-    const bytes = await creerPdf({ facture, boutique, design: 'facture_maroc' })
-    expect(octets(bytes).startsWith('%PDF-')).toBe(true)
+  it('chaque modèle rend un PDF valide et distinct', async () => {
+    const empreintes = new Set<string>()
+    for (const design of Object.keys(DESIGNS) as DesignDocument[]) {
+      const bytes = await creerPdf({ facture, boutique, design })
+      expect(octets(bytes).startsWith('%PDF-'), design).toBe(true)
+      expect(octets(bytes)).toContain('%%EOF')
+      empreintes.add(await sha256Hex(bytes))
+    }
+    expect(empreintes.size).toBe(Object.keys(DESIGNS).length)
+  })
+
+  it('le modèle ticket sort sur un rouleau de 80 mm', async () => {
+    const bytes = await creerPdf({ facture, boutique, design: 'ticket' })
+    const pdf = await PDFDocument.load(bytes)
+    const pages = pdf.getPages()
+    expect(pages).toHaveLength(1)
+    expect(pages[0]?.getWidth()).toBeCloseTo(226.77, 1)
+    expect(pages[0]?.getHeight()).toBeLessThan(900)
+  })
+
+  it('le même modèle reste déterministe', async () => {
+    for (const design of ['moderne', 'epure', 'bandeau', 'ticket'] as DesignDocument[]) {
+      const premier = await creerPdf({ facture, boutique, design })
+      const second = await creerPdf({ facture, boutique, design })
+      expect(await sha256Hex(premier), design).toBe(await sha256Hex(second))
+    }
   })
 
   it('pagine un document long', async () => {
