@@ -3,37 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Page introuvable — Facture Maroc</title>
+<title>Page introuvable — FactureApp</title>
 <meta name="robots" content="noindex">
-<style>
-  :root { --bleu: #1E3FD2; --nuit: #0B1B4D; --papier: #F6F8FE; --ardoise: #4D5B7C; }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--papier);
-    color: var(--nuit);
-    font: 400 16.5px/1.6 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  }
-  main { max-width: 34rem; padding: clamp(56px, 12vw, 140px) clamp(20px, 6vw, 48px); }
-  .marque { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 40px;
-    font-weight: 600; font-size: 17px; text-decoration: none; color: inherit; }
-  .marque i { width: 22px; height: 26px; background: var(--bleu);
-    clip-path: polygon(0 0, 100% 0, 100% 78%, 83% 100%, 66% 78%, 50% 100%, 33% 78%, 16% 100%, 0 78%); }
-  h1 { margin: 0 0 16px; font-size: clamp(32px, 7vw, 46px); line-height: 1.05; letter-spacing: -.03em; }
-  p { margin: 0 0 28px; color: var(--ardoise); }
-  a.bouton { display: inline-block; padding: 15px 22px; background: var(--bleu); color: #fff;
-    font-weight: 600; font-size: 15px; text-decoration: none; }
-  a.bouton:hover { background: var(--nuit); }
-  a:focus-visible { outline: 3px solid var(--bleu); outline-offset: 3px; }
-</style>
+<meta name="theme-color" content="#1E3FD2">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
+<link rel="preload" href="/assets/fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/site.css">
 </head>
 <body>
-<main>
-  <a class="marque" href="https://factureapp.ma/"><i aria-hidden="true"></i>Facture Maroc</a>
-  <h1>Cette page n’existe pas.</h1>
-  <p>Le lien est peut-être ancien, ou l’adresse mal recopiée. Le site, lui, est
-    toujours là.</p>
-  <a class="bouton" href="https://factureapp.ma/">Revenir à l’accueil</a>
+
+<a class="saut" href="#contenu">Aller au contenu</a>
+
+<header class="barre">
+  <a class="marque" href="/"><span aria-hidden="true"></span>FactureApp</a>
+  <nav aria-label="Sections">
+    <a href="/#fonctionnalites">Fonctionnalités</a>
+    <a href="/app/tarifs">Tarifs</a>
+    <a href="/#questions">Questions</a>
+    <a href="/app/">Connexion</a>
+  </nav>
+  <a class="bouton bouton--plein bouton--petit" href="/app/?mode=signup">Créer ma facture</a>
+</header>
+
+<main id="contenu">
+  <article class="doc">
+    <h1>Cette page n’existe pas.</h1>
+    <p class="chapeau">Le lien est peut-être ancien, ou l’adresse mal recopiée.
+      Le site, lui, est toujours là.</p>
+    <div class="suite">
+      <a class="bouton bouton--plein" href="/">Revenir à l’accueil</a>
+      <a class="bouton bouton--contour" href="/app/?mode=signup">Créer ma facture</a>
+    </div>
+  </article>
 </main>
+
 </body>
 </html>

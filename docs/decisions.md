@@ -229,6 +229,73 @@ Un numéro déjà imprimé n'est jamais réémis par la webapp. L'import reprend
 clients, les articles et les compteurs, puis recrée les documents en brouillons
 avec leur numéro Android dans `reference`.
 
+### 2026-11-12 — La vitrine vend la webapp ; le prix vit dans offres.ts
+Le site marketing ne vend plus l'application Android : l'accueil mène au compte
+web, et `test.html` reste la seule page Android. Aucun montant n'est imprimé
+dans le HTML ; `/tarifs` redirige en 301 vers `/app/tarifs`, qui lit
+`webapp/src/lib/offres.ts`. Le tarif Pro (990 DH) reste provisoire tant que le
+paiement en ligne n'est pas ouvert.
+
+### 2026-11-12 — Les captures viennent de la vraie application
+Les deux captures du compte sont prises sur la boutique de test de l’agent
+(`agent-test@factureapp.ma`), remplie d’un jeu de démonstration identique à
+celui du site (Atelier Atlas, Société Nomade). Aucune donnée d’une boutique
+réelle n’est lue ni montrée. La boutique de test a été renommée « Atelier
+Atlas » pour que la capture et le site racontent la même histoire ;
+`./scripts/compte-test.sh reinitialiser` la vide.
+
+### 2026-11-12 — Le site ne promet plus l’absence de mesure d’audience
+Yassine n’a jamais pris cet engagement. Les phrases « aucun script de mesure
+d’audience » sont retirées ; restent « aucune publicité » et « aucune revente
+de données », qui sont vrais. Une mesure d’audience (Cloudflare Web Analytics,
+sans cookie) ne demande aucun changement de code : elle s’active dans le
+tableau de bord, et la politique de confidentialité doit alors la citer.
+
+### 2026-11-12 — Le prix s’écrit à deux endroits, vérifiés
+L’accueil affiche le tarif du Pro et les CGV doivent l’énoncer : deux copies
+qui peuvent diverger. `check-site.mjs` lit `offres.ts` et refuse un prix qui ne
+correspond plus, sur l’une comme sur l’autre page. Aucune autre page n’a le
+droit de le recopier.
+
+### 2026-11-12 — Les boutons mènent à l’inscription, pas à la connexion
+Un visiteur qui clique « Créer ma facture » n’a pas de compte : toutes les
+actions de création pointent sur `/app/?mode=signup`. Les liens de connexion
+(`Connexion`, `Se connecter`) restent sur `/app/`.
+
+### 2026-11-12 — Six modèles de document, comme sur Android
+La webapp n’en connaissait que deux (`classique`, `facture_maroc`). Elle reprend
+les six modèles de l’application : Classique, Moderne, Facture Maroc, Épuré,
+Bandeau, et Ticket sur rouleau 80 mm. Les identifiants existants ne changent pas
+— `facture_maroc` reste `facture_maroc`, sinon les documents déjà émis
+perdraient leur modèle — et la contrainte SQL est seulement élargie
+(`0006_modeles.sql`). Le choix se fait par document, se règle par défaut sur la
+boutique, et le générateur public le propose pour juger le rendu sans compte.
+
+### 2026-11-12 — La vitrine prend la forme d’une page produit
+L’accueil suit la structure d’une page de logiciel de facturation (celle de
+factura-ma.com) : héros avec la facture et les quatre preuves, aiguillage
+compte / générateur, quatre atouts avec leur miniature, trois étapes avec une
+capture réelle de l’éditeur, états du document, dix documents, deux formules avec
+leur prix, note du fondateur, FAQ, appel final. Le langage visuel reste celui de
+`DESIGN.md` : la structure est empruntée, pas les cartes arrondies ni les dégradés.
+La capture vient de `app/gratuit` (le seul écran public) ; elle est masquée sous
+720 px. L’image de partage est refaite depuis le site — l’ancienne montrait
+l’application Android.
+
+### 2026-11-12 — La vitrine ne cite plus l’application Android
+La webapp est le produit, et le site ne vend qu’elle : la section Android de
+`a-propos.html` et de `facture-modele-marocain-gratuit.html` est supprimée, le
+lien « version Android de test » disparaît de tous les pieds de page, et
+`contact.html` ne propose plus de test fermé. `test.html` reste en ligne, en
+`noindex`, sans lien entrant, pour les testeurs qui ont déjà l’adresse.
+`webapp/scripts/check-site.mjs` refuse désormais toute mention d’Android ou du
+Play Store dans une page de la vitrine.
+
+### 2026-11-12 — Une page de limites assumée
+`docs/avis.html` énumère ce que la webapp ne fait pas : journal de stock, export
+UBL, facture électronique DGI, relances, comptabilité, mode hors ligne. Toute
+promesse retirée du site doit y être ajoutée, et inversement.
+
 ## Open
 
 1. **Auto-entrepreneur number** — print it on documents?

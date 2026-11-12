@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>À propos — Facture Maroc hors ligne</title>
-<meta name="description" content="Qui développe Facture Maroc, pourquoi l’application n’a aucune permission réseau, et ce qu’elle fait de vos données : rien, elles restent dans le téléphone.">
+<title>À propos — FactureApp</title>
+<meta name="description" content="Qui développe FactureApp, la facturation marocaine en ligne : pourquoi le navigateur, où sont les données, et ce que le projet ne promet pas.">
 <link rel="canonical" href="https://factureapp.ma/a-propos.html">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_MA">
-<meta property="og:site_name" content="Facture Maroc hors ligne">
-<meta property="og:title" content="À propos — Facture Maroc hors ligne">
-<meta property="og:description" content="Qui développe Facture Maroc, pourquoi l’application n’a aucune permission réseau, et ce qu’elle fait de vos données.">
+<meta property="og:site_name" content="FactureApp">
+<meta property="og:title" content="À propos — FactureApp">
+<meta property="og:description" content="La facturation marocaine en ligne, faite par une seule personne, sans publicité ni revendeur de données.">
 <meta property="og:url" content="https://factureapp.ma/a-propos.html">
 <meta property="og:image" content="https://factureapp.ma/assets/img/apercu-1024.jpg">
-<meta property="og:image:alt" content="Aperçu de Facture Maroc : une facture marocaine avec ICE, TVA et le montant en toutes lettres.">
+<meta property="og:image:alt" content="Aperçu de FactureApp : une facture marocaine avec ICE, TVA et le total en dirhams.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#1E3FD2">
 <meta name="color-scheme" content="light">
@@ -29,7 +29,7 @@
   "@type": "AboutPage",
   "url": "https://factureapp.ma/a-propos.html",
   "inLanguage": "fr",
-  "name": "À propos de Facture Maroc hors ligne",
+  "name": "À propos de FactureApp",
   "mainEntity": { "@id": "https://factureapp.ma/#editeur" },
   "breadcrumb": {
     "@type": "BreadcrumbList",
@@ -46,14 +46,14 @@
 <a class="saut" href="#contenu">Aller au contenu</a>
 
 <header class="barre">
-  <a class="marque" href="./"><span aria-hidden="true"></span>Facture Maroc</a>
+  <a class="marque" href="./"><span aria-hidden="true"></span>FactureApp</a>
   <nav aria-label="Sections">
     <a href="./#fonctionnalites">Fonctionnalités</a>
-    <a href="./#documents">Documents</a>
-    <a href="./#captures">Captures</a>
+    <a href="app/tarifs">Tarifs</a>
     <a href="./#questions">Questions</a>
+    <a href="app/">Connexion</a>
   </nav>
-  <a class="bouton bouton--contour bouton--petit" href="test.html">Devenir testeur</a>
+  <a class="bouton bouton--plein bouton--petit" href="app/?mode=signup">Créer ma facture</a>
 </header>
 
 <main id="contenu">
@@ -66,71 +66,75 @@
       </ol>
     </nav>
 
-    <h1>À propos de Facture Maroc</h1>
-    <p class="maj">Mis à jour le 10 novembre 2026 · Yassine, développeur de l’application</p>
+    <h1>À propos de FactureApp</h1>
+    <p class="maj">Mis à jour le 12 novembre 2026 · Yassine, développeur</p>
 
     <div class="enbref">
-      <p>Facture Maroc est une application Android de facturation et de gestion de
-        stock, faite pour les commerces marocains : factures, devis, bons de
-        commande, tickets, avoirs, avec les mentions légales du pays. Elle
-        fonctionne hors ligne, sans compte, et sans aucune permission réseau.</p>
+      <p>FactureApp facture depuis le navigateur, sur un téléphone comme sur
+        l’ordinateur du comptoir : les documents sont dans un compte, le PDF est
+        archivé, et il part dans la conversation WhatsApp du client. Pas
+        d’installation, pas de système à choisir : la même adresse, le même
+        compte, les mêmes documents.</p>
     </div>
 
-    <h2>Pourquoi une application hors ligne</h2>
-    <p>Un commerçant qui facture dans une boutique, un atelier ou un souk n’a pas
-      toujours de réseau, et n’a pas envie que ses prix d’achat, ses clients et
-      ses marges partent chez un hébergeur qu’il ne connaît pas. La facturation
-      est aussi une obligation qui survit à une coupure : un document doit
-      pouvoir être établi, imprimé et retrouvé le jour où la connexion tombe.</p>
-    <p>L’application n’a donc pas la permission <code>INTERNET</code>. Ce n’est
-      pas un réglage que l’on peut désactiver : la permission n’existe pas dans
-      le manifeste, et Android refuse alors toute connexion sortante. Le
-      téléphone ne peut rien envoyer, même si quelqu’un le lui demandait.</p>
+    <h2>Pourquoi le navigateur</h2>
+    <p>Une facture marocaine se termine rarement sur une imprimante : elle part
+      sur WhatsApp, en photo ou en PDF, dans la conversation où le client a
+      demandé le devis. Le navigateur est le seul endroit qui ouvre le même
+      document depuis le téléphone de la caisse et depuis l’ordinateur du
+      bureau, sans installer quoi que ce soit ni dépendre d’un système.</p>
+    <p>L’archive répond à l’autre moitié du problème. À l’émission, les octets du
+      PDF et leur empreinte SHA-256 sont enregistrés : une réimpression
+      télécharge le document tel qu’il est parti, elle ne le redessine pas. Un
+      document émis ne se modifie ni ne se supprime ; une correction passe par
+      un avoir.</p>
 
-    <h2>Ce que contient une version</h2>
+    <h2>Ce que contient un compte</h2>
     <ul>
-      <li>Dix types de documents, chacun avec sa propre numérotation :
-        facture, devis, bon de commande, ticket 80 mm, avoir, proforma, facture
+      <li>Dix types de documents, chacun avec sa propre numérotation : facture,
+        devis, bon de commande, ticket 80 mm, avoir, proforma, facture
         d’acompte, facture de régularisation, facture simplifiée, facture à
         l’export.</li>
-      <li>Six modèles imprimables, dont un format ticket pour imprimante de
-        comptoir.</li>
-      <li>Mentions légales : ICE, IF, RC, patente, CNSS, TVA par ligne, montant
-        arrêté en toutes lettres.</li>
-      <li>Stock mis à jour à l’émission, rendu par un avoir ; achats, inventaire,
-        valorisation au coût moyen ou FIFO, marge par document et par article.</li>
-      <li>Sauvegarde dans un fichier que vous gardez, export XML (UBL 2.1) et CSV
-        pour le comptable.</li>
+      <li>Mentions légales : ICE, IF, RC, patente et CNSS du vendeur, ICE du
+        client professionnel, TVA par ligne à 20 %, 10 % ou 0 % avec motif,
+        remise et acompte.</li>
+      <li>PDF archivé avec son empreinte, envoi WhatsApp avec message
+        prérempli, relevé client et suivi des paiements.</li>
+      <li>Cinq factures émises par mois sur le plan gratuit, devis et avoirs
+        sans limite ; le plan Pro retire la limite et le filigrane.</li>
     </ul>
 
+    <h2>Les données</h2>
+    <p>Les documents sont dans une base hébergée en Europe, cloisonnée par
+      boutique : chaque compte ne lit que ses propres clients, articles et
+      documents. Le PDF émis est archivé dans un espace privé. Aucune publicité, aucune revente de données.</p>
+
     <h2>Où en est le projet</h2>
-    <p>L’application est en test fermé sur Google Play ; la version publiée ici
-      est la 0.11.1, et le code source est public. Les captures d’écran du site
-      montrent une base de démonstration, pas les données d’un vrai commerce.</p>
-    <p>Le code est écrit en Kotlin et Jetpack Compose, sans base de données :
-      les documents sont des fichiers JSON, lisibles avec un simple éditeur de
-      texte, et sauvegardables sans outil propriétaire. Ce choix coûte un peu de
-      performance sur de très gros volumes ; il garantit qu’un document reste
-      lisible dans dix ans, ce qui est la durée de conservation attendue d’une
-      facture.</p>
+    <p>La version web est ouverte, et c’est le produit : une seule adresse, un
+      compte, les mêmes documents d’un appareil à l’autre. Le code source est
+      public, et le projet est tenu par une seule personne : les corrections
+      prennent parfois quelques jours.</p>
 
     <h2>Ce que le site ne fait pas</h2>
     <ul>
-      <li>Aucun compte, aucune inscription, aucune newsletter.</li>
-      <li>Aucun pistage publicitaire, aucun script tiers, aucun cookie.</li>
-      <li>Aucune promesse de conformité que je ne peux pas tenir : la facturation
-        électronique marocaine n’a pas encore de spécifications techniques
-        publiées, et l’application ne prétend donc pas être « conforme DGI ».</li>
+      <li>Aucune publicité, aucune revente de données.</li>
+      <li>Aucune promesse de conformité que je ne peux pas tenir : la
+        facturation électronique marocaine n’a pas encore de spécifications
+        techniques publiées, et FactureApp ne prétend donc pas être « conforme
+        DGI ».</li>
+      <li>Aucun conseil fiscal : la page
+        <a href="avis.html">ce qu’elle fait et ce qu’elle ne fait pas</a> dit aussi
+        ce qui manque.</li>
     </ul>
 
-    <p class="signature">Écrit par Yassine, qui développe Facture Maroc. Une
+    <p class="signature">Écrit par Yassine, qui développe FactureApp. Une
       question, une erreur à signaler : <a href="contact.html">la page
       contact</a> ou le
       <a href="https://github.com/beav0team/facture-maroc">dépôt GitHub</a>.</p>
 
     <div class="suite">
-      <a class="bouton bouton--plein" href="./">Voir l’application</a>
-      <a class="bouton bouton--contour" href="mentions-obligatoires-facture-maroc.html">Mentions obligatoires d’une facture</a>
+      <a class="bouton bouton--plein" href="app/?mode=signup">Créer ma facture</a>
+      <a class="bouton bouton--contour" href="avis.html">Ce qu’elle fait, ce qu’elle ne fait pas</a>
     </div>
 
   </article>
@@ -139,31 +143,38 @@
 <footer class="pied">
   <div class="contenu">
     <div>
-      <a class="marque" href="./"><span aria-hidden="true"></span>Facture Maroc</a>
-      <p style="margin:12px 0 0;max-width:34ch">Facturation hors ligne pour les
-        commerces marocains. Gratuite, sans compte, sans connexion.</p>
+      <a class="marque" href="./"><span aria-hidden="true"></span>FactureApp</a>
+      <p style="margin:12px 0 0;max-width:34ch">Facturation marocaine en ligne.
+        Gratuit jusqu’à 5 factures par mois, sans carte bancaire.</p>
     </div>
     <div>
-      <h3>Application</h3>
+      <h3>Produit</h3>
       <ul>
         <li><a href="./#fonctionnalites">Fonctionnalités</a></li>
-        <li><a href="./#documents">Documents</a></li>
-        <li><a href="./#captures">Captures</a></li>
-        <li><a href="./#questions">Questions</a></li>
+        <li><a href="app/tarifs">Tarifs</a></li>
+        <li><a href="app/gratuit">Générateur gratuit</a></li>
+        <li><a href="app/">Se connecter</a></li>
       </ul>
     </div>
     <div>
-      <h3>Informations</h3>
+      <h3>Guides</h3>
       <ul>
-        <li><a href="a-propos.html">À propos</a></li>
-        <li><a href="contact.html">Contact</a></li>
         <li><a href="mentions-obligatoires-facture-maroc.html">Mentions obligatoires d’une facture</a></li>
-        <li><a href="privacy.html">Politique de confidentialité</a></li>
+        <li><a href="facture-modele-marocain-gratuit.html">Modèle de facture</a></li>
+        <li><a href="avis.html">Ce qu’elle fait, ce qu’elle ne fait pas</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Le projet</h3>
+      <ul>
+        <li><a href="a-propos.html" aria-current="page">À propos</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      <li><a href="cgv.html">Conditions de vente</a></li>
+        <li><a href="confidentialite.html">Politique de confidentialité</a></li>
         <li><a href="https://github.com/beav0team/facture-maroc">Code source</a></li>
       </ul>
     </div>
-    <p class="mentions">Version 0.11.1 · Android 8.0 et plus · Français — © 2026
-      Facture Maroc.</p>
+    <p class="mentions">FactureApp, Français — © 2026.</p>
   </div>
 </footer>
 

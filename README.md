@@ -173,33 +173,61 @@ envoyée.
   le fichier de sauvegarde de l’application (Paramètres → Sauvegarde), qu’on
   voit et qu’on garde.
 
-Politique complète : [`docs/privacy.html`](docs/privacy.html) — publiée sur
-Cloudflare Pages à l’adresse
-`https://factureapp.ma/privacy.html`.
+Deux politiques distinctes, parce que les deux produits ne traitent pas les
+mêmes données :
 
-Le site public — présentation, captures, questions fréquentes et inscription des
-testeurs — est publié depuis `docs/` :
-`https://factureapp.ma/`. Les pages marketing sont en HTML et CSS seuls, sans
+- **version web** : [`docs/confidentialite.html`](docs/confidentialite.html) —
+  `https://factureapp.ma/confidentialite.html`, liée depuis tous les pieds de
+  page ;
+- **application Android** : [`docs/privacy.html`](docs/privacy.html) —
+  `https://factureapp.ma/privacy.html`, conservée pour la fiche Google Play et
+  volontairement non liée depuis le site web.
+
+Le site public — présentation, questions fréquentes et guides — est publié
+depuis `docs/` : `https://factureapp.ma/`. Il vend la **webapp**, et rien
+d’autre : l’accueil mène au compte (`/app/`), et aucune page ne cite ni ne lie
+l’application Android. `docs/test.html` reste en place, en `noindex` et sans
+aucun lien entrant, pour les testeurs qui ont déjà l’adresse.
+
+L’accueil est une page produit : héros avec la facture et quatre preuves,
+aiguillage compte / générateur, quatre atouts, trois étapes illustrées par une
+capture réelle de l’éditeur (`assets/img/editeur-*.webp`, prise sur
+`app/gratuit`), états du document, dix types de documents, deux formules avec
+leur prix, note du fondateur, FAQ et appel final. Les autres pages gardent le
+format éditorial. Les pages marketing sont en HTML et CSS seuls, sans
 construction ni JavaScript, et n’appellent **aucune ressource externe**, polices
-comprises : une page qui promet l’absence de réseau ne peut pas charger Google
-Fonts. L’application web, servie sous `/app/`, est un bundle séparé et utilise
-Supabase pour les comptes et les documents.
+comprises.
+L’application web, servie sous `/app/`, est un bundle séparé et utilise Supabase
+pour les comptes et les documents.
 
-Trois pages éditoriales s’y ajoutent : [`docs/a-propos.html`](docs/a-propos.html),
-[`docs/contact.html`](docs/contact.html) et le guide
-[`docs/mentions-obligatoires-facture-maroc.html`](docs/mentions-obligatoires-facture-maroc.html).
+Cinq pages éditoriales s’y ajoutent : [`docs/a-propos.html`](docs/a-propos.html),
+[`docs/contact.html`](docs/contact.html), le guide
+[`docs/mentions-obligatoires-facture-maroc.html`](docs/mentions-obligatoires-facture-maroc.html),
+le générateur [`docs/facture-modele-marocain-gratuit.html`](docs/facture-modele-marocain-gratuit.html)
+et [`docs/avis.html`](docs/avis.html), qui énumère ce que la webapp fait et ne
+fait pas. Le langage visuel est fixé dans [`docs/DESIGN.md`](docs/DESIGN.md).
+
+Le prix du plan Pro n’est écrit qu’à un endroit, `webapp/src/lib/offres.ts` :
+`/tarifs` redirige en 301 vers `/app/tarifs`, qui le lit. Aucun montant ne doit
+être recopié dans le HTML.
+
 `python3 docs/build.py` régénère le `sitemap.xml` (avec `lastmod` pris sur git)
 et aligne la version affichée sur `app/build.gradle.kts` ;
 `docs/scripts/site-check.sh` refuse une page sans titre unique, sans description,
 sans canonical, sans `<h1>`, une image sans dimensions, un lien local mort ou un
-budget de polices dépassé. Les polices sont sous-ensemblées par
+budget de polices dépassé. Il connaît les routes de la SPA (`/app/tarifs`,
+`/app/gratuit`) grâce à `docs/_redirects`.
+
+`webapp/scripts/check-site.mjs`, appelé par `webapp/scripts/build.sh`, garde la
+vitrine elle-même : en-tête identique partout, lien vers `/app/`, aucune ancre
+morte, aucun prix en dur, et pas de règle `/app/*` attrape-tout dans
+`_redirects`. Les polices sont sous-ensemblées par
 `docs/scripts/fonts.sh` (75 Ko → 35 Ko pour Bricolage, 45 → 31 pour Plex Sans).
 
-L’installation de la version de test est expliquée pas à pas sur
-[`docs/test.html`](docs/test.html) : rejoindre le groupe
-`facturemaroc-testeurs`, s’inscrire au test fermé, puis installer depuis Google
-Play. La page ne publie aucune adresse personnelle — les retours passent par les
-tickets GitHub.
+`docs/test.html` (installation de l’application Android de test) reste publié
+mais n’est plus lié depuis aucune page et n’est pas indexé : il sert uniquement
+aux testeurs qui ont déjà l’adresse. La page ne publie aucune adresse
+personnelle — les retours passent par les tickets GitHub.
 
 > **Sauvegarde et restauration** : Android peut sauvegarder l’application, mais
 > l’application fournit aussi son propre fichier de sauvegarde (Paramètres →

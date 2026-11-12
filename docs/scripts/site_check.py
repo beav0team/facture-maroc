@@ -4,6 +4,9 @@
 Lancé par `docs/scripts/site-check.sh`. Sort en erreur au premier problème :
 c'est ce qui empêche une page de partir sans canonical, sans description, ou
 avec une image sans dimensions.
+
+Les liens vers `/app/<route>` n'ont pas de fichier derrière eux : ils sont
+résolus en lisant `_redirects`, la même table que Cloudflare Pages applique.
 """
 from __future__ import annotations
 
@@ -14,7 +17,9 @@ import sys
 from urllib.parse import urlparse
 
 DOCS = pathlib.Path(__file__).resolve().parent.parent
-NOINDEX = {"test.html", "404.html"}          # exemptés de canonical/description
+# privacy.html est la politique de l'application Android, gardée pour la fiche
+# Play : elle n'est plus liée ni listée depuis le site web.
+NOINDEX = {"test.html", "404.html", "privacy.html"}
 FONT_BUDGET = 120 * 1024                     # octets, polices au premier chargement
 
 errors: list[str] = []
@@ -38,12 +43,26 @@ def check_jsonld(page: pathlib.Path, text: str) -> None:
 
 
 def check_local_links(page: pathlib.Path, text: str) -> None:
+    table = DOCS / "_redirects"
+    redirects = table.read_text(encoding="utf-8") if table.exists() else ""
+    spa = {line.split()[0] for line in redirects.splitlines()
+           if line.strip() and not line.lstrip().startswith("#")}
+
     for attr, value in re.findall(r'(href|src)="([^"]+)"', text):
         if value.startswith(("http://", "https://", "mailto:", "#", "data:")):
             continue
-        target = value.split("#", 1)[0].split("?", 1)[0]
-        if target and not (DOCS / target).exists():
-            err(page.name, f"{attr} cassé : {value}")
+        # 404.html is served from any depth, so it addresses the site root
+        # absolutely; resolve those against docs/ like the server does.
+        target = value.split("#", 1)[0].split("?", 1)[0].lstrip("/")
+        if not target:
+            continue
+        if (DOCS / target).exists():
+            continue
+        # /app/<route> has no file: Cloudflare rewrites it to the SPA shell
+        # through _redirects, so the route only has to be declared there.
+        if target.startswith("app/") and f"/{target.rstrip('/')}" in spa:
+            continue
+        err(page.name, f"{attr} cassé : {value}")
 
 
 def main() -> int:
@@ -89,8 +108,10 @@ def main() -> int:
     if total > FONT_BUDGET:
         errors.append(f"assets/fonts : {total // 1024} Ko > {FONT_BUDGET // 1024} Ko")
 
+    # Anciens hachages d'images et sous-ensemble de police retiré. Les largeurs
+    # d'image (-320, -520, -1040) sont légitimes : ne pas les remettre ici.
     for stale in ("a79fdb52", "e2291e84", "01d28544", "08949f72", "0d1f0b8d",
-                  "-520.webp", "latin-ext"):
+                  "latin-ext"):
         for path in DOCS.rglob("*.html"):
             if stale in path.read_text(encoding="utf-8"):
                 errors.append(f"{path.name} référence encore {stale}")

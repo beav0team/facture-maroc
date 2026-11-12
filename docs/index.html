@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Facture Maroc hors ligne — factures, devis, stock</title>
-<meta name="description" content="Facturation hors ligne pour les commerces marocains : factures, devis, avoirs, ICE, IF, TVA, stock. Gratuite, sans compte, sans connexion.">
+<title>FactureApp — logiciel de facturation marocain, envoi WhatsApp</title>
+<meta name="description" content="Logiciel de facturation en ligne pour le Maroc : ICE, IF, TVA aux taux de 2026, numérotation continue, PDF archivé. Envoi WhatsApp en un clic. Gratuit jusqu’à 5 factures par mois.">
 <link rel="canonical" href="https://factureapp.ma/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_MA">
-<meta property="og:site_name" content="Facture Maroc hors ligne">
-<meta property="og:title" content="Facture Maroc hors ligne — vos factures, même sans réseau">
-<meta property="og:description" content="Dix documents avec vos mentions légales, le montant écrit en toutes lettres, et votre stock qui suit. Tout reste sur votre téléphone.">
+<meta property="og:site_name" content="FactureApp">
+<meta property="og:title" content="FactureApp — logiciel de facturation marocain">
+<meta property="og:description" content="ICE, IF, TVA, numérotation continue, PDF archivé. Le document part dans la conversation de votre client. Gratuit jusqu’à 5 factures par mois.">
 <meta property="og:url" content="https://factureapp.ma/">
 <meta property="og:image" content="https://factureapp.ma/assets/img/apercu-1024.jpg">
 <meta property="og:image:width" content="1024">
 <meta property="og:image:height" content="500">
-<meta property="og:image:alt" content="Aperçu de Facture Maroc : une facture marocaine avec ICE, TVA et le montant en toutes lettres.">
+<meta property="og:image:alt" content="Une facture marocaine avec ICE, TVA et le total en dirhams.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Facture Maroc hors ligne — vos factures, même sans réseau">
-<meta name="twitter:description" content="Dix documents avec vos mentions légales, le montant en toutes lettres, le stock qui suit. Aucune permission réseau.">
+<meta name="twitter:title" content="FactureApp — logiciel de facturation marocain">
+<meta name="twitter:description" content="ICE, IF, TVA, numérotation continue, PDF archivé. Gratuit jusqu’à 5 factures par mois.">
 <meta name="twitter:image" content="https://factureapp.ma/assets/img/apercu-1024.jpg">
 <meta name="theme-color" content="#1E3FD2">
 <meta name="color-scheme" content="light">
@@ -27,9 +27,6 @@
 <link rel="manifest" href="manifest.json">
 <link rel="preload" href="assets/fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" as="image"
-      imagesrcset="assets/img/factures-260.webp 260w, assets/img/factures-400.webp 400w"
-      imagesizes="(max-width: 720px) 132px, (max-width: 1080px) 152px, 198px">
 <link rel="stylesheet" href="assets/css/site.css">
 <script type="application/ld+json">
 {
@@ -38,23 +35,22 @@
     {
       "@type": "SoftwareApplication",
       "@id": "https://factureapp.ma/#application",
-      "name": "Facture Maroc hors ligne",
-      "alternateName": "Facture Maroc",
+      "name": "FactureApp",
+      "alternateName": "Facture Maroc en ligne",
       "applicationCategory": "BusinessApplication",
-      "applicationSubCategory": "Facturation et gestion de stock",
-      "operatingSystem": "Android 8.0 ou plus récent",
+      "applicationSubCategory": "Facturation",
+      "operatingSystem": "Navigateur web",
       "inLanguage": "fr",
-      "softwareVersion": "0.11.1",
-      "description": "Facturation hors ligne pour les commerces marocains : factures, devis, bons de commande, tickets, avoirs, proformas, acomptes, régularisations, factures simplifiées et factures à l’export, avec ICE, IF, RC, patente, CNSS, TVA et montants en toutes lettres.",
+      "description": "Logiciel de facturation en ligne pour le Maroc : factures, devis, avoirs et sept autres documents, ICE, IF, TVA aux taux légaux, numérotation continue, PDF archivé, envoi WhatsApp.",
       "url": "https://factureapp.ma/",
       "image": "https://factureapp.ma/assets/img/apercu-1024.jpg",
-      "screenshot": "https://factureapp.ma/assets/img/factures-1040.webp",
       "featureList": [
-        "Dix types de documents numérotés séparément",
-        "Mentions légales marocaines : ICE, IF, RC, patente, CNSS",
-        "TVA par ligne, 20 %, 10 %, 0 % ou exonérée",
-        "Stock mis à jour à l’émission du document",
-        "Fonctionne sans aucune permission réseau"
+        "Dix types de documents, une séquence par type",
+        "ICE, IF, RC, patente et CNSS imprimés",
+        "TVA par ligne à 20 %, 10 % ou 0 % avec motif",
+        "PDF archivé avec empreinte SHA-256",
+        "Envoi WhatsApp avec message prérempli",
+        "Catalogue clients et articles, suivi des paiements"
       ],
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "MAD" },
       "publisher": { "@id": "https://factureapp.ma/#editeur" }
@@ -62,7 +58,7 @@
     {
       "@type": "Organization",
       "@id": "https://factureapp.ma/#editeur",
-      "name": "Facture Maroc hors ligne",
+      "name": "FactureApp",
       "url": "https://factureapp.ma/",
       "logo": "https://factureapp.ma/assets/img/icone-512.png",
       "sameAs": [
@@ -73,7 +69,7 @@
       "@type": "WebSite",
       "@id": "https://factureapp.ma/#site",
       "url": "https://factureapp.ma/",
-      "name": "Facture Maroc hors ligne",
+      "name": "FactureApp",
       "inLanguage": "fr",
       "publisher": { "@id": "https://factureapp.ma/#editeur" }
     }
@@ -86,38 +82,42 @@
 <a class="saut" href="#contenu">Aller au contenu</a>
 
 <header class="barre">
-  <a class="marque" href="./"><span aria-hidden="true"></span>Facture Maroc</a>
+  <a class="marque" href="./"><span aria-hidden="true"></span>FactureApp</a>
   <nav aria-label="Sections">
     <a href="#fonctionnalites">Fonctionnalités</a>
-    <a href="#documents">Documents</a>
-    <a href="#captures">Captures</a>
+    <a href="/app/tarifs">Tarifs</a>
     <a href="#questions">Questions</a>
-    <a href="facture-modele-marocain-gratuit.html">Facture gratuite</a>
+    <a href="/app/">Connexion</a>
   </nav>
-  <a class="bouton bouton--contour bouton--petit" href="test.html">Devenir testeur</a>
+  <a class="bouton bouton--plein bouton--petit" href="/app/?mode=signup">Créer ma facture</a>
 </header>
 
 <main id="contenu">
 
   <section class="heros">
     <div class="argument">
-      <h1>Vos factures, même sans réseau.</h1>
-      <p class="chapeau">Facture, devis, bon de commande, ticket, avoir. Dix documents
-        avec vos mentions légales, le montant écrit en toutes lettres, et votre
-        stock qui suit. Tout reste sur votre téléphone.</p>
-      <div class="actions">
-        <a class="bouton bouton--plein" href="test.html">Devenir testeur</a>
-        <a class="bouton bouton--contour" href="#captures">Voir les captures</a>
-      </div>
-      <ul class="reperes">
-        <li><b>Bientôt</b> sur Google Play</li>
-        <li>Android 8 et plus</li>
-        <li>Aucune connexion demandée</li>
+      <h1>Le logiciel de facturation marocain, avec envoi WhatsApp.</h1>
+      <p class="chapeau">Des factures complètes, en PDF, envoyées à votre client
+        par WhatsApp. ICE, IF, TVA aux taux de 2026, numérotation continue, PDF
+        archivé.</p>
+
+      <ul class="preuves">
+        <li>ICE et IF imprimés</li>
+        <li>TVA 20 %, 10 % ou 0 %</li>
+        <li>Auto-entrepreneur sans TVA</li>
+        <li>Mentions obligatoires</li>
       </ul>
+
+      <div class="actions">
+        <a class="bouton bouton--plein" href="/app/?mode=signup">Créer ma première facture</a>
+        <a class="bouton bouton--contour" href="/app/gratuit">Essayer sans compte</a>
+      </div>
+      <p class="offre"><b>Gratuit</b> jusqu’à 5 factures par mois. Devis et
+        avoirs sans limite, sans carte bancaire.</p>
     </div>
 
     <div class="scene">
-      <article class="feuille" aria-label="Exemple de facture produite par l’application">
+      <article class="feuille" aria-label="Exemple de facture produite par FactureApp">
         <div class="entete-feuille">
           <div class="raison">
             Atelier Atlas
@@ -127,7 +127,7 @@
           </div>
           <div class="reference">
             <b>FACTURE</b>
-            <span>F-20261021-0001<br>21 octobre 2026</span>
+            <span>F-20261111-0001<br>11 novembre 2026</span>
           </div>
         </div>
 
@@ -140,7 +140,7 @@
           </div>
           <div class="droite">
             <b>Échéance</b>
-            04 novembre 2026<br>
+            25 novembre 2026<br>
             Règlement par virement
           </div>
         </div>
@@ -170,64 +170,242 @@
           <div class="total"><span>Total TTC</span><b>2 304,00 DH</b></div>
         </div>
 
-        <p class="lettres">Arrêtée la présente facture à la somme de : deux mille
-          trois cent quatre dirhams.</p>
-
-        <svg class="dechirure" viewBox="0 0 600 10" preserveAspectRatio="none" aria-hidden="true">
-          <path fill="#FFFFFF" d="M0,0 L600,0 L588,10 L576,0 L564,10 L552,0 L540,10 L528,0 L516,10 L504,0 L492,10 L480,0 L468,10 L456,0 L444,10 L432,0 L420,10 L408,0 L396,10 L384,0 L372,10 L360,0 L348,10 L336,0 L324,10 L312,0 L300,10 L288,0 L276,10 L264,0 L252,10 L240,0 L228,10 L216,0 L204,10 L192,0 L180,10 L168,0 L156,10 L144,0 L132,10 L120,0 L108,10 L96,0 L84,10 L72,0 L60,10 L48,0 L36,10 L24,0 L12,10 L0,0 Z"/>
-        </svg>
+        <span class="tampon tampon--emis">Émis</span>
+        <div class="perfore" aria-hidden="true"></div>
       </article>
 
-      <div class="telephone">
-        <div class="ecran">
-          <img src="assets/img/factures-400.webp"
-               srcset="assets/img/factures-260.webp 260w, assets/img/factures-400.webp 400w"
-               sizes="(max-width: 720px) 132px, (max-width: 1080px) 152px, 198px"
-               width="400" height="751" fetchpriority="high" decoding="async"
-               alt="Liste des factures dans l’application : total du mois, brouillons et documents émis">
-        </div>
+      <div class="message">
+        <p class="message__titre">WhatsApp — Société Nomade</p>
+        <p class="message__texte">Facture F-20261111-0001 du 11/11/2026 —
+          2&#160;304,00 DH. Bonjour Société Nomade, votre document est joint.
+          Merci.</p>
+        <span class="message__piece">F-20261111-0001.pdf</span>
       </div>
+    </div>
+  </section>
+
+  <section class="aiguillage" aria-label="Par où commencer">
+    <div class="contenu">
+      <a href="/app/?mode=signup">
+        <b>Vous facturez vos clients</b>
+        <span>Compte gratuit, cinq factures par mois : numérotation, archive et
+          envoi WhatsApp.</span>
+      </a>
+      <a href="/app/gratuit">
+        <b>Vous voulez juste un PDF</b>
+        <span>Le générateur, sans compte : vous remplissez, vous téléchargez, le
+          document part.</span>
+      </a>
     </div>
   </section>
 
   <section class="section" id="fonctionnalites">
     <div class="contenu">
-      <h2>Trois onglets, pas de détour.</h2>
-      <p class="presentation">Tout ce qu’il faut pour établir un document, et rien de
-        plus. Les écrans suivent l’ordre du travail : la facture, le client, l’article.</p>
+      <h2>Ce dont un commerce marocain a besoin, rien de plus.</h2>
+      <p class="presentation">Pas de comptabilité, pas d’ERP. La facture, le
+        client, le PDF, et la conversation où le document doit arriver.</p>
 
-      <dl class="fiches">
-        <div>
-          <dt>Factures</dt>
-          <dd>Brouillons et documents émis, total facturé du mois, recherche par
-            client, numéro ou date, duplication, suppression et export XML.</dd>
-        </div>
-        <div>
-          <dt>Clients</dt>
-          <dd>Un carnet d’adresses avec ICE, IF, RC, patente, CNSS, téléphone et
-            e-mail ; le client se remplit sur la facture en un tap. Les fournisseurs
-            ont les mêmes champs, et c’est le fournisseur qui remplit un bon
-            de commande.</dd>
-        </div>
-        <div>
-          <dt>Articles</dt>
-          <dd>Votre catalogue : quantité en stock, prix d’achat, prix de vente et
-            code-barres, tapé ou scanné avec l’appareil photo. Les dossiers
-            s’imbriquent — les coussins se rangent sous Textile — et chaque
-            commerce choisit les champs que sa fiche article demande.</dd>
-        </div>
-      </dl>
+      <div class="atouts">
+        <article class="atout">
+          <h3>WhatsApp en un clic</h3>
+          <p>Le bouton prépare le PDF et ouvre la conversation du client, message
+            déjà écrit. Sur téléphone, le partage du système joint le fichier ;
+            sur ordinateur, vous l’ajoutez à la main.</p>
+          <div class="mini" aria-hidden="true">
+            <p class="mini__tete"><span>WhatsApp</span><span>Société Nomade</span></p>
+            <p class="mini__ligne"><span>Facture F-20261111-0001</span><span>2 304,00</span></p>
+            <p class="mini__ligne"><span>Message prérempli</span><span>oui</span></p>
+            <p class="mini__pied"><span>Pièce jointe</span><span>0001.pdf</span></p>
+          </div>
+        </article>
+
+        <article class="atout">
+          <h3>TVA aux taux légaux</h3>
+          <p>Seuls les taux en vigueur sont proposés, chaque ligne est arrondie
+            au centime. À 0 %, vous choisissez le motif — auto-entrepreneur,
+            article 91, export — et la mention est imprimée.</p>
+          <div class="mini" aria-hidden="true">
+            <p class="mini__tete"><span>TVA par ligne</span><span>3 taux</span></p>
+            <p class="mini__ligne"><span>20 % — taux normal</span><span>384,00</span></p>
+            <p class="mini__ligne"><span>10 % — services</span><span>—</span></p>
+            <p class="mini__ligne"><span>0 % — auto-entrepreneur</span><span>0,00</span></p>
+            <p class="mini__pied"><span>TVA totale</span><span>384,00</span></p>
+          </div>
+        </article>
+
+        <article class="atout">
+          <h3>Les mentions imprimées</h3>
+          <p>ICE, IF, RC, patente et CNSS du vendeur, ICE du client
+            professionnel. Les champs sont recopiés du compte et du carnet
+            client, jamais ressaisis à chaque document.</p>
+          <div class="mini" aria-hidden="true">
+            <p class="mini__tete"><span>Atelier Atlas</span><span>Mentions</span></p>
+            <p class="mini__ligne"><span>ICE</span><span>002547813000045</span></p>
+            <p class="mini__ligne"><span>IF · RC</span><span>40218764 · 512843</span></p>
+            <p class="mini__pied"><span>Patente · CNSS</span><span>35178902</span></p>
+          </div>
+        </article>
+
+        <article class="atout">
+          <h3>Remise, acompte, arrondi</h3>
+          <p>Remise en pourcentage ou en dirhams, frais, acompte déduit du solde,
+            arrondi au dirham sur option. Le total et le net à payer se
+            recalculent à chaque changement de ligne.</p>
+          <div class="mini" aria-hidden="true">
+            <p class="mini__tete"><span>Totaux</span><span>F-0001</span></p>
+            <p class="mini__ligne"><span>Sous-total</span><span>2 020,00</span></p>
+            <p class="mini__ligne"><span>Remise</span><span>−100,00</span></p>
+            <p class="mini__ligne"><span>TVA 20 %</span><span>384,00</span></p>
+            <p class="mini__pied"><span>Total TTC</span><span>2 304,00 DH</span></p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="etapes">
+    <div class="contenu">
+      <h2>Trois étapes, depuis votre téléphone ou votre ordinateur.</h2>
+      <p class="presentation">Le même compte sur les deux : ce que vous saisissez
+        au comptoir se retrouve au bureau, et le numéro ne dépend pas de
+        l’appareil.</p>
+
+      <div class="duo-etapes">
+        <ol class="parcours">
+          <li>
+            <span class="num">1</span>
+            <div>
+              <h3>Le client</h3>
+              <p>Nom et numéro WhatsApp. L’ICE, l’IF et l’adresse sont
+                facultatifs, et se gardent d’un document à l’autre.</p>
+            </div>
+          </li>
+          <li>
+            <span class="num">2</span>
+            <div>
+              <h3>Les prestations</h3>
+              <p>Désignation, quantité, prix. La TVA, la remise et le total TTC
+                se calculent seuls, ligne par ligne.</p>
+            </div>
+          </li>
+          <li>
+            <span class="num">3</span>
+            <div>
+              <h3>L’envoi</h3>
+              <p>Le numéro est attribué, le PDF rendu et archivé, et WhatsApp
+                s’ouvre sur la conversation du client.</p>
+            </div>
+          </li>
+        </ol>
+
+        <figure class="fenetre">
+          <div class="fenetre__barre" aria-hidden="true">
+            <i></i><i></i><i></i>
+            <span>factureapp.ma/app/gratuit</span>
+          </div>
+          <img src="assets/img/editeur-1040.webp"
+               srcset="assets/img/editeur-560.webp 560w, assets/img/editeur-1040.webp 1040w"
+               sizes="(max-width: 900px) 100vw, 620px"
+               width="1040" height="412"
+               alt="L’éditeur FactureApp : boutique, client, TVA, lignes de prestation et total TTC, avec le bouton Télécharger le PDF.">
+          <figcaption>L’éditeur, ici dans le générateur gratuit. Une fois
+            connecté, les trois étapes sont les mêmes et le document est
+            numéroté puis archivé.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="section" id="compte">
+    <div class="contenu">
+      <h2>Le compte, pas un formulaire.</h2>
+      <p class="presentation">Le téléphone au comptoir, l’ordinateur au bureau :
+        le même compte, les mêmes documents. Une facture émise garde son numéro
+        et son PDF, quel que soit l’appareil qui l’ouvre.</p>
+
+      <div class="captures-compte">
+        <figure class="fenetre">
+          <div class="fenetre__barre" aria-hidden="true">
+            <i></i><i></i><i></i>
+            <span>factureapp.ma/app/documents</span>
+          </div>
+          <img src="assets/img/compte-documents-1040.webp"
+               srcset="assets/img/compte-documents-560.webp 560w, assets/img/compte-documents-1040.webp 1040w"
+               sizes="(max-width: 900px) 100vw, 1000px"
+               width="1040" height="565" loading="lazy"
+               alt="La liste des documents : numéro, date, client, montant et reste dû pour chaque facture, avec le quota du plan gratuit.">
+          <figcaption>Les documents dans l’ordre où ils ont été émis : le
+            numéro, l’état et le reste dû.</figcaption>
+        </figure>
+
+        <figure class="fenetre">
+          <div class="fenetre__barre" aria-hidden="true">
+            <i></i><i></i><i></i>
+            <span>factureapp.ma/app/documents/nouveau</span>
+          </div>
+          <img src="assets/img/compte-editeur-1040.webp"
+               srcset="assets/img/compte-editeur-560.webp 560w, assets/img/compte-editeur-1040.webp 1040w"
+               sizes="(max-width: 900px) 100vw, 1000px"
+               width="1040" height="942" loading="lazy"
+               alt="L’éditeur : client, adresse et ICE, lignes avec quantité, prix et TVA, total TTC, conditions de paiement et choix du modèle.">
+          <figcaption>L’éditeur : le client, les lignes, la TVA et le modèle, sur
+            un seul écran.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="etats">
+    <div class="contenu">
+      <h2>Un document émis ne se réécrit pas.</h2>
+      <p class="presentation">Le numéro est pris à l’émission, pas à
+        l’enregistrement. Un brouillon peut attendre ; dès qu’il part, il est
+        figé. Une correction passe par un avoir, jamais par une réécriture.</p>
+
+      <div class="etats">
+        <article class="etat">
+          <div class="mini" aria-hidden="true">
+            <p class="mini__tete"><span>Facture</span><span>brouillon</span></p>
+            <p class="mini__ligne"><span>Société Nomade</span><span>2 304,00</span></p>
+            <p class="mini__pied"><span>Numéro</span><span>—</span></p>
+          </div>
+          <h3>Brouillon</h3>
+          <p>Vous saisissez, vous fermez, vous revenez. Aucun numéro n’est
+            consommé et rien n’est envoyé.</p>
+        </article>
+
+        <article class="etat">
+          <div class="mini" aria-hidden="true">
+            <p class="mini__tete"><span>Facture</span><span>F-20261111-0001</span></p>
+            <p class="mini__ligne"><span>Société Nomade</span><span>2 304,00</span></p>
+            <p class="mini__pied"><span>Archivé</span><span>SHA-256</span></p>
+          </div>
+          <h3>Émis</h3>
+          <p>Le numéro est attribué, le PDF rendu et archivé avec son empreinte.
+            Le document ne se modifie plus et ne se supprime plus.</p>
+        </article>
+
+        <article class="etat">
+          <div class="mini" aria-hidden="true">
+            <p class="mini__tete"><span>F-20261111-0001</span><span>payé</span></p>
+            <p class="mini__ligne"><span>Payé le 11/11/2026</span><span>2 304,00</span></p>
+            <p class="mini__pied"><span>Reste dû</span><span>0,00</span></p>
+          </div>
+          <h3>Encaissé</h3>
+          <p>Chaque paiement garde son moyen, sa date et sa référence. Le reçu
+            se tire du paiement, le reste dû se lit sur le relevé du client.</p>
+        </article>
+      </div>
     </div>
   </section>
 
   <section class="section" id="documents">
     <div class="contenu">
-      <h2>Dix documents, chacun son numéro.</h2>
-      <p class="presentation">Une facture ne partage pas sa séquence avec un devis.
-        Les avoirs et les régularisations rappellent le document qu’ils annulent ou
-        remplacent.</p>
-      <p class="note">Ce que chaque document doit porter — ICE, IF, RC,
-        patente, CNSS, TVA ligne par ligne — est détaillé sur la page
+      <h2>Dix documents, dix séquences.</h2>
+      <p class="presentation">Une facture ne partage pas son numéro avec un
+        devis. Ce que chaque document doit porter — ICE, IF, RC, patente, CNSS,
+        TVA ligne par ligne — est détaillé sur la page
         <a href="mentions-obligatoires-facture-maroc.html">mentions obligatoires
         d’une facture au Maroc</a>.</p>
 
@@ -246,125 +424,140 @@
     </div>
   </section>
 
+
   <section class="section" id="modeles">
     <div class="contenu">
-      <h2>Quatre modèles, du classique au ticket.</h2>
-      <p class="presentation">Le document se règle sur le papier : logo, TVA,
-        remise générale ou par ligne, prix hors taxe ou toutes taxes comprises, et
-        le montant écrit en toutes lettres. Le mode auto-entrepreneur imprime
-        « TVA non applicable » sur tous les documents.</p>
+      <h2>Six modèles, le même document.</h2>
+      <p class="presentation">Le modèle change la mise en page, pas les
+        chiffres. Cinq sortent sur A4, le sixième sur un rouleau de caisse de
+        80 mm. Il se choisit par document et reste attaché au PDF émis : une
+        réimpression sort le modèle d’origine.</p>
 
       <ul class="modeles">
-        <li>
-          <strong>Classique</strong>
-          <span>Le modèle sobre, en une colonne, pour les factures de tous les jours.</span>
+        <li class="modele">
+          <div class="modele__page">
+            <img src="assets/img/modele-classique-520.webp"
+                 srcset="assets/img/modele-classique-320.webp 320w, assets/img/modele-classique-520.webp 520w"
+                 sizes="(max-width: 900px) 45vw, 200px"
+                 width="520" height="445" loading="lazy"
+                 alt="Modèle Classique : logo et coordonnées à gauche, titre FACTURE à droite, tableau à en-tête gris.">
+          </div>
+          <p><b>Classique</b><span>Logo à gauche, titre à droite.</span></p>
         </li>
-        <li>
-          <strong>Moderne</strong>
-          <span>Bandeau coloré et lignes aérées, pour un document plus commercial.</span>
+        <li class="modele">
+          <div class="modele__page">
+            <img src="assets/img/modele-moderne-520.webp"
+                 srcset="assets/img/modele-moderne-320.webp 320w, assets/img/modele-moderne-520.webp 520w"
+                 sizes="(max-width: 900px) 45vw, 200px"
+                 width="520" height="445" loading="lazy"
+                 alt="Modèle Moderne : grand titre bleu, filet d’accent sous l’en-tête, en-tête de tableau souligné.">
+          </div>
+          <p><b>Moderne</b><span>Titre large, filet d’accent.</span></p>
         </li>
-        <li>
-          <strong>Facture Maroc</strong>
-          <span>Grille complète et espace de signature, pensé pour les dossiers administratifs.</span>
+        <li class="modele">
+          <div class="modele__page">
+            <img src="assets/img/modele-facture_maroc-520.webp"
+                 srcset="assets/img/modele-facture_maroc-320.webp 320w, assets/img/modele-facture_maroc-520.webp 520w"
+                 sizes="(max-width: 900px) 45vw, 200px"
+                 width="520" height="445" loading="lazy"
+                 alt="Modèle Facture Maroc : bandeau bleu nuit, filet safran, titre en safran.">
+          </div>
+          <p><b>Facture Maroc</b><span>Bandeau sombre, safran.</span></p>
         </li>
-        <li>
-          <strong>Ticket 80 mm</strong>
-          <span>Format rouleau pour une imprimante de comptoir, sortie rapide.</span>
+        <li class="modele">
+          <div class="modele__page">
+            <img src="assets/img/modele-epure-520.webp"
+                 srcset="assets/img/modele-epure-320.webp 320w, assets/img/modele-epure-520.webp 520w"
+                 sizes="(max-width: 900px) 45vw, 200px"
+                 width="520" height="445" loading="lazy"
+                 alt="Modèle Épuré : trait d’accent, titre en capitales, filets fins, aucun fond.">
+          </div>
+          <p><b>Épuré</b><span>Filets fins, sans fond.</span></p>
         </li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="section" id="captures">
-    <div class="contenu">
-      <h2>Ce que vous avez sous les yeux.</h2>
-      <p class="presentation">Quatre écrans, ceux du quotidien : la liste des
-        documents, le constructeur, les clients, le catalogue.</p>
-
-      <ul class="captures">
-        <li>
-          <figure>
-            <img src="assets/img/factures-560.webp"
-                 srcset="assets/img/factures-560.webp 560w, assets/img/factures-1040.webp 1040w"
-                 sizes="(max-width: 520px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1051"
-                 loading="lazy" decoding="async" alt="Écran Factures : total du mois, brouillons, documents émis">
-            <figcaption>Factures — ce qui est parti, ce qui reste en brouillon.</figcaption>
-          </figure>
+        <li class="modele">
+          <div class="modele__page">
+            <img src="assets/img/modele-bandeau-520.webp"
+                 srcset="assets/img/modele-bandeau-320.webp 320w, assets/img/modele-bandeau-520.webp 520w"
+                 sizes="(max-width: 900px) 45vw, 200px"
+                 width="520" height="445" loading="lazy"
+                 alt="Modèle Bandeau : bandeau bleu pleine largeur avec texte blanc, en-tête de tableau teinté.">
+          </div>
+          <p><b>Bandeau</b><span>Bande pleine largeur.</span></p>
         </li>
-        <li>
-          <figure>
-            <img src="assets/img/constructeur-560.webp"
-                 srcset="assets/img/constructeur-560.webp 560w, assets/img/constructeur-1040.webp 1040w"
-                 sizes="(max-width: 520px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1051"
-                 loading="lazy" decoding="async" alt="Écran de construction d’un document : type, client, lignes, remise, TVA">
-            <figcaption>Constructeur — le type, le client, les lignes, la remise.</figcaption>
-          </figure>
-        </li>
-        <li>
-          <figure>
-            <img src="assets/img/clients-560.webp"
-                 srcset="assets/img/clients-560.webp 560w, assets/img/clients-1040.webp 1040w"
-                 sizes="(max-width: 520px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1051"
-                 loading="lazy" decoding="async" alt="Écran Clients : carnet avec ICE, IF, RC et coordonnées">
-            <figcaption>Clients — le carnet, avec leurs identifiants légaux.</figcaption>
-          </figure>
-        </li>
-        <li>
-          <figure>
-            <img src="assets/img/articles-560.webp"
-                 srcset="assets/img/articles-560.webp 560w, assets/img/articles-1040.webp 1040w"
-                 sizes="(max-width: 520px) 62vw, (max-width: 900px) 30vw, 280px" width="560" height="1051"
-                 loading="lazy" decoding="async" alt="Écran Articles : catalogue, stock, prix d’achat et de vente">
-            <figcaption>Articles — le stock, les prix, les dossiers.</figcaption>
-          </figure>
+        <li class="modele">
+          <div class="modele__page modele__page--ticket">
+            <img src="assets/img/modele-ticket-520.webp"
+                 srcset="assets/img/modele-ticket-320.webp 320w, assets/img/modele-ticket-520.webp 520w"
+                 sizes="(max-width: 900px) 45vw, 200px"
+                 width="520" height="445" loading="lazy"
+                 alt="Modèle Ticket : rouleau de 80 mm, une colonne, séparateurs en pointillés.">
+          </div>
+          <p><b>Ticket 80 mm</b><span>Rouleau de caisse.</span></p>
         </li>
       </ul>
     </div>
   </section>
 
-  <section class="section" id="stock">
+  <section class="section" id="prix">
     <div class="contenu">
-      <h2>Le stock suit le document.</h2>
-      <div class="duo">
+      <h2>Gratuit pour commencer.</h2>
+      <p class="presentation">Cinq factures par mois sans rien payer. Le Pro lève
+        la limite et retire le filigrane du PDF ; il s’active à la main, sans
+        reconduction automatique.</p>
+
+      <ul class="formules">
+        <li class="formule">
+          <h3>Gratuit</h3>
+          <p class="prix">0 DH <small>par mois</small></p>
+          <p class="texte">Pour essayer et facturer quelques clients.</p>
+          <ul>
+            <li>5 factures émises par mois</li>
+            <li>Devis et avoirs illimités</li>
+            <li>Clients, articles, paiements</li>
+            <li>PDF archivé avec filigrane</li>
+          </ul>
+          <a class="bouton bouton--contour" href="/app/?mode=signup">Commencer</a>
+        </li>
+        <li class="formule formule--pro">
+          <h3>Pro</h3>
+          <p class="prix">990 DH <small>par an</small></p>
+          <p class="texte">Pour un commerce qui facture tous les jours.</p>
+          <ul>
+            <li>Factures illimitées</li>
+            <li>PDF sans filigrane</li>
+            <li>Un an, sans reconduction automatique</li>
+            <li>Support par e-mail</li>
+          </ul>
+          <a class="bouton bouton--plein" href="/app/tarifs">Passer au Pro</a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="fondateur">
+    <div class="contenu">
+      <div class="fondateur">
         <div>
-          <p class="presentation">Pas de deuxième saisie, pas de tableau à part.
-            Émettre une facture, un ticket, une facture simplifiée ou un export
-            retire les quantités vendues ; un avoir les remet. Un devis, une
-            proforma ou un bon de commande ne touche à rien, et supprimer une
-            facture émise remet le stock.</p>
-          <p class="presentation">Chaque ligne est reconnue par sa désignation. Si
-            un article est renommé entre le brouillon et l’émission, la quantité ne
-            suit pas — c’est le seul cas, et l’application le dit.</p>
+          <h2>Fait au Maroc, pour les commerces marocains.</h2>
+          <p>Ce n’est pas un outil étranger traduit en français. Il part de ce
+            qui se passe vraiment dans une boutique : un client qui demande un
+            devis sur WhatsApp, une remise accordée à la main, un acompte versé
+            avant livraison, un comptable qui réclame les pièces du mois.</p>
+          <p>Si quelque chose vous manque, écrivez : c’est comme ça que le
+            produit avance.</p>
+          <p class="nom">Yassine, développeur de FactureApp ·
+            <a href="a-propos.html">l’histoire du projet</a></p>
         </div>
-        <div class="exemple">
-          <p><b>2 chaises</b> sortent du stock quand la facture est émise.</p>
-          <p><b>−1 avoir</b> sur la même facture : les 2 unités reviennent.</p>
-          <p><b>0 mouvement</b> pour le devis qui a précédé la commande.</p>
-        </div>
+        <ul class="faits">
+          <li><b>Une seule personne</b>
+            <span>Le produit et le support, sans revendeur ni intermédiaire.</span></li>
+          <li><b>Code source public</b>
+            <span><a href="https://github.com/beav0team/facture-maroc">github.com/beav0team/facture-maroc</a></span></li>
+          <li><b>Données en Europe</b>
+            <span>Une base cloisonnée par boutique, sans publicité ni mesure
+              d’audience.</span></li>
+        </ul>
       </div>
-    </div>
-  </section>
-
-  <section class="bandeau" id="donnees">
-    <svg class="bord-dechire" viewBox="0 0 600 10" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      <path fill="#F6F8FE" d="M0,0 L600,0 L588,10 L576,0 L564,10 L552,0 L540,10 L528,0 L516,10 L504,0 L492,10 L480,0 L468,10 L456,0 L444,10 L432,0 L420,10 L408,0 L396,10 L384,0 L372,10 L360,0 L348,10 L336,0 L324,10 L312,0 L300,10 L288,0 L276,10 L264,0 L252,10 L240,0 L228,10 L216,0 L204,10 L192,0 L180,10 L168,0 L156,10 L144,0 L132,10 L120,0 L108,10 L96,0 L84,10 L72,0 L60,10 L48,0 L36,10 L24,0 L12,10 L0,0 Z"/>
-    </svg>
-    <div class="contenu">
-      <h2>Vos données restent chez vous.</h2>
-      <p class="presentation">L’application n’a pas le droit d’aller sur Internet.
-        Ce n’est pas une promesse commerciale, c’est une permission qui n’est pas
-        déclarée dans le système Android.</p>
-
-      <ul class="regles">
-        <li><b>Aucun compte</b>Ni inscription, ni abonnement, ni publicité. On
-          installe, on remplit ses coordonnées une fois, on facture.</li>
-        <li><b>Hors ligne, pour de vrai</b>Tout est dans le téléphone : les
-          documents, les clients, le catalogue, les numéros déjà utilisés.</li>
-        <li><b>Une sauvegarde à vous</b>Un fichier que vous enregistrez où vous
-          voulez, et que vous restaurez sur un autre appareil.</li>
-        <li><b>Un export pour le comptable</b>XML (UBL 2.1) — les factures
-          partent dans son logiciel, pas dans un nuage.</li>
-      </ul>
     </div>
   </section>
 
@@ -372,69 +565,76 @@
     <div class="contenu faq">
       <div class="faq-tete">
         <h2>Questions fréquentes.</h2>
-        <p class="presentation">Ce qu’on me demande avant d’installer
-          l’application. Si votre question n’y est pas, écrivez à
+        <p class="presentation">Ce qu’on me demande avant de commencer. Si votre
+          question n’y est pas, écrivez à
           <a href="mailto:contact%40factureapp.ma">contact&#64;factureapp.ma</a>.</p>
       </div>
 
       <div class="questions">
         <details>
           <summary>Faut-il une connexion Internet ?</summary>
-          <p>Non, à aucun moment. La facture, le catalogue et les numéros sont
-            enregistrés dans le téléphone. L’application n’a même pas la permission
-            d’accéder au réseau.</p>
+          <p>Oui. Vos documents sont enregistrés dans votre compte, pas dans le
+            navigateur : sans connexion, vous ne pouvez ni ouvrir FactureApp ni
+            enregistrer un document.</p>
         </details>
         <details>
-          <summary>Où sont mes factures si je change de téléphone ?</summary>
-          <p>Dans un fichier de sauvegarde que vous créez depuis les paramètres et
-            que vous gardez où vous voulez : carte mémoire, ordinateur, clé USB.
-            Vous le restaurez sur le nouvel appareil.</p>
+          <summary>Où sont mes données ?</summary>
+          <p>Dans une base hébergée en Europe, cloisonnée par boutique : chaque
+            compte ne lit que ses propres clients, articles et documents. Le PDF
+            émis est archivé dans un espace privé et son empreinte est
+            enregistrée.</p>
         </details>
         <details>
-          <summary>Les mentions légales sont-elles complètes ?</summary>
-          <p>Le document porte l’ICE, l’IF, le RC, la patente et le CNSS du
-            commerçant, ceux du client quand vous les avez, la TVA ligne par ligne,
-            les remises, et le montant arrêté en toutes lettres. Les taux et les
-            mentions d’usage sont couverts ; la conformité de votre facturation
-            reste à valider avec votre comptable.</p>
+          <summary>Le PDF part-il vraiment sur WhatsApp ?</summary>
+          <p>Sur téléphone, le partage du système joint le fichier à la
+            conversation. Sur ordinateur, WhatsApp ne permet pas à un site de
+            joindre un fichier : le message s’ouvre prérempli et vous ajoutez le
+            PDF, qui vient d’être téléchargé.</p>
         </details>
         <details>
           <summary>Je suis auto-entrepreneur, la TVA s’applique-t-elle ?</summary>
-          <p>Vous pouvez activer le mode auto-entrepreneur : la TVA n’est alors pas
-            calculée et les documents portent la mention « TVA non applicable ».</p>
+          <p>Choisissez 0 % et le motif auto-entrepreneur : aucune TVA n’est
+            calculée et la mention est imprimée sur le document.</p>
+        </details>
+        <details>
+          <summary>Puis-je annuler une facture émise ?</summary>
+          <p>Pas en la supprimant. Vous créez un avoir : le numéro d’origine
+            reste, la correction est traçable, et les deux pièces restent dans
+            l’historique.</p>
+        </details>
+        <details>
+          <summary>Le stock est-il dans la version web ?</summary>
+          <p>Le catalogue et ses quantités, oui. Le journal de mouvements, les
+            achats et la valorisation n’y sont pas : la quantité d’un article se
+            corrige à la main.</p>
+        </details>
+        <details>
+          <summary>Et la facture électronique de la DGI ?</summary>
+          <p>Le décret et les spécifications techniques ne sont pas publiés :
+            la version web ne prétend donc pas être conforme à un dispositif
+            qui n’existe pas encore. Les mentions légales imprimées, elles,
+            sont complètes.</p>
         </details>
         <details>
           <summary>Puis-je facturer des services, pas seulement des articles ?</summary>
-          <p>Oui. Une prestation est un article sans quantité de stock, et vous
-            pouvez aussi taper une ligne à la main, avec son prix et son unité,
-            sans passer par le catalogue.</p>
-        </details>
-        <details>
-          <summary>Sur quels téléphones ?</summary>
-          <p>Android 8.0 et plus récent. L’appareil photo n’est utilisé que pour
-            scanner un code-barres, et seulement si vous le demandez.</p>
-        </details>
-        <details>
-          <summary>Comment l’installer ?</summary>
-          <p>Les tests sont ouverts sur Google Play. Le guide en trois étapes
-            (groupe, inscription, installation) est sur la page
-            <a href="test.html">Devenir testeur</a> : une fois installée par ce
-            biais, l’application se met à jour toute seule ensuite.</p>
+          <p>Oui. Un article sans stock est une prestation, et une ligne peut
+            être tapée à la main, avec son prix et son unité, sans passer par le
+            catalogue.</p>
         </details>
       </div>
     </div>
   </section>
 
-  <section class="testeurs" id="testeurs">
+  <section class="depart" id="commencer">
     <div class="contenu">
       <div>
-        <h2>Essayez-la avant tout le monde.</h2>
-        <p>La version de test est ouverte. Rejoignez le groupe, inscrivez-vous au
-          test, puis installez l’application depuis Google Play. Trois étapes,
-          sans e-mail à écrire.</p>
+        <h2>La première prend cinq minutes.</h2>
+        <p>Vous remplissez votre boutique une fois, puis un client, deux lignes.
+          Le PDF part dans la conversation, et le numéro est déjà le bon.</p>
       </div>
       <div class="actions">
-        <a class="bouton bouton--nuit" href="test.html">Voir comment installer</a>
+        <a class="bouton bouton--nuit" href="/app/?mode=signup">Créer ma facture</a>
+        <a class="bouton bouton--contour" href="/app/gratuit">Essayer sans compte</a>
       </div>
     </div>
   </section>
@@ -444,32 +644,39 @@
 <footer class="pied">
   <div class="contenu">
     <div>
-      <a class="marque" href="./"><span aria-hidden="true"></span>Facture Maroc</a>
-      <p style="margin:12px 0 0;max-width:34ch">Facturation hors ligne pour les
-        commerces marocains. Gratuite, sans compte, sans connexion.</p>
+      <a class="marque" href="./"><span aria-hidden="true"></span>FactureApp</a>
+      <p style="margin:12px 0 0;max-width:34ch">Logiciel de facturation
+        marocain, en ligne. Gratuit jusqu’à 5 factures par mois, sans carte
+        bancaire.</p>
     </div>
     <div>
-      <h3>Application</h3>
+      <h3>Produit</h3>
       <ul>
         <li><a href="#fonctionnalites">Fonctionnalités</a></li>
-        <li><a href="#documents">Documents</a></li>
-        <li><a href="#captures">Captures</a></li>
-        <li><a href="#questions">Questions</a></li>
+        <li><a href="app/tarifs">Tarifs</a></li>
+        <li><a href="app/gratuit">Générateur gratuit</a></li>
+        <li><a href="app/">Se connecter</a></li>
       </ul>
     </div>
     <div>
-      <h3>Informations</h3>
+      <h3>Guides</h3>
+      <ul>
+        <li><a href="mentions-obligatoires-facture-maroc.html">Mentions obligatoires d’une facture</a></li>
+        <li><a href="facture-modele-marocain-gratuit.html">Modèle de facture</a></li>
+        <li><a href="avis.html">Ce qu’elle fait, ce qu’elle ne fait pas</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Le projet</h3>
       <ul>
         <li><a href="a-propos.html">À propos</a></li>
         <li><a href="contact.html">Contact</a></li>
-        <li><a href="mentions-obligatoires-facture-maroc.html">Mentions obligatoires d’une facture</a></li>
-        <li><a href="privacy.html">Politique de confidentialité</a></li>
-        <li><a href="test.html">Installer la version de test</a></li>
+      <li><a href="cgv.html">Conditions de vente</a></li>
+        <li><a href="confidentialite.html">Politique de confidentialité</a></li>
         <li><a href="https://github.com/beav0team/facture-maroc">Code source</a></li>
       </ul>
     </div>
-    <p class="mentions">Version 0.11.1 · Android 8.0 et plus · Français — © 2026
-      Facture Maroc. Les captures montrent une base de démonstration.</p>
+    <p class="mentions">FactureApp, Français — © 2026.</p>
   </div>
 </footer>
 

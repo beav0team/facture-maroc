@@ -21,6 +21,62 @@ answering from memory.
 La webapp vendable vit dans `webapp/`, se construit dans `docs/app/` et est
 servie sous `/app/`. L'app Android reste hors ligne et inchangée.
 
+**Site marketing — refonte du 2026-11-12**
+
+- La vitrine vend la webapp, en page produit : héros (facture + quatre
+  preuves), aiguillage compte / générateur, quatre atouts, trois étapes avec une
+  capture réelle de l’éditeur, états du document, dix documents, formules avec
+  prix, note du fondateur, FAQ, appel final. Plus aucune page ne cite ni ne lie
+  l’application Android
+  (section retirée d’`a-propos` et du modèle, lien de pied de page supprimé
+  partout, plus de test fermé dans `contact`). `test.html` reste en ligne, en
+  `noindex` et sans lien entrant, pour les testeurs qui ont l’adresse.
+- `docs/DESIGN.md` fixe le langage : carnet à souches, perforation, tampon,
+  numéros de série, et la liste de ce qui est interdit.
+- `/tarifs` → `/app/tarifs` en 301 ; le prix du Pro ne vit plus que dans
+  `webapp/src/lib/offres.ts`, aucun montant n'est écrit dans le HTML.
+- `docs/avis.html` : ce que la webapp fait et ne fait pas (stock, DGI,
+  paiements, relances, hors ligne).
+- `webapp/scripts/check-site.mjs`, appelé par `build.sh` : chaque page doit
+  avoir l’en-tête, un lien `/app/`, aucune ancre morte et aucun prix en dur.
+- **CGV** (2026-11-12) : `docs/cgv.html` — plans, activation, prix, durée,
+  rétractation, disponibilité, responsabilité, droit marocain. Le prix du Pro y
+  est imprimé et vérifié contre `offres.ts`, comme sur l’accueil ; aucune autre
+  page ne le recopie.
+- **Entrée par l’inscription** : les boutons « Créer ma facture » et « Commencer »
+  pointent sur `/app/?mode=signup`. « Connexion » et « Se connecter » restent sur
+  `/app/`. Le générateur fait de même après un brouillon.
+- **Confidentialité séparée** (2026-11-12) : `confidentialite.html` décrit la
+  webapp (compte, boutique, documents, PDF archivés, sous-traitants, droits) et
+  remplace `privacy.html` dans tous les pieds de page. `privacy.html` reste
+  publiée pour la fiche Play — l’application Android a sa propre politique — et
+  n’est plus liée ni listée dans le sitemap. `check-site.mjs` refuse un lien
+  vers `privacy.html` depuis une page de la vitrine.
+- **Captures du compte** (2026-11-12) : section `#compte` de l’accueil avec
+  deux captures réelles (liste des documents, éditeur rempli) prises sur la
+  boutique de test de l’agent, après un jeu de démonstration créé par l’API.
+  L’éditeur a gagné deux corrections au passage : le sélecteur d’article
+  écrasait la désignation (`width: 100%` dans une rangée flex), et le tableau
+  respire sur 1 200 px au lieu de 1 100.
+- **Plus de promesse de non-pistage** : les mentions « aucun script de mesure
+  d’audience » ont été retirées d’`a-propos`, `avis` et `confidentialite`.
+  Cloudflare Web Analytics s’active depuis le tableau de bord, sans code ; si
+  l’audience est mesurée un jour, `confidentialite.html` doit le dire.
+- **Galerie des six modèles** sur l’accueil (`#modeles`, `assets/img/modele-*`) :
+  vignettes rendues par le vrai moteur PDF, rognées au haut de page, le rouleau
+  centré sur son cadre.
+- **Six modèles de document** (2026-11-12) : Classique, Moderne, Facture Maroc,
+  Épuré, Bandeau (A4) et Ticket (rouleau 80 mm). Choisis par document dans
+  l’éditeur, réglés par défaut dans les paramètres, et repris par le générateur
+  public pour les essayer sans compte. Le modèle est stocké sur le document ;
+  une réimpression sort l’archive, donc le modèle d’origine. Migration
+  `webapp/supabase/migrations/0006_modeles.sql` à appliquer **avant** le
+  déploiement : sans elle, la base refuse les quatre nouveaux identifiants.
+- `docs/build.py` ne s’occupe plus que du `sitemap.xml` : le site n’imprime
+  aucun numéro de version, donc plus de dépendance à `app/build.gradle.kts`.
+  `docs/scripts/site_check.py` accepte les routes de la SPA en lisant
+  `_redirects`.
+
 **En production**
 
 - **https://factureapp.ma** (Cloudflare Pages, projet `factureapp`, branche
@@ -84,7 +140,7 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   JSON+PDF via `service_role` ou reset du mot de passe Postgres + `pg_dump`.
 - **SMTP** : celui de Supabase est limité ; configurer un fournisseur pour les
   confirmations et réinitialisations.
-- **CNDP** et validation du texte de `privacy.html` (déjà réécrit).
+- **CNDP** et relecture du texte de `confidentialite.html` (version web).
 - Monitoring, disponibilité et test de restauration réels.
 
 ---

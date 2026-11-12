@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Installer la version de test — Facture Maroc</title>
+<title>Installer la version de test — Facture Maroc hors ligne</title>
 <meta name="description" content="Comment installer Facture Maroc avant sa publication sur Google Play : rejoindre le groupe de testeurs, s’inscrire au test fermé, puis installer l’application depuis le Play Store.">
 <meta name="robots" content="noindex, follow">
 <meta name="theme-color" content="#1E3FD2">
@@ -38,35 +38,28 @@
     list-style: none;
     margin: clamp(28px, 4vw, 42px) 0 0;
     padding: 0;
-    display: grid;
-    gap: 16px;
+    border-top: 1px solid var(--trait);
   }
 
   .etape {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr);
-    gap: 20px;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 24px;
     align-items: start;
-    padding: 24px;
-    background: var(--blanc);
-    border: 1px solid var(--trait);
+    padding: 26px 0;
+    border-bottom: 1px solid var(--trait);
   }
 
   .etape .num {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--bleu);
-    color: var(--blanc);
-    font: 600 16px/1 var(--mono);
+    padding-top: 4px;
+    font: 500 13px/1.5 var(--mono);
+    color: var(--ardoise);
   }
 
   .etape h2 {
     margin: 0 0 8px;
-    font: 600 19px/1.3 var(--titre);
-    letter-spacing: -0.01em;
+    font: 700 20px/1.3 var(--titre);
+    letter-spacing: -0.012em;
   }
 
   .etape p {
@@ -101,16 +94,14 @@
 
   .savoir {
     margin-top: clamp(28px, 4vw, 40px);
-    padding: 24px 26px;
-    background: #EDF1FC;
-    border: 1px solid var(--trait);
+    padding-top: 26px;
+    border-top: 2px solid var(--nuit);
   }
 
   .savoir h2 {
     margin: 0 0 12px;
-    font: 600 15px/1.3 var(--texte);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font: 700 19px/1.3 var(--titre);
+    letter-spacing: -0.012em;
     color: var(--nuit);
   }
 
@@ -120,7 +111,7 @@
     display: grid;
     gap: 9px;
     font-size: 15px;
-    color: #2A3550;
+    color: var(--ardoise);
   }
 
   .apres {
@@ -141,11 +132,11 @@
     color: var(--ardoise);
   }
 
-  .pied .contenu { grid-template-columns: minmax(0, 1.3fr) minmax(0, .85fr); }
+  .pied .contenu { grid-template-columns: minmax(0, 1.6fr) minmax(0, .8fr) minmax(0, .8fr); }
 
   @media (max-width: 560px) {
-    .etape { grid-template-columns: 1fr; gap: 14px; padding: 20px; }
-    .etape .num { width: 36px; height: 36px; font-size: 14px; }
+    .etape { grid-template-columns: 1fr; gap: 10px; padding: 22px 0; }
+    .etape .num { padding-top: 0; }
   }
 </style>
 </head>
@@ -154,9 +145,9 @@
 <a class="saut" href="#contenu">Aller au contenu</a>
 
 <header class="barre">
-  <a class="marque" href="./"><span aria-hidden="true"></span>Facture Maroc</a>
+  <a class="marque" href="./"><span aria-hidden="true"></span>Facture Maroc hors ligne</a>
   <nav aria-label="Sections">
-    <a href="./#fonctionnalites">Fonctionnalités</a>
+    <a href="./">FactureApp, la version web</a>
     <a href="./#questions">Questions</a>
   </nav>
   <a class="bouton bouton--contour bouton--petit" href="./">Retour au site</a>
@@ -255,20 +246,27 @@
 <footer class="pied">
   <div class="contenu">
     <div>
-      <a class="marque" href="./"><span aria-hidden="true"></span>Facture Maroc</a>
-      <p style="margin:12px 0 0;max-width:34ch">Facturation hors ligne pour les
-        commerces marocains. Gratuite, sans compte, sans connexion.</p>
+      <a class="marque" href="./"><span aria-hidden="true"></span>FactureApp</a>
+      <p style="margin:12px 0 0;max-width:34ch">Facturation marocaine en ligne.
+        Gratuit jusqu’à 5 factures par mois.</p>
     </div>
     <div>
-      <h3>Informations</h3>
+      <h3>Le site</h3>
       <ul>
-        <li><a href="./">Retour au site</a></li>
+        <li><a href="./">Accueil</a></li>
+        <li><a href="app/">Se connecter</a></li>
+        <li><a href="app/tarifs">Tarifs</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Cette page</h3>
+      <ul>
         <li><a href="privacy.html">Politique de confidentialité</a></li>
         <li><a href="https://github.com/beav0team/facture-maroc">Code source</a></li>
       </ul>
     </div>
-    <p class="mentions">Version 0.11.1 · Android 8.0 et plus · Français — © 2026
-      Facture Maroc.</p>
+    <p class="mentions">Facture Maroc hors ligne, Android 8.0 et plus, Français
+      — © 2026.</p>
   </div>
 </footer>
 

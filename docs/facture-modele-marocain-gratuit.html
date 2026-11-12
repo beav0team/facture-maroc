@@ -45,10 +45,11 @@
   <a class="marque" href="./"><span aria-hidden="true"></span>FactureApp</a>
   <nav aria-label="Sections">
     <a href="./#fonctionnalites">Fonctionnalités</a>
-    <a href="facture-modele-marocain-gratuit.html">Générateur gratuit</a>
     <a href="app/tarifs">Tarifs</a>
+    <a href="./#questions">Questions</a>
+    <a href="app/">Connexion</a>
   </nav>
-  <a class="bouton bouton--contour bouton--petit" href="app/">Se connecter</a>
+  <a class="bouton bouton--plein bouton--petit" href="app/?mode=signup">Créer ma facture</a>
 </header>
 
 <main id="contenu">
@@ -62,7 +63,7 @@
     </nav>
 
     <h1>Une facture marocaine gratuite, dans le navigateur</h1>
-    <p class="maj">Mis à jour le 11 novembre 2026 · sans compte, sans installation</p>
+    <p class="maj">Mis à jour le 12 novembre 2026 · sans compte, sans installation</p>
 
     <div class="enbref">
       <p>Le générateur calcule le HT, la TVA et le TTC en dirhams, puis produit
@@ -89,10 +90,11 @@
       numéro suivi n’est pas une pièce comptable complète. Ces deux gestes
       demandent un compte. La version gratuite de FactureApp permet
       <strong>cinq factures émises par mois</strong>, numérotées et archivées ;
-      le plan Pro à 990 DH par an retire la limite et le filigrane.
+      le plan Pro, dont le prix est sur la page des tarifs, retire la limite et
+      le filigrane.
     </p>
     <p>
-      <a class="bouton bouton--contour" href="app/">Ouvrir un compte gratuit</a>
+      <a class="bouton bouton--contour" href="app/?mode=signup">Ouvrir un compte gratuit</a>
       <a class="bouton bouton--contour" href="app/tarifs">Voir les tarifs</a>
     </p>
 
@@ -106,24 +108,46 @@
       explique ce que chaque case signifie.
     </p>
 
-    <h2>Et hors ligne ?</h2>
-    <p>
-      L’application Android <strong>Facture Maroc hors ligne</strong> fait la
-      même chose sans réseau, sans compte et sans permission Internet, avec en
-      plus le stock, les achats et les rapports. La webapp et l’application
-      partagent le même moteur de calcul : une facture sort au même centime des
-      deux côtés.
-    </p>
-
-    <p>
-      <a class="bouton bouton--plein" href="app/gratuit">Créer ma facture gratuite</a>
-    </p>
-
-    <footer>
-      FactureApp — la facturation marocaine dans le navigateur.
-      <a href="./">Retour au site</a>
-    </footer>
   </article>
 </main>
+
+<footer class="pied">
+      <div class="contenu">
+        <div>
+          <a class="marque" href="./"><span aria-hidden="true"></span>FactureApp</a>
+          <p style="margin:12px 0 0;max-width:34ch">Facturation marocaine en ligne.
+            Gratuit jusqu’à 5 factures par mois, sans carte bancaire.</p>
+        </div>
+        <div>
+          <h3>Produit</h3>
+          <ul>
+            <li><a href="./#fonctionnalites">Fonctionnalités</a></li>
+            <li><a href="app/tarifs">Tarifs</a></li>
+            <li><a href="app/gratuit">Générateur gratuit</a></li>
+            <li><a href="app/">Se connecter</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Guides</h3>
+          <ul>
+            <li><a href="mentions-obligatoires-facture-maroc.html">Mentions obligatoires d’une facture</a></li>
+            <li><a href="facture-modele-marocain-gratuit.html" aria-current="page">Modèle de facture</a></li>
+            <li><a href="avis.html">Ce qu’elle fait, ce qu’elle ne fait pas</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Le projet</h3>
+          <ul>
+            <li><a href="a-propos.html">À propos</a></li>
+            <li><a href="contact.html">Contact</a></li>
+      <li><a href="cgv.html">Conditions de vente</a></li>
+            <li><a href="confidentialite.html">Politique de confidentialité</a></li>
+            <li><a href="https://github.com/beav0team/facture-maroc">Code source</a></li>
+          </ul>
+        </div>
+        <p class="mentions">FactureApp, Français — © 2026.</p>
+      </div>
+</footer>
+
 </body>
 </html>

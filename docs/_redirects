@@ -20,3 +20,7 @@
 /app/import /app/ 200
 /app/gratuit /app/ 200
 /app/tarifs /app/ 200
+
+# L'ancienne page de tarifs vit dans l'application : le prix n'est écrit qu'à
+# un seul endroit, et /tarifs ne doit pas en garder une copie figée.
+/tarifs /app/tarifs 301

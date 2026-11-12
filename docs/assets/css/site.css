@@ -60,6 +60,8 @@
   --safran: #F7C948;
   --trait: #CBD5EC;
   --ardoise: #4D5B7C;
+  --vert: #16704A;
+  --rouge: #B3261E;
   --blanc: #FFFFFF;
 
   --titre: "Bricolage Grotesque", "Segoe UI", sans-serif;
@@ -212,56 +214,178 @@ a { color: inherit; }
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 26px;
+  margin-bottom: 28px;
 }
 
-.reperes {
-  display: flex;
-  flex-wrap: wrap;
+/* La phrase du plan gratuit, sous les boutons : une seule ligne, pas de
+   chapelet de faits séparés par des points. */
+.offre {
   margin: 0;
-  padding: 18px 0 0;
+  padding-top: 20px;
   border-top: 1px solid var(--trait);
-  list-style: none;
-  font-size: 13.5px;
+  max-width: 46ch;
+  font-size: 14.5px;
+  line-height: 1.55;
   color: var(--ardoise);
 }
 
-.reperes li + li {
-  margin-left: 14px;
-  padding-left: 14px;
+.offre b {
+  font-weight: 600;
+  color: var(--nuit);
+}
+
+/* Les quatre mentions vendues d'entrée, sous le chapeau : une ligne de faits,
+   pas une grille de badges. */
+.preuves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0 0 26px;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  color: var(--ardoise);
+}
+
+.preuves li::before {
+  content: "✓";
+  margin-right: 7px;
+  color: var(--vert);
+  font-weight: 600;
+}
+
+/* Aiguillage : deux chemins réels — le compte, ou le générateur sans compte. */
+.aiguillage {
+  border-top: 1px solid var(--trait);
+  border-bottom: 1px solid var(--trait);
+}
+
+.aiguillage .contenu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.aiguillage a {
+  display: grid;
+  gap: 5px;
+  padding: 24px 32px 24px 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.aiguillage a + a {
+  padding-left: 32px;
   border-left: 1px solid var(--trait);
 }
 
-.reperes b { color: var(--nuit); font-weight: 600; }
+.aiguillage b {
+  font: 700 17px/1.3 var(--titre);
+  letter-spacing: -0.012em;
+  color: var(--nuit);
+}
+
+.aiguillage b::after {
+  content: " →";
+  color: var(--bleu);
+}
+
+.aiguillage a:hover b { text-decoration: underline; text-decoration-thickness: 2px; }
+
+.aiguillage span {
+  max-width: 46ch;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ardoise);
+}
 
 /* la facture */
 
 .scene {
   position: relative;
-  min-height: 560px;
   display: flex;
+  flex-direction: column;
   align-items: flex-end;
   justify-content: flex-end;
-  gap: 18px;
+  gap: 0;
 }
 
 .feuille {
   position: relative;
-  width: min(100%, 430px);
-  margin: 0 0 34px;
-  padding: 30px 32px 34px;
+  z-index: 1;
+  width: min(100%, 440px);
+  margin: 0;
+  padding: 30px 32px 52px;
   background: var(--blanc);
   box-shadow: 0 30px 60px -34px rgba(11, 27, 77, .55), 0 2px 0 rgba(11, 27, 77, .06);
 }
 
-.dechirure {
+/* La perforation de la souche : des demi-cercles couleur papier qui mordent le
+   bas de la feuille. C'est le seul dégradé du site, et il ne sert qu'à percer. */
+.perfore {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -9px;
-  width: 100%;
-  height: 10px;
-  display: block;
+  bottom: 0;
+  height: 8px;
+  background-image: radial-gradient(circle 7px at 15px 8px, var(--papier) 7px, transparent 7.5px);
+  background-size: 30px 16px;
+  background-repeat: repeat-x;
+  pointer-events: none;
+}
+
+/* Le tampon : un objet imprimé, pas une pastille d'interface. */
+.tampon {
+  position: absolute;
+  z-index: 2;
+  right: 26px;
+  bottom: 14px;
+  padding: 7px 11px;
+  border: 2px solid currentColor;
+  box-shadow: inset 0 0 0 1px currentColor;
+  font: 700 10px/1 var(--texte);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  transform: rotate(-7deg);
+  opacity: .9;
+}
+
+.tampon--emis { color: var(--bleu); }
+.tampon--paye { color: var(--vert); }
+.tampon--brouillon { color: var(--ardoise); }
+
+/* Le message qui sort de la souche : c'est ce que l'application envoie. */
+.message {
+  position: relative;
+  z-index: 0;
+  align-self: flex-start;
+  width: min(100%, 360px);
+  margin: -14px 0 0 18px;
+  padding: 18px 18px 14px;
+  background: var(--blanc);
+  border: 1px solid var(--trait);
+  border-left: 3px solid var(--safran);
+}
+
+.message__titre {
+  margin: 0 0 8px;
+  font: 600 12px/1.3 var(--texte);
+  color: var(--ardoise);
+}
+
+.message__texte {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.message__piece {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 6px 9px;
+  background: var(--papier);
+  border: 1px solid var(--trait);
+  font: 500 11.5px/1 var(--mono);
+  color: var(--nuit);
 }
 
 .entete-feuille {
@@ -351,38 +475,385 @@ a { color: inherit; }
 }
 .totaux .total b { font-size: 13px; }
 
-.lettres {
-  margin: 16px 0 0;
-  padding-top: 9px;
+/* ---------- captures du compte ---------- */
+
+.captures-compte {
+  display: grid;
+  gap: 32px;
+  margin: 40px 0 0;
+}
+
+/* ---------- états d'un document ---------- */
+
+.etats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
   border-top: 1px solid var(--trait);
-  font-size: 8px;
-  line-height: 1.5;
+}
+
+.etat {
+  padding: 26px 28px 26px 0;
+}
+
+.etat + .etat {
+  padding-left: 28px;
+  border-left: 1px solid var(--trait);
+}
+
+.etat h3 {
+  margin: 0 0 8px;
+  font: 700 18px/1.3 var(--titre);
+  letter-spacing: -0.012em;
+}
+
+.etat p {
+  margin: 0;
+  max-width: 38ch;
+  font-size: 15px;
   color: var(--ardoise);
+}
+
+.mini {
+  margin: 0 0 22px;
+  padding: 12px 14px 14px;
+  background: var(--blanc);
+  border: 1px solid var(--trait);
+  min-height: 118px;
+}
+
+.mini__tete {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--trait);
+  font: 500 10.5px/1 var(--mono);
+  color: var(--ardoise);
+}
+
+.mini__ligne {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--trait);
+  font-size: 9.5px;
+  color: var(--ardoise);
+}
+
+.mini__pied {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1.5px solid var(--nuit);
+  font: 500 10.5px/1 var(--mono);
+  color: var(--nuit);
+}
+
+/* ---------- atouts ---------- */
+
+.atouts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 56px;
+  margin: 40px 0 0;
+}
+
+.atout {
+  padding: 26px 0 30px;
+  border-top: 1px solid var(--trait);
+}
+
+.atout h3 {
+  margin: 0 0 8px;
+  font: 700 19px/1.3 var(--titre);
+  letter-spacing: -0.012em;
+}
+
+.atout p {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--ardoise);
+}
+
+.atout .mini { margin: 20px 0 0; }
+
+/* ---------- parcours en trois étapes ---------- */
+
+.duo-etapes {
+  display: grid;
+  grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+  gap: 56px;
+  align-items: start;
+  margin-top: 40px;
+}
+
+.parcours {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.parcours li {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 16px;
+  padding: 22px 0;
+  border-top: 1px solid var(--trait);
+}
+
+.parcours li:last-child { border-bottom: 1px solid var(--trait); }
+
+.parcours .num {
+  padding-top: 2px;
+  font: 500 13px/1.6 var(--mono);
+  color: var(--bleu);
+}
+
+.parcours h3 {
+  margin: 0 0 5px;
+  font: 700 18px/1.3 var(--titre);
+  letter-spacing: -0.01em;
+}
+
+.parcours p {
+  margin: 0;
   max-width: 44ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ardoise);
 }
 
-.telephone {
-  flex: 0 0 auto;
-  width: 198px;
-  padding: 6px;
-  background: var(--nuit);
-  border-radius: 26px;
-  box-shadow: 0 30px 56px -28px rgba(11, 27, 77, .65);
+/* La capture du produit dans son cadre : une fenêtre, pas un téléphone
+   flottant. Le cadre dit d'où vient l'image. */
+.fenetre {
+  margin: 0;
+  border: 1px solid var(--trait);
+  background: var(--blanc);
 }
 
-.ecran {
-  aspect-ratio: 1080 / 2020;
-  border-radius: 21px;
+.fenetre__barre {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--trait);
+  font: 400 11.5px/1 var(--mono);
+  color: var(--ardoise);
+}
+
+.fenetre__barre i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--trait);
+}
+
+.fenetre__barre span {
+  margin-left: 8px;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.ecran img {
+.fenetre img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
+  height: auto;
+  padding: 14px;
+  background: var(--papier);
 }
+
+.fenetre figcaption {
+  padding: 11px 14px;
+  border-top: 1px solid var(--trait);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ardoise);
+}
+
+/* ---------- les six modèles ---------- */
+
+.modeles {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 24px 20px;
+  margin: 40px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.modele { margin: 0; }
+
+/* Chaque vignette est une feuille au même format : le ticket, plus court,
+   se centre au lieu de casser l'alignement des légendes. */
+.modele__page {
+  display: grid;
+  place-items: center;
+  /* Vignette rognée au haut de la page : l'en-tête, le tableau et les totaux
+     sont ce qui distingue les modèles ; la moitié blanche du bas ne dit rien. */
+  aspect-ratio: 1075 / 920;
+  padding: 8px;
+  background: var(--blanc);
+  border: 1px solid var(--trait);
+}
+
+.modele__page img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+
+.modele p {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ardoise);
+}
+
+.modele b {
+  display: block;
+  margin-bottom: 2px;
+  font: 600 14px/1.3 var(--titre);
+  letter-spacing: -0.008em;
+  color: var(--nuit);
+}
+
+/* ---------- formules ---------- */
+
+.formules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  margin: 40px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.formule {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 26px 26px;
+  background: var(--blanc);
+  border: 1px solid var(--trait);
+}
+
+.formule--pro { border-color: var(--nuit); }
+
+.formule h3 {
+  margin: 0;
+  font: 700 15px/1.2 var(--texte);
+  letter-spacing: 0.01em;
+  color: var(--ardoise);
+}
+
+.formule .prix {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 8px 0 10px;
+  font: 800 38px/1 var(--titre);
+  letter-spacing: -0.035em;
+  color: var(--nuit);
+}
+
+.formule .prix small {
+  font: 400 14px/1 var(--texte);
+  letter-spacing: 0;
+  color: var(--ardoise);
+}
+
+.formule .texte {
+  margin: 0 0 8px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ardoise);
+}
+
+.formule ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.formule li {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--trait);
+  font-size: 14.5px;
+  color: var(--ardoise);
+}
+
+.formule li:last-child { border-bottom: 0; }
+
+.formule .bouton {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.formule ul { margin-bottom: 18px; }
+
+/* ---------- le fondateur ---------- */
+
+.fondateur {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, .7fr);
+  gap: 56px;
+  padding-top: 26px;
+  border-top: 2px solid var(--nuit);
+}
+
+.fondateur > div { max-width: 60ch; }
+
+.faits {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.faits li {
+  padding: 14px 0;
+  border-top: 1px solid var(--trait);
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ardoise);
+}
+
+.faits li:first-child { border-top: 0; padding-top: 0; }
+
+.faits b {
+  display: block;
+  margin-bottom: 3px;
+  font: 600 15px/1.3 var(--titre);
+  color: var(--nuit);
+}
+
+.faits a { color: var(--bleu); }
+
+.fondateur h2 {
+  margin: 0 0 16px;
+  max-width: 30ch;
+}
+
+.fondateur p {
+  margin: 0 0 14px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ardoise);
+}
+
+.fondateur .nom {
+  margin-top: 20px;
+  font-size: 14.5px;
+  color: var(--nuit);
+}
+
+.fondateur a { color: var(--bleu); }
 
 /* ---------- sections ---------- */
 
@@ -405,6 +876,8 @@ a { color: inherit; }
   color: var(--ardoise);
   font-size: 17px;
 }
+
+.presentation a { color: var(--bleu); }
 
 /* tableau des trois onglets */
 .fiches {
@@ -457,27 +930,6 @@ a { color: inherit; }
 }
 
 /* modèles */
-.modeles {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0 32px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.modeles li {
-  padding: 20px 0 0;
-  border-top: 2px solid var(--nuit);
-}
-
-.modeles strong {
-  display: block;
-  font: 700 16px/1.3 var(--titre);
-  margin-bottom: 4px;
-}
-
-.modeles span { font-size: 14.5px; color: var(--ardoise); }
 
 /* stock */
 .duo {
@@ -487,95 +939,25 @@ a { color: inherit; }
   align-items: start;
 }
 
-.exemple {
-  padding: 24px 26px;
-  background: var(--blanc);
-  border: 1px solid var(--trait);
+.duo h3 {
+  margin: 0 0 10px;
+  font: 700 19px/1.3 var(--titre);
+  letter-spacing: -0.012em;
 }
 
-.exemple p { margin: 0; }
-.exemple p + p {
-  margin-top: 16px;
-  padding-top: 16px;
+.duo .presentation { margin-bottom: 0; }
+
+/* Une phrase de clôture après deux colonnes doit se lire comme une clôture,
+   pas comme la fin de la colonne de gauche. */
+/* Le filet de clôture couvre la largeur du contenu ; la phrase, elle, garde
+   sa mesure de lecture. */
+.cloture {
+  margin-top: 48px;
+  padding-top: 24px;
   border-top: 1px solid var(--trait);
 }
 
-.exemple b {
-  font-family: var(--mono);
-  font-weight: 500;
-}
-
-/* captures */
-.captures {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.captures img {
-  display: block;
-  width: 100%;
-  border: 1px solid var(--trait);
-  background: var(--blanc);
-}
-
-.captures figcaption {
-  margin-top: 10px;
-  font-size: 14px;
-  color: var(--ardoise);
-}
-
-/* ---------- bandeau confidentialité ---------- */
-
-.bandeau {
-  position: relative;
-  background: var(--bleu);
-  color: var(--blanc);
-  padding: clamp(56px, 7vw, 92px) 0;
-}
-
-.bord-dechire {
-  display: block;
-  width: 100%;
-  position: absolute;
-  top: -1px;
-  left: 0;
-  width: 100%;
-  height: 12px;
-}
-
-.bandeau h2 {
-  color: var(--blanc);
-  max-width: 32ch;
-}
-
-.bandeau .presentation { color: #D7DFF8; }
-
-.regles {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 28px 56px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.regles li {
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, .3);
-  font-size: 15.5px;
-  color: #E4E9FA;
-}
-
-.regles b {
-  display: block;
-  margin-bottom: 4px;
-  font: 600 16px/1.3 var(--titre);
-  color: var(--blanc);
-}
+.cloture .presentation { margin-bottom: 0; }
 
 /* ---------- questions ---------- */
 
@@ -628,34 +1010,34 @@ a { color: inherit; }
   color: var(--ardoise);
 }
 
-/* ---------- testeurs ---------- */
+/* ---------- bande de départ ---------- */
 
-.testeurs {
+.depart {
   background: var(--safran);
   padding: clamp(48px, 6vw, 80px) 0;
 }
 
-.testeurs .contenu {
+.depart .contenu {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
   gap: 32px;
   align-items: end;
 }
 
-.testeurs h2 {
+.depart h2 {
   margin: 0 0 12px;
   font: 800 clamp(28px, 3.4vw, 42px)/1.08 var(--titre);
   letter-spacing: -0.035em;
   max-width: 22ch;
 }
 
-.testeurs p {
+.depart p {
   margin: 0;
   max-width: 46ch;
   color: #2A2A16;
 }
 
-.testeurs .actions {
+.depart .actions {
   margin: 0;
   justify-content: flex-end;
 }
@@ -671,7 +1053,7 @@ a { color: inherit; }
 
 .pied .contenu {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) repeat(2, minmax(0, .85fr));
+  grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, .8fr));
   gap: 32px;
 }
 
@@ -705,55 +1087,52 @@ a { color: inherit; }
 @media (max-width: 1080px) {
   .heros { grid-template-columns: 1fr; gap: 44px; }
   .argument { max-width: 640px; }
-  .scene {
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 22px;
-    min-height: 0;
-    padding-bottom: 0;
-  }
-  .feuille { width: 100%; max-width: 440px; margin: 0; }
-  .telephone { width: 152px; }
+  .scene { align-items: center; }
+  .feuille { width: 100%; max-width: 440px; }
+  .message { align-self: center; width: min(100%, 440px); margin: -14px 0 0; }
 }
 
 @media (max-width: 900px) {
-  .modeles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 32px; }
-  .captures {
-    grid-template-columns: none;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(220px, 1fr);
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding-bottom: 12px;
-  }
-  .captures li { scroll-snap-align: start; }
+  .aiguillage .contenu { grid-template-columns: 1fr; }
+  .aiguillage a { padding: 22px 0; }
+  .aiguillage a + a { padding-left: 0; border-left: 0; border-top: 1px solid var(--trait); }
+  .atouts { grid-template-columns: 1fr; }
+  .duo-etapes { grid-template-columns: 1fr; gap: 40px; }
+  .fondateur { grid-template-columns: 1fr; gap: 32px; }
   .duo { grid-template-columns: 1fr; }
+  .etats { grid-template-columns: 1fr; }
+  .etat { padding: 22px 0; }
+  .etat + .etat { padding-left: 0; border-left: 0; border-top: 1px solid var(--trait); }
+  .modeles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .formules { grid-template-columns: 1fr; gap: 32px; }
   .faq { grid-template-columns: 1fr; gap: 8px; }
   .faq .presentation { margin-bottom: 24px; }
-  .testeurs .contenu { grid-template-columns: 1fr; }
-  .testeurs .actions { justify-content: flex-start; }
+  .depart .contenu { grid-template-columns: 1fr; }
+  .depart .actions { justify-content: flex-start; }
   .pied .contenu { grid-template-columns: 1fr 1fr; }
   .pied .contenu > div:first-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 720px) {
   .barre nav { display: none; }
+  .modeles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Une capture de bureau réduite à 350 px ne se lit pas : la section garde
+     les trois étapes, qui suffisent. */
+  .fenetre { display: none; }
   .fiches div { grid-template-columns: 1fr; gap: 6px; }
   .documents { grid-template-columns: 1fr; }
-  .regles { grid-template-columns: 1fr; }
-  .telephone { width: 132px; }
-  .feuille { padding: 18px 16px 24px; }
+  .feuille { padding: 18px 16px 44px; }
   .ligne { grid-template-columns: minmax(0, 1fr) 20px 52px 58px; font-size: 7.5px; gap: 6px; }
   .totaux { width: 158px; }
   .reference span { font-size: 8.5px; white-space: nowrap; }
   .parties { font-size: 7.5px; }
+  .tampon { right: 16px; bottom: 12px; padding: 5px 8px; font-size: 8.5px; }
+  .message { padding: 16px 14px 12px; }
 }
 
 @media (max-width: 520px) {
   .barre { gap: 16px; }
   .barre .bouton { margin-left: auto; }
-  .modeles { grid-template-columns: 1fr; }
   .pied .contenu { grid-template-columns: 1fr; }
 }
 
@@ -831,6 +1210,11 @@ a { color: inherit; }
 .doc a { color: var(--bleu); }
 .doc a:hover { text-decoration-thickness: 2px; }
 
+/* Un bouton plein garde son texte blanc, même dans un guide où les liens sont
+   bleus. Sans ces deux règles, .doc a repeint le libellé en bleu sur le bleu. */
+.doc a.bouton--plein { color: var(--blanc); }
+.doc a.bouton--contour { color: var(--nuit); }
+
 .doc .enbref {
   margin: 0 0 30px;
   padding: 20px 22px;
@@ -896,14 +1280,6 @@ a { color: inherit; }
 }
 
 .doc .suite .bouton { font-size: 14.5px; }
-
-.section .note {
-  margin: -26px 0 38px;
-  max-width: 62ch;
-  font-size: 15.5px;
-  color: var(--ardoise);
-}
-.section .note a { color: var(--bleu); }
 
 /* Un tableau de guide ne doit jamais pousser la page en largeur : il défile
    dans sa boîte. Les cellules restent lisibles, le reste de la page est fixe. */
