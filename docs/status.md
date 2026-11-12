@@ -170,6 +170,15 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   quatre helpers sont exportés et testés directement : le texte d’un PDF est
   compressé et encodé en hexadécimal, donc le chercher dans les octets ne
   prouve rien.
+- **Clé de contrôle ICE (modulo 97)** : un ICE client à 15 chiffres mais avec
+  une clé erronée (chiffre faux, transposition) est bloqué, tant dans
+  l’éditeur que dans `emettre_document()` (migration `0010_ice_cle_controle.sql`).
+  La validation repose sur le modulo 97 sur les 15 chiffres (comme un IBAN) :
+  `validerIceCleControle()` dans `lib/validation.ts`, testé avec 16 ICE
+  réels (BCP, Maroc Telecom, Orange, inwi, etc.). Un lien vers
+  `maroc.welipro.com/outils/verifier-ice` permet de confirmer qu’un ICE bien
+  formé existe vraiment. Un ICE client absent reste accepté (la boutique ne
+  peut pas inventer le numéro de son client).
 - **Les mêmes contrôles en SQL** (migration `0008_emission_controles.sql`) :
   `emettre_document()` refuse lui aussi une date absente du calendrier ou
   postérieure au jour, un document comptable dont la boutique n’a ni ICE ni
@@ -179,8 +188,7 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   ne sont pas concernés. `rls_documents.sql` couvre les cinq cas, dont un
   devis qui passe malgré l’ICE vendeur vide. Suite rejouée localement contre
   PostgreSQL 17 avec un schéma `auth` de substitution : les quatre suites sont
-  vertes. **Migration non encore appliquée en production** — à coller dans le
-  SQL Editor Supabase.
+  vertes. Migrations 0008 et 0010 appliquées en production.
 - **Quota élargi à tous les documents facturés** (migration `0009_quota.sql`) :
   Le quota gratuit ne comptait que `type = 'facture'` : une boutique pouvait
   émettre ses cinq factures puis continuer à facturer en tickets,
@@ -192,8 +200,7 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   simplifiés et exports dans les 5 gratuits par mois. Devis et avoirs restent
   illimités. Les pages de la vitrine passent de « 5 factures par mois » à « 5
   documents facturés par mois » ; le badge du plan dit « 2 / 5 documents ce
-  mois ». **Migration non encore appliquée en production** — à coller dans le
-  SQL Editor Supabase après la 0008.
+  mois ». Migration 0009 appliquée en production.
 - **Réarchivage d’un PDF manquant** (editor) : si l’upload Storage échoue à
   l’émission, le document est numéroté et immuable mais sans archive. Le
   prévisualiseur d’un document émis propose désormais « Archiver ce PDF » ; le
@@ -226,7 +233,7 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
 - **https://factureapp.ma** (Cloudflare Pages, projet `factureapp`, branche
   `master`, build `bash webapp/scripts/build.sh`, sortie `docs`). Liens
   profonds de l'app à 200 ; GitHub Pages désactivé.
-- Supabase `njbfvskjexzlnvenmxml` (eu-north-1), schéma 0001 → 0006, RLS.
+- Supabase `njbfvskjexzlnvenmxml` (eu-north-1), schéma 0001 → 0010, RLS.
 - **Google OAuth publié en production** ; connexion Google et e-mail/mot de
   passe vérifiées sur le site.
 - Données réelles : 3 comptes/boutiques (Atlas, Benzen, PNEUMATIQUE AGHARAS),

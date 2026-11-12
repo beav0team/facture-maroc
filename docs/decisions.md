@@ -479,3 +479,16 @@ en brouillons sans réémettre leur numéro (l'ancien reste en référence), et 
 restaure pas les paiements ni les PDF archivés. Les compteurs de numérotation
 reprennent la série. Le ticket imprime en outre ICE, IF et RC du client, comme
 l'A4, via `identifiantsClient()`.
+
+### 2026-11-12 — Clé de contrôle ICE validée (modulo 97)
+L'ICE client était seulement vérifié sur sa forme (15 chiffres). Un ICE peut
+avoir 15 chiffres et une clé de contrôle erronée (chiffre mal recopié,
+transposition). Migration `0010_ice_cle_controle.sql` ajoute `valider_ice_cle_controle()`
+dans `emettre_document()` : les 15 chiffres réduits modulo 97 doivent donner 0.
+Même contrôle côté éditeur via `validerIceCleControle()` dans
+`lib/validation.ts`, testé avec 16 ICE réels (BCP, Maroc Telecom, Orange,
+inwi, etc.). Un lien vers `maroc.welipro.com/outils/verifier-ice` permet de
+confirmer qu'un ICE bien formé existe vraiment. Un ICE client absent reste
+accepté (la boutique ne peut pas inventer le numéro de son client).
+Les 3 migrations (0008, 0009, 0010) sont appliquées en production sur
+`njbfvskjexzlnvenmxml`.
