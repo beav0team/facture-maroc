@@ -3,14 +3,23 @@
 // pdf-lib is a real PDF writer, so this suite asserts what the customer gets:
 // a valid file, the same bytes twice for the same document (the archive hash
 // must not change between a reprint and the original), French accents that do
-// not throw, and a watermark only on the free plan.
+// not throw, and the legal mentions a controller looks for.
 
 import { describe, expect, it } from 'vitest'
 import { PDFDocument } from 'pdf-lib'
-import { assainir, creerPdf, creerRecuPdf, sha256Hex } from '../src/lib/pdf'
+import {
+  assainir,
+  creerPdf,
+  creerRecuPdf,
+  identifiantsVendeur,
+  libelleRecapTva,
+  mentionReference,
+  montantArrete,
+  sha256Hex,
+} from '../src/lib/pdf'
 import { DESIGNS, type DesignDocument } from '../src/lib/document'
 import { cheminArchive, nomFichier } from '../src/lib/archive'
-import type { Facture } from '../src/lib/invoice'
+import { calculer, type Facture } from '../src/lib/invoice'
 import type { SnapshotBoutique } from '../src/lib/documents'
 
 const boutique: SnapshotBoutique = {
@@ -91,15 +100,71 @@ describe('PDF', () => {
     expect(bytes.byteLength).toBeGreaterThan(1000)
   })
 
-  it('le filigrane ne change pas la validité du fichier', async () => {
-    const libre = await creerPdf({ facture, boutique })
-    const gratuit = await creerPdf({ facture, boutique, filigrane: 'FACTUREAPP · GRATUIT' })
-    expect(gratuit.byteLength).toBeGreaterThan(1000)
-    expect(await sha256Hex(gratuit)).not.toBe(await sha256Hex(libre))
+  // Il n'y a plus de filigrane : le plan gratuit et le plan Pro produisent le
+  // même document. Ce test le fige, sinon la mention pourrait revenir par
+  // mégarde dans un modèle.
+  it('aucun filigrane ne distingue le plan gratuit', async () => {
+    const bytes = await creerPdf({ facture, boutique })
+    const contenu = octets(bytes)
+    expect(octets(bytes).startsWith('%PDF-')).toBe(true)
+    expect(contenu).not.toContain('GRATUIT')
+    expect(contenu).not.toContain('FACTUREAPP')
   })
 
-  it('chaque modèle rend un PDF valide et distinct', async () => {
-    const empreintes = new Set<string>()
+  it('arrête la facture au total, pas au net après acompte', async () => {
+    const avecAcompte: Facture = {
+      ...facture,
+      lignes: [{ description: 'Prestation', quantite: 1, prixUnitaire: 1000 }],
+      tauxTva: 0,
+      acompte: 400,
+    }
+    const totaux = calculer(avecAcompte)
+    expect(totaux.netAPayer).toBe(600)
+    // La phrase déclare le total (1 000), même si 400 ont déjà été versés.
+    expect(montantArrete(totaux, 'facture')).toContain('MILLE')
+    expect(montantArrete(totaux, 'facture')).not.toContain('SIX CENT')
+    // Et le ticket, qui rend le même document, dit la même chose.
+    expect(montantArrete(totaux, 'ticket')).toContain('MILLE')
+  })
+
+  it('un avoir nomme la facture qu’il annule', () => {
+    const base = { ...facture, reference: 'F-20261111-0001' }
+    expect(mentionReference({ ...base, type: 'avoir' })).toBe(
+      'Annule et remplace la facture N° F-20261111-0001',
+    )
+    expect(mentionReference({ ...base, type: 'regul' })).toBe(
+      'Rectifie la facture N° F-20261111-0001',
+    )
+    expect(mentionReference({ ...base, type: 'acompte' })).toBe(
+      'Acompte sur la facture N° F-20261111-0001',
+    )
+    // Sur une facture ordinaire la mention reste neutre.
+    expect(mentionReference({ ...base, type: 'facture' })).toBe('Réf. facture N° F-20261111-0001')
+    // Sans référence, rien à nommer.
+    expect(mentionReference({ ...base, type: 'avoir', reference: '  ' })).toBeNull()
+  })
+
+  it('le récapitulatif de TVA porte la base de chaque taux', () => {
+    expect(libelleRecapTva({ taux: 20, base: 1000 })).toContain('TVA 20 % sur')
+    expect(libelleRecapTva({ taux: 20, base: 1000 })).toContain('1 000,00')
+    // Une exonération n'a pas de base à imprimer.
+    expect(libelleRecapTva({ taux: 0, base: 0 })).toBe('TVA 0 %')
+  })
+
+  it('le ticket porte les cinq identifiants du vendeur', () => {
+    const ligne = identifiantsVendeur(boutique, ' · ')
+    for (const attendu of [
+      'ICE 001234567000012',
+      'IF 12345678',
+      'RC 98765',
+      'Patente 112233',
+      'CNSS 445566',
+    ]) {
+      expect(ligne).toContain(attendu)
+    }
+  })
+
+  it('chaque modèle rend un PDF valide et distinct', async () => {    const empreintes = new Set<string>()
     for (const design of Object.keys(DESIGNS) as DesignDocument[]) {
       const bytes = await creerPdf({ facture, boutique, design })
       expect(octets(bytes).startsWith('%PDF-'), design).toBe(true)

@@ -11,8 +11,8 @@
 // narrow no-break space the money formatter writes for thousands; it is not in
 // WinAnsi and is replaced before drawing.
 
-import { PDFDocument, StandardFonts, degrees, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
-import type { DesignDocument } from './document'
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
+import type { DesignDocument, TypeDocument } from './document'
 import type { SnapshotBoutique } from './documents'
 import { analyserDate } from './dates'
 import { calculer, libelleTotal, totalLigne, type Facture, type Totaux } from './invoice'
@@ -30,7 +30,6 @@ const TRAIT = rgb(0.796, 0.835, 0.925)
 const BLEU = rgb(0.118, 0.247, 0.824)
 const SAFRAN = rgb(0.969, 0.788, 0.282)
 const BLANC = rgb(1, 1, 1)
-const ROUGE = rgb(0.702, 0.149, 0.118)
 
 /** The one accent the templates derive their rules and tints from. */
 const ACCENT = BLEU
@@ -45,8 +44,6 @@ export type OptionsPdf = {
   boutique: SnapshotBoutique
   design?: DesignDocument
   totaux?: Totaux
-  /** "FACTUREAPP · GRATUIT" across the page while the shop is on the free plan. */
-  filigrane?: string | null
   logo?: LogoPdf | null
   /** `true` prints the deposit/payment block even when nothing was paid. */
   montrerReglement?: boolean
@@ -134,15 +131,7 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
   // ---------------------------------------------------------------- header
   const titre = assainir(libelleDocument(facture).toUpperCase())
   const numeroTexte = assainir(facture.numero || 'Brouillon')
-  const legalBoutique = [
-    boutique.ice ? `ICE ${boutique.ice}` : '',
-    boutique.if_fiscal ? `IF ${boutique.if_fiscal}` : '',
-    boutique.rc ? `RC ${boutique.rc}` : '',
-    boutique.patente ? `Patente ${boutique.patente}` : '',
-    boutique.cnss ? `CNSS ${boutique.cnss}` : '',
-  ]
-    .filter(Boolean)
-    .join('  ·  ')
+  const legalBoutique = identifiantsVendeur(boutique)
 
   /** L'adresse, le contact et les identifiants, avec la taille de chacun. */
   function lignesBoutique(): Array<{ texte: string; taille: number }> {
@@ -319,14 +308,7 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
         color: BLANC,
       })
     }
-    const legal = [
-      boutique.ice ? `ICE ${boutique.ice}` : '',
-      boutique.if_fiscal ? `IF ${boutique.if_fiscal}` : '',
-      boutique.rc ? `RC ${boutique.rc}` : '',
-      boutique.patente ? `Patente ${boutique.patente}` : '',
-    ]
-      .filter(Boolean)
-      .join('  ·  ')
+    const legal = identifiantsVendeur(boutique)
     if (legal) {
       pageCourante.drawText(assainir(legal), {
         x: MARGE + (logo ? 56 : 0),
@@ -509,7 +491,9 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
     yDate -= 12
   }
   if (facture.reference?.trim()) {
-    page.drawText(assainir(`Réf. : ${facture.reference}`), {
+    // La mention qu'un contrôle cherche sur un document de correction : le
+    // document corrigé doit être nommé, pas seulement référencé.
+    page.drawText(assainir(mentionReference(facture) ?? ''), {
       x: PAGE_L - MARGE - 220,
       y: yDate,
       size: 9,
@@ -652,7 +636,9 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
     ligneTotal(texteOuVide(facture.surchargeLibelle) || 'Frais', dh(totaux.surcharge))
   }
   for (const tva of totaux.lignesTvaImprimees) {
-    ligneTotal(`TVA ${tva.taux} %`, dh(tva.montant))
+    // Le taux, sa base, son montant : la base est ce qui rend le document
+    // vérifiable à la main.
+    ligneTotal(libelleRecapTva(tva), dh(tva.montant))
   }
   const accentFilet = design === 'moderne' || design === 'epure' || design === 'bandeau'
   page.drawLine({
@@ -689,13 +675,12 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
     y -= 12
   }
 
-  // Le montant arrêté en toutes lettres : usage constant au Maroc, attendu par
-  // les administrations. Il se lit sous le net à payer, jamais dans la colonne
-  // des totaux. Découpé à la largeur du texte, pas du bloc des montants : la
-  // phrase est longue.
+  // Le montant arrêté en toutes lettres : c'est le total du document que la
+  // phrase déclare, pas ce qui reste à payer. Un acompte se déduit du net à
+  // payer ; il ne change pas la somme à laquelle la facture est arrêtée.
   if (options.montantLettres) {
     y -= 4
-    const phrase = arreteEnLettres(totaux.netAPayer, facture.type ?? 'facture')
+    const phrase = montantArrete(totaux, facture.type ?? 'facture')
     for (const ligne of couper(phrase, normal, 8, PAGE_L - 2 * MARGE)) {
       page.drawText(ligne, { x: MARGE, y, size: 8, font: normal, color: ENCRE })
       y -= 10
@@ -755,24 +740,6 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
     })
   })
 
-  // ---------------------------------------------------------------- watermark
-  if (options.filigrane) {
-    const texte = assainir(options.filigrane)
-    for (const pageCourante of pages) {
-      const taille = 34
-      const largeur = gras.widthOfTextAtSize(texte, taille)
-      pageCourante.drawText(texte, {
-        x: (PAGE_L - largeur * 0.7) / 2,
-        y: PAGE_H / 2 - 40,
-        size: taille,
-        font: gras,
-        color: ROUGE,
-        opacity: 0.08,
-        rotate: degrees(35),
-      })
-    }
-  }
-
   const bytes = await pdf.save({ useObjectStreams: false })
   return bytes
 }
@@ -805,13 +772,7 @@ async function creerPdfTicket(options: OptionsPdf): Promise<Uint8Array> {
   const coordonnees = [
     texteOuVide(boutique.adresse),
     boutique.telephone ?? '',
-    [
-      boutique.ice ? `ICE ${boutique.ice}` : '',
-      boutique.if_fiscal ? `IF ${boutique.if_fiscal}` : '',
-      boutique.rc ? `RC ${boutique.rc}` : '',
-    ]
-      .filter(Boolean)
-      .join(' · '),
+    identifiantsVendeur(boutique, ' · '),
   ].filter(Boolean)
   const coordsLignes = coordonnees.flatMap((ligne) => couper(ligne, normal, 6.5, utile))
 
@@ -837,7 +798,9 @@ async function creerPdfTicket(options: OptionsPdf): Promise<Uint8Array> {
   if (totaux.surcharge > 0) {
     rangees.push([texteOuVide(document.surchargeLibelle) || 'Frais', dh(totaux.surcharge), false])
   }
-  for (const tva of totaux.lignesTvaImprimees) rangees.push([`TVA ${tva.taux} %`, dh(tva.montant), false])
+  for (const tva of totaux.lignesTvaImprimees) {
+    rangees.push([libelleRecapTva(tva), dh(tva.montant), false])
+  }
   rangees.push([libelleTotal(totaux), dh(totaux.total), true])
   if (totaux.acompte > 0) rangees.push(['Acompte', `-${dh(totaux.acompte)}`, false])
   if (totaux.paye > 0) rangees.push(['Déjà payé', `-${dh(totaux.paye)}`, false])
@@ -847,17 +810,19 @@ async function creerPdfTicket(options: OptionsPdf): Promise<Uint8Array> {
   // The roll is 80 mm wide: the sentence has to be wrapped, and its height
   // counted in the page height below, or it would print over the footer.
   const lignesLettres = options.montantLettres
-    ? couper(arreteEnLettres(totaux.netAPayer, document.type ?? 'facture'), normal, 7, L - 2 * M)
+    ? couper(montantArrete(totaux, document.type ?? 'facture'), normal, 7, L - 2 * M)
     : []
 
   const hLogo = logo ? 40 : 0
   const hLignes = lignes.reduce((total, ligne) => total + ligne.hauteur, 0)
+  const reference = mentionReference(document)
+  const lignesReference = reference ? couper(reference, normal, 6.5, utile) : []
   const hauteur =
     M +
     hLogo +
     nomLignes.length * 13 + 2 +
     coordsLignes.length * 8 + 6 + 14 +
-    10 + 14 +
+    10 + 14 + lignesReference.length * 8 +
     clientLignes.length * 9 + 2 + 12 +
     hLignes +
     2 + 12 +
@@ -925,7 +890,12 @@ async function creerPdfTicket(options: OptionsPdf): Promise<Uint8Array> {
   })
   y -= 10
   page.drawText(assainir(document.date), { x: M, y, size: 7, font: normal, color: ARDOISE })
-  y -= 14
+  y -= 10
+  for (const ligne of lignesReference) {
+    page.drawText(assainir(ligne), { x: M, y, size: 6.5, font: normal, color: ARDOISE })
+    y -= 8
+  }
+  y -= 4
 
   for (let index = 0; index < clientLignes.length; index += 1) {
     page.drawText(assainir(clientLignes[index] ?? ''), {
@@ -1031,22 +1001,65 @@ async function creerPdfTicket(options: OptionsPdf): Promise<Uint8Array> {
     color: ARDOISE,
   })
 
-  if (options.filigrane) {
-    const texte = assainir(options.filigrane)
-    const taille = 16
-    const largeur = gras.widthOfTextAtSize(texte, taille)
-    page.drawText(texte, {
-      x: (L - largeur * 0.7) / 2,
-      y: PAGE_T / 2,
-      size: taille,
-      font: gras,
-      color: ROUGE,
-      opacity: 0.08,
-      rotate: degrees(35),
-    })
-  }
-
   return pdf.save({ useObjectStreams: false })
+}
+
+/**
+ * La phrase qui nomme le document corrigé.
+ *
+ * Un avoir annule, une régularisation rectifie, un acompte s'impute : trois
+ * relations différentes, et « Réf. : » ne dit ni laquelle ni sur quoi. Les
+ * mêmes mots sur l'A4 et sur le ticket.
+ */
+export function mentionReference(facture: Facture): string | null {
+  const reference = facture.reference?.trim()
+  if (!reference) return null
+  const type = facture.type ?? 'facture'
+  const ouverture =
+    type === 'avoir' ? 'Annule et remplace la facture N°'
+    : type === 'regul' ? 'Rectifie la facture N°'
+    : type === 'acompte' ? 'Acompte sur la facture N°'
+    : 'Réf. facture N°'
+  return `${ouverture} ${reference}`
+}
+
+/**
+ * La ligne de récapitulatif d'un taux de TVA : le taux, sa base, le montant.
+ *
+ * Sans la base, un document à deux taux ne se vérifie pas à la main : le
+ * contrôleur doit refaire le calcul, et le montant seul ne prouve rien. Un
+ * taux à 0 % (exonération) n'a pas de base à imprimer.
+ */
+export function libelleRecapTva(tva: { taux: number; base: number }): string {
+  const base = tva.taux > 0 ? ` sur ${dh(tva.base)}` : ''
+  return `TVA ${tva.taux} %${base}`
+}
+
+/**
+ * Le montant arrêté en toutes lettres.
+ *
+ * C'est le total du document que la phrase déclare, pas ce qui reste à payer :
+ * un acompte se déduit du net à payer, il ne change pas la somme à laquelle la
+ * facture est arrêtée.
+ */
+export function montantArrete(totaux: Totaux, type: TypeDocument): string {
+  return arreteEnLettres(totaux.total, type)
+}
+
+/** Les identifiants légaux du vendeur, tels qu'ils s'impriment. */
+export function identifiantsVendeur(
+  boutique: SnapshotBoutique,
+  separateur = '  ·  ',
+): string {
+  return [
+    boutique.ice ? `ICE ${boutique.ice}` : '',
+    boutique.if_fiscal ? `IF ${boutique.if_fiscal}` : '',
+    boutique.rc ? `RC ${boutique.rc}` : '',
+    boutique.patente ? `Patente ${boutique.patente}` : '',
+    boutique.cnss ? `CNSS ${boutique.cnss}` : '',
+  ]
+    .filter(Boolean)
+    .join(separateur)
 }
 
 function libelleDocument(facture: Facture): string {

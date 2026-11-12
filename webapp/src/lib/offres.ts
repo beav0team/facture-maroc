@@ -30,7 +30,7 @@ export const OFFRES: Offre[] = [
     points: [
       '5 factures émises par mois',
       'Clients, articles et devis illimités',
-      'PDF archivé avec filigrane',
+      'PDF archivé, sans filigrane',
       'Accès depuis téléphone et ordinateur',
     ],
     action: 'Commencer',
@@ -44,7 +44,6 @@ export const OFFRES: Offre[] = [
     texte: 'Pour un commerce qui facture tous les jours.',
     points: [
       'Factures illimitées',
-      'PDF sans filigrane',
       'Un an, sans reconduction automatique',
       'Support par e-mail',
     ],

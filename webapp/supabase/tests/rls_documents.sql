@@ -39,6 +39,14 @@ begin
   perform set_config('role', 'authenticated', true);
   select (public.create_shop_for_me('Documents A')).id into v_shop_a;
 
+  -- Une facture ne part pas sans l'identité du vendeur : l'ICE et l'IF sont
+  -- renseignés tout de suite, comme une boutique réelle les remplit avant de
+  -- facturer.
+  perform set_config('role', v_owner, true);
+  update public.shops set ice = '001234567000012', if_fiscal = '12345678' where id = v_shop_a;
+  perform set_config('request.jwt.claims', json_build_object('sub', v_a, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
   -- L'aperçu ne consomme pas.
   v_apercu := public.apercu_numero(v_shop_a, 'facture');
   v_apercu2 := public.apercu_numero(v_shop_a, 'facture');
@@ -283,7 +291,124 @@ begin
     when sqlstate '42501' then null;
   end;
 
-  raise notice 'Documents : numérotation, quota, émission et avoir vérifiés.';
+  -- ------------------------------------------- contrôles avant émission
+  perform set_config('role', v_owner, true);
+  perform set_config('request.jwt.claims', json_build_object('sub', v_a, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
+  -- Une date qui n'existe pas.
+  v_id := public.enregistrer_brouillon(
+    null,
+    jsonb_build_object('shop_id', v_shop_a, 'type', 'facture', 'date_emission', '31/02/2026',
+                       'client_snapshot', jsonb_build_object('nom', 'Client date')),
+    jsonb_build_array(jsonb_build_object('libelle', 'Service', 'quantite', 1, 'prix_unitaire', 100, 'tva_taux', 20, 'total_ht', 100))
+  );
+  v_bloque := false;
+  begin
+    perform public.emettre_document(v_id);
+  exception
+    when sqlstate '22007' then v_bloque := true;
+  end;
+  if not v_bloque then
+    raise exception 'une facture datée du 31 février a été émise';
+  end if;
+
+  -- Une date future.
+  v_id := public.enregistrer_brouillon(
+    null,
+    jsonb_build_object('shop_id', v_shop_a, 'type', 'facture',
+                       'date_emission', to_char(current_date + 1, 'DD/MM/YYYY'),
+                       'client_snapshot', jsonb_build_object('nom', 'Client futur')),
+    jsonb_build_array(jsonb_build_object('libelle', 'Service', 'quantite', 1, 'prix_unitaire', 100, 'tva_taux', 20, 'total_ht', 100))
+  );
+  v_bloque := false;
+  begin
+    perform public.emettre_document(v_id);
+  exception
+    when sqlstate '22007' then v_bloque := true;
+  end;
+  if not v_bloque then
+    raise exception 'une facture datée de demain a été émise';
+  end if;
+
+  -- Un ICE client qui n'a pas quinze chiffres.
+  v_id := public.enregistrer_brouillon(
+    null,
+    jsonb_build_object('shop_id', v_shop_a, 'type', 'facture',
+                       'client_snapshot', jsonb_build_object('nom', 'Client ICE', 'ice', '12345')),
+    jsonb_build_array(jsonb_build_object('libelle', 'Service', 'quantite', 1, 'prix_unitaire', 100, 'tva_taux', 20, 'total_ht', 100))
+  );
+  v_bloque := false;
+  begin
+    perform public.emettre_document(v_id);
+  exception
+    when sqlstate '22023' then v_bloque := true;
+  end;
+  if not v_bloque then
+    raise exception 'un ICE client à cinq chiffres est passé';
+  end if;
+
+  -- Un client professionnel sans ICE n'est pas bloqué : la boutique ne peut
+  -- pas inventer un numéro que son client ne lui a pas envoyé.
+  v_id := public.enregistrer_brouillon(
+    null,
+    jsonb_build_object('shop_id', v_shop_a, 'type', 'facture',
+                       'client_snapshot', jsonb_build_object('nom', 'Fournisseur', 'if_fiscal', '87654321')),
+    jsonb_build_array(jsonb_build_object('libelle', 'Service', 'quantite', 1, 'prix_unitaire', 100, 'tva_taux', 20, 'total_ht', 100))
+  );
+  perform public.emettre_document(v_id);
+
+  -- Un avoir sans référence ne dit pas ce qu'il annule.
+  v_id := public.enregistrer_brouillon(
+    null,
+    jsonb_build_object('shop_id', v_shop_a, 'type', 'avoir', 'reference', '',
+                       'client_snapshot', jsonb_build_object('nom', 'Client avoir')),
+    jsonb_build_array(jsonb_build_object('libelle', 'Service', 'quantite', 1, 'prix_unitaire', 100, 'tva_taux', 20, 'total_ht', 100))
+  );
+  v_bloque := false;
+  begin
+    perform public.emettre_document(v_id);
+  exception
+    when sqlstate '22023' then v_bloque := true;
+  end;
+  if not v_bloque then
+    raise exception 'un avoir sans référence est passé';
+  end if;
+
+  -- Une boutique sans ICE ne peut pas émettre de facture, mais un devis passe.
+  perform set_config('role', v_owner, true);
+  update public.shops set ice = '' where id = v_shop_a;
+  perform set_config('request.jwt.claims', json_build_object('sub', v_a, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
+  v_id := public.enregistrer_brouillon(
+    null,
+    jsonb_build_object('shop_id', v_shop_a, 'type', 'facture',
+                       'client_snapshot', jsonb_build_object('nom', 'Client sans ICE vendeur')),
+    jsonb_build_array(jsonb_build_object('libelle', 'Service', 'quantite', 1, 'prix_unitaire', 100, 'tva_taux', 20, 'total_ht', 100))
+  );
+  v_bloque := false;
+  begin
+    perform public.emettre_document(v_id);
+  exception
+    when sqlstate '22023' then v_bloque := true;
+  end;
+  if not v_bloque then
+    raise exception 'une facture sans ICE vendeur est passée';
+  end if;
+
+  v_id := public.enregistrer_brouillon(
+    null,
+    jsonb_build_object('shop_id', v_shop_a, 'type', 'devis',
+                       'client_snapshot', jsonb_build_object('nom', 'Client devis sans ICE')),
+    jsonb_build_array(jsonb_build_object('libelle', 'Service', 'quantite', 1, 'prix_unitaire', 100, 'tva_taux', 20, 'total_ht', 100))
+  );
+  perform public.emettre_document(v_id);
+
+  perform set_config('role', v_owner, true);
+  update public.shops set ice = '001234567000012' where id = v_shop_a;
+
+  raise notice 'Documents : numérotation, quota, émission, avoir et contrôles vérifiés.';
 end;
 $$;
 

@@ -392,3 +392,50 @@ is silent data loss — a group PATCHing a row built from its own fields blanks
 everything it does not show — so all five screens share one `Saisie` and the
 save projects only that group's keys; a test asserts the exact key list for
 Facturation and that `nom` and `prefixes` are absent from it.
+
+### 2026-11-12 — The free plan ships an unstamped PDF
+The watermark was a commercial argument, not a legal one, and it made the free
+plan produce a document a shop is half-ashamed to send. It is removed from the
+engine entirely — the option, both drawing blocks, the colour constant and every
+call site — rather than switched off by a flag: a disabled option is a
+`filigrane: true` away from returning, and the plan is now the only difference
+between the two offers. The marketing pages, CGV, FAQ and `offres.ts` were
+rewritten in the same commit so that nothing promises a watermark that no longer
+exists; `docs/avis.html` now says the free PDF is complete.
+
+### 2026-11-12 — Compliance fixes that do not wait for an accountant
+An audit against the app's own published checklist found five defects worth
+fixing immediately, before the structural questions (Arabic, RAS TVA, DGI
+e-invoicing) that need an accountant. The amount in words now declares
+`totaux.total`, the sum the document is stopped at, not `netAPayer`: a deposit
+reduces what is left to pay, not the amount the invoice is issued for. The VAT
+recap prints the base next to each rate — without it a two-rate invoice cannot
+be checked by hand. A credit note, a regularisation and a deposit note name the
+document they correct ("Annule et remplace la facture N°", "Rectifie la
+facture N°", "Acompte sur la facture N°"); "Réf. :" said neither which relation
+nor which document. The receipt and the A4 header print all five seller
+identifiers, Patente and CNSS included. Emission now refuses an invalid or
+future date, an accounting document from a shop without ICE or IF, a credit or
+regularisation without reference, and a client ICE that is not fifteen digits.
+A professional client carrying an IF/RC/Patente but no ICE only asks for
+confirmation: the shop cannot invent a number its customer never sent, and
+blocking the sale at the counter would be worse than the missing field. These
+are client-side checks; `emettre_document` in SQL does not repeat them yet, so
+the API remains callable without them.
+
+### 2026-11-12 — Emission controls live in SQL, not only in the editor
+The editor refuses a bad date or a missing seller ICE before calling the API,
+but the editor is not the only caller: a stale tab, a manual call, or a future
+client can all reach `emettre_document` directly, and once the number is taken
+the document is evidence. Migration `0008_emission_controles.sql` therefore
+repeats the checks in the function — valid calendar date, not in the future,
+seller ICE and IF on an accounting document, a reference on an avoir or a
+regularisation, and a client ICE that is exactly fifteen digits when present.
+An absent client ICE stays accepted on purpose: the shop cannot invent a
+number its customer never sent, and blocking the counter sale would be worse
+than the missing field; the editor asks for confirmation instead. Devis, bon de
+commande and proforma are exempt, as they create neither a claim nor a
+deduction right. The trade-off of putting the rule in the database is that a
+shop with an empty ICE can no longer issue anything until it fills the field —
+the error names the settings page, and no production shop has issued a document
+yet.

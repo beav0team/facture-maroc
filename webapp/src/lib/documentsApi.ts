@@ -24,7 +24,13 @@ function absent(): Resultat<never> {
 export function messageErreur(error: { message?: string; hint?: string; code?: string } | null): string {
   if (!error) return 'Erreur inconnue.'
   const message = error.message?.trim() ?? ''
-  if (error.code === 'P0001' && error.hint) return `${message} ${error.hint}`
+  // Le hint porte la marche à suivre (« Renseignez-le dans Paramètres →
+  // Boutique ») : sans lui, l'utilisateur lit ce qui manque sans savoir où le
+  // mettre. On l'ajoute dès qu'il existe, quel que soit le code SQL.
+  if (error.hint?.trim()) {
+    const hint = error.hint.trim()
+    if (!message.includes(hint)) return message ? `${message} ${hint}` : hint
+  }
   if (message.includes('duplicate key') && message.includes('documents_numero_unique')) {
     return 'Ce numéro de document existe déjà, réessayez.'
   }

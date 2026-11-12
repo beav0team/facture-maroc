@@ -151,6 +151,40 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   document_lines.shop_id does not exist`), attrapé en le lançant sur la
   boutique de test. Vérifié en bout de chaîne : 4 documents, 6 lignes, aucune
   orpheline.
+- **Filigrane supprimé, mentions complétées** (2026-11-12) : le filigrane du
+  plan gratuit est retiré du moteur, de l’éditeur, du générateur public, des
+  tarifs et de toutes les pages de la vitrine — un PDF du plan gratuit est
+  désormais complet. Dans le même passage, l’audit de conformité a corrigé
+  cinq défauts : le montant en lettres déclare le **total** du document et non
+  le net après acompte (`montantArrete()`, une seule fonction pour l’A4 et le
+  ticket) ; le récapitulatif de TVA imprime la **base** de chaque taux
+  (`libelleRecapTva()` : « TVA 20 % sur 1 000,00 DH ») ; l’avoir, la
+  régularisation et l’acompte **nomment** la facture corrigée (« Annule et
+  remplace la facture N°… », « Rectifie… », « Acompte sur… ») sur l’A4 et sur
+  le ticket ; le ticket et l’en-tête impriment les cinq identifiants du
+  vendeur (ICE, IF, RC, Patente, CNSS) via `identifiantsVendeur()` ; l’émission
+  refuse une date invalide ou future, une boutique sans ICE ou sans IF pour un
+  document comptable, une référence manquante sur un avoir ou une
+  régularisation, et un ICE client qui n’a pas quinze chiffres — un client
+  professionnel sans ICE demande une confirmation, il ne bloque pas. Les
+  quatre helpers sont exportés et testés directement : le texte d’un PDF est
+  compressé et encodé en hexadécimal, donc le chercher dans les octets ne
+  prouve rien.
+- **Les mêmes contrôles en SQL** (migration `0008_emission_controles.sql`) :
+  `emettre_document()` refuse lui aussi une date absente du calendrier ou
+  postérieure au jour, un document comptable dont la boutique n’a ni ICE ni
+  IF, un avoir ou une régularisation sans référence, et un ICE client qui n’a
+  pas quinze chiffres. Un ICE client absent reste accepté (la boutique ne peut
+  pas inventer le numéro de son client) ; devis, bon de commande et proforma
+  ne sont pas concernés. `rls_documents.sql` couvre les cinq cas, dont un
+  devis qui passe malgré l’ICE vendeur vide. Suite rejouée localement contre
+  PostgreSQL 17 avec un schéma `auth` de substitution : les quatre suites sont
+  vertes. **Migration non encore appliquée en production** — à coller dans le
+  SQL Editor Supabase.
+- `docs/status.md` note pour la boutique : après la 0008, une boutique sans ICE
+  ou IF ne peut plus émettre de facture jusqu’à ce qu’elle les renseigne dans
+  Paramètres → Boutique. Aucune boutique réelle n’a de document émis à ce
+  jour ; le message d’erreur donne le chemin.
 - **`build.sh` n’appelle `corepack enable` que si `pnpm` manque** : lancé sans
   condition, il remplaçait un `pnpm` local qui marche par un shim pointant sur
   `bin/pnpm.cjs`, fichier que pnpm 12 ne livre pas — le build mourait avant
@@ -178,8 +212,8 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
 - Numérotation et quota atomiques en SQL ; numéro pris à l'émission, snapshot
   boutique figé, documents émis immuables, avoir depuis une facture, 5
   factures gratuites par mois.
-- PDF `pdf-lib` déterministe, six modèles, filigrane gratuit, archivé avec
-  SHA-256 ; réimpression depuis l’archive. Partage WhatsApp/natif.
+- PDF `pdf-lib` déterministe, six modèles, archivé avec SHA-256 ;
+  réimpression depuis l’archive. Partage WhatsApp/natif.
 - Paiements multiples, reçu PDF, reste dû, retard, relevé client.
 - Générateur public, tarifs, admin, import de sauvegarde Android.
 - **Réinitialisation du mot de passe** : le lien envoyé par « Mot de passe
@@ -208,7 +242,7 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   document émis ouvre l'archive ; sans archive, la fenêtre le dit et propose le
   rendu reconstruit. Une erreur de rendu s'affiche au lieu de laisser le bouton
   muet.
-- 168 tests Vitest, 0 erreur `svelte-check` ; preuves RLS locales (quatre
+- 209 tests Vitest, 0 erreur `svelte-check` ; preuves RLS locales (quatre
   suites, dont `rls_admin.sql`).
 
 **Reste à faire pour vendre**

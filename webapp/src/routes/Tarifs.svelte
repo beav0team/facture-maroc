@@ -21,8 +21,8 @@
       <h1>Un prix simple, en dirhams</h1>
       <p class="texte">
         Pas de commission sur vos factures, pas d’engagement. Le plan gratuit
-        permet de travailler tout de suite ; le plan Pro retire la limite et le
-        filigrane.
+        permet de travailler tout de suite ; le plan Pro retire la limite de
+        cinq factures par mois.
       </p>
     </section>
 

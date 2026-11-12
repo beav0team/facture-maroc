@@ -262,3 +262,27 @@ describe('brouillonVide', () => {
     expect(saisie.facture.lignes).toEqual([])
   })
 })
+
+// Le message d'erreur d'une émission refusée doit dire quoi corriger et où.
+// `emettre_document` lève une exception avec un `hint` (« Renseignez-le dans
+// Paramètres → Boutique ») : sans lui, l'utilisateur lit ce qui manque sans
+// savoir où le mettre.
+describe('messageErreur', () => {
+  it('ajoute le hint, quel que soit le code SQL', async () => {
+    const { messageErreur } = await import('../src/lib/documentsApi')
+    expect(
+      messageErreur({
+        message: 'L’ICE de votre boutique manque : il est obligatoire sur une facture.',
+        hint: 'Renseignez-le dans Paramètres → Boutique.',
+        code: '22023',
+      }),
+    ).toBe(
+      'L’ICE de votre boutique manque : il est obligatoire sur une facture. Renseignez-le dans Paramètres → Boutique.',
+    )
+  })
+
+  it('ne répète pas le hint déjà contenu dans le message', async () => {
+    const { messageErreur } = await import('../src/lib/documentsApi')
+    expect(messageErreur({ message: 'Déjà là. Le hint.', hint: 'Le hint.' })).toBe('Déjà là. Le hint.')
+  })
+})

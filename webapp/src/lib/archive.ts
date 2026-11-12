@@ -63,7 +63,6 @@ export async function archiverDocument(params: {
   facture: Facture
   boutique: SnapshotBoutique
   design: DesignDocument
-  filigrane: string | null
 }): Promise<Resultat<ArchiveCreee>> {
   if (!supabase) return { donnees: null, erreur: 'Supabase n’est pas configuré.' }
 
@@ -76,7 +75,6 @@ export async function archiverDocument(params: {
     facture: params.facture,
     boutique: params.boutique,
     design: params.design,
-    filigrane: params.filigrane,
     logo,
   })
   const sha256 = await sha256Hex(bytes)

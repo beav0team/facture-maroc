@@ -98,7 +98,6 @@
           prix_ttc: false,
           logo_path: null,
         },
-        filigrane: 'FACTUREAPP · GRATUIT',
         // No shop to read here: the free generator always prints the words, so
         // a visitor sees the real document, not a reduced one.
         montantLettres: true,
@@ -125,9 +124,9 @@
       <p class="surtitre">Sans compte, sans installation</p>
       <h1>Créez une facture marocaine en deux minutes</h1>
       <p class="texte">
-        Remplissez, vérifiez les totaux, téléchargez le PDF. Le fichier porte un
-        filigrane et n’est pas numéroté : un compte FactureApp prend le numéro à
-        l’émission et archive le PDF définitif.
+        Remplissez, vérifiez les totaux, téléchargez le PDF. Le fichier n’est pas
+        numéroté : un compte FactureApp prend le numéro à l’émission et archive
+        le PDF définitif.
       </p>
     </section>
 

@@ -30,7 +30,7 @@
   import { archiverDocument, nomFichier, telechargerArchive, telechargerBlob } from '../lib/archive'
   import { reprendreBrouillon } from '../lib/brouillonPublic'
   import { calculer, libelleTotal, totalLigne, type Ligne } from '../lib/invoice'
-  import { analyserDate } from '../lib/dates'
+  import { analyserDate, jourDepuisEpoque } from '../lib/dates'
   import { analyserMontant, arrondi, dirhams, montant, quantiteValeur } from '../lib/money'
   import { avecExoneration, avecTaux, avecTva, horsTva, ligneDepuisArticle, reevaluerLignesTtc } from '../lib/prix'
   import { aller } from '../lib/router.svelte'
@@ -87,7 +87,7 @@
     /*
      * Only the quota is refreshed here: `demarrer()` resets the form, and
      * re-running it would erase a half-typed invoice. The plan decides the
-     * watermark and the 5-invoice limit, so it must not wait for a reload.
+     * 5-invoice limit, so it must not wait for a reload.
      */
     const rafraichirQuota = () => {
       if (document.visibilityState !== 'visible') return
@@ -367,16 +367,90 @@
     return res.donnees
   }
 
+  /**
+   * Ce qui empêche un document de partir.
+   *
+   * Un brouillon peut rester incomplet — une facture se prépare en plusieurs
+   * fois. L'émission, non : elle prend un numéro qui ne se rend pas, et le PDF
+   * part chez le client. Ce sont les mentions qu'un contrôle cherche d'abord
+   * qui sont vérifiées ici, avant le numéro.
+   */
+  function mentionManquante(facture: typeof saisie.facture): string | null {
+    const type = facture.type ?? 'facture'
+    const comptable = ['facture', 'ticket', 'simplifiee', 'export', 'avoir', 'regul', 'acompte'].includes(type)
+
+    const date = analyserDate(facture.date)
+    if (!date) return 'La date d’émission n’est pas une date valide (JJ/MM/AAAA).'
+    if (jourDepuisEpoque(date) > jourDepuisEpoque(new Date())) {
+      return 'La date d’émission ne peut pas être dans le futur.'
+    }
+
+    if (comptable) {
+      const shop = auth.boutique
+      if (!shop?.ice?.trim()) {
+        return 'L’ICE de votre boutique manque : il est obligatoire sur une facture. Renseignez-le dans Paramètres → Boutique.'
+      }
+      if (!shop.if_fiscal?.trim()) {
+        return 'Votre identifiant fiscal (IF) manque : il est obligatoire sur une facture. Renseignez-le dans Paramètres → Boutique.'
+      }
+    }
+
+    if ((type === 'avoir' || type === 'regul') && !facture.reference?.trim()) {
+      return 'Un document de correction doit porter le numéro de la facture qu’il corrige.'
+    }
+
+    // Un ICE est une suite de quinze chiffres : treize sont une faute de
+    // frappe que le client découvrira au contrôle. Le vendeur, lui, doit
+    // pouvoir l'empêcher ici.
+    const iceClient = (facture.client.ice ?? '').replace(/[\s-]/g, '')
+    if (iceClient !== '' && !/^\d{15}$/.test(iceClient)) {
+      return 'L’ICE du client doit comporter 15 chiffres.'
+    }
+
+    return null
+  }
+
+  /**
+   * Un client professionnel sans ICE : l'ICE est exigé entre entreprises, mais
+   * la boutique ne peut pas le deviner. On demande confirmation plutôt que de
+   * bloquer une vente au comptoir parce qu'un fournisseur n'a pas envoyé son
+   * numéro.
+   */
+  function clientProfessionnelSansIce(facture: typeof saisie.facture): boolean {
+    const client = facture.client
+    const professionnel = [client.ifFiscal, client.rc, client.patente, client.cnss].some(
+      (valeur) => (valeur ?? '').trim() !== '',
+    )
+    return professionnel && (client.ice ?? '').trim() === ''
+  }
+
   async function emettre() {
     if (!modifiable) return
     if (quotaBloque) {
       erreur = 'Le quota de 5 factures gratuites est atteint pour ce mois.'
       return
     }
+
+    const manque = mentionManquante(saisie.facture)
+    if (manque) {
+      erreur = manque
+      return
+    }
+
     const documentId = await enregistrer(false)
     if (!documentId) return
 
     if (!confirm(`Émettre définitivement ce document ? Son numéro sera pris et il ne pourra plus être modifié.`)) {
+      return
+    }
+
+    if (
+      clientProfessionnelSansIce(saisie.facture) &&
+      !confirm(
+        'Ce client porte un IF, un RC, une patente ou un CNSS mais pas d’ICE. ' +
+          'L’ICE est obligatoire sur une facture entre entreprises. Émettre quand même ?',
+      )
+    ) {
       return
     }
 
@@ -394,7 +468,6 @@
 
     // The archive is the copy that will be reprinted. It is written now, from
     // the frozen snapshot, and never re-rendered on demand afterwards.
-    const planGratuit = quota?.plan !== 'pro'
     const docRes = await api.chargerDocument(documentId)
     if (docRes.donnees) {
       documentRow = docRes.donnees
@@ -404,7 +477,6 @@
         facture: saisie.facture,
         boutique: docRes.donnees.shop_snapshot ?? snapshotBoutique(boutique ?? {}),
         design: saisie.design,
-        filigrane: planGratuit ? 'FACTUREAPP · GRATUIT' : null,
       })
       if (archive.erreur) {
         message = `Document émis : ${res.donnees.numero}. Le PDF n’a pas pu être archivé (${archive.erreur}).`
@@ -438,10 +510,6 @@
     aller('/documents')
   }
 
-  function filigrane(): string | null {
-    return quota?.plan === 'pro' ? null : 'FACTUREAPP · GRATUIT'
-  }
-
   async function genererPdfBytes(): Promise<Uint8Array | null> {
     const shop = documentRow?.shop_snapshot ?? (boutique ? snapshotBoutique(boutique) : null)
     if (!shop) return null
@@ -451,7 +519,6 @@
       boutique: shop,
       design: saisie.design,
       totaux,
-      filigrane: filigrane(),
       // The snapshot carries the setting frozen at emission; a snapshot taken
       // before 0007 has no field and defaults to "printed".
       montantLettres: shop.montant_lettres ?? true,
