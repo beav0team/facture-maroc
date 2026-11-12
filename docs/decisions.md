@@ -304,6 +304,24 @@ URL redirigée. Sur disque les fichiers restent `avis.html` : le serveur local
 réécrit `/avis` vers le fichier. `privacy.html` reste publiée pour la fiche
 Play, mais en `noindex` — elle ne doit pas être indexée par le site.
 
+### 2026-11-12 — Une facture sans TVA dit « Total », pas « Total TTC »
+« TTC » suppose une taxe collectée. Une facture d’auto-entrepreneur, ou toute
+facture dont la TVA ne s’applique pas, n’imprime donc ni ligne de TVA ni
+« Total TTC » : le PDF écrit « Total », ajoute « TVA non applicable » sous les
+totaux, et laisse la référence légale (article 91-II-3° pour les prestataires,
+seuil de l’article 89 pour les détaillants) à la note du document. Le libellé
+vient de `libelleTotal()` : l’éditeur, le générateur et les deux rendus PDF ne
+peuvent pas diverger.
+
+### 2026-11-12 — Trois pages pour trois intentions de recherche
+`facture-auto-entrepreneur-maroc`, `logiciel-facturation-gratuit-maroc` et
+`factureapp-ou-hisab` ne se remplacent pas : la première explique le régime et
+les mentions, la deuxième ce que le plan gratuit couvre, la troisième compare
+deux produits. La comparaison est datée, non affiliée, et n’affirme sur Hisab
+que ce que son site public annonce ; elle ne doit pas être réécrite de mémoire.
+Les trois pages sont liées depuis tous les pieds de page pour ne pas dépendre du
+seul maillage contextuel.
+
 ## Open
 
 1. **Auto-entrepreneur number** — print it on documents?

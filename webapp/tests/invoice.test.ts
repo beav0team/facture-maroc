@@ -6,7 +6,7 @@
 // HT, VAT is untouched, and HT + TVA still equals TTC.
 
 import { describe, expect, it } from 'vitest'
-import { calculer, type Facture } from '../src/lib/invoice'
+import { calculer, libelleTotal, type Facture } from '../src/lib/invoice'
 
 function facture(surcharge: Partial<Facture> = {}): Facture {
   return {
@@ -60,5 +60,21 @@ describe('arrondi au dirham', () => {
   it('ne s’applique pas sans le drapeau', () => {
     const t = calculer(facture())
     expect(t.total).toBe(119.4)
+  })
+})
+
+describe('libellé du total', () => {
+  it('dit TTC quand une TVA est imprimée', () => {
+    expect(libelleTotal(calculer(facture()))).toBe('Total TTC')
+  })
+
+  it('dit Total quand la TVA ne s’applique pas', () => {
+    const t = calculer(facture({ tvaNonApplicable: true }))
+    expect(t.lignesTvaImprimees).toEqual([])
+    expect(libelleTotal(t)).toBe('Total')
+  })
+
+  it('garde Total avoir pour un avoir', () => {
+    expect(libelleTotal(calculer(facture({ type: 'avoir' })))).toBe('Total avoir')
   })
 })

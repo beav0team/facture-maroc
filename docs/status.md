@@ -79,6 +79,19 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   Les fichiers restent `x.html` sur disque et le serveur local réécrit `/x`.
   `privacy.html` est désormais en `noindex` — elle restait indexable malgré son
   absence du sitemap.
+- **Trois guides d’intention** (2026-11-12) : `facture-auto-entrepreneur-maroc`
+  (TVA non applicable, mentions, numérotation), `logiciel-facturation-gratuit-maroc`
+  (ce que le plan gratuit couvre, sans le confondre avec le générateur sans
+  compte) et `factureapp-ou-hisab` (comparaison factuelle, datée du 12 novembre
+  2026, non affiliée, chaque affirmation sur Hisab attribuée à son site public).
+  Les trois sont liées depuis le pied de page de toutes les pages, plus deux
+  liens contextuels depuis le guide des mentions et la page du modèle.
+- **Facture sans TVA** (2026-11-12) : quand « TVA non applicable » est coché,
+  le PDF n’imprime aucune ligne de TVA, écrit « TVA non applicable » sous les
+  totaux et intitule le total « Total », jamais « Total TTC ». `libelleTotal()`
+  dans `invoice.ts` est la seule source du libellé : PDF A4, ticket 80 mm,
+  éditeur et générateur public. La référence légale précise reste dans la note
+  du document — elle dépend du régime, le logiciel ne l’invente pas.
 - `docs/build.py` ne s’occupe plus que du `sitemap.xml` : le site n’imprime
   aucun numéro de version, donc plus de dépendance à `app/build.gradle.kts`.
   `docs/scripts/site_check.py` accepte les routes de la SPA en lisant
@@ -105,8 +118,8 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
 - Numérotation et quota atomiques en SQL ; numéro pris à l'émission, snapshot
   boutique figé, documents émis immuables, avoir depuis une facture, 5
   factures gratuites par mois.
-- PDF `pdf-lib` déterministe, deux modèles, filigrane gratuit, archivé avec
-  SHA-256 ; réimpression depuis l'archive. Partage WhatsApp/natif.
+- PDF `pdf-lib` déterministe, six modèles, filigrane gratuit, archivé avec
+  SHA-256 ; réimpression depuis l’archive. Partage WhatsApp/natif.
 - Paiements multiples, reçu PDF, reste dû, retard, relevé client.
 - Générateur public, tarifs, admin, import de sauvegarde Android.
 - **Réinitialisation du mot de passe** : le lien envoyé par « Mot de passe

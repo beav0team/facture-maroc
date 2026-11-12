@@ -15,7 +15,7 @@ import { PDFDocument, StandardFonts, degrees, rgb, type PDFFont, type PDFPage } 
 import type { DesignDocument } from './document'
 import type { SnapshotBoutique } from './documents'
 import { analyserDate } from './dates'
-import { calculer, totalLigne, type Facture, type Totaux } from './invoice'
+import { calculer, libelleTotal, totalLigne, type Facture, type Totaux } from './invoice'
 import { montant } from './money'
 
 const PAGE_L = 595.28
@@ -658,7 +658,7 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
     thickness: accentFilet ? 1.2 : 0.8,
     color: accentFilet ? ACCENT : TRAIT,
   })
-  ligneTotal(totaux.estAvoir ? 'Total avoir' : 'Total TTC', dh(totaux.total), true)
+  ligneTotal(libelleTotal(totaux), dh(totaux.total), true)
   if (totaux.acompte > 0) {
     ligneTotal('Acompte', `-${dh(totaux.acompte)}`)
   }
@@ -671,6 +671,20 @@ export async function creerPdf(options: OptionsPdf): Promise<Uint8Array> {
     true,
     design === 'classique' ? ENCRE : design === 'facture_maroc' ? BLEU : ACCENT,
   )
+  // La mention que la loi attend d'une facture sans TVA (auto-entrepreneur,
+  // exonération). La référence légale précise reste dans la note du document :
+  // elle dépend du régime, le logiciel n'a pas à l'inventer.
+  if (facture.tvaNonApplicable) {
+    y -= 2
+    page.drawText('TVA non applicable', {
+      x: xEtiquette,
+      y,
+      size: 8,
+      font: normal,
+      color: ARDOISE,
+    })
+    y -= 12
+  }
 
   // ---------------------------------------------------------------- footer
   let yPied = Math.min(y - 16, 150)
@@ -807,10 +821,11 @@ async function creerPdfTicket(options: OptionsPdf): Promise<Uint8Array> {
     rangees.push([texteOuVide(document.surchargeLibelle) || 'Frais', dh(totaux.surcharge), false])
   }
   for (const tva of totaux.lignesTvaImprimees) rangees.push([`TVA ${tva.taux} %`, dh(tva.montant), false])
-  rangees.push([totaux.estAvoir ? 'Total avoir' : 'Total TTC', dh(totaux.total), true])
+  rangees.push([libelleTotal(totaux), dh(totaux.total), true])
   if (totaux.acompte > 0) rangees.push(['Acompte', `-${dh(totaux.acompte)}`, false])
   if (totaux.paye > 0) rangees.push(['Déjà payé', `-${dh(totaux.paye)}`, false])
   rangees.push([totaux.estAvoir ? 'Net à créditer' : 'Net à payer', dh(totaux.netAPayer), true])
+  if (document.tvaNonApplicable) rangees.push(['TVA non applicable', '', false])
 
   const hLogo = logo ? 40 : 0
   const hLignes = lignes.reduce((total, ligne) => total + ligne.hauteur, 0)

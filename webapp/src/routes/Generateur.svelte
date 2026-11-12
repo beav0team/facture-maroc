@@ -1,6 +1,6 @@
 <script lang="ts">
   import { DESIGNS, TAUX_TVA, designDepuisId, type DesignDocument } from '../lib/document'
-  import { calculer, totalLigne, type Facture, type Ligne } from '../lib/invoice'
+  import { calculer, libelleTotal, totalLigne, type Facture, type Ligne } from '../lib/invoice'
   import { analyserMontant, dirhams } from '../lib/money'
   import { nomFichier, telechargerBlob } from '../lib/archive'
   import { memoriserBrouillon } from '../lib/brouillonPublic'
@@ -190,7 +190,7 @@
             {#each totaux.lignesTvaImprimees as tva}
               <div><dt>TVA {tva.taux} %</dt><dd>{dirhams(tva.montant)}</dd></div>
             {/each}
-            <div class="totaux__fort"><dt>Total TTC</dt><dd>{dirhams(totaux.total)}</dd></div>
+            <div class="totaux__fort"><dt>{libelleTotal(totaux)}</dt><dd>{dirhams(totaux.total)}</dd></div>
           </dl>
           <div class="champ">
             <label for="g-modele">Modèle du PDF</label>

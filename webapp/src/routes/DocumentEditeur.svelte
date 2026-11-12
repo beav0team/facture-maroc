@@ -29,7 +29,7 @@
   import * as api from '../lib/documentsApi'
   import { archiverDocument, nomFichier, telechargerArchive, telechargerBlob } from '../lib/archive'
   import { reprendreBrouillon } from '../lib/brouillonPublic'
-  import { calculer, totalLigne, type Ligne } from '../lib/invoice'
+  import { calculer, libelleTotal, totalLigne, type Ligne } from '../lib/invoice'
   import { analyserDate } from '../lib/dates'
   import { analyserMontant, arrondi, dirhams, montant, quantiteValeur } from '../lib/money'
   import { avecExoneration, avecTaux, avecTva, horsTva, ligneDepuisArticle, reevaluerLignesTtc } from '../lib/prix'
@@ -926,12 +926,16 @@
               {#each totaux.lignesTvaImprimees as tva}
                 <div><dt>TVA {tva.taux} %</dt><dd>{dirhams(tva.montant)}</dd></div>
               {/each}
-              <div class="totaux__fort"><dt>Total TTC</dt><dd>{dirhams(totaux.total)}</dd></div>
+              <div class="totaux__fort"><dt>{libelleTotal(totaux)}</dt><dd>{dirhams(totaux.total)}</dd></div>
               {#if totaux.acompte > 0}
                 <div><dt>Acompte</dt><dd>−{dirhams(totaux.acompte)}</dd></div>
               {/if}
               <div class="totaux__fort"><dt>Net à payer</dt><dd>{dirhams(totaux.netAPayer)}</dd></div>
             </dl>
+
+            {#if saisie.facture.tvaNonApplicable}
+              <p class="totaux__note">TVA non applicable — la mention figure sur le PDF.</p>
+            {/if}
 
             {#if estEmis}
               <div class="reglement">
@@ -1378,6 +1382,12 @@
     padding-top: 6px;
     border-top: 1px solid var(--trait);
     font-weight: 700;
+  }
+
+  .totaux__note {
+    margin: 4px 0 0;
+    font-size: 0.82rem;
+    color: var(--ardoise);
   }
 
   .reglement {

@@ -114,6 +114,16 @@ export type Totaux = {
   echeanceImprimee: string | null
 }
 
+/**
+ * Le libellé du total. « TTC » n'a de sens que si une TVA est imprimée : une
+ * facture d'auto-entrepreneur (TVA non applicable) affiche « Total », pas un
+ * TTC qui laisserait croire à une taxe qu'elle ne collecte pas.
+ */
+export function libelleTotal(t: Totaux): string {
+  if (t.estAvoir) return 'Total avoir'
+  return t.lignesTvaImprimees.length === 0 ? 'Total' : 'Total TTC'
+}
+
 const borne = (valeur: number, min: number, max: number): number =>
   Math.min(Math.max(valeur, min), max)
 
