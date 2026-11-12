@@ -70,8 +70,15 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   l’éditeur, réglés par défaut dans les paramètres, et repris par le générateur
   public pour les essayer sans compte. Le modèle est stocké sur le document ;
   une réimpression sort l’archive, donc le modèle d’origine. Migration
-  `webapp/supabase/migrations/0006_modeles.sql` à appliquer **avant** le
-  déploiement : sans elle, la base refuse les quatre nouveaux identifiants.
+  `0006_modeles.sql` appliquée en production le 2026-11-12 ; les six
+  identifiants ont été enregistrés puis relus par l’API du compte de test avant
+  d’être supprimés.
+- **URL sans extension** (2026-11-12) : Cloudflare Pages redirige `/x.html`
+  vers `/x` en 308. Tous les liens, canonicals, `og:url`, JSON-LD et le sitemap
+  pointent la version finale ; `site_check.py` refuse un canonical en `.html`.
+  Les fichiers restent `x.html` sur disque et le serveur local réécrit `/x`.
+  `privacy.html` est désormais en `noindex` — elle restait indexable malgré son
+  absence du sitemap.
 - `docs/build.py` ne s’occupe plus que du `sitemap.xml` : le site n’imprime
   aucun numéro de version, donc plus de dépendance à `app/build.gradle.kts`.
   `docs/scripts/site_check.py` accepte les routes de la SPA en lisant
@@ -82,7 +89,7 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
 - **https://factureapp.ma** (Cloudflare Pages, projet `factureapp`, branche
   `master`, build `bash webapp/scripts/build.sh`, sortie `docs`). Liens
   profonds de l'app à 200 ; GitHub Pages désactivé.
-- Supabase `njbfvskjexzlnvenmxml` (eu-north-1), schéma 0001 → 0004, RLS.
+- Supabase `njbfvskjexzlnvenmxml` (eu-north-1), schéma 0001 → 0006, RLS.
 - **Google OAuth publié en production** ; connexion Google et e-mail/mot de
   passe vérifiées sur le site.
 - Données réelles : 3 comptes/boutiques (Atlas, Benzen, PNEUMATIQUE AGHARAS),

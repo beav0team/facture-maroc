@@ -23,17 +23,20 @@ REPO = DOCS.parent
 
 # Pages indexables, dans l'ordre du sitemap. `test.html` est en noindex et
 # `404.html` ne doit jamais être listé : les deux sont volontairement absents.
+# Les URL publiées n'ont pas d'extension : Cloudflare Pages redirige
+# `/x.html` vers `/x` en 308. Sitemap et canonicals désignent la version finale,
+# sinon chaque page indexée passe par une redirection.
 PAGES = [
     ("index.html", "https://factureapp.ma/", "1.0", "weekly"),
     ("mentions-obligatoires-facture-maroc.html",
-     "https://factureapp.ma/mentions-obligatoires-facture-maroc.html", "0.9", "monthly"),
+     "https://factureapp.ma/mentions-obligatoires-facture-maroc", "0.9", "monthly"),
     ("facture-modele-marocain-gratuit.html",
-     "https://factureapp.ma/facture-modele-marocain-gratuit.html", "0.9", "monthly"),
-    ("avis.html", "https://factureapp.ma/avis.html", "0.7", "monthly"),
-    ("a-propos.html", "https://factureapp.ma/a-propos.html", "0.6", "monthly"),
-    ("cgv.html", "https://factureapp.ma/cgv.html", "0.4", "yearly"),
-    ("contact.html", "https://factureapp.ma/contact.html", "0.5", "yearly"),
-    ("confidentialite.html", "https://factureapp.ma/confidentialite.html", "0.3", "yearly"),
+     "https://factureapp.ma/facture-modele-marocain-gratuit", "0.9", "monthly"),
+    ("avis.html", "https://factureapp.ma/avis", "0.7", "monthly"),
+    ("a-propos.html", "https://factureapp.ma/a-propos", "0.6", "monthly"),
+    ("cgv.html", "https://factureapp.ma/cgv", "0.4", "yearly"),
+    ("contact.html", "https://factureapp.ma/contact", "0.5", "yearly"),
+    ("confidentialite.html", "https://factureapp.ma/confidentialite", "0.3", "yearly"),
 ]
 
 

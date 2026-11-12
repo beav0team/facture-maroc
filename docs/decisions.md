@@ -296,6 +296,14 @@ Play Store dans une page de la vitrine.
 UBL, facture électronique DGI, relances, comptabilité, mode hors ligne. Toute
 promesse retirée du site doit y être ajoutée, et inversement.
 
+### 2026-11-12 — Les URL publiques n’ont pas d’extension
+Cloudflare Pages redirige `/avis.html` vers `/avis` en 308. Les liens, les
+canonicals, les `og:url`, le JSON-LD et le sitemap désignent donc la version
+finale, sans `.html` ; `site_check.py` échoue si un canonical repointe vers une
+URL redirigée. Sur disque les fichiers restent `avis.html` : le serveur local
+réécrit `/avis` vers le fichier. `privacy.html` reste publiée pour la fiche
+Play, mais en `noindex` — elle ne doit pas être indexée par le site.
+
 ## Open
 
 1. **Auto-entrepreneur number** — print it on documents?

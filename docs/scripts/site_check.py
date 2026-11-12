@@ -7,6 +7,8 @@ avec une image sans dimensions.
 
 Les liens vers `/app/<route>` n'ont pas de fichier derrière eux : ils sont
 résolus en lisant `_redirects`, la même table que Cloudflare Pages applique.
+Les pages publiques sont liées sans extension (`/avis`) et servies depuis
+`avis.html` : Cloudflare redirige justement `/avis.html` vers `/avis` en 308.
 """
 from __future__ import annotations
 
@@ -58,6 +60,10 @@ def check_local_links(page: pathlib.Path, text: str) -> None:
             continue
         if (DOCS / target).exists():
             continue
+        # `/avis` est le nom public de `avis.html` : Cloudflare Pages sert la
+        # page sans extension et redirige l'ancienne URL en 308.
+        if (DOCS / f"{target}.html").exists():
+            continue
         # /app/<route> has no file: Cloudflare rewrites it to the SPA shell
         # through _redirects, so the route only has to be declared there.
         if target.startswith("app/") and f"/{target.rstrip('/')}" in spa:
@@ -88,12 +94,18 @@ def main() -> int:
         if page.name not in NOINDEX:
             if not re.search(r'<meta name="description" content="[^"]+"', text):
                 err(page.name, "pas de meta description")
-            if not re.search(r'<link rel="canonical" href="https://factureapp\.ma/', text):
+            canonical = re.search(
+                r'<link rel="canonical" href="(https://factureapp\.ma/[^"]*)"', text)
+            if not canonical:
                 err(page.name, "pas de canonical")
+            elif canonical.group(1).endswith(".html"):
+                err(page.name, "canonical en .html (Cloudflare redirige en 308)")
             loc = "https://factureapp.ma/" + (
-                "" if page.name == "index.html" else page.name)
+                "" if page.name == "index.html" else page.name.removesuffix(".html"))
             if loc not in sitemap:
                 err(page.name, "absent du sitemap")
+        elif not re.search(r'<meta name="robots" content="noindex', text):
+            err(page.name, "page en NOINDEX sans meta robots noindex")
 
         for img in re.findall(r"<img[^>]*>", text):
             for attr in ("width=", "height=", "alt="):
