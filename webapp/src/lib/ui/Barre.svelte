@@ -70,14 +70,9 @@
     display: flex;
     align-items: center;
     gap: 2px;
-    overflow-x: auto;
-    scrollbar-width: none;
+    flex-wrap: wrap;
     order: 3;
     width: 100%;
-  }
-
-  .barre__nav::-webkit-scrollbar {
-    display: none;
   }
 
   .barre__nav a {
@@ -105,6 +100,35 @@
     align-items: center;
     gap: 14px;
     margin-left: auto;
+  }
+
+  /* Sur téléphone, la barre empilait marque, nom de boutique + déconnexion,
+     puis deux rangées de nav : 175 px de haut. On garde la boutique pour les
+     écrans qui ont la place et on resserre les pastilles. */
+  @media (max-width: 719px) {
+    .barre {
+      gap: 8px 12px;
+      padding: 8px 16px;
+    }
+
+    .barre__nav a {
+      padding: 6px 10px;
+      font-size: 0.88rem;
+    }
+
+    .etiquette {
+      display: none;
+    }
+  }
+
+  @media (min-width: 480px) and (max-width: 719px) {
+    .etiquette {
+      display: inline;
+      max-width: 12ch;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   @media (min-width: 720px) {

@@ -756,40 +756,57 @@
                         placeholder="Désignation"
                       />
                     </div>
-                    <input
-                      class="nombre"
-                      aria-label="Quantité"
-                      value={quantiteValeur(ligne.quantite)}
-                      disabled={!modifiable}
-                      inputmode="decimal"
-                      oninput={(e) => majQuantite(index, e.currentTarget.value)}
-                    />
-                    <input
-                      class="nombre"
-                      aria-label={prixTtc ? 'Prix unitaire TTC' : 'Prix unitaire HT'}
-                      value={prixAffiche(ligne)}
-                      disabled={!modifiable}
-                      inputmode="decimal"
-                      oninput={(e) => majPrix(index, e.currentTarget.value)}
-                    />
-                    <input
-                      class="nombre"
-                      aria-label="Remise de la ligne en pourcentage"
-                      value={ligne.remisePourcent ?? 0}
-                      disabled={!modifiable}
-                      inputmode="decimal"
-                      oninput={(e) => majRemiseLigne(index, e.currentTarget.value)}
-                    />
-                    <input
-                      class="nombre"
-                      aria-label="Taux de TVA de la ligne"
-                      value={ligne.tauxTva ?? ''}
-                      disabled={!modifiable}
-                      inputmode="decimal"
-                      placeholder={String(tauxDocument)}
-                      oninput={(e) => majTauxLigne(index, e.currentTarget.value)}
-                    />
-                    <span class="ligne__total">{dirhams(arrondi(totalLigne(ligne)))}</span>
+                    <div class="ligne__nombres">
+                      <label class="ligne__champ">
+                        <span>Qté</span>
+                        <input
+                          class="nombre"
+                          aria-label="Quantité"
+                          value={quantiteValeur(ligne.quantite)}
+                          disabled={!modifiable}
+                          inputmode="decimal"
+                          oninput={(e) => majQuantite(index, e.currentTarget.value)}
+                        />
+                      </label>
+                      <label class="ligne__champ">
+                        <span>{prixTtc ? 'P.U. TTC' : 'P.U. HT'}</span>
+                        <input
+                          class="nombre"
+                          aria-label={prixTtc ? 'Prix unitaire TTC' : 'Prix unitaire HT'}
+                          value={prixAffiche(ligne)}
+                          disabled={!modifiable}
+                          inputmode="decimal"
+                          oninput={(e) => majPrix(index, e.currentTarget.value)}
+                        />
+                      </label>
+                      <label class="ligne__champ">
+                        <span>Rem. %</span>
+                        <input
+                          class="nombre"
+                          aria-label="Remise de la ligne en pourcentage"
+                          value={ligne.remisePourcent ?? 0}
+                          disabled={!modifiable}
+                          inputmode="decimal"
+                          oninput={(e) => majRemiseLigne(index, e.currentTarget.value)}
+                        />
+                      </label>
+                      <label class="ligne__champ">
+                        <span>TVA %</span>
+                        <input
+                          class="nombre"
+                          aria-label="Taux de TVA de la ligne"
+                          value={ligne.tauxTva ?? ''}
+                          disabled={!modifiable}
+                          inputmode="decimal"
+                          placeholder={String(tauxDocument)}
+                          oninput={(e) => majTauxLigne(index, e.currentTarget.value)}
+                        />
+                      </label>
+                    </div>
+                    <span class="ligne__total">
+                      <span class="ligne__total-libelle">Total HT</span>
+                      {dirhams(arrondi(totalLigne(ligne)))}
+                    </span>
                     <div class="ligne__outils">
                       <label class="case-mini" title="Ligne exonérée de TVA">
                         <input
@@ -1282,6 +1299,28 @@
     min-width: 0;
   }
 
+  /* Sur téléphone les quatre champs numériques s'empilaient sans étiquette :
+     on ne voyait que « 1 », « 0 », « 0 », « 20 ». Ils forment maintenant une
+     grille 2 × 2 avec un libellé au-dessus de chaque champ. */
+  .ligne__nombres {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .ligne__champ {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .ligne__champ span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ardoise);
+  }
+
   .ligne select,
   .ligne input {
     min-height: 40px;
@@ -1300,9 +1339,18 @@
   }
 
   .ligne__total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    text-align: right;
+  }
+
+  .ligne__total-libelle {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ardoise);
   }
 
   .ligne__outils {
@@ -1478,6 +1526,17 @@
 
     .ligne--entete span:nth-child(n + 2) {
       text-align: right;
+    }
+
+    /* Le tableau desktop a déjà sa ligne d'en-têtes : les libellés mobiles
+       disparaissent et les champs redeviennent des colonnes de la grille. */
+    .ligne__nombres {
+      display: contents;
+    }
+
+    .ligne__champ span,
+    .ligne__total-libelle {
+      display: none;
     }
 
     .cote {

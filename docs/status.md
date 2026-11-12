@@ -92,6 +92,17 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   dans `invoice.ts` est la seule source du libellé : PDF A4, ticket 80 mm,
   éditeur et générateur public. La référence légale précise reste dans la note
   du document — elle dépend du régime, le logiciel ne l’invente pas.
+- **Passe de rendu** (2026-11-12) : défauts d’affichage corrigés sur téléphone.
+  Le bouton « Se connecter » des en-têtes publics était ardoise sur bleu
+  (contraste 1,15) — un sélecteur scopé `nav a` battait le `.btn` global ;
+  il est blanc. La barre de l’application coupait « Paramètres » derrière un
+  défilement sans barre ; la nav revient à la ligne (175 → 121 px de haut,
+  nom de boutique masqué sous 480 px). Les champs Qté / P.U. / Rem. / TVA de
+  l’éditeur et du générateur s’empilaient sans étiquette sur mobile : ils
+  forment une grille 2 × 2 avec libellés, et le générateur a gagné la ligne
+  d’en-têtes qui manquait sur ordinateur. `.btn` ne garde plus le soulignement
+  par défaut du navigateur. Le pied de page ne répète plus « Ce qu’elle fait,
+  ce qu’elle ne fait pas » : huit pages portaient un `</li>` malformé.
 - `docs/build.py` ne s’occupe plus que du `sitemap.xml` : le site n’imprime
   aucun numéro de version, donc plus de dépendance à `app/build.gradle.kts`.
   `docs/scripts/site_check.py` accepte les routes de la SPA en lisant

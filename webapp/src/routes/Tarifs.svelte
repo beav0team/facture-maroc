@@ -112,6 +112,26 @@
     color: var(--bleu);
   }
 
+  /* Svelte scope les sélecteurs : `nav a` (0,1,2) battrait le .btn global
+     (0,1,0) et peindrait « Se connecter » en ardoise sur le bleu. */
+  nav a.btn {
+    color: var(--blanc);
+  }
+
+  /* Sous 560 px la marque passe seule sur sa ligne ; on étire la nav pour
+     que « Se connecter » reste collé au bord droit au lieu de flotter. */
+  @media (max-width: 560px) {
+    .barre-publique {
+      gap: 10px;
+    }
+
+    nav {
+      width: 100%;
+      justify-content: space-between;
+      gap: 10px;
+    }
+  }
+
   .contenu {
     width: min(900px, 100%);
     margin: 0 auto;

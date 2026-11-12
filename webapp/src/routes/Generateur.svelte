@@ -158,22 +158,41 @@
             <button class="btn btn--discret" type="button" onclick={ajouter}>Ajouter une ligne</button>
           </div>
 
+          <div class="ligne ligne--entete" aria-hidden="true">
+            <span>Désignation</span>
+            <span>Qté</span>
+            <span>P.U. HT</span>
+            <span>Total HT</span>
+            <span></span>
+          </div>
+
           {#each lignes as ligne, index (index)}
             <div class="ligne">
               <input aria-label="Désignation" bind:value={ligne.description} placeholder="Désignation" />
-              <input
-                aria-label="Quantité"
-                value={ligne.quantite}
-                inputmode="decimal"
-                oninput={(e) => majQuantite(index, e.currentTarget.value)}
-              />
-              <input
-                aria-label="Prix unitaire HT"
-                value={ligne.prixUnitaire}
-                inputmode="decimal"
-                oninput={(e) => majPrix(index, e.currentTarget.value)}
-              />
-              <span class="ligne__total">{dirhams(totalLigne(ligne))}</span>
+              <div class="ligne__nombres">
+                <label class="ligne__champ">
+                  <span>Qté</span>
+                  <input
+                    aria-label="Quantité"
+                    value={ligne.quantite}
+                    inputmode="decimal"
+                    oninput={(e) => majQuantite(index, e.currentTarget.value)}
+                  />
+                </label>
+                <label class="ligne__champ">
+                  <span>P.U. HT</span>
+                  <input
+                    aria-label="Prix unitaire HT"
+                    value={ligne.prixUnitaire}
+                    inputmode="decimal"
+                    oninput={(e) => majPrix(index, e.currentTarget.value)}
+                  />
+                </label>
+              </div>
+              <span class="ligne__total">
+                <span class="ligne__total-libelle">Total HT</span>
+                {dirhams(totalLigne(ligne))}
+              </span>
               {#if lignes.length > 1}
                 <button class="lien-discret lien-discret--danger" type="button" onclick={() => supprimer(index)} aria-label="Supprimer la ligne">✕</button>
               {/if}
@@ -270,6 +289,25 @@
     color: var(--bleu);
   }
 
+  /* Même piège que dans Tarifs.svelte : le sélecteur scopé `nav a` gagne
+     contre le .btn global et rend le libellé illisible sur le fond bleu. */
+  nav a.btn {
+    color: var(--blanc);
+  }
+
+  /* Même mise en page mobile que Tarifs.svelte : la nav occupe sa ligne. */
+  @media (max-width: 560px) {
+    .barre-publique {
+      gap: 10px;
+    }
+
+    nav {
+      width: 100%;
+      justify-content: space-between;
+      gap: 10px;
+    }
+  }
+
   .contenu {
     width: min(1000px, 100%);
     margin: 0 auto;
@@ -349,6 +387,29 @@
     background: var(--papier);
   }
 
+  .ligne--entete {
+    display: none;
+  }
+
+  .ligne__nombres {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .ligne__champ {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .ligne__champ span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ardoise);
+  }
+
   .ligne input {
     min-height: 40px;
     padding: 0 10px;
@@ -360,9 +421,18 @@
   }
 
   .ligne__total {
-    text-align: right;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+  }
+
+  .ligne__total-libelle {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ardoise);
   }
 
   .cote {
@@ -447,6 +517,32 @@
       border: 0;
       background: none;
       padding: 0;
+    }
+
+    .ligne--entete {
+      display: grid;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--ardoise);
+      padding-bottom: 2px;
+      border-bottom: 1px solid var(--trait);
+    }
+
+    .ligne--entete span {
+      padding: 0 4px;
+    }
+
+    .ligne--entete span:nth-child(n + 2) {
+      text-align: right;
+    }
+
+    .ligne__nombres {
+      display: contents;
+    }
+
+    .ligne__champ span,
+    .ligne__total-libelle {
+      display: none;
     }
 
     .totaux {

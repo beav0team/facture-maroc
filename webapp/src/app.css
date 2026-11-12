@@ -95,6 +95,7 @@ a {
   color: var(--blanc);
   font: inherit;
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
   transition: background 120ms ease, border-color 120ms ease;
 }
