@@ -1114,13 +1114,29 @@ a { color: inherit; }
 }
 
 @media (max-width: 720px) {
+  /* La barre passe sur deux rangées : marque + action, puis la navigation.
+     Sans `flex-wrap`, la nav en width:100% était écrasée dans les quelques
+     pixels qui restaient — une entrée par ligne, la première coupée par la
+     hauteur fixe — et le bouton sortait de l'écran. */
+  .barre {
+    height: auto;
+    flex-wrap: wrap;
+    column-gap: 16px;
+    row-gap: 10px;
+    padding-block: 12px;
+  }
+  .barre .bouton {
+    margin-left: auto;
+  }
   .barre nav {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    flex-basis: 100%;
+    order: 3;
+    gap: 8px 16px;
     margin-left: 0;
     font-size: 13px;
-    padding-top: 8px;
+    padding-top: 10px;
     border-top: 1px solid var(--trait);
     width: 100%;
   }
@@ -1140,8 +1156,7 @@ a { color: inherit; }
 }
 
 @media (max-width: 520px) {
-  .barre { gap: 16px; }
-  .barre .bouton { margin-left: auto; }
+  .barre { column-gap: 12px; }
   .pied .contenu { grid-template-columns: 1fr; }
 }
 

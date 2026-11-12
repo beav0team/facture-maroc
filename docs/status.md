@@ -103,10 +103,24 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   d’en-têtes qui manquait sur ordinateur. `.btn` ne garde plus le soulignement
   par défaut du navigateur. Le pied de page ne répète plus « Ce qu’elle fait,
   ce qu’elle ne fait pas » : huit pages portaient un `</li>` malformé.
-- `docs/build.py` ne s’occupe plus que du `sitemap.xml` : le site n’imprime
-  aucun numéro de version, donc plus de dépendance à `app/build.gradle.kts`.
+- `docs/build.py` estampille aussi `assets/css/site.css?v=<empreinte>` dans
+  chaque page : `docs/_headers` sert `/assets/*` en cache immuable un an, donc
+  sans empreinte une correction de CSS n’atteignait jamais un visiteur déjà
+  venu. Les images de la vitrine (remplacées sans renommage) passent à une
+  heure de cache, les polices et le CSS restent immuables.
   `docs/scripts/site_check.py` accepte les routes de la SPA en lisant
   `_redirects`.
+- **En-tête de la vitrine** (2026-11-12, correction) : sous 720 px, la barre
+  n’avait pas de `flex-wrap` et sa hauteur était figée à 76 px ; la nav en
+  `width:100%` était écrasée dans les quelques pixels restants — une entrée
+  par ligne, la première coupée — et « Créer ma facture » sortait de l’écran
+  (16 px de débordement à 390, 86 px à 320). La barre passe désormais sur deux
+  rangées (marque + action, puis la nav) en `height:auto`.
+- `webapp/scripts/check-layout.mjs` (Playwright + Chromium du système) rend les
+  13 pages à 320/360/390/414/520/720/900/1440 px et échoue sur un débordement
+  horizontal, un en-tête trop haut ou un lien de nav non rendu. Il a été
+  vérifié contre l’ancien CSS (13 échecs) avant d’être gardé. Il tourne en
+  local, pas dans `build.sh` : l’image de build Cloudflare n’a pas de navigateur.
 
 **En production**
 

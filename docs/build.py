@@ -1,25 +1,32 @@
 #!/usr/bin/env python3
-"""Régénère le sitemap de la vitrine, écrit à la main nulle part ailleurs.
+"""Régénère le sitemap de la vitrine et estampille la feuille de style.
 
-    python3 docs/build.py            # met à jour sitemap.xml
-    python3 docs/build.py --check    # sort en erreur si le sitemap est périmé
+    python3 docs/build.py            # met à jour sitemap.xml et les ?v=
+    python3 docs/build.py --check    # sort en erreur si l'un des deux est périmé
 
-Le site ne publie plus de numéro de version : la seule chose tenue à jour ici
-est `sitemap.xml`, la liste des pages indexables et leur `lastmod`, pris sur le
-dernier commit qui a touché le fichier. Le script ne dépend donc plus de
-l'application Android.
+Le site ne publie plus de numéro de version : `sitemap.xml` est tenu à jour ici
+(lastmod pris sur le dernier commit qui a touché la page), et le `?v=` de
+`assets/css/site.css` est recalculé sur son contenu.
 
-Il ne touche à rien d'autre : ni au CSS, ni aux polices, ni au contenu.
+Le `?v=` n'est pas décoratif : `docs/_headers` sert `/assets/*` en
+`max-age=31536000, immutable`, donc sans empreinte une correction de CSS
+n'atteindrait jamais un visiteur déjà venu. Les polices, les images du site et
+le bundle de l'app (haché par Vite) ne sont pas touchés.
 """
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import pathlib
+import re
 import subprocess
 import sys
 
 DOCS = pathlib.Path(__file__).resolve().parent
 REPO = DOCS.parent
+CSS = DOCS / "assets" / "css" / "site.css"
+LIEN_CSS = re.compile(r'href="((?:/)?assets/css/site\.css)(?:\?v=[0-9a-f]+)?"')
+
 
 # Pages indexables, dans l'ordre du sitemap. `test.html` est en noindex et
 # `404.html` ne doit jamais être listé : les deux sont volontairement absents.
@@ -78,9 +85,45 @@ def sitemap() -> str:
     return "\n".join(lines) + "\n"
 
 
+def empreinte() -> str:
+    """Empreinte courte du CSS, la seule chose qui change son URL publique."""
+    return hashlib.sha256(CSS.read_bytes()).hexdigest()[:10]
+
+
+def pages_perimees(empreinte_css: str) -> list[pathlib.Path]:
+    """Pages dont le `?v=` ne correspond plus au contenu du CSS."""
+    marque = f"?v={empreinte_css}"
+    perimees: list[pathlib.Path] = []
+    for page in sorted(DOCS.glob("*.html")):
+        avant = page.read_text(encoding="utf-8")
+        if LIEN_CSS.sub(lambda m: f'href="{m.group(1)}{marque}"', avant) != avant:
+            perimees.append(page)
+    return perimees
+
+
+def estampiller(pages: list[pathlib.Path], empreinte_css: str) -> None:
+    marque = f"?v={empreinte_css}"
+    for page in pages:
+        page.write_text(
+            LIEN_CSS.sub(lambda m: f'href="{m.group(1)}{marque}"', page.read_text(encoding="utf-8")),
+            encoding="utf-8",
+        )
+
+
 def main() -> int:
     check = "--check" in sys.argv
     stale: list[str] = []
+
+    empreinte_css = empreinte()
+    perimees = pages_perimees(empreinte_css)
+    if perimees:
+        if check:
+            stale.append(
+                "assets/css/site.css : ?v= périmé dans " + ", ".join(p.name for p in perimees)
+            )
+        else:
+            estampiller(perimees, empreinte_css)
+            print(f"site.css?v={empreinte_css} écrit dans {len(perimees)} pages")
 
     out = sitemap()
     current = (DOCS / "sitemap.xml").read_text(encoding="utf-8") if (DOCS / "sitemap.xml").exists() else ""
@@ -96,6 +139,7 @@ def main() -> int:
         return 1
     print("docs/ à jour" if not check else "docs/ à jour")
     return 0
+
 
 
 if __name__ == "__main__":

@@ -8,13 +8,8 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
   Cache-Control: public, max-age=0, must-revalidate
 
-# Assets hashés (JS, CSS, polices) : cache immuable 1 an
+# Bundle de l'app : Vite hache les noms de fichier, le cache long est sûr
 /app/assets/*
-  Cache-Control: public, max-age=31536000, immutable
-  X-Content-Type-Options: nosniff
-
-# Assets marketing hashés
-/assets/*
   Cache-Control: public, max-age=31536000, immutable
   X-Content-Type-Options: nosniff
 
@@ -24,6 +19,24 @@
 
 /app/icons/*
   Cache-Control: public, max-age=31536000, immutable
+
+# CSS de la vitrine : docs/build.py estampille un ?v=<empreinte> sur chaque
+# page, donc l'URL change quand le fichier change — cache long légitime.
+/assets/css/*
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+# Polices : stables, jamais renommées.
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+# Images de la vitrine : remplacées sans changer de nom (captures de compte,
+# maquettes de modèles). Pas de cache immuable, sinon une image corrigée reste
+# un an dans le navigateur d'un visiteur déjà venu.
+/assets/img/*
+  Cache-Control: public, max-age=3600
+  X-Content-Type-Options: nosniff
 
 # HSTS forcé (Cloudflare l'active aussi côté edge)
 /*
