@@ -48,6 +48,7 @@ PAGES = [
     ("factureapp-ou-hisab.html",
      "https://factureapp.ma/factureapp-ou-hisab", "0.7", "monthly"),
     ("avis.html", "https://factureapp.ma/avis", "0.7", "monthly"),
+    ("testeurs.html", "https://factureapp.ma/testeurs", "0.7", "weekly"),
     ("a-propos.html", "https://factureapp.ma/a-propos", "0.6", "monthly"),
     ("cgv.html", "https://factureapp.ma/cgv", "0.4", "yearly"),
     ("contact.html", "https://factureapp.ma/contact", "0.5", "yearly"),

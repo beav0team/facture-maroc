@@ -70,18 +70,19 @@ for (const nom of fichiers) {
     }
   }
 
-  // The site sells the web app. test.html is the one Android page, kept for
-  // testers who already have the link: no marketing page may point at it, and
-  // no marketing page may talk about Android or the Play Store.
+  // The site sells the web app. test.html is the legacy Android install page,
+  // kept in noindex for testers who already have the address. The Android app
+  // is now advertised on /testeurs, so a marketing page may talk about it —
+  // but only by sending the reader there, never straight to test.html.
   if (nom !== 'test.html') {
     if (/href="[^"]*test\.html/.test(html)) {
-      erreurs.push(`${nom}: lien vers test.html (la vitrine ne vend que la webapp)`)
+      erreurs.push(`${nom}: lien vers test.html (passer par testeurs.html)`)
     }
     if (/href="[^"]*privacy\.html/.test(html)) {
       erreurs.push(`${nom}: lien vers privacy.html (politique Android ; le web utilise confidentialite.html)`)
     }
-    if (/\bAndroid\b|Play Store|Google Play/.test(html)) {
-      erreurs.push(`${nom}: mention d'Android ou du Play Store`)
+    if (/\bAndroid\b|Play Store|Google Play/.test(html) && !/href="\/?testeurs\.html"|href="testeurs"/.test(html)) {
+      erreurs.push(`${nom}: mentionne Android sans lien vers testeurs`)
     }
   } else if (!/<meta name="robots" content="noindex/.test(html)) {
     erreurs.push('test.html: la page Android doit rester en noindex')

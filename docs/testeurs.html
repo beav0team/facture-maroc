@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Devenir testeur de Facture Maroc hors ligne — l’application Android</title>
+<meta name="description" content="Facture Maroc hors ligne est l’application Android pour facturer sans Internet. Elle cherche 12 testeurs avant sa publication sur Google Play : trois étapes, cinq minutes, gratuit.">
+<meta name="theme-color" content="#1E3FD2">
+<link rel="canonical" href="https://factureapp.ma/testeurs">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Devenir testeur de Facture Maroc hors ligne">
+<meta property="og:description" content="L’application Android qui facture sans Internet cherche 12 testeurs avant sa publication sur Google Play.">
+<meta property="og:url" content="https://factureapp.ma/testeurs">
+<meta property="og:image" content="https://factureapp.ma/assets/img/og-factureapp.png">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/img/icone-180.png">
+<link rel="preload" href="assets/fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/site.css?v=5ee7563091">
+<style>
+  .page {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: clamp(34px, 5vw, 62px) var(--marge) clamp(44px, 6vw, 76px);
+  }
+
+  .entete h1 {
+    margin: 0 0 16px;
+    font: 800 clamp(32px, 3.7vw, 46px)/1.03 var(--titre);
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+
+  .entete p {
+    margin: 0;
+    max-width: 56ch;
+    font-size: 17.5px;
+    color: var(--ardoise);
+  }
+
+  .compte {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .compte li {
+    padding: 7px 13px;
+    border: 1px solid var(--trait);
+    border-radius: 999px;
+    font: 500 13px/1.4 var(--mono);
+    color: var(--ardoise);
+  }
+
+  /* The three screens, side by side on a desktop and a swipe on a phone:
+     a grid of three 880px-tall images would push the steps off the page. */
+  .apercus {
+    display: flex;
+    gap: 16px;
+    margin: clamp(26px, 4vw, 38px) 0 0;
+    padding: 0 0 8px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+
+  .apercu {
+    margin: 0;
+    flex: 0 0 clamp(190px, 27vw, 258px);
+    scroll-snap-align: start;
+  }
+
+  .apercu img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 16px;
+    border: 1px solid var(--trait);
+    background: #121826;
+  }
+
+  .apercu figcaption {
+    margin-top: 10px;
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--ardoise);
+  }
+
+  .etapes {
+    list-style: none;
+    margin: clamp(28px, 4vw, 42px) 0 0;
+    padding: 0;
+    border-top: 1px solid var(--trait);
+  }
+
+  .etape {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+    padding: 26px 0;
+    border-bottom: 1px solid var(--trait);
+  }
+
+  .etape .num {
+    padding-top: 4px;
+    font: 500 13px/1.5 var(--mono);
+    color: var(--ardoise);
+  }
+
+  .etape h2 {
+    margin: 0 0 8px;
+    font: 700 20px/1.3 var(--titre);
+    letter-spacing: -0.012em;
+  }
+
+  .etape p {
+    margin: 0 0 16px;
+    max-width: 54ch;
+    font-size: 15.5px;
+    color: var(--ardoise);
+  }
+
+  .etape .bouton {
+    padding: 13px 18px;
+    font-size: 14px;
+  }
+
+  .badge-play {
+    display: inline-block;
+    line-height: 0;
+  }
+
+  .badge-play img {
+    height: 56px;
+    width: auto;
+  }
+
+  .precision {
+    display: block;
+    margin: 12px 0 0;
+    max-width: 54ch;
+    font-size: 13.5px;
+    color: var(--ardoise);
+  }
+
+  .pourquoi {
+    margin-top: clamp(30px, 4vw, 44px);
+    padding: 24px 26px;
+    border: 1px solid var(--trait);
+    border-left: 3px solid var(--nuit);
+    border-radius: 4px;
+  }
+
+  .pourquoi h2 {
+    margin: 0 0 10px;
+    font: 700 19px/1.3 var(--titre);
+    letter-spacing: -0.012em;
+  }
+
+  .pourquoi p {
+    margin: 0;
+    max-width: 58ch;
+    font-size: 15.5px;
+    color: var(--ardoise);
+  }
+
+  .savoir {
+    margin-top: clamp(28px, 4vw, 40px);
+    padding-top: 26px;
+    border-top: 2px solid var(--nuit);
+  }
+
+  .savoir h2 {
+    margin: 0 0 12px;
+    font: 700 19px/1.3 var(--titre);
+    letter-spacing: -0.012em;
+    color: var(--nuit);
+  }
+
+  .savoir ul {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 9px;
+    font-size: 15px;
+    color: var(--ardoise);
+  }
+
+  .apres {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--trait);
+  }
+
+  .apres h2 {
+    margin: 0 0 8px;
+    font: 600 19px/1.3 var(--titre);
+  }
+
+  .apres p {
+    margin: 0;
+    max-width: 58ch;
+    font-size: 15.5px;
+    color: var(--ardoise);
+  }
+
+  @media (max-width: 560px) {
+    .etape { grid-template-columns: 1fr; gap: 10px; padding: 22px 0; }
+    .etape .num { padding-top: 0; }
+  }
+</style>
+</head>
+<body>
+
+<a class="saut" href="#contenu">Aller au contenu</a>
+
+<header class="barre">
+  <a class="marque" href="./"><span aria-hidden="true"></span>FactureApp</a>
+  <nav aria-label="Sections">
+    <a href="./">FactureApp, la version web</a>
+    <a href="./#questions">Questions</a>
+  </nav>
+  <a class="bouton bouton--contour bouton--petit" href="./">Retour au site</a>
+</header>
+
+<main id="contenu">
+  <div class="page">
+
+    <div class="entete">
+      <h1>Facturez sans Internet, et aidez-nous à sortir l’application Android.</h1>
+      <p><b>Facture Maroc hors ligne</b> est l’application Android : le catalogue,
+        les clients et les factures vivent sur le téléphone, sans compte et sans
+        connexion. Google Play demande 12 testeurs inscrits pendant 14 jours
+        avant d’ouvrir la publication : c’est la seule étape qui reste.</p>
+
+      <ul class="compte">
+        <li>12 testeurs</li>
+        <li>14 jours</li>
+        <li>5 minutes</li>
+        <li>Gratuit</li>
+      </ul>
+    </div>
+
+    <div class="apercus">
+      <figure class="apercu">
+        <img src="assets/img/androide-documents-420.webp"
+             srcset="assets/img/androide-documents-420.webp 420w, assets/img/androide-documents-840.webp 840w"
+             sizes="258px" width="420" height="880" loading="lazy"
+             alt="L’écran des documents dans l’application Android : reste à encaisser, facturé ce mois-ci, puis les devis et factures émis avec leur numéro et leur montant.">
+        <figcaption>Le tableau de bord : ce qu’il reste à encaisser, et chaque
+          document émis avec son numéro.</figcaption>
+      </figure>
+
+      <figure class="apercu">
+        <img src="assets/img/androide-articles-420.webp"
+             srcset="assets/img/androide-articles-420.webp 420w, assets/img/androide-articles-840.webp 840w"
+             sizes="258px" width="420" height="880" loading="lazy"
+             alt="Le catalogue Android : un dossier de pneus avec le nombre d’articles et d’unités, les quantités en stock et les articles à commander.">
+        <figcaption>Le catalogue par dossiers, avec les quantités en stock et
+          ce qui est à commander.</figcaption>
+      </figure>
+
+      <figure class="apercu">
+        <img src="assets/img/androide-facture-420.webp"
+             srcset="assets/img/androide-facture-420.webp 420w, assets/img/androide-facture-840.webp 840w"
+             sizes="258px" width="420" height="880" loading="lazy"
+             alt="Une facture Android avec son montant en lettres et l’aperçu du PDF : trois lignes, la TVA et le total TTC.">
+        <figcaption>La facture et son PDF, montant arrêté en lettres
+          compris.</figcaption>
+      </figure>
+    </div>
+
+    <ol class="etapes">
+      <li class="etape">
+        <span class="num" aria-hidden="true">1</span>
+        <div>
+          <h2>Rejoignez le groupe de testeurs</h2>
+          <p>Le groupe Google sert uniquement à vous ouvrir l’accès au test.
+            Ouvrez-le et cliquez sur « Rejoindre le groupe ». Utilisez de
+            préférence le compte Google de votre téléphone.</p>
+          <a class="bouton bouton--plein"
+             href="https://groups.google.com/g/facturemaroc-testeurs"
+             target="_blank" rel="noopener">Rejoindre le groupe</a>
+        </div>
+      </li>
+
+      <li class="etape">
+        <span class="num" aria-hidden="true">2</span>
+        <div>
+          <h2>Inscrivez-vous au test</h2>
+          <p>Sur la page du test, avec le même compte Google, cliquez sur
+            « Devenir testeur ». Google confirme votre inscription et autorise
+            l’installation de l’application sur votre compte.</p>
+          <a class="bouton bouton--plein"
+             href="https://play.google.com/apps/testing/com.yassine.facturemaroc"
+             target="_blank" rel="noopener">S’inscrire au test</a>
+        </div>
+      </li>
+
+      <li class="etape">
+        <span class="num" aria-hidden="true">3</span>
+        <div>
+          <h2>Installez depuis Google Play</h2>
+          <p>L’application apparaît alors dans le Play Store, comme n’importe
+            quelle autre. Il peut s’écouler quelques minutes entre l’inscription
+            et l’ouverture du lien : c’est normal.</p>
+          <a class="badge-play"
+             href="https://play.google.com/store/apps/details?id=com.yassine.facturemaroc"
+             target="_blank" rel="noopener">
+            <img src="assets/img/google-play-fr.png"
+                 alt="Disponible sur Google Play"
+                 width="646" height="250">
+          </a>
+          <span class="precision">Le lien s’active dès que Google a validé la
+            version de test.</span>
+        </div>
+      </li>
+    </ol>
+
+    <div class="pourquoi">
+      <h2>Pourquoi une application séparée ?</h2>
+      <p>La version web, <a href="./">FactureApp</a>, facture depuis un
+        navigateur et archive les PDF en ligne. L’application Android, elle,
+        fonctionne <b>hors ligne</b> : un atelier, une boutique sans réseau ou un
+        commercial en tournée peuvent facturer sans dépendre d’une connexion.
+        Les deux partagent le même moteur de facture et les mêmes mentions
+        marocaines, mais aucun compte n’est nécessaire côté Android, et les
+        données ne quittent pas le téléphone.</p>
+    </div>
+
+    <div class="savoir">
+      <h2>À savoir avant de commencer</h2>
+      <ul>
+        <li>Utilisez le même compte Google sur le téléphone et dans le
+          navigateur, sinon le Play Store ne proposera pas l’installation.</li>
+        <li>Android 8.0 ou plus récent.</li>
+        <li>Après l’inscription, comptez de quelques minutes à quelques heures
+          avant que le lien du Play Store ne fonctionne.</li>
+        <li>Si vous avez déjà installé un fichier APK à la main, désinstallez-le
+          d’abord : la version Play est signée différemment et refusera de
+          s’installer par-dessus.</li>
+        <li>Vos factures restent sur votre téléphone. Le groupe ne reçoit aucune
+          donnée et ne sert qu’à distribuer la version de test.</li>
+        <li>Aucune contrepartie n’est demandée : tester suffit. Un message pour
+          dire ce qui bloque ou ce qui manque nous aide beaucoup.</li>
+      </ul>
+    </div>
+
+    <div class="apres">
+      <h2>Quitter le test</h2>
+      <p>Play Store → fiche de l’application → « Quitter le programme ».
+        L’application reste installée et vos données restent sur le téléphone ;
+        vous ne recevez simplement plus les mises à jour de test.</p>
+    </div>
+
+    <div class="apres">
+      <h2>Une étape ne fonctionne pas ?</h2>
+      <p>Écrivez à
+        <a href="mailto:contact%40factureapp.ma">contact&#64;factureapp.ma</a>
+        en précisant votre modèle de téléphone et l’étape qui bloque.</p>
+    </div>
+
+  </div>
+</main>
+
+<footer class="pied">
+  <div class="contenu">
+    <div>
+      <a class="marque" href="./"><span aria-hidden="true"></span>FactureApp</a>
+      <p style="margin:12px 0 0;max-width:34ch">Logiciel de facturation
+        marocain, en ligne. Gratuit jusqu’à 5 documents facturés par mois, sans
+        carte bancaire.</p>
+    </div>
+    <div>
+      <h3>Produit</h3>
+      <ul>
+        <li><a href="app/">Se connecter</a></li>
+        <li><a href="app/tarifs">Tarifs</a></li>
+        <li><a href="app/gratuit">Générateur gratuit</a></li>
+        <li><a href="testeurs">Tester l’application Android</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Guides</h3>
+      <ul>
+        <li><a href="mentions-obligatoires-facture-maroc">Mentions obligatoires d’une facture</a></li>
+        <li><a href="facture-modele-marocain-gratuit">Modèle de facture</a></li>
+        <li><a href="facture-auto-entrepreneur-maroc">Facture auto-entrepreneur</a></li>
+        <li><a href="logiciel-facturation-gratuit-maroc">Logiciel de facturation gratuit</a></li>
+        <li><a href="facturation-electronique-maroc">Facturation électronique</a></li>
+        <li><a href="factureapp-ou-hisab">FactureApp ou Hisab</a></li>
+        <li><a href="avis">Ce qu’elle fait, ce qu’elle ne fait pas</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Le projet</h3>
+      <ul>
+        <li><a href="a-propos">À propos</a></li>
+        <li><a href="contact">Contact</a></li>
+        <li><a href="cgv">Conditions de vente</a></li>
+        <li><a href="confidentialite">Politique de confidentialité</a></li>
+        <li><a href="https://github.com/beav0team/facture-maroc">Code source</a></li>
+      </ul>
+    </div>
+    <p class="mentions">Facture Maroc hors ligne, Android 8.0 et plus, Français
+      — © 2026.</p>
+  </div>
+</footer>
+
+</body>
+</html>
