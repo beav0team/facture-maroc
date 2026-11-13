@@ -22,6 +22,7 @@ const TITRES: Record<string, string> = {
 function titrePour(chemin: string): string {
   if (chemin.startsWith('/documents/') && chemin !== '/documents/nouveau') return 'Document — FactureApp'
   if (chemin.startsWith('/clients/')) return 'Relevé client — FactureApp'
+  if (chemin.startsWith('/articles/')) return 'Articles — FactureApp'
   return TITRES[chemin] ?? 'FactureApp'
 }
 

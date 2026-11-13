@@ -110,7 +110,15 @@ vi.mock('../src/lib/supabase', () => {
     },
   ]
 
-  const tables: Record<string, unknown> = { clients, articles, documents, payments: paiements }
+  const tables: Record<string, unknown> = {
+    clients,
+    articles,
+    documents,
+    payments: paiements,
+    // Les dossiers vivent dans leur propre table : un dossier vide n'a aucune
+    // ligne d'article, donc il ne peut pas être déduit du catalogue.
+    article_folders: [{ chemin: 'Moteur' }],
+  }
 
   return {
     supabase: {
@@ -164,10 +172,13 @@ vi.mock('../src/lib/session.svelte', () => ({
 
 const montages: Array<{ instance: ReturnType<typeof mount>; cible: HTMLElement }> = []
 
-async function rendre(composant: Parameters<typeof mount>[0]): Promise<HTMLElement> {
+async function rendre(
+  composant: Parameters<typeof mount>[0],
+  props: Record<string, unknown> = {},
+): Promise<HTMLElement> {
   const cible = document.createElement('div')
   document.body.append(cible)
-  const instance = mount(composant, { target: cible })
+  const instance = mount(composant, { target: cible, props })
   montages.push({ instance, cible })
   flushSync()
   // onMount starts the query; let its promise chain and the re-render settle.
@@ -272,11 +283,22 @@ describe('écran Paramètres', () => {
 })
 
 describe('écran Articles', () => {
-  it('affiche l’article, son prix et son stock', async () => {
+  it('la racine dessine les dossiers, pas leur contenu', async () => {
     const cible = await rendre(Articles)
+    expect(cible.textContent).toContain('Moteur')
+    // The tile counts what the folder opens onto; the article itself lives one
+    // level down, exactly like the Android catalogue.
+    expect(cible.textContent).toContain('1 article')
+    expect(cible.textContent).not.toContain('Huile 5W30')
+  })
+
+  it('un dossier montre ses articles, leur prix et leur stock', async () => {
+    const cible = await rendre(Articles, { dossier: 'Moteur' })
     expect(cible.textContent).toContain('Huile 5W30')
     expect(cible.textContent).toContain('89,90 DH / bidon')
     expect(cible.textContent).toContain('12 en stock')
+    // The breadcrumb is the only way back, so it has to be there and clickable.
+    expect(cible.querySelector('.fil a')?.textContent).toContain('Tous les dossiers')
   })
 
   it('un service se déclare sans stock', async () => {
@@ -292,6 +314,17 @@ describe('écran Articles', () => {
     service?.click()
     flushSync()
     expect(cible.querySelector('#a-stock')).toBeNull()
+  })
+
+  it('le formulaire d’article part du dossier où l’on se trouve', async () => {
+    const cible = await rendre(Articles, { dossier: 'Moteur/Vidange' })
+    const bouton = [...cible.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Nouvel article'),
+    )
+    bouton?.click()
+    flushSync()
+    const champ = cible.querySelector<HTMLInputElement>('#a-dossier')
+    expect(champ?.value).toBe('Moteur/Vidange')
   })
 })
 

@@ -15,6 +15,9 @@
 /app/clients /app/ 200
 /app/clients/* /app/ 200
 /app/articles /app/ 200
+# Un dossier d'articles vit sous /app/articles/<chemin encodé> : une règle
+# explicite, jamais /app/*, qui avalerait aussi /app/assets/*.js.
+/app/articles/* /app/ 200
 /app/parametres /app/ 200
 /app/parametres/boutique /app/ 200
 /app/parametres/facturation /app/ 200

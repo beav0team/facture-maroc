@@ -28,8 +28,24 @@
   })
 
   const PREFIXE_DOCUMENT = '/documents/'
+  const PREFIXE_ARTICLES = '/articles/'
   const ROUTE_RELEVE = /^\/clients\/([^/]+)\/releve$/
   const releve = $derived(ROUTE_RELEVE.exec(route.chemin))
+
+  /**
+   * The folder a URL points at. The path is encoded as a whole, so a folder
+   * named "Mobilier/Chaises" keeps its slash inside one segment and cannot turn
+   * into two routes.
+   */
+  const dossierArticles = $derived.by(() => {
+    if (!route.chemin.startsWith(PREFIXE_ARTICLES)) return ''
+    const encode = route.chemin.slice(PREFIXE_ARTICLES.length)
+    try {
+      return decodeURIComponent(encode)
+    } catch {
+      return ''
+    }
+  })
 </script>
 
 {#if !auth.pret}
@@ -58,6 +74,8 @@
       <Releve id={releve[1]} />
     {:else if route.chemin === '/articles'}
       <Articles />
+    {:else if route.chemin.startsWith(PREFIXE_ARTICLES)}
+      <Articles dossier={dossierArticles} />
     {:else if route.chemin === '/parametres'}
       <Parametres />
     {:else if route.chemin === '/parametres/boutique'}
