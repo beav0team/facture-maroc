@@ -4,6 +4,7 @@
   import {
     statutDocument,
     situationDeReglement,
+    texteQuota,
     type DocumentRow,
     type PaiementRow,
     type QuotaBoutique,
@@ -11,6 +12,7 @@
   } from '../lib/documents'
   import * as api from '../lib/documentsApi'
   import { dirhams } from '../lib/money'
+  import { nomOffre } from '../lib/offres'
   import { auth } from '../lib/session.svelte'
   import Barre from '../lib/ui/Barre.svelte'
   import SansBoutique from '../lib/ui/SansBoutique.svelte'
@@ -135,7 +137,7 @@
           <p class="entete__texte">
             {documents.length} document{documents.length > 1 ? 's' : ''}
             {#if quota}
-              · {quota.plan === 'pro' ? 'Plan Pro' : `${quota.utilise} / ${quota.limite} factures ce mois`}
+              · {nomOffre(quota.plan)} · {texteQuota(quota)}
             {/if}
           </p>
         </div>
@@ -144,14 +146,19 @@
 
       {#if erreur}<p class="alerte" role="alert">{erreur}</p>{/if}
 
-      {#if quota && quota.plan === 'gratuit' && quota.limite !== null}
+      {#if quota && quota.plan !== 'pro' && quota.limite !== null}
         <div class="quota" role="status">
           <div class="quota__barre">
             <span style={`width: ${Math.min(100, (quota.utilise / quota.limite) * 100)}%`}></span>
           </div>
           <p class="quota__texte">
-            Plan gratuit : {quota.utilise} facture{quota.utilise > 1 ? 's' : ''} émise{quota.utilise > 1 ? 's' : ''}
-            sur {quota.limite} ce mois. <a href="/app/tarifs">Passer au plan Pro</a>
+            {#if quota.expire}
+              Abonnement terminé : vous êtes repassé au plan gratuit.
+            {:else}
+              {nomOffre(quota.plan)} : {quota.utilise} facture{quota.utilise > 1 ? 's' : ''} émise{quota.utilise > 1 ? 's' : ''}
+              sur {quota.limite} ce mois.
+            {/if}
+            <a href="/app/tarifs">{quota.expire ? 'Se réabonner' : quota.plan === 'gratuit' ? 'Passer à Essentiel ou au Pro' : 'Passer au Pro'}</a>
           </p>
         </div>
       {/if}

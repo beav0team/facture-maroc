@@ -88,7 +88,7 @@
       <ParametresBanque />
     {:else if route.chemin === '/parametres/donnees'}
       <ParametresDonnees />
-    {:else if route.chemin === '/admin'}
+    {:else if route.chemin === '/admin' || route.chemin.startsWith('/admin/')}
       <Admin />
     {:else if route.chemin === '/import'}
       <Import />

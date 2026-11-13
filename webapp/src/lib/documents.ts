@@ -14,6 +14,7 @@ import type {
 } from './document'
 import { calculer, totalLigne, type Client, type Facture, type Ligne, type Paiement, type Totaux } from './invoice'
 import { analyserMontant, arrondi, montant } from './money'
+import type { ClePlan } from './offres'
 
 export type StatutDocument = 'brouillon' | 'emis'
 
@@ -128,12 +129,19 @@ export type ArchiveRow = {
   created_at: string
 }
 
-/** What `quota_boutique()` returns. `limite` is null on Pro. */
+/** What `quota_boutique()` returns. `limite` is null on Pro (unlimited). */
 export type QuotaBoutique = {
-  plan: 'gratuit' | 'pro'
+  plan: ClePlan
   paid_until: string | null
+  /** Same date as `paid_until`, kept for the screens that already read it. */
+  jusqu_au?: string | null
   utilise: number
   limite: number | null
+  /** Extra documents granted by the console, on top of the tier. */
+  bonus?: number
+  /** A paid tier whose end date has passed: the plan reads « gratuit ». */
+  expire?: boolean
+  suspendue?: boolean
 }
 
 export const LIMITE_GRATUITE = 5
@@ -437,7 +445,7 @@ export function statutDocument(
     : { texte: `Échéance ${dateCourte(echeance)}`, ton: 'neutral' }
 }
 
-/** Free plan exhausted: the next invoice would be refused by the database. */
+/** Tier exhausted: the next invoice would be refused by the database. */
 export function quotaAtteint(quota: QuotaBoutique | null | undefined): boolean {
   if (!quota) return false
   if (quota.plan === 'pro') return false
@@ -447,9 +455,27 @@ export function quotaAtteint(quota: QuotaBoutique | null | undefined): boolean {
 /** The sentence the editor and the dashboard print above the quota bar. */
 export function texteQuota(quota: QuotaBoutique | null | undefined): string {
   if (!quota) return ''
-  if (quota.plan === 'pro') return 'Plan Pro'
+  if (quota.plan === 'pro') return 'Documents illimités'
   const limite = quota.limite ?? LIMITE_GRATUITE
   return `${quota.utilise} / ${limite} documents ce mois`
+}
+
+/**
+ * The sentence the dashboard prints when a paid tier has ended.
+ *
+ * Empty when nothing expired: an expired shop reads « gratuit » in `plan`, so
+ * without this the screen would silently look like a free account that lost
+ * its documents instead of an abonnement that ran out.
+ */
+export function texteExpiration(quota: QuotaBoutique | null | undefined): string {
+  if (!quota?.expire) return ''
+  const fin = quota.paid_until ?? quota.jusqu_au ?? ''
+  const jour = /^\d{4}-\d{2}-\d{2}/.test(fin)
+    ? `${fin.slice(8, 10)}/${fin.slice(5, 7)}/${fin.slice(0, 4)}`
+    : fin
+  return jour === ''
+    ? 'Votre abonnement est terminé. Vous êtes repassé au plan gratuit.'
+    : `Votre abonnement s’est terminé le ${jour}. Vous êtes repassé au plan gratuit.`
 }
 
 /** A draft as the editor holds it: the engine document plus its page setup. */

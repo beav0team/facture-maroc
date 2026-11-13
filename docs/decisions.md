@@ -524,3 +524,32 @@ est un objet physique : dupliquer un code rendrait le scan d'une facture
 ambigu, et l'index d'unicité le refuserait de toute façon. Le suffixe de
 libellé évite deux « Chaise en rotin » indiscernables dans le sélecteur
 d'article de l'éditeur.
+
+### 2026-11-14 — Trois paliers, 240 et 480 DH, pour passer sous le marché
+Le tarif unique à 990 DH laissait un trou : un commerce qui facture une
+vingtaine de fois par mois n'avait rien à acheter — trop pour cinq documents
+gratuits, pas assez pour payer l'illimité. Le barème devient **Gratuit (0 DH,
+5 documents/mois), Essentiel (240 DH/an, 50) et Pro (480 DH/an, illimité)**,
+annuels, sans reconduction. À la date de la décision, l'illimité le moins cher
+publié au Maroc tournait autour de 999 DH/an : 480 DH passe dessous sans
+rogner sur ce que le produit sait faire.
+
+Le prix ne s'écrit que dans `webapp/src/lib/offres.ts` ; le site et les CGV le
+relisent, et `check-site.mjs` refuse un montant qui ne correspond plus. Aucun
+concurrent n'est nommé sur le site.
+
+Trois garde-fous :
+- **Pas de palier « utilisateurs » ni « boutiques »** : `memberships` n'a ni
+  politique d'insertion ni flux d'invitation, et `create_shop_for_me` n'est
+  bridé par rien. Vendre ce qu'on ne limite pas serait une promesse en l'air.
+- **Le plan redevient une limite, pas un booléen** : `quota_limite()` rend NULL
+  en Pro, 50 + bonus en Essentiel, 5 + bonus en gratuit. `boutique_est_pro()`
+  garde son sens (« illimité ») pour ses cinq appelants.
+- **L'expiration laisse une trace** : `plan_effectif()` applique la date,
+  `subscriptions.plan` garde la valeur brute, et la console écrit « Essentiel
+  expiré le … » au lieu d'effacer l'histoire.
+
+`admin_abonnement` devient le seul écrivain de plan : trois paliers, date
+future obligatoire sur les payants, et journalisation (`action='abonnement'`,
+`{ancien, nouveau, jusqu_au, note}`) — c'était le dernier geste de la console
+qui ne laissait aucune trace.

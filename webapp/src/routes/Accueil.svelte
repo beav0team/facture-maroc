@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { texteQuota, type QuotaBoutique } from '../lib/documents'
+  import { nomOffre } from '../lib/offres'
   import * as api from '../lib/documentsApi'
   import { auth, creerBoutique } from '../lib/session.svelte'
   import Barre from '../lib/ui/Barre.svelte'
@@ -112,12 +113,12 @@
           <p class="entete__surtitre">Bonjour</p>
           <h1>{auth.boutique.nom}</h1>
         </div>
-        {#if quota?.plan === 'pro'}
-          <span class="etiquette">{texteQuota(quota)}</span>
+        {#if quota?.expire}
+          <a class="etiquette" href="/app/tarifs">{nomOffre(quota.plan)} · abonnement terminé</a>
         {:else if quota}
-          <a class="etiquette" href="/app/tarifs">Plan gratuit · {texteQuota(quota)}</a>
+          <a class="etiquette" href="/app/tarifs">{nomOffre(quota.plan)} · {texteQuota(quota)}</a>
         {:else}
-          <a class="etiquette" href="/app/tarifs">Plan gratuit · 5 documents / mois</a>
+          <a class="etiquette" href="/app/tarifs">Gratuit · 5 documents / mois</a>
         {/if}
       </section>
 

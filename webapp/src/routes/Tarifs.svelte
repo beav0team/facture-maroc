@@ -1,8 +1,8 @@
 <script lang="ts">
   import { auth } from '../lib/session.svelte'
-  import { CONTACT_PRO, OFFRES } from '../lib/offres'
+  import { CONTACT_ESSENTIEL, OFFRES } from '../lib/offres'
 
-  const contact = CONTACT_PRO
+  const contact = CONTACT_ESSENTIEL
 </script>
 
 <div class="page">
@@ -20,10 +20,11 @@
       <p class="surtitre">Tarifs</p>
       <h1>Un prix simple, en dirhams</h1>
       <p class="texte">
-        Pas de commission sur vos factures, pas d’engagement. Le plan gratuit
-        permet de travailler tout de suite ; le plan Pro retire la limite de
-        cinq documents facturés par mois (factures, tickets, factures d’acompte,
-        régularisations, exports — les devis et les avoirs ne sont pas comptés).
+        Pas de commission sur vos factures, pas d’engagement, pas de
+        reconduction automatique. Le plan gratuit permet de travailler tout de
+        suite ; Essentiel et Pro augmentent le nombre de documents facturés par
+        mois (factures, tickets, factures d’acompte, régularisations, exports —
+        les devis et les avoirs ne sont jamais comptés).
       </p>
     </section>
 
@@ -52,21 +53,24 @@
     <section class="carte precision">
       <h2>Comment se passe le paiement</h2>
       <p class="texte">
-        L’abonnement Pro est activé après réception du paiement, par virement ou
-        espèces en boutique. Écrivez à
+        Essentiel et Pro sont activés après réception du paiement, par virement
+        ou espèces en boutique. Écrivez à
         <a href={contact}>contact@factureapp.ma</a> avec le nom de votre
-        boutique : l’activation se fait sous 24 heures ouvrées et dure un an.
+        boutique : l’activation se fait sous 24 heures ouvrées, pour un an, et
+        ne se renouvelle pas toute seule. À l’échéance, le compte repasse au
+        plan gratuit sans rien perdre : les documents restent lisibles et
+        téléchargeables.
       </p>
       <p class="texte">
-        <strong>Rétractation :</strong> vous pouvez renoncer au plan Pro dans les
-        7 jours suivant l’activation, à condition qu’aucune facture n’ait été
-        émise pendant cette période. Le remboursement est alors intégral, par le
-        même moyen que le paiement, sous 14 jours.
+        <strong>Rétractation :</strong> vous pouvez renoncer à Essentiel ou au
+        Pro dans les 7 jours suivant l’activation, à condition qu’aucune
+        facture n’ait été émise pendant cette période. Le remboursement est
+        alors intégral, par le même moyen que le paiement, sous 14 jours.
       </p>
       {#if auth.user}
         <p class="texte">Connecté{ auth.user.email ? ` en tant que ${auth.user.email}` : '' }.</p>
       {:else}
-        <p class="texte">Créez d’abord un compte gratuit, puis demandez le passage au Pro.</p>
+        <p class="texte">Créez d’abord un compte gratuit, puis demandez le passage à Essentiel ou au Pro.</p>
       {/if}
     </section>
   </main>

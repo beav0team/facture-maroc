@@ -1,16 +1,31 @@
-// Les deux formules, à un seul endroit.
+// Les trois formules, à un seul endroit.
 //
 // Le site marketing n'affiche aucun montant : la seule page qui imprime un
-// prix est /app/tarifs, et elle lit ce fichier. Changer le prix du Pro ici le
-// change partout, sans copie à retrouver dans le HTML.
+// prix est /app/tarifs, et elle lit ce fichier. Changer un prix ici le change
+// partout, sans copie à retrouver dans le HTML. `scripts/check-site.mjs` relit
+// ce fichier et refuse un site dont un palier ne correspond plus.
 //
-// Le tarif n'est pas encore arbitré (le paiement en ligne n'est pas ouvert) :
-// 990 DH est le chiffre affiché aujourd'hui, pas une décision figée.
+// Trois paliers, un seul axe : les documents facturés par mois. Le plan
+// gratuit reste à cinq — c'est le plancher du marché marocain, s'y aligner est
+// la condition d'entrée, pas un argument. Essentiel (240 DH/an) couvre le
+// commerce qui facture chaque jour sans atteindre l'illimité ; Pro (480 DH/an)
+// restait, au moment de l'écrire, l'illimité le moins cher publié au Maroc.
+//
+// Aucune promesse que le produit ne tient pas : pas de « 3 utilisateurs »
+// (aucune invitation n'existe), pas de « plusieurs boutiques » (rien ne bride
+// la création), pas de quotas de stockage (les archives sont illimitées).
+
+export const CONTACT_ESSENTIEL =
+  'mailto:contact@factureapp.ma?subject=Passage%20au%20plan%20Essentiel%20FactureApp'
 
 export const CONTACT_PRO =
   'mailto:contact@factureapp.ma?subject=Passage%20au%20plan%20Pro%20FactureApp'
 
+export type ClePlan = 'gratuit' | 'essentiel' | 'pro'
+
 export interface Offre {
+  /** La clé écrite en base dans `subscriptions.plan`. */
+  cle: ClePlan
   nom: string
   prix: string
   periode: string
@@ -23,6 +38,7 @@ export interface Offre {
 
 export const OFFRES: Offre[] = [
   {
+    cle: 'gratuit',
     nom: 'Gratuit',
     prix: '0 DH',
     periode: 'pour toujours',
@@ -38,17 +54,42 @@ export const OFFRES: Offre[] = [
     principal: false,
   },
   {
-    nom: 'Pro',
-    prix: '990 DH',
+    cle: 'essentiel',
+    nom: 'Essentiel',
+    prix: '240 DH',
     periode: 'par an',
-    texte: 'Pour un commerce qui facture tous les jours.',
+    texte: 'Pour un commerce qui facture chaque jour, sans se ruiner.',
     points: [
-      'Documents facturés illimités',
+      '50 documents facturés par mois',
+      'Devis, avoirs, clients et articles illimités',
+      'PDF archivé, sans filigrane',
       'Un an, sans reconduction automatique',
       'Support par e-mail',
     ],
-    action: 'Passer au Pro',
-    lien: CONTACT_PRO,
+    action: 'Demander Essentiel',
+    lien: CONTACT_ESSENTIEL,
     principal: true,
   },
+  {
+    cle: 'pro',
+    nom: 'Pro',
+    prix: '480 DH',
+    periode: 'par an',
+    texte: 'Pour une boutique qui ne compte plus ses factures.',
+    points: [
+      'Documents facturés illimités',
+      'Devis, avoirs, clients et articles illimités',
+      'PDF archivé, sans filigrane',
+      'Un an, sans reconduction automatique',
+      'Support par e-mail et WhatsApp',
+    ],
+    action: 'Passer au Pro',
+    lien: CONTACT_PRO,
+    principal: false,
+  },
 ]
+
+/** Le libellé d'un palier, pour les écrans qui n'affichent qu'un mot. */
+export function nomOffre(cle: ClePlan): string {
+  return OFFRES.find((offre) => offre.cle === cle)?.nom ?? 'Gratuit'
+}

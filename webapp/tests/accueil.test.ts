@@ -61,16 +61,34 @@ async function rendre() {
 }
 
 describe('Accueil — étiquette du plan', () => {
-  it('affiche « Plan Pro » quand la boutique est payée', async () => {
+  it('affiche le palier Pro quand la boutique est payée', async () => {
     etat.quota = { plan: 'pro', paid_until: '2027-11-11', utilise: 0, limite: null }
     const body = await rendre()
-    expect(body.textContent).toContain('Plan Pro')
-    expect(body.textContent).not.toContain('Plan gratuit')
+    expect(body.textContent).toContain('Pro · Documents illimités')
+    expect(body.textContent).not.toContain('Gratuit ·')
   })
 
   it('affiche le quota réel quand la boutique est gratuite', async () => {
     etat.quota = { plan: 'gratuit', paid_until: null, utilise: 2, limite: 5 }
     const body = await rendre()
-    expect(body.textContent).toContain('Plan gratuit · 2 / 5 documents ce mois')
+    expect(body.textContent).toContain('Gratuit · 2 / 5 documents ce mois')
+  })
+
+  it('affiche le palier Essentiel et sa limite de 50', async () => {
+    etat.quota = { plan: 'essentiel', paid_until: '2027-11-11', utilise: 7, limite: 50 }
+    const body = await rendre()
+    expect(body.textContent).toContain('Essentiel · 7 / 50 documents ce mois')
+  })
+
+  it('dit qu’un abonnement est terminé au lieu de faire croire à un plan gratuit', async () => {
+    etat.quota = {
+      plan: 'gratuit',
+      paid_until: '2026-10-01',
+      utilise: 3,
+      limite: 5,
+      expire: true,
+    }
+    const body = await rendre()
+    expect(body.textContent).toContain('Gratuit · abonnement terminé')
   })
 })

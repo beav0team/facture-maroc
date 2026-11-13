@@ -1,0 +1,397 @@
+/* Console d'administration — styles partagés par les quatre sections.
+   Globaux à dessein : les composants de la console sont petits et doivent se
+   ressembler, sans recopier dix fois les mêmes règles dans du CSS scoppé. */
+
+.console {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  padding: clamp(20px, 4vw, 40px) clamp(14px, 4vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.console__entete {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.console__entete h1 {
+  font-size: clamp(1.45rem, 3vw, 1.9rem);
+}
+
+.console__surtitre {
+  font-family: var(--titre);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ardoise);
+  letter-spacing: -0.01em;
+}
+
+.console__nav {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--trait);
+  padding-bottom: 0;
+}
+
+.console__nav a {
+  padding: 9px 12px;
+  border-radius: 10px 10px 0 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ardoise);
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-bottom: 0;
+}
+
+.console__nav a:hover {
+  color: var(--nuit);
+  background: var(--papier);
+}
+
+.console__nav a.actif {
+  color: var(--bleu);
+  background: var(--blanc);
+  border-color: var(--trait);
+  margin-bottom: -1px;
+}
+
+.bloc {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bloc__entete {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bloc__entete h2 {
+  font-size: 1.1rem;
+}
+
+.bloc__entete h3 {
+  font-size: 1rem;
+}
+
+.grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.chiffre {
+  padding: 13px 15px;
+}
+
+.chiffre__valeur {
+  font-family: var(--titre);
+  font-size: 1.55rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.chiffre__libelle {
+  color: var(--ardoise);
+  font-size: 0.8rem;
+}
+
+.note {
+  color: var(--ardoise);
+  font-size: 0.87rem;
+}
+
+.liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ligne {
+  padding: 12px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--trait);
+}
+
+.ligne:first-child {
+  border-top: 0;
+}
+
+.ligne__texte {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.ligne__texte h3 {
+  font-size: 0.99rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ligne__texte h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ligne__texte h3 a:hover {
+  color: var(--bleu);
+  text-decoration: underline;
+}
+
+.ligne__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.etiquette {
+  font-family: var(--texte);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ardoise);
+  background: var(--papier);
+  border: 1px solid var(--trait);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.etiquette--pro {
+  color: var(--vert);
+  border-color: color-mix(in srgb, var(--vert) 40%, var(--trait));
+  background: color-mix(in srgb, var(--vert) 8%, var(--blanc));
+}
+
+.etiquette--danger {
+  color: var(--rouge);
+  border-color: #f3c2bf;
+  background: #fdeceb;
+}
+
+.etiquette--alerte {
+  color: #9a5b00;
+  border-color: #f0d6a8;
+  background: #fdf4e3;
+}
+
+.lien-discret {
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.87rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--bleu);
+}
+
+.lien-discret:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.lien-discret--danger {
+  color: var(--rouge);
+}
+
+.recherche {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.recherche .champ {
+  flex: 1 1 260px;
+}
+
+.filtres {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filtres button {
+  padding: 6px 11px;
+  border: 1px solid var(--trait);
+  border-radius: 999px;
+  background: var(--blanc);
+  color: var(--ardoise);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filtres button.actif {
+  border-color: var(--bleu);
+  color: var(--bleu);
+  background: color-mix(in srgb, var(--bleu) 7%, var(--blanc));
+}
+
+.formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.formulaire__grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.formulaire__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.tableau {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.tableau th {
+  text-align: left;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ardoise);
+  font-weight: 700;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--trait);
+}
+
+.tableau td {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--trait);
+  vertical-align: middle;
+}
+
+.tableau td:last-child,
+.tableau th:last-child {
+  text-align: right;
+}
+
+.tableau tr:last-child td {
+  border-bottom: 0;
+}
+
+.tableau select {
+  min-height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--trait);
+  border-radius: 8px;
+  background: var(--blanc);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.alerte-ligne {
+  padding: 10px 12px;
+  border: 1px solid var(--trait);
+  border-left: 4px solid #d9a13b;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.alerte-ligne--forte {
+  border-left-color: var(--rouge);
+}
+
+.danger {
+  border-color: #f3c2bf;
+}
+
+.danger h2 {
+  color: var(--rouge);
+}
+
+.voile {
+  position: fixed;
+  inset: 0;
+  background: rgb(11 27 77 / 45%);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 20;
+}
+
+.dialogue {
+  width: min(460px, 100%);
+  padding: 22px;
+}
+
+.dialogue form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dialogue h2 {
+  font-size: 1.12rem;
+}
+
+.dialogue__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.vide {
+  padding: 18px 4px;
+  color: var(--ardoise);
+  font-size: 0.89rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 620px) {
+  .tableau th:nth-child(n + 4),
+  .tableau td:nth-child(n + 4) {
+    display: none;
+  }
+
+  .ligne {
+    align-items: flex-start;
+  }
+}

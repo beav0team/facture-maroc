@@ -16,6 +16,9 @@ const TITRES: Record<string, string> = {
   '/gratuit': 'Générateur gratuit — FactureApp',
   '/tarifs': 'Tarifs — FactureApp',
   '/admin': 'Administration — FactureApp',
+  '/admin/boutiques': 'Boutiques — Administration — FactureApp',
+  '/admin/comptes': 'Comptes — Administration — FactureApp',
+  '/admin/journal': 'Journal — Administration — FactureApp',
   '/import': 'Import Android — FactureApp',
 }
 
@@ -23,6 +26,7 @@ function titrePour(chemin: string): string {
   if (chemin.startsWith('/documents/') && chemin !== '/documents/nouveau') return 'Document — FactureApp'
   if (chemin.startsWith('/clients/')) return 'Relevé client — FactureApp'
   if (chemin.startsWith('/articles/')) return 'Articles — FactureApp'
+  if (chemin.startsWith('/admin/boutiques/')) return 'Boutique — Administration — FactureApp'
   return TITRES[chemin] ?? 'FactureApp'
 }
 

@@ -33,7 +33,7 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   `noindex` et sans lien entrant, pour les testeurs qui ont l’adresse.
 - `docs/DESIGN.md` fixe le langage : carnet à souches, perforation, tampon,
   numéros de série, et la liste de ce qui est interdit.
-- `/tarifs` → `/app/tarifs` en 301 ; le prix du Pro ne vit plus que dans
+- `/tarifs` → `/app/tarifs` en 301 ; les trois prix ne vivent que dans
   `webapp/src/lib/offres.ts`, aucun montant n'est écrit dans le HTML.
 - `docs/avis.html` : ce que la webapp fait et ne fait pas (stock, DGI,
   paiements, relances, hors ligne).
@@ -65,10 +65,18 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   `/accounts/<id>` et `/accounts/<id>/pages/...` répondent 9109 — d’où la
   solution de zone. **`curl -4` obligatoire** : l’IPv6 casse
   `api.cloudflare.com` sur cette machine (même famille de panne que Supabase).
-- **CGV** (2026-11-12) : `docs/cgv.html` — plans, activation, prix, durée,
-  rétractation, disponibilité, responsabilité, droit marocain. Le prix du Pro y
-  est imprimé et vérifié contre `offres.ts`, comme sur l’accueil ; aucune autre
-  page ne le recopie.
+- **CGV** (2026-11-12, prix revus le 2026-11-14) : `docs/cgv.html` — plans,
+  activation, prix, durée, rétractation, disponibilité, responsabilité, droit
+  marocain. Les prix d’Essentiel et du Pro y sont imprimés et vérifiés contre
+  `offres.ts`, comme sur l’accueil ; aucune autre page ne les recopie.
+- **Trois paliers** (2026-11-14, migration `0014_plans.sql`) : Gratuit (5
+  documents facturés par mois), **Essentiel à 240 DH/an** (50) et **Pro à
+  480 DH/an** (illimité). Le plan devient une limite (NULL = illimité) et non
+  plus un booléen : `plan_effectif()`, `quota_limite()` et `quota_boutique()`
+  rendent le palier réel, date de fin comprise. Un abonnement échu retombe en
+  gratuit en gardant la trace du palier acheté (`expire`, « Essentiel expiré le
+  … » dans la console). `admin_abonnement` accepte les trois paliers, exige une
+  date future sur les payants et journalise chaque changement.
 - **Entrée par l’inscription** : les boutons « Créer ma facture » et « Commencer »
   pointent sur `/app/?mode=signup`. « Connexion » et « Se connecter » restent sur
   `/app/`. Le générateur fait de même après un brouillon.
@@ -301,15 +309,17 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   laisse pas l'écran vide.
 - **Le plan affiché est le vrai** : l'étiquette de l'accueil était la chaîne
   figée « Plan gratuit · 5 factures / mois » ; elle vient maintenant de
-  `quota_boutique` (« Plan Pro », sinon le quota réel) et se relit au retour
-  sur l'onglet.
+  `quota_boutique` (« Gratuit · 2 / 5 », « Essentiel · 30 / 50 », « Pro ·
+  Documents illimités », « abonnement terminé ») et se relit au retour sur
+  l'onglet.
 - **Boutique de l'administrateur** : `chargerBoutique()` lit `memberships`
   (scopé à `auth.uid()`), plus `shops` — un administrateur plateforme voyait la
   plus ancienne boutique du site (« Atlas ») au lieu de la sienne, puisque
   « admin lit boutiques » lui ouvre toutes les boutiques.
-- **Console d'administration** (`0005_admin.sql`) : boutiques avec leur
-  propriétaire et leurs compteurs, comptes avec e-mail et dernière connexion,
-  chiffres de la plateforme, abonnement Pro avec date libre et note,
+- **Console d'administration** (`0005_admin.sql`, complétée en `0013` puis
+  `0014`) : boutiques avec leur propriétaire et leurs compteurs, comptes avec
+  e-mail et dernière connexion, chiffres de la plateforme, abonnement à trois
+  paliers (Gratuit / Essentiel / Pro) avec date libre et note,
   nomination d'un administrateur par e-mail, retrait (le dernier ne peut pas
   partir). Tout passe par des fonctions `security definer` réservées à
   `est_admin_plateforme()` : le navigateur ne voit jamais `auth.users` ni le

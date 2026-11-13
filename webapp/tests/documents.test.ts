@@ -15,6 +15,7 @@ import {
   quotaAtteint,
   statutDocument,
   typeCompteDansQuota,
+  texteExpiration,
   texteQuota,
   type DocumentRow,
   type LigneRow,
@@ -237,9 +238,11 @@ describe('statutDocument', () => {
 })
 
 describe('quota', () => {
-  it('bloque la sixième facture gratuite', () => {
+  it('bloque la facture qui dépasse le palier', () => {
     expect(quotaAtteint({ plan: 'gratuit', paid_until: null, utilise: 4, limite: 5 })).toBe(false)
     expect(quotaAtteint({ plan: 'gratuit', paid_until: null, utilise: 5, limite: 5 })).toBe(true)
+    expect(quotaAtteint({ plan: 'essentiel', paid_until: '2027-01-01', utilise: 49, limite: 50 })).toBe(false)
+    expect(quotaAtteint({ plan: 'essentiel', paid_until: '2027-01-01', utilise: 50, limite: 50 })).toBe(true)
     expect(quotaAtteint({ plan: 'pro', paid_until: '2027-01-01', utilise: 99, limite: null })).toBe(false)
   })
 
@@ -247,7 +250,25 @@ describe('quota', () => {
     expect(texteQuota({ plan: 'gratuit', paid_until: null, utilise: 2, limite: 5 })).toBe(
       '2 / 5 documents ce mois',
     )
-    expect(texteQuota({ plan: 'pro', paid_until: null, utilise: 0, limite: null })).toBe('Plan Pro')
+    expect(texteQuota({ plan: 'essentiel', paid_until: '2027-01-01', utilise: 12, limite: 50 })).toBe(
+      '12 / 50 documents ce mois',
+    )
+    expect(texteQuota({ plan: 'pro', paid_until: null, utilise: 0, limite: null })).toBe(
+      'Documents illimités',
+    )
+  })
+
+  it('annonce la fin d’un abonnement, et rien quand il court encore', () => {
+    expect(texteExpiration({ plan: 'gratuit', paid_until: null, utilise: 0, limite: 5 })).toBe('')
+    expect(
+      texteExpiration({
+        plan: 'gratuit',
+        paid_until: '2026-10-01',
+        utilise: 0,
+        limite: 5,
+        expire: true,
+      }),
+    ).toBe('Votre abonnement s’est terminé le 01/10/2026. Vous êtes repassé au plan gratuit.')
   })
 })
 

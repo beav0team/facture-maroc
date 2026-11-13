@@ -25,6 +25,12 @@
 /app/parametres/banque /app/ 200
 /app/parametres/donnees /app/ 200
 /app/admin /app/ 200
+# Une fiche boutique vit sous /app/admin/boutiques/<id> : deux règles
+# explicites, comme pour les dossiers d'articles.
+/app/admin/boutiques /app/ 200
+/app/admin/boutiques/* /app/ 200
+/app/admin/comptes /app/ 200
+/app/admin/journal /app/ 200
 /app/import /app/ 200
 /app/gratuit /app/ 200
 /app/tarifs /app/ 200

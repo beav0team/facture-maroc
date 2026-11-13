@@ -21,6 +21,7 @@
     saisieDeDocument,
     situationDeReglement,
     snapshotBoutique,
+    texteQuota,
     typeCompteDansQuota,
     type DocumentRow,
     type PaiementRow,
@@ -29,6 +30,7 @@
   } from '../lib/documents'
   import * as api from '../lib/documentsApi'
   import { archiverDocument, nomFichier, telechargerArchive, telechargerBlob } from '../lib/archive'
+  import { nomOffre } from '../lib/offres'
   import { reprendreBrouillon } from '../lib/brouillonPublic'
   import { calculer, libelleTotal, totalLigne, type Ligne } from '../lib/invoice'
   import { analyserDate, jourDepuisEpoque } from '../lib/dates'
@@ -71,6 +73,12 @@
   const prixTtc = $derived(Boolean(boutique?.prix_ttc))
   const tauxDocument = $derived(Math.max(saisie.facture.tauxTva ?? 20, 0))
   const quotaBloque = $derived(quotaAtteint(quota) && typeCompteDansQuota(saisie.facture.type))
+  const messageQuota = $derived(
+    quota?.expire
+      ? 'Votre abonnement est terminé : vous êtes repassé au plan gratuit. Les devis et les avoirs restent libres.'
+      : `Le quota de ${quota?.limite ?? 5} documents de votre palier est atteint ce mois-ci ` +
+        '(factures, tickets, factures d’acompte). Les devis et les avoirs restent libres.',
+  )
   const titre = $derived(estEmis ? saisie.facture.numero || 'Document' : saisie.id ? 'Modifier le brouillon' : 'Nouveau document')
 
   function tauxDeLigne(ligne: Ligne): number {
@@ -432,9 +440,7 @@
   async function emettre() {
     if (!modifiable) return
     if (quotaBloque) {
-      erreur =
-        'Le quota de 5 documents gratuits est atteint pour ce mois (factures, tickets, ' +
-        'factures d’acompte). Les devis et les avoirs restent libres.'
+      erreur = messageQuota
       return
     }
 
@@ -766,9 +772,8 @@
 
       {#if quotaBloque && modifiable}
         <p class="alerte" role="alert">
-          Le quota de 5 documents gratuits est atteint pour ce mois (factures,
-          tickets, factures d’acompte). Les devis et les avoirs restent libres.
-          <a href="/app/tarifs">Passer au plan Pro</a> pour émettre cette facture.
+          {messageQuota}
+          <a href="/app/tarifs">{quota?.expire ? 'Se réabonner' : 'Passer à Essentiel ou au Pro'}</a> pour émettre cette facture.
         </p>
       {/if}
       {#if message}<p class="alerte alerte--info" role="status">{message}</p>{/if}
@@ -1077,7 +1082,7 @@
             {/if}
 
             {#if quota && !estEmis}
-              <p class="note">{quota.plan === 'pro' ? 'Plan Pro' : `${quota.utilise} / ${quota.limite} factures ce mois`}</p>
+              <p class="note">{nomOffre(quota.plan)} · {texteQuota(quota)}</p>
             {/if}
 
             {#if modifiable}

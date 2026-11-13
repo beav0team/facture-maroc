@@ -336,7 +336,7 @@ describe('écran Documents', () => {
     expect(cible.textContent).toContain('Garage Atlas')
     expect(cible.textContent).toContain('120,00 DH')
     expect(cible.textContent).toContain('100,00 DH restant')
-    expect(cible.textContent).toContain('1 / 5 factures ce mois')
+    expect(cible.textContent).toContain('1 / 5 documents ce mois')
     expect(cible.textContent).toContain('Nouveau document')
   })
 })
