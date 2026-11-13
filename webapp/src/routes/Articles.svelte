@@ -11,6 +11,7 @@
   } from '../lib/catalogue'
   import {
     afficher,
+    aDuStock,
     articlesDans,
     articlesDirects,
     avecAncetres,
@@ -22,6 +23,7 @@
     nomDe,
     normaliserChemin,
     parentDe,
+    quantiteDans,
     rebase,
     segmentsDe,
     suggestionCopie,
@@ -74,6 +76,10 @@
   const sansDossier = $derived(articlesDirects('', articles))
   const fil = $derived(segmentsDe(courant))
   const nombreServices = $derived(articles.filter((article) => article.stock === null).length)
+  /** Units on the shelf in the folder on screen, and in the whole catalogue. */
+  const quantiteCourante = $derived(quantiteDans(courant, articles))
+  const quantiteTotale = $derived(quantiteDans('', articles))
+  const stockCourant = $derived(aDuStock(courant, articles))
 
   /** A search asks "is it here?", so it reaches the sub-folders. */
   const resultats = $derived(
@@ -439,9 +445,13 @@
   }
 
   function resumeTuile(chemin: string): string {
-    const dedans = articlesDans(chemin, articles).length
+    const dedans = articlesDans(chemin, articles)
     const sous = descendantsDe(chemin, arbre).length
-    const parties = [`${dedans} article${dedans > 1 ? 's' : ''}`]
+    // Quantity first: it is what the shop came for. The article count follows
+    // because "12 en stock" could be one tyre or twelve references.
+    const parties: string[] = []
+    if (aDuStock(chemin, articles)) parties.push(`${quantiteDans(chemin, articles)} en stock`)
+    parties.push(`${dedans.length} article${dedans.length > 1 ? 's' : ''}`)
     if (sous > 0) parties.push(`${sous} sous-dossier${sous > 1 ? 's' : ''}`)
     return parties.join(' · ')
   }
@@ -460,13 +470,15 @@
           <p class="entete__texte">
             {#if courant === ''}
               {articles.length} article{articles.length > 1 ? 's' : ''} ·
+              {quantiteTotale} en stock ·
               {nombreServices} service{nombreServices > 1 ? 's' : ''} ·
               {arbre.length} dossier{arbre.length > 1 ? 's' : ''}
             {:else}
               {articlesDans(courant, articles).length} article{articlesDans(courant, articles)
                 .length > 1
                 ? 's'
-                : ''}
+                : ''}{#if stockCourant} ·
+                {quantiteCourante} en stock{/if}
               dans « {afficher(courant)} »
             {/if}
           </p>

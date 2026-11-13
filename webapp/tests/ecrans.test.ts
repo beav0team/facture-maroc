@@ -283,11 +283,12 @@ describe('écran Paramètres', () => {
 })
 
 describe('écran Articles', () => {
-  it('la racine dessine les dossiers, pas leur contenu', async () => {
+  it('la racine dessine les dossiers, avec leur quantité en stock', async () => {
     const cible = await rendre(Articles)
     expect(cible.textContent).toContain('Moteur')
-    // The tile counts what the folder opens onto; the article itself lives one
-    // level down, exactly like the Android catalogue.
+    // A tile stands for a shelf: what it holds and how many units are on it.
+    // "1 article" alone made a folder of twelve tyres look like one tyre.
+    expect(cible.textContent).toContain('12 en stock')
     expect(cible.textContent).toContain('1 article')
     expect(cible.textContent).not.toContain('Huile 5W30')
   })

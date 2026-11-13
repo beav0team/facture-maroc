@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Article } from '../src/lib/catalogue'
 import {
   afficher,
+  aDuStock,
   articlesDans,
   articlesDirects,
   avecAncetres,
@@ -15,6 +16,7 @@ import {
   nomDe,
   normaliserChemin,
   parentDe,
+  quantiteDans,
   rebase,
   suggestionCopie,
 } from '../src/lib/dossiers'
@@ -167,6 +169,21 @@ describe('les articles d’un dossier', () => {
     // shallowly, so "Mobilier (2)" opened onto one row.
     expect(compterArticles('Mobilier', tous)).toBe(2)
     expect(articlesDans('Mobilier', tous)).toHaveLength(2)
+  })
+
+  it('une tuile additionne les quantités de tout ce qu’elle ouvre', () => {
+    // A shelf is not a list: one reference with twelve in stock is twelve.
+    const deux = article({ dossier: 'Mobilier/Chaises', stock: 4 })
+    const trois = article({ dossier: 'Mobilier', stock: 6 })
+    expect(quantiteDans('Mobilier', [chaise, deux, trois])).toBe(10)
+    expect(quantiteDans('', [chaise, montage])).toBe(0)
+  })
+
+  it('un service ne compte pas dans la quantité', () => {
+    expect(quantiteDans('', [montage])).toBe(0)
+    // ... and a folder of services only has no quantity to show at all.
+    expect(aDuStock('', [montage])).toBe(false)
+    expect(aDuStock('', [montage, article({ stock: 2 })])).toBe(true)
   })
 
   it('suit la casse de ce que l’article porte', () => {

@@ -180,6 +180,32 @@ export function compterArticles(chemin: string, articles: Article[]): number {
 }
 
 /**
+ * How many units sit on the shelf in `chemin`, sub-folders included.
+ *
+ * This is what a shop counts when it looks at a shelf, and it is not the number
+ * of articles: a folder holding one tyre with twelve in stock is twelve, not
+ * one. Services (`stock === null`) contribute nothing — they cannot be counted,
+ * and counting them as zero would be right by accident but for the wrong
+ * reason.
+ */
+export function quantiteDans(chemin: string, articles: Article[]): number {
+  return articlesDans(chemin, articles).reduce(
+    (total, article) => total + (article.stock ?? 0),
+    0,
+  )
+}
+
+/**
+ * Whether `chemin` holds anything countable at all.
+ *
+ * A folder of services has no quantity to show: printing "0 en stock" beside
+ * "3 articles" would read as a shelf that ran out when there is no shelf.
+ */
+export function aDuStock(chemin: string, articles: Article[]): boolean {
+  return articlesDans(chemin, articles).some((article) => article.stock !== null)
+}
+
+/**
  * Where a copy of `chemin` lands under `parent`: the same name when it is free
  * there, then `(copie)`, then `(copie 2)`, exactly like the Android catalogue.
  */
