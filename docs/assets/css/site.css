@@ -172,8 +172,11 @@ a { color: inherit; }
 .bouton--plein { background: var(--bleu); color: var(--blanc); }
 .bouton--plein:hover { background: var(--nuit); }
 
-.bouton--contour { border-color: var(--nuit); color: var(--nuit); }
-.bouton--contour:hover { background: var(--nuit); color: var(--blanc); }
+/* Un bouton au contour reste clair au survol : il s'éclaircit d'un cran et
+   passe au bleu, il ne bascule pas en aplat sombre (le passage à --nuit
+   donnait l'impression que le bouton s'éteignait). */
+.bouton--contour { background: var(--blanc); border-color: var(--nuit); color: var(--nuit); }
+.bouton--contour:hover { background: var(--papier); border-color: var(--bleu); color: var(--bleu); }
 
 .bouton--petit { padding: 11px 16px; font-size: 14px; }
 
@@ -1238,6 +1241,9 @@ a { color: inherit; }
    bleus. Sans ces deux règles, .doc a repeint le libellé en bleu sur le bleu. */
 .doc a.bouton--plein { color: var(--blanc); }
 .doc a.bouton--contour { color: var(--nuit); }
+/* Sans cette règle, `.doc a.bouton--contour` (0,2,1) bat `.bouton--contour:hover`
+   (0,2,0) : le bouton gardait son texte nuit sur le fond clair du survol. */
+.doc a.bouton--contour:hover { color: var(--bleu); }
 
 .doc .enbref {
   margin: 0 0 30px;
