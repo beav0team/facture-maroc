@@ -129,6 +129,19 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   d’en-têtes qui manquait sur ordinateur. `.btn` ne garde plus le soulignement
   par défaut du navigateur. Le pied de page ne répète plus « Ce qu’elle fait,
   ce qu’elle ne fait pas » : huit pages portaient un `</li>` malformé.
+- **Recrutement des testeurs Android** (2026-11-13) : l’application Android
+  était absente de la vitrine depuis la refonte « tout web ». Elle a désormais
+  `docs/testeurs.html`, publique et indexable, parce que Google Play exige
+  **12 testeurs opt-in pendant 14 jours** avant d’ouvrir la publication. La
+  page reprend les trois étapes (groupe Google → test fermé → installation via
+  le badge Play officiel), montre trois captures réelles (documents, catalogue
+  avec les quantités, facture et PDF), explique la différence avec la webapp et
+  rappelle comment quitter le test. L’accueil a une section « Et sur Android,
+  sans réseau » et chaque pied de page renvoie vers `/testeurs`. `test.html`
+  reste en `noindex` pour les testeurs qui ont déjà l’adresse.
+  `check-site.mjs` n’interdit plus toute mention d’Android : elle exige qu’une
+  page qui en parle renvoie vers `/testeurs`, et interdit toujours un lien
+  direct vers `test.html`.
 - `docs/build.py` estampille aussi `assets/css/site.css?v=<empreinte>` dans
   chaque page : `docs/_headers` sert `/assets/*` en cache immuable un an, donc
   sans empreinte une correction de CSS n’atteignait jamais un visiteur déjà
