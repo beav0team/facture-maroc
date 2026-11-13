@@ -331,6 +331,48 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
 
 ---
 
+## FactureApp web — dossiers d'articles imbriqués (2026-11-13)
+
+Le catalogue web range comme celui d'Android : une grille de dossiers, un fil
+d'Ariane, puis les articles. Un dossier est un **chemin** (`Mobilier/Chaises`),
+pas un nœud avec un id — `articles.dossier` reste la clé de jointure, donc
+l'import d'une sauvegarde Android, l'export et la restauration ne changent pas.
+
+- **`article_folders`** (migration `0011_dossiers.sql`) porte ce que la colonne
+  ne peut pas dire : un dossier vide. Sans elle, vider un rayon le faisait
+  disparaître et un renommage n'avait aucune ligne à réécrire. Index unique
+  `(shop_id, lower(chemin))`, donc `Mobilier` et `mobilier` sont le même rayon.
+  Un déclencheur normalise `  Mobilier /  Chaises  ` et matérialise les parents,
+  sans quoi la grille ne dessinerait pas la tuile du rayon. Reprise des
+  catalogues existants incluse.
+- **Gestes** (migration `0012_dossiers_rpc.sql`) : créer, renommer, déplacer,
+  copier et supprimer, **une transaction par geste** — renommer réécrit tout le
+  sous-arbre, et une connexion qui tombe au milieu laisserait la moitié des
+  articles dans l'ancien rayon. Écriture uniquement par ces fonctions
+  (`security definer`, RLS en lecture seule sur la table).
+- **`dossier_est_dans`** compare le préfixe **suivi du séparateur** :
+  `Mobilier d'appoint` n'est pas dans `Mobilier`. Un `like 'Mobilier%'` aurait
+  pris l'un pour l'autre à la suppression.
+- **Suppression** : le geste normal refuse tant qu'il reste un sous-dossier et
+  remonte les articles chez le parent (rien n'est perdu). « Supprimer
+  définitivement » est un second geste explicite qui exige de taper le nom du
+  dossier, vérifié en base — pas seulement dans la boîte de dialogue.
+- **Copie** : le code-barres est retiré (l'index d'unicité interdit deux
+  articles au même code : un code est un objet physique) et les libellés
+  gagnent `(copie)`, `(copie 2)`, comme sur Android.
+- **Écran** : recherche profonde dans le dossier courant ; un article créé
+  depuis un dossier y arrive déjà rempli ; menu par tuile ; le fil d'Ariane est
+  le seul retour, donc cliquable. Route `/app/articles/<chemin encodé>` et
+  règle `_redirects` explicite — jamais `/app/*`, qui avalerait les `.js`.
+- **Preuves** : 25 tests de règles (`tests/dossiers.test.ts`), 4 tests d'écran,
+  et `supabase/tests/rls_dossiers.sql` (parents, casse, renommage, déplacement,
+  copie sans code-barres, les deux suppressions, isolation entre boutiques).
+  Suite complète 260 tests, `svelte-check` 0 erreur.
+- Migrations `0011` puis `0012` appliquées en production le 2026-11-13. Le
+  build n'est poussé sur `master` qu'après la préversion locale.
+
+---
+
 ## In progress — refonte de l'interface (2026-11-10)
 
 Publié sur **GitHub** `v0.12.0-beta.4` (APK R8 + AAB + mapping) ;

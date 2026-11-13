@@ -492,3 +492,35 @@ confirmer qu'un ICE bien formé existe vraiment. Un ICE client absent reste
 accepté (la boutique ne peut pas inventer le numéro de son client).
 Les 3 migrations (0008, 0009, 0010) sont appliquées en production sur
 `njbfvskjexzlnvenmxml`.
+
+### 2026-11-13 — Dossiers d'articles : un chemin, pas un nœud
+Un dossier est stocké comme une chaîne (`Mobilier/Chaises`), et non comme une
+ligne avec un `parent_id`. Deux raisons : `articles.dossier` reste la clé de
+jointure, donc l'import Android, l'export et la restauration ne changent pas
+d'un octet ; et l'arborescence se lit dans un dump sans jointure. Le prix est
+que les règles de l'arbre sont des règles de chaîne — parent, enfants,
+appartenance — donc elles vivent dans un module pur (`lib/dossiers.ts`)
+testé, et la même règle est écrite une fois en SQL (`dossier_est_dans`).
+
+La table `article_folders` ne remplace pas la colonne : elle existe pour les
+dossiers **vides** et pour les lignes qu'un renommage réécrit. Sans elle,
+supprimer le dernier article d'un rayon faisait disparaître le rayon.
+
+Les écritures passent par des fonctions `security definer` et non par des
+`update` de l'onglet : renommer ou déplacer réécrit tout le sous-arbre, et une
+connexion qui tombe au milieu laisserait un catalogue à moitié déplacé.
+Chaque geste est une transaction.
+
+La suppression a deux gestes distincts. Le geste normal refuse tant qu'il
+reste un sous-dossier et remonte les articles chez le parent : rien n'est
+perdu, et c'est ce que fait un commerce qui « enlève une étagère ». La
+suppression récursive est séparée, nommée « Supprimer définitivement », et
+exige de taper le nom du dossier — contrôlé par la base, pas seulement par la
+boîte de dialogue, pour qu'un onglet resté ouvert ne puisse pas lancer ça par
+accident.
+
+La copie retire les codes-barres et suffixe les libellés `(copie)`. Un code
+est un objet physique : dupliquer un code rendrait le scan d'une facture
+ambigu, et l'index d'unicité le refuserait de toute façon. Le suffixe de
+libellé évite deux « Chaise en rotin » indiscernables dans le sélecteur
+d'article de l'éditeur.
