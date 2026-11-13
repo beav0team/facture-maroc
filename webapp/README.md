@@ -90,7 +90,7 @@ sans jamais les faire reculer.
 
 ### 2 bis. Nommer un administrateur
 
-Le panneau `/app/admin` (activation manuelle du plan Pro) est réservé aux
+Le panneau `/app/admin` (activation manuelle des trois paliers) est réservé aux
 utilisateurs présents dans `platform_admins`. Après la première connexion,
 récupérer l'identifiant dans Authentication → Users, puis dans SQL Editor :
 
@@ -250,8 +250,9 @@ le site et l'application Android casse la suite.
 
 ## Limites connues
 
-- Le paiement en ligne n'existe pas : le plan Pro est activé manuellement dans
-  `/app/admin` après virement ou espèces. C'est assumé pour le lancement.
+- Le paiement en ligne n'existe pas : Essentiel et Pro sont activés
+  manuellement dans `/app/admin` après virement ou espèces. C'est assumé pour le
+  lancement.
 - Les paliers de prix et les attributs libres d'un article sont stockés et
   conservés, mais pas encore modifiables dans l'interface web.
 - Une seule boutique par utilisateur dans l'interface. Le schéma en autorise

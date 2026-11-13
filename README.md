@@ -17,7 +17,8 @@ Sur le Play Store : **0.11.1** (versionCode 18) tant que la 0.12.0 n'y est pas t
 Le même moteur de facturation dans le navigateur, sur
 **[factureapp.ma/app](https://factureapp.ma/app/)** : comptes, boutiques,
 numérotation automatique, PDF archivé, paiements et relevés clients. Gratuit
-jusqu'à 5 factures émises par mois ; plan Pro à 990 DH par an.
+jusqu'à 5 factures émises par mois ; Essentiel à 240 DH par an (50 documents) et
+Pro à 480 DH par an (illimité).
 
 La webapp vit dans [`webapp/`](webapp/) (Vite + Svelte 5 + TypeScript +
 Supabase) et se construit dans `docs/app/`. L'application Android reste
@@ -207,9 +208,9 @@ le générateur [`docs/facture-modele-marocain-gratuit.html`](docs/facture-model
 et [`docs/avis.html`](docs/avis.html), qui énumère ce que la webapp fait et ne
 fait pas. Le langage visuel est fixé dans [`docs/DESIGN.md`](docs/DESIGN.md).
 
-Le prix du plan Pro n’est écrit qu’à un endroit, `webapp/src/lib/offres.ts` :
-`/tarifs` redirige en 301 vers `/app/tarifs`, qui le lit. Aucun montant ne doit
-être recopié dans le HTML.
+Les prix des trois paliers ne sont écrits qu’à un endroit,
+`webapp/src/lib/offres.ts` : `/tarifs` redirige en 301 vers `/app/tarifs`, qui
+les lit. Aucun montant ne doit être recopié dans le HTML.
 
 `python3 docs/build.py` régénère le `sitemap.xml` (avec `lastmod` pris sur git)
 et aligne la version affichée sur `app/build.gradle.kts` ;
