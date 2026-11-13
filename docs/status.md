@@ -52,6 +52,19 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   `Site not found`) — il faut ajouter `www` comme domaine personnalisé dans le
   projet Cloudflare Pages `factureapp` puis rediriger vers l’apex ; aucun
   identifiant Cloudflare n’est disponible sur la machine, donc non fait.
+- **`www` corrigé le 2026-11-13**, entièrement au niveau de la zone, sans
+  toucher au projet Pages : CNAME `www` proxifié vers `factureapp.pages.dev`
+  plus une Redirect Rule dynamique (`concat("https://factureapp.ma",
+  http.request.uri.path)`, 301, query conservée) dans la phase
+  `http_request_dynamic_redirect`. Vérifié : `/`, `/avis` et
+  `/facturation-electronique-maroc` répondent 301 vers l’apex, chemin et query
+  conservés, certificat `*.factureapp.ma` valide. Script rejouable :
+  `~/.local/share/factureapp/fix-www.sh`, jeton dans
+  `~/.config/cloudflare/api.env` (portées DNS + Config Rules).
+  **L’API Pages demande une portée « compte » que le jeton n’a pas** :
+  `/accounts/<id>` et `/accounts/<id>/pages/...` répondent 9109 — d’où la
+  solution de zone. **`curl -4` obligatoire** : l’IPv6 casse
+  `api.cloudflare.com` sur cette machine (même famille de panne que Supabase).
 - **CGV** (2026-11-12) : `docs/cgv.html` — plans, activation, prix, durée,
   rétractation, disponibilité, responsabilité, droit marocain. Le prix du Pro y
   est imprimé et vérifié contre `offres.ts`, comme sur l’accueil ; aucune autre
