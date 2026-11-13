@@ -63,7 +63,7 @@
     </nav>
 
     <h1>Une facture marocaine gratuite, dans le navigateur</h1>
-    <p class="maj">Mis à jour le 12 novembre 2026 · sans compte, sans installation</p>
+    <p class="maj">Mis à jour le 13 novembre 2026 · sans compte, sans installation</p>
 
     <div class="enbref">
       <p>Le générateur calcule le HT, la TVA et le TTC en dirhams, puis produit
@@ -75,6 +75,43 @@
       <a class="bouton bouton--plein" href="app/gratuit">Créer ma facture gratuite</a>
     </p>
 
+    <h2>Trois façons d’obtenir un modèle de facture marocaine</h2>
+    <p>
+      Un « modèle de facture » ne veut pas dire la même chose selon ce que vous
+      cherchez : un fichier à remplir, un formulaire qui calcule, ou un document
+      numéroté et conservé. Les trois existent, et ils ne rendent pas le même
+      service.
+    </p>
+    <div class="tableau">
+    <table>
+      <caption>Ce que chaque solution produit réellement.</caption>
+      <thead>
+        <tr>
+          <th scope="col">Solution</th>
+          <th scope="col">Ce que vous obtenez</th>
+          <th scope="col">Ce qu’il faut prévoir</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Solution"><span>Un modèle Word ou Excel téléchargé</span></td>
+          <td data-label="Résultat">Une mise en page à remplir</td>
+          <td data-label="À prévoir">Les calculs, le numéro et la conservation restent à votre charge</td>
+        </tr>
+        <tr>
+          <td data-label="Solution"><span>Le générateur gratuit, sans compte</span></td>
+          <td data-label="Résultat">Un PDF A4 avec totaux et TVA justes</td>
+          <td data-label="À prévoir">Ni numéro suivi, ni archive : la pièce n’est pas complète</td>
+        </tr>
+        <tr>
+          <td data-label="Solution"><span>Un compte gratuit</span></td>
+          <td data-label="Résultat">Un document numéroté, archivé, retrouvable</td>
+          <td data-label="À prévoir">Cinq documents facturés par mois, sans carte bancaire</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
     <h2>Ce que le générateur fait</h2>
     <ul>
       <li>le nom de votre boutique et celui du client ;</li>
@@ -84,7 +121,75 @@
       <li>un PDF au format A4, prêt à imprimer ou à envoyer.</li>
     </ul>
 
-    <h2>Ce qu’il ne fait pas</h2>
+    <h2>Un exemple chiffré, ligne par ligne</h2>
+    <p>
+      Deux lignes suffisent à voir où se glissent les erreurs dans un tableur :
+      la TVA se calcule sur le total HT, pas ligne par ligne, et l’arrondi se
+      fait une seule fois, à la fin.
+    </p>
+    <div class="tableau">
+    <table>
+      <caption>Une facture de garage, TVA à 20 %.</caption>
+      <thead>
+        <tr>
+          <th scope="col">Désignation</th>
+          <th scope="col">Quantité × prix unitaire</th>
+          <th scope="col">Total HT</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Désignation"><span>Pose de plaquettes avant</span></td>
+          <td data-label="Quantité × prix">1 × 250 DH</td>
+          <td data-label="Total HT">250,00 DH</td>
+        </tr>
+        <tr>
+          <td data-label="Désignation"><span>Jeu de plaquettes avant</span></td>
+          <td data-label="Quantité × prix">1 × 480 DH</td>
+          <td data-label="Total HT">480,00 DH</td>
+        </tr>
+        <tr>
+          <td data-label="Désignation"><span>Total HT</span></td>
+          <td data-label="Quantité × prix">—</td>
+          <td data-label="Total HT">730,00 DH</td>
+        </tr>
+        <tr>
+          <td data-label="Désignation"><span>TVA 20 %</span></td>
+          <td data-label="Quantité × prix">730,00 × 0,20</td>
+          <td data-label="Total HT">146,00 DH</td>
+        </tr>
+        <tr>
+          <td data-label="Désignation"><span>Total TTC</span></td>
+          <td data-label="Quantité × prix">—</td>
+          <td data-label="Total HT">876,00 DH</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      Sous les totaux, la formule en toutes lettres : « Arrêtée la présente
+      facture à la somme de huit cent soixante-seize dirhams ». C’est la ligne
+      qu’un tableur oublie, et celle qu’un comptable vérifie en premier sur un
+      montant rond.
+    </p>
+
+    <h2>Ce qu’un modèle téléchargé ne fait pas</h2>
+    <p>
+      Un fichier Word ou Excel est une mise en page, pas un registre. Ce qu’il
+      ne fait pas, et qui compte autant que la mise en page :
+    </p>
+    <ul>
+      <li><strong>il ne numérote pas.</strong> Deux factures finissent par porter
+        le même numéro, et une série avec un trou se corrige mal ;</li>
+      <li><strong>il ne conserve pas.</strong> Le fichier vit dans un dossier,
+        sur un téléphone, et il est envoyé une fois puis oublié ;</li>
+      <li><strong>il ne recalcule pas.</strong> Une ligne ajoutée à la main dans
+        le tableau change les totaux sans prévenir ;</li>
+      <li><strong>il ne fige pas le document.</strong> Une facture émise qui se
+        réécrit trois semaines plus tard n’est plus la même pièce.</li>
+    </ul>
+
+    <h2>Ce que le générateur ne fait pas</h2>
     <p>
       Il ne numérote pas la facture et ne la conserve pas : un document sans
       numéro suivi n’est pas une pièce comptable complète. Ces deux gestes
@@ -108,6 +213,51 @@
       <a href="mentions-obligatoires-facture-maroc">Mentions obligatoires d’une facture marocaine</a>
       explique ce que chaque case signifie.
     </p>
+    <p>
+      Un auto-entrepreneur, lui, produit une facture sans TVA : le
+      <a href="facture-auto-entrepreneur-maroc">guide qui lui est consacré</a>
+      détaille la mention à porter et le total sans TTC.
+    </p>
+
+    <h2>Questions fréquentes</h2>
+
+    <h3>Un fichier Excel suffit-il à tenir une facturation ?</h3>
+    <p>
+      Pour une vente unique, oui : le document tient. Dès qu’il y a une série —
+      une facture par client, chaque mois — le classeur devient le point faible :
+      personne ne vérifie que le numéro suivant est le bon, et une copie
+      enregistrée ailleurs casse la série.
+    </p>
+
+    <h3>Le générateur est-il vraiment gratuit ?</h3>
+    <p>
+      Oui, et sans création de compte. Aucun filigrane n’est ajouté au PDF : le
+      document produit par le générateur gratuit est identique à celui d’un
+      compte, à ceci près qu’il n’a ni numéro suivi ni archive.
+    </p>
+
+    <h3>Où vont les données saisies dans le générateur ?</h3>
+    <p>
+      Elles restent dans votre navigateur. Rien n’est envoyé à un serveur tant
+      que vous n’avez pas créé de compte ; si vous en créez un, le brouillon est
+      repris une seule fois dans l’éditeur. Le détail est dans la
+      <a href="confidentialite">politique de confidentialité</a>.
+    </p>
+
+    <p class="source">Références : article 145 du Code général des impôts
+      (mentions de la facture, TVA par ligne), loi 9-88 sur les obligations
+      comptables (conservation des documents). Ce guide décrit ce que
+      FactureApp produit et ce que demandent les textes ; il ne remplace pas
+      l’avis de votre comptable.</p>
+
+    <p class="signature">Écrit par Yassine, développeur de FactureApp.
+      Dernière vérification : 13 novembre 2026. Une erreur dans cette page ?
+      <a href="contact">Signalez-la</a>.</p>
+
+    <div class="suite">
+      <a class="bouton bouton--plein" href="app/gratuit">Créer ma facture gratuite</a>
+      <a class="bouton bouton--contour" href="facturation-electronique-maroc">Où en est la réforme</a>
+    </div>
 
   </article>
 </main>
@@ -135,6 +285,7 @@
             <li><a href="facture-modele-marocain-gratuit" aria-current="page">Modèle de facture</a></li>
             <li><a href="facture-auto-entrepreneur-maroc">Facture auto-entrepreneur</a></li>
             <li><a href="logiciel-facturation-gratuit-maroc">Logiciel de facturation gratuit</a></li>
+            <li><a href="facturation-electronique-maroc">Facturation électronique</a></li>
             <li><a href="factureapp-ou-hisab">FactureApp ou Hisab</a></li>
             <li><a href="avis">Ce qu’elle fait, ce qu’elle ne fait pas</a></li>
           </ul>

@@ -31,6 +31,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://factureapp.ma/facturation-electronique-maroc</loc>
+    <lastmod>2026-11-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://factureapp.ma/factureapp-ou-hisab</loc>
     <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>

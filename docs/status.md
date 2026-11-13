@@ -39,6 +39,19 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   paiements, relances, hors ligne).
 - `webapp/scripts/check-site.mjs`, appelé par `build.sh` : chaque page doit
   avoir l’en-tête, un lien `/app/`, aucune ancre morte et aucun prix en dur.
+- **Passe SEO** (2026-11-13) : audit du site, corrections appliquées. Nouvelle
+  page `facturation-electronique-maroc.html` (868 mots) sur la réforme DGI —
+  ce qui est publié, ce qui ne l’est pas, sans revendiquer de conformité ;
+  liée depuis 11 pieds de page, la FAQ de l’accueil, `mentions-obligatoires`,
+  `avis` et `factureapp-ou-hisab`, et ajoutée à `build.py` (donc au sitemap).
+  `facture-modele-marocain-gratuit.html` passe de 351 à 907 mots (trois
+  solutions comparées, exemple chiffré avec TVA, ce qu’un tableur ne fait pas,
+  FAQ). Cinq meta descriptions ramenées sous 160 caractères. `check-site.mjs`
+  et `check-layout.mjs` passent (14 pages × 8 largeurs).
+  **Reste ouvert : `www.factureapp.ma` répond encore 404** (GitHub Pages,
+  `Site not found`) — il faut ajouter `www` comme domaine personnalisé dans le
+  projet Cloudflare Pages `factureapp` puis rediriger vers l’apex ; aucun
+  identifiant Cloudflare n’est disponible sur la machine, donc non fait.
 - **CGV** (2026-11-12) : `docs/cgv.html` — plans, activation, prix, durée,
   rétractation, disponibilité, responsabilité, droit marocain. Le prix du Pro y
   est imprimé et vérifié contre `offres.ts`, comme sur l’accueil ; aucune autre

@@ -43,6 +43,8 @@ PAGES = [
      "https://factureapp.ma/facture-auto-entrepreneur-maroc", "0.8", "monthly"),
     ("logiciel-facturation-gratuit-maroc.html",
      "https://factureapp.ma/logiciel-facturation-gratuit-maroc", "0.8", "monthly"),
+    ("facturation-electronique-maroc.html",
+     "https://factureapp.ma/facturation-electronique-maroc", "0.7", "monthly"),
     ("factureapp-ou-hisab.html",
      "https://factureapp.ma/factureapp-ou-hisab", "0.7", "monthly"),
     ("avis.html", "https://factureapp.ma/avis", "0.7", "monthly"),
