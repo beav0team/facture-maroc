@@ -1254,6 +1254,15 @@ a { color: inherit; }
 }
 .doc .enbref p:last-child { margin: 0; }
 
+/* Deux liens vers les guides voisins, juste sous l'encadré : le maillage
+   interne des guides ne dépend plus du seul pied de page. */
+.doc .lire-aussi {
+  margin: -12px 0 30px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ardoise);
+}
+
 .doc table {
   width: 100%;
   margin: 0 0 26px;
