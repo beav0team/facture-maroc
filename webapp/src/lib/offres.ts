@@ -1,9 +1,10 @@
-// Les trois formules, à un seul endroit.
+// Les trois formules : la structure, les libellés et les valeurs par défaut.
 //
-// Le site marketing n'affiche aucun montant : la seule page qui imprime un
-// prix est /app/tarifs, et elle lit ce fichier. Changer un prix ici le change
-// partout, sans copie à retrouver dans le HTML. `scripts/check-site.mjs` relit
-// ce fichier et refuse un site dont un palier ne correspond plus.
+// Depuis la 0016, le prix annuel, le quota et les prestations des deux paliers
+// payants se règlent dans la console (`/app/admin/reglages`) et vivent en base ;
+// ce fichier fournit les défauts quand rien n'est réglé, la clé et le nom de
+// chaque palier, et les puces du plan gratuit, qui ne se vend pas. Changer un
+// prix ici change donc le défaut, pas le barème en vigueur.
 //
 // Trois paliers, un seul axe : les documents facturés par mois. Le plan
 // gratuit reste à cinq — c'est le plancher du marché marocain, s'y aligner est

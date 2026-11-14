@@ -33,12 +33,16 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   `noindex` et sans lien entrant, pour les testeurs qui ont l’adresse.
 - `docs/DESIGN.md` fixe le langage : carnet à souches, perforation, tampon,
   numéros de série, et la liste de ce qui est interdit.
-- `/tarifs` → `/app/tarifs` en 301 ; les trois prix ne vivent que dans
-  `webapp/src/lib/offres.ts`, aucun montant n'est écrit dans le HTML.
+- `/tarifs` → `/app/tarifs` en 301 ; le barème payant se règle dans la console
+  (migration `0016_tarifs.sql`) et `offres.ts` n’en garde que les défauts. Le
+  site statique porte des blocs balisés `data-tarif`, réécrits au build par
+  `webapp/scripts/tarifs-site.mjs` depuis `reglages_publics()`.
 - `docs/avis.html` : ce que la webapp fait et ne fait pas (stock, DGI,
   paiements, relances, hors ligne).
-- `webapp/scripts/check-site.mjs`, appelé par `build.sh` : chaque page doit
-  avoir l’en-tête, un lien `/app/`, aucune ancre morte et aucun prix en dur.
+- `webapp/scripts/check-site.mjs`, appelé par `build.sh` juste après
+  `tarifs-site.mjs` : chaque page doit avoir l’en-tête, un lien `/app/`, aucune
+  ancre morte, des marqueurs `data-tarif` bien formés et identiques d’une page à
+  l’autre, et aucun prix écrit à la main hors marqueur.
 - **Passe SEO** (2026-11-13) : audit du site, corrections appliquées. Nouvelle
   page `facturation-electronique-maroc.html` (868 mots) sur la réforme DGI —
   ce qui est publié, ce qui ne l’est pas, sans revendiquer de conformité ;
@@ -77,6 +81,24 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   gratuit en gardant la trace du palier acheté (`expire`, « Essentiel expiré le
   … » dans la console). `admin_abonnement` accepte les trois paliers, exige une
   date future sur les payants et journalise chaque changement.
+- **Achat par WhatsApp** (2026-11-14, migration `0015_reglages.sql`) : le
+  numéro se règle dans la console, onglet Réglages — il vit dans
+  `plateforme_reglages` (aucune politique) et sort par `reglages_publics()`,
+  la seule fonction ouverte à `anon`, parce que `/app/tarifs` se visite sans
+  compte. Les deux cartes payantes affichent alors « Commander sur WhatsApp »
+  avec un message prérempli (nom et prix lus dans `offres.ts`), l’e-mail
+  restant en second ; sans numéro, le bouton n’existe pas et l’e-mail reprend
+  la main. `admin_reglage_whatsapp` normalise (06… → 212…), refuse un texte et
+  journalise `reglage_modifie` avec l’ancien et le nouveau.
+- **Tarifs réglables** (2026-11-14, migration `0016_tarifs.sql`) : le prix
+  annuel, le quota de documents et les prestations des deux paliers payants
+  s’enregistrent dans l’onglet Réglages (clé `tarifs` de
+  `plateforme_reglages`), avec les mêmes bornes côté SQL et côté écran (prix
+  entier 50–50 000 DH, quota 6–100 000, 1 à 8 prestations de 3–140
+  caractères, Pro toujours illimité). `quota_limite()` lit ce quota : ce qui
+  est affiché est ce qui est appliqué. Les blocs du site statique marqués
+  `data-tarif` sont réécrits au build par `scripts/tarifs-site.mjs` ;
+  `check-site.mjs` vérifie ensuite la forme et la cohérence entre pages.
 - **Entrée par l’inscription** : les boutons « Créer ma facture » et « Commencer »
   pointent sur `/app/?mode=signup`. « Connexion » et « Se connecter » restent sur
   `/app/`. Le générateur fait de même après un brouillon.

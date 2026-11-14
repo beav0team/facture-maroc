@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 // Guards the marketing site: a page must keep the shared shell, link to the app,
-// carry no Android, and print a price only where offres.ts says so.
+// carry no Android, and print the paid prices only where they were injected.
 //
-// Run from webapp/: `node scripts/check-site.mjs`. build.sh calls it before
-// `pnpm build` so Cloudflare refuses a deploy that would break the funnel.
+// Run from webapp/: `node scripts/check-site.mjs`. `build.sh` runs
+// `scripts/tarifs-site.mjs` first, then this guard, so Cloudflare refuses a
+// deploy that would break the funnel or publish a price the console does not
+// agree with.
 
 import { readdir, readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -23,38 +25,116 @@ const fichiers = (await readdir(docs))
 const index = await readFile(join(docs, 'index.html'), 'utf8')
 const idsIndex = new Set([...index.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]))
 
-// The prices exist once, in webapp/src/lib/offres.ts. The homepage may print
-// them, and the terms page has to state them, but only the exact values found
-// there: a stale copy fails the build instead of quietly diverging from what
-// /app/tarifs charges.
-const offres = await readFile(join(ici, '..', 'src', 'lib', 'offres.ts'), 'utf8')
+// --------------------------------------------------------------- les prix
+//
+// Prices are data since migration 0016. `scripts/tarifs-site.mjs` writes them
+// into the tags that carry `data-tarif="…"`, from `reglages_publics()`. This
+// guard does not know the database: it checks that what is written there is
+// well formed, identical on every page, and never duplicated by hand outside a
+// marker. The free plan (0 DH) is not a setting and stays hard-coded.
 
-function lireOffre(cle) {
-  const debut = offres.indexOf(`cle: '${cle}'`)
-  if (debut < 0) return null
-  const fin = offres.indexOf('\n  },', debut)
-  const bloc = offres.slice(debut, fin < 0 ? undefined : fin)
-  return {
-    cle,
-    nom: bloc.match(/nom:\s*'([^']+)'/)?.[1] ?? null,
-    prix: bloc.match(/prix:\s*'([^']+)'/)?.[1] ?? null,
-    periode: bloc.match(/periode:\s*'([^']+)'/)?.[1] ?? null,
+const element = (cle) =>
+  new RegExp(`<([a-zA-Z][\\w-]*)[^>]*\\bdata-tarif="${cle}"[^>]*>([\\s\\S]*?)</\\1>`, 'g')
+
+const sansBalises = (texte) =>
+  texte
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&#160;|&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+/** Les clés `data-tarif="…"` de la page, avec leur contenu en texte. */
+function marqueurs(html) {
+  const valeurs = new Map()
+  for (const [, cle] of html.matchAll(/data-tarif="([^"]+)"/g)) {
+    const trouves = [...html.matchAll(element(cle))].map((m) => sansBalises(m[2]))
+    if (trouves.length === 0) continue
+    valeurs.set(cle, trouves)
   }
+  return valeurs
 }
 
-const CLES = ['gratuit', 'essentiel', 'pro']
-const offresLues = CLES.map(lireOffre)
-for (const offre of offresLues) {
-  if (!offre || !offre.prix || !offre.periode) {
-    erreurs.push(`offres.ts: le palier « ${offre?.cle ?? '?'} » est incomplet`)
-  }
+/** Le HTML débarrassé des blocs injectés, pour y chercher un prix recopié. */
+function sansMarqueurs(html) {
+  return html
+    .replace(/<([a-zA-Z][\w-]*)[^>]*\bdata-tarif="[^"]+"[^>]*>[\s\S]*?<\/\1>/g, '')
+    .replace(/<ul[^>]*\bdata-tarif-liste="[^"]+"[^>]*>[\s\S]*?<\/ul>/g, '')
 }
 
-// Every price the site is allowed to print, per page.
-const autorisees = new Map([
-  ['index.html', offresLues],
-  ['cgv.html', offresLues.filter((offre) => offre?.cle !== 'gratuit')],
+const PAYANTES = ['index.html', 'cgv.html']
+// Chaque page qui vend doit porter les prix, le quota d'Essentiel et — sur
+// l'accueil — les listes de prestations.
+const ATTENDUS = new Map([
+  ['index.html', ['essentiel-prix', 'pro-prix', 'essentiel-quota']],
+  ['cgv.html', ['essentiel-prix', 'pro-prix', 'essentiel-quota']],
 ])
+const LISTES = new Map([['index.html', ['essentiel', 'pro']]])
+
+const prixParCle = new Map()
+
+for (const nom of PAYANTES) {
+  const html = await readFile(join(docs, nom), 'utf8')
+  const trouves = marqueurs(html)
+
+  for (const cle of ATTENDUS.get(nom) ?? []) {
+    if (!trouves.has(cle)) {
+      erreurs.push(`${nom}: marqueur data-tarif="${cle}" manquant`)
+    }
+  }
+
+  for (const plan of LISTES.get(nom) ?? []) {
+    const motif = new RegExp(`<ul[^>]*\\bdata-tarif-liste="${plan}"[^>]*>([\\s\\S]*?)</ul>`)
+    const liste = html.match(motif)?.[1]
+    if (!liste) {
+      erreurs.push(`${nom}: liste data-tarif-liste="${plan}" manquante`)
+      continue
+    }
+    const puces = [...liste.matchAll(/<li>([\s\S]*?)<\/li>/g)].length
+    if (puces < 1 || puces > 8) {
+      erreurs.push(`${nom}: la liste ${plan} compte ${puces} prestations (1 à 8 attendues)`)
+    }
+  }
+
+  for (const [cle, valeurs] of trouves) {
+    if (new Set(valeurs).size > 1) {
+      erreurs.push(`${nom}: les marqueurs "${cle}" ne disent pas la même chose (${valeurs.join(' / ')})`)
+    }
+    const valeur = valeurs[0]
+
+    if (cle.endsWith('-prix')) {
+      const montant = Number(valeur.match(/^(\d{2,5}) DH$/)?.[1])
+      if (!Number.isInteger(montant) || montant < 50 || montant > 50_000) {
+        erreurs.push(`${nom}: ${cle} vaut « ${valeur} », pas un prix entier entre 50 et 50 000 DH`)
+      }
+    } else if (cle.endsWith('-quota')) {
+      const quota = Number(valeur)
+      if (!Number.isInteger(quota) || quota < 6 || quota > 100_000) {
+        erreurs.push(`${nom}: ${cle} vaut « ${valeur} », pas un quota entier entre 6 et 100 000`)
+      }
+    }
+
+    const deja = prixParCle.get(cle)
+    if (deja && deja.valeur !== valeur) {
+      erreurs.push(`le marqueur "${cle}" vaut « ${deja.valeur} » sur ${deja.nom} et « ${valeur} » sur ${nom}`)
+    } else if (!deja) {
+      prixParCle.set(cle, { valeur, nom })
+    }
+  }
+
+  // A price typed by hand outside a marker would silently disagree with the
+  // console. The mock invoices above print amounts like « 2 304,00 DH » or
+  // « 1 × 480 DH », so only a bare amount followed by DH is suspicious, and 0
+  // (the free plan) is legitimate.
+  const restant = sansBalises(sansMarqueurs(html))
+  for (const [, montant] of restant.matchAll(/(?<![\d,.])(\d{1,5})\s*DH/g)) {
+    if (montant === '0') continue
+    erreurs.push(`${nom}: prix écrit à la main « ${montant} DH » hors d'un marqueur data-tarif`)
+  }
+}
+
+if (!/0\s*DH/.test(index)) {
+  erreurs.push('index.html: le prix du plan gratuit (0 DH) a disparu')
+}
 
 // The old single Pro price must never come back.
 const ANCIEN_PRIX = '990 DH'
@@ -74,39 +154,6 @@ for (const nom of fichiers) {
 
   if (html.includes(ANCIEN_PRIX)) {
     erreurs.push(`${nom}: l'ancien prix de ${ANCIEN_PRIX} traîne encore`)
-  }
-
-  const attendues = autorisees.get(nom)
-  for (const offre of offresLues) {
-    if (!offre?.prix) continue
-    const montant = offre.prix.match(/\d+/)?.[0]
-    if (!montant || montant === '0') continue
-    if (attendues?.includes(offre)) {
-      if (!html.includes(offre.prix)) {
-        erreurs.push(
-          `${nom}: le prix ${offre.nom} (${offre.prix}) manque ou ne correspond plus à offres.ts`,
-        )
-      }
-      if (!html.includes(offre.periode)) {
-        erreurs.push(
-          `${nom}: la période ${offre.nom} (${offre.periode}) ne correspond plus à offres.ts`,
-        )
-      }
-    } else if (
-      new RegExp(`${montant}\\s*DH\\s*(?:<small|${offre.periode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`).test(
-        html,
-      )
-    ) {
-      erreurs.push(`${nom}: le prix ${offre.nom} est recopié (il vit dans offres.ts)`)
-    }
-  }
-
-  // The homepage also prints the free tier; its wording must match too.
-  if (attendues?.includes(offresLues[0])) {
-    const gratuit = offresLues[0]
-    if (!html.includes(gratuit.prix)) {
-      erreurs.push(`${nom}: le prix ${gratuit.nom} (${gratuit.prix}) manque`)
-    }
   }
 
   // The site sells the web app. test.html is the legacy Android install page,
@@ -154,4 +201,8 @@ if (erreurs.length) {
   process.exit(1)
 }
 
-console.log(`Site marketing — ${fichiers.length} pages vérifiées, ${CLES.length} paliers.`)
+const bareme = [...prixParCle]
+  .filter(([cle]) => cle.endsWith('-prix'))
+  .map(([cle, { valeur }]) => `${cle.replace('-prix', '')} ${valeur}`)
+  .join(', ')
+console.log(`Site marketing — ${fichiers.length} pages vérifiées, ${bareme}.`)

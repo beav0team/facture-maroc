@@ -11,6 +11,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Le barème payant vit dans la console (migration 0016) : les blocs balisés du
+# site sont réécrits depuis `reglages_publics()` avant d'être vérifiés. Si la
+# base est injoignable, les valeurs déjà publiées sont conservées.
+node scripts/tarifs-site.mjs
+
 # Vérifie le site marketing avant de compiler : une page sans navigation, sans
 # lien vers l'application ou avec un prix recopié fait échouer le déploiement.
 node scripts/check-site.mjs

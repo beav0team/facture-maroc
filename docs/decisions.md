@@ -553,3 +553,61 @@ Trois garde-fous :
 future obligatoire sur les payants, et journalisation (`action='abonnement'`,
 `{ancien, nouveau, jusqu_au, note}`) — c'était le dernier geste de la console
 qui ne laissait aucune trace.
+
+### 2026-11-14 — Le numéro WhatsApp se règle dans la console, il ne se code pas
+Sans compte marchand (pas d'ICE, pas de RIB professionnel), le seul chemin
+d'achat possible aujourd'hui est le contact direct : virement, espèces, ou
+WhatsApp. Un numéro écrit dans `offres.ts` aurait demandé un déploiement à
+chaque changement et aurait exposé le projet à un numéro périmé sur une page
+publique. Il devient donc un réglage : table `plateforme_reglages`
+(`0015_reglages.sql`), onglet **Réglages** de la console.
+
+Trois choix :
+- **`reglages_publics()` est la seule fonction lisible par `anon`,** et elle ne
+  rend que `whatsapp`. La table n'a aucune politique : ajouter une clé ne
+  l'expose pas tant que la fonction ne la nomme pas. `/app/tarifs` est
+  publique, donc il faut bien cette ouverture — mais une seule, nommée.
+- **Sans numéro, rien ne casse.** Le bouton n'apparaît pas et la demande par
+  e-mail reste ; une valeur vide est un état normal, pas une erreur.
+- **Un texte n'est pas un numéro.** `admin_reglage_whatsapp` n'accepte que
+  chiffres et séparateurs : sans ce contrôle, « bonjour » perdrait ses lettres
+  et ressemblerait à une demande d'effacement. Les formes `06…`/`07…`/`05…`
+  deviennent `212…`, le reste doit être au format international.
+
+Le paiement par carte reste hors sujet à cette date : il demande un compte
+marchand, donc une société. Le réglage permet en revanche de basculer l'achat
+vers WhatsApp sans toucher au code.
+
+### 2026-11-14 — Les prix et les prestations se règlent aussi dans la console
+Un prix est une décision commerciale. Le garder dans `offres.ts` signifiait un
+commit, une relecture du site et un déploiement pour changer 240 DH, alors que
+la console change déjà les plans et les boutiques. `0016_tarifs.sql` ajoute une
+clé `tarifs` à `plateforme_reglages`, écrite par `admin_tarifs` et publiée par
+`reglages_publics()`.
+
+Ce qui reste dans le code : les clés de palier (`gratuit`, `essentiel`, `pro`),
+la limite du gratuit (5 documents, le plancher du marché), les défauts
+d'`offres.ts` quand rien n'est réglé. Ce qui devient une donnée : le prix
+annuel, le quota d'Essentiel et la liste des prestations affichées.
+
+Quatre choix :
+- **Le quota affiché est le quota appliqué.** `quota_limite()` lit la même clé
+  que la page des tarifs. Vendre 60 documents et refuser le 51e aurait été le
+  pire des deux mondes ; un test SQL émet 60 documents et vérifie que le 61e
+  est refusé.
+- **Pro ne se limite pas.** `quota: null` est la seule valeur acceptée : un Pro
+  limité n'aurait plus de raison d'exister.
+- **Les bornes sont les mêmes en SQL et dans la console.** Prix entier
+  50–50 000 DH, quota 6–100 000 (le gratuit en inclut 5), 1 à 8 prestations de
+  3 à 140 caractères. La console refuse avant l'aller-retour ; le SQL refuse
+  quand même un appel direct à l'API.
+- **Le site statique est régénéré, pas recopié.** Les blocs qu'il doit suivre
+  portent `data-tarif` (et `data-tarif-liste` pour les puces) ;
+  `scripts/tarifs-site.mjs` les réécrit au build depuis `reglages_publics()`, et
+  `check-site.mjs` vérifie ensuite la forme et l'égalité entre l'accueil et les
+  CGV. Une base injoignable laisse les valeurs du dernier déploiement en place :
+  une panne de lecture ne doit pas bloquer un déploiement ni publier un barème
+  inventé.
+
+Les CGV ne recopient plus les prestations d'Essentiel et de Pro : elles
+renvoient à la page des tarifs, qui est la seule à les afficher à jour.

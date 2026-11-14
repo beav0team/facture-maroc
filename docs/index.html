@@ -518,9 +518,9 @@
 
   <section class="section" id="prix">
     <div class="contenu">
-      <h2>Gratuit pour commencer. 240 DH pour facturer tous les jours.</h2>
+      <h2>Gratuit pour commencer. <span data-tarif="essentiel-prix">240 DH</span> pour facturer tous les jours.</h2>
       <p class="presentation">Cinq documents facturés par mois sans rien payer. Essentiel en
-        couvre cinquante ; Pro lève la limite. Les deux s’activent à la main, pour un an,
+        couvre <span data-tarif="essentiel-quota">50</span> ; Pro lève la limite. Les deux s’activent à la main, pour un an,
         sans reconduction automatique.</p>
 
       <ul class="formules">
@@ -538,9 +538,9 @@
         </li>
         <li class="formule formule--vedette">
           <h3>Essentiel</h3>
-          <p class="prix">240 DH <small>par an</small></p>
+          <p class="prix"><span data-tarif="essentiel-prix">240 DH</span> <small>par an</small></p>
           <p class="texte">Pour un commerce qui facture chaque jour, sans se ruiner.</p>
-          <ul>
+          <ul data-tarif-liste="essentiel">
             <li>50 documents facturés par mois</li>
             <li>Devis, avoirs, clients et articles illimités</li>
             <li>Un an, sans reconduction automatique</li>
@@ -550,9 +550,9 @@
         </li>
         <li class="formule formule--pro">
           <h3>Pro</h3>
-          <p class="prix">480 DH <small>par an</small></p>
+          <p class="prix"><span data-tarif="pro-prix">480 DH</span> <small>par an</small></p>
           <p class="texte">Pour une boutique qui ne compte plus ses factures.</p>
-          <ul>
+          <ul data-tarif-liste="pro">
             <li>Documents facturés illimités</li>
             <li>Devis, avoirs, clients et articles illimités</li>
             <li>Un an, sans reconduction automatique</li>

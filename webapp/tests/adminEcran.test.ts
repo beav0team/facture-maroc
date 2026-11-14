@@ -226,6 +226,8 @@ vi.mock('../src/lib/supabase', () => {
     admin_retirer: null,
     admin_abonnement: null,
     admin_modifier_boutique: null,
+    reglages_publics: { whatsapp: '' },
+    admin_reglage_whatsapp: '212612345678',
   }
   return {
     estConfigure: true,
@@ -233,6 +235,12 @@ vi.mock('../src/lib/supabase', () => {
       auth: { getSession: async () => ({ data: { session: null } }) },
       rpc: async (nom: string, args: unknown) => {
         appels.push({ nom, args })
+        // `admin_tarifs` rend le barème enregistré : la console le réaffiche et
+        // annonce les prix que la base vient d'accepter.
+        if (nom === 'admin_tarifs') {
+          const envoyes = (args as { p_tarifs?: unknown } | null)?.p_tarifs
+          return { data: envoyes ?? null, error: null }
+        }
         return { data: reponses[nom] ?? null, error: null }
       },
       storage: { from: () => stockage },
@@ -387,6 +395,124 @@ describe('journal', () => {
     expect(texte).toContain('Boutique suspendue')
     expect(texte).toContain('agnaou1996@gmail.com')
     expect(texte).toContain('Impayé')
+  })
+})
+
+describe('réglages de la plateforme', () => {
+  it('lit le numéro WhatsApp et ne touche à aucune boutique', async () => {
+    route.chemin = '/admin/reglages'
+    const body = await rendre()
+    const texte = body.textContent ?? ''
+    expect(texte).toContain('Achat par WhatsApp')
+    expect(texte).toContain('Vide')
+    expect(noms()).toContain('reglages_publics')
+    expect(noms()).not.toContain('admin_boutiques')
+  })
+
+  it('enregistre un numéro marocain et l’affiche normalisé', async () => {
+    route.chemin = '/admin/reglages'
+    const body = await rendre()
+    appels.length = 0
+
+    const champ = body.querySelector('#r-whatsapp') as HTMLInputElement
+    champ.value = '06 12 34 56 78'
+    champ.dispatchEvent(new Event('input', { bubbles: true }))
+    flushSync()
+
+    ;(body.querySelector('form.formulaire') as HTMLFormElement).dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    )
+    for (let i = 0; i < 6; i += 1) {
+      await Promise.resolve()
+      flushSync()
+    }
+
+    const appel = appels.find((a) => a.nom === 'admin_reglage_whatsapp')
+    expect(appel).toBeDefined()
+    expect(appel!.args).toEqual({ p_numero: '06 12 34 56 78' })
+
+    const texte = body.textContent ?? ''
+    expect(texte).toContain('Numéro enregistré : 06 12 34 56 78')
+    expect(texte).toContain('Réglé')
+  })
+
+  it('refuse un texte sans appeler la base', async () => {
+    route.chemin = '/admin/reglages'
+    const body = await rendre()
+    appels.length = 0
+
+    const champ = body.querySelector('#r-whatsapp') as HTMLInputElement
+    champ.value = 'bonjour'
+    champ.dispatchEvent(new Event('input', { bubbles: true }))
+    flushSync()
+
+    ;(champ.closest('form') as HTMLFormElement).dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    )
+    flushSync()
+
+    expect(noms()).not.toContain('admin_reglage_whatsapp')
+    expect(body.textContent).toContain('ne ressemble pas à un numéro marocain')
+  })
+
+  it('enregistre le barème des deux paliers et annonce les nouveaux prix', async () => {
+    route.chemin = '/admin/reglages'
+    const body = await rendre()
+    appels.length = 0
+
+    const saisir = (selecteur: string, valeur: string) => {
+      const champ = body.querySelector(selecteur) as HTMLInputElement
+      champ.value = valeur
+      champ.dispatchEvent(new Event('input', { bubbles: true }))
+    }
+    saisir('#t-essentiel-prix', '300')
+    saisir('#t-essentiel-quota', '60')
+    saisir('#t-pro-prix', '600')
+    flushSync()
+
+    const formulaire = (body.querySelector('#t-essentiel-prix') as HTMLElement).closest(
+      'form',
+    ) as HTMLFormElement
+    formulaire.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    for (let i = 0; i < 6; i += 1) {
+      await Promise.resolve()
+      flushSync()
+    }
+
+    const appel = appels.find((a) => a.nom === 'admin_tarifs')
+    expect(appel).toBeDefined()
+    const envoi = appel!.args as {
+      p_tarifs: {
+        essentiel: { prix: number; quota: number | null; points: string[] }
+        pro: { prix: number; quota: number | null; points: string[] }
+      }
+    }
+    expect(envoi.p_tarifs.essentiel.prix).toBe(300)
+    expect(envoi.p_tarifs.essentiel.quota).toBe(60)
+    expect(envoi.p_tarifs.essentiel.points.length).toBeGreaterThan(0)
+    expect(envoi.p_tarifs.pro.prix).toBe(600)
+    expect(envoi.p_tarifs.pro.quota).toBeNull()
+
+    expect(body.textContent).toContain('Barème enregistré : Essentiel 300 DH, Pro 600 DH')
+  })
+
+  it('refuse un prix hors bornes sans appeler la base', async () => {
+    route.chemin = '/admin/reglages'
+    const body = await rendre()
+    appels.length = 0
+
+    const prix = body.querySelector('#t-essentiel-prix') as HTMLInputElement
+    prix.value = '0'
+    prix.dispatchEvent(new Event('input', { bubbles: true }))
+    flushSync()
+
+    ;(prix.closest('form') as HTMLFormElement).dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    )
+    flushSync()
+
+    expect(noms()).not.toContain('admin_tarifs')
+    expect(body.textContent).toContain('entre 50 et 50 000 DH')
   })
 })
 

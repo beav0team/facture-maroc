@@ -263,6 +263,12 @@
   gap: 12px;
 }
 
+/* Une zone de texte (les prestations d'un palier) prend toute la largeur : à
+   deux colonnes, une liste de puces se lit mal. */
+.formulaire__grille .champ--large {
+  grid-column: 1 / -1;
+}
+
 .formulaire__actions {
   display: flex;
   gap: 10px;

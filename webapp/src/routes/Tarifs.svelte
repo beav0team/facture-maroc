@@ -1,8 +1,34 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import { auth } from '../lib/session.svelte'
-  import { CONTACT_ESSENTIEL, OFFRES } from '../lib/offres'
+  import { supabase } from '../lib/supabase'
+  import { CONTACT_ESSENTIEL } from '../lib/offres'
+  import { offresDepuis, tarifsDepuisReglages } from '../lib/tarifs'
+  import { lienWhatsApp, numeroValide } from '../lib/whatsapp'
 
   const contact = CONTACT_ESSENTIEL
+
+  // Numéro et barème se règlent dans la console (0015, 0016), pas ici : cette
+  // page est publique, ne dépend d'aucune session, et doit rester juste quand
+  // ils changent. Sans réglage, `offres.ts` fait foi.
+  let whatsapp = $state('')
+  let tarifs = $state(tarifsDepuisReglages({}))
+  const offres = $derived(offresDepuis(tarifs))
+
+  onMount(() => {
+    void chargerReglages()
+  })
+
+  async function chargerReglages() {
+    if (!supabase) return
+    const { data, error } = await supabase.rpc('reglages_publics')
+    if (error) return
+    const reglages = (data ?? {}) as { whatsapp?: string; tarifs?: unknown }
+    const brut = reglages.whatsapp ?? ''
+    if (numeroValide(brut)) whatsapp = brut
+    tarifs = tarifsDepuisReglages(reglages.tarifs)
+  }
+
 </script>
 
 <div class="page">
@@ -29,7 +55,8 @@
     </section>
 
     <div class="offres">
-      {#each OFFRES as offre}
+      {#each offres as offre}
+        {@const wa = offre.cle === 'gratuit' ? '' : lienWhatsApp(whatsapp, offre.cle)}
         <article class="carte offre" class:offre--principale={offre.principal}>
           <div class="offre__entete">
             <h2>{offre.nom}</h2>
@@ -45,7 +72,16 @@
               <li>{point}</li>
             {/each}
           </ul>
-          <a class="btn" class:btn--discret={!offre.principal} href={offre.lien}>{offre.action}</a>
+          <div class="offre__actions">
+            {#if wa}
+              <a class="btn btn--whatsapp" href={wa} target="_blank" rel="noopener noreferrer">
+                Commander sur WhatsApp
+              </a>
+              <a class="offre__mail" href={offre.lien}>ou écrire à contact@factureapp.ma</a>
+            {:else}
+              <a class="btn" class:btn--discret={!offre.principal} href={offre.lien}>{offre.action}</a>
+            {/if}
+          </div>
         </article>
       {/each}
     </div>
@@ -54,12 +90,14 @@
       <h2>Comment se passe le paiement</h2>
       <p class="texte">
         Essentiel et Pro sont activés après réception du paiement, par virement
-        ou espèces en boutique. Écrivez à
-        <a href={contact}>contact@factureapp.ma</a> avec le nom de votre
-        boutique : l’activation se fait sous 24 heures ouvrées, pour un an, et
-        ne se renouvelle pas toute seule. À l’échéance, le compte repasse au
-        plan gratuit sans rien perdre : les documents restent lisibles et
-        téléchargeables.
+        ou espèces en boutique. {#if whatsapp}Le bouton WhatsApp ci-dessus ouvre
+        la conversation avec le message déjà écrit ; l’e-mail reste possible à
+        <a href={contact}>contact@factureapp.ma</a>.{:else}Écrivez à
+        <a href={contact}>contact@factureapp.ma</a>.{/if}{' '}
+        Dans les deux cas, indiquez le nom de votre boutique : l’activation se
+        fait sous 24 heures ouvrées, pour un an, et ne se renouvelle pas toute
+        seule. À l’échéance, le compte repasse au plan gratuit sans rien perdre :
+        les documents restent lisibles et téléchargeables.
       </p>
       <p class="texte">
         <strong>Rétractation :</strong> vous pouvez renoncer à Essentiel ou au
@@ -238,6 +276,36 @@
 
   .offre .btn {
     margin-top: auto;
+  }
+
+  .offre__actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .offre__mail {
+    color: var(--ardoise);
+    font-size: 0.85rem;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .offre__mail:hover {
+    text-decoration: underline;
+  }
+
+  /* Le vert de WhatsApp, choisi pour être reconnu, pas pour décorer : c'est le
+     seul bouton du site où la couleur dit la destination. */
+  .offre__actions .btn--whatsapp {
+    background: #1faa54;
+    color: var(--blanc);
+    text-align: center;
+  }
+
+  .offre__actions .btn--whatsapp:hover {
+    background: #188c44;
   }
 
   .precision {

@@ -10,6 +10,7 @@
   import Comptes from './admin/Comptes.svelte'
   import Fiche from './admin/Fiche.svelte'
   import Journal from './admin/Journal.svelte'
+  import Reglages from './admin/Reglages.svelte'
 
   let admin = $state(false)
   let verifie = $state(false)
@@ -24,6 +25,7 @@
     { chemin: '/admin/boutiques', libelle: 'Boutiques' },
     { chemin: '/admin/comptes', libelle: 'Comptes' },
     { chemin: '/admin/journal', libelle: 'Journal' },
+    { chemin: '/admin/reglages', libelle: 'Réglages' },
   ] as const
 
   /** `/admin/boutiques/<uuid>`; the id is a uuid so no decoding is needed. */
@@ -36,9 +38,11 @@
       ? 'comptes'
       : route.chemin === '/admin/journal'
         ? 'journal'
-        : route.chemin === '/admin/boutiques' || ficheId
-          ? 'boutiques'
-          : 'apercu',
+        : route.chemin === '/admin/reglages'
+          ? 'reglages'
+          : route.chemin === '/admin/boutiques' || ficheId
+            ? 'boutiques'
+            : 'apercu',
   )
 
   function actif(chemin: string): boolean {
@@ -134,6 +138,8 @@
         <Comptes />
       {:else if section === 'journal'}
         <Journal />
+      {:else if section === 'reglages'}
+        <Reglages />
       {:else if ficheId}
         <Fiche id={ficheId} />
       {:else}
