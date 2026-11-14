@@ -78,11 +78,16 @@ begin
     raise exception 'B a modifié % ligne(s) de la boutique de A', v_touche;
   end if;
 
-  delete from public.shops where id = v_shop_a;
-  get diagnostics v_touche = row_count;
-  if v_touche <> 0 then
-    raise exception 'B a supprimé % ligne(s) de la boutique de A', v_touche;
-  end if;
+  begin
+    delete from public.shops where id = v_shop_a;
+    get diagnostics v_touche = row_count;
+    if v_touche <> 0 then
+      raise exception 'B a supprimé % ligne(s) de la boutique de A', v_touche;
+    end if;
+  exception
+    when insufficient_privilege then
+      null; -- attendu : la RLS refuse la suppression inter-boutique
+  end;
 
   begin
     insert into public.shops (nom, created_by) values ('Boutique pirate', v_b);

@@ -611,3 +611,28 @@ Quatre choix :
 
 Les CGV ne recopient plus les prestations d'Essentiel et de Pro : elles
 renvoient à la page des tarifs, qui est la seule à les afficher à jour.
+
+### 2026-11-14 — Le journal de stock arrive dans la webapp
+
+Jusqu'ici `articles.stock` était une quantité corrigée à la main : la vente ne
+la touchait pas et la boutique ne savait pas *pourquoi* il en restait trois.
+`0017_stock.sql` ajoute `stock_movements` — un journal en ajout seul, lisible
+par les membres, écrit uniquement par des fonctions `security definer` — avec
+les mêmes motifs qu'Android (`invoice`, `credit`, `purchase`, `stocktake`,
+`adjustment`) et la même règle de direction à l'émission.
+
+Quatre choix :
+- **La déduction à l'émission est un trigger**, pas du code applicatif :
+  n'importe quel chemin qui émet un document (futur écran, correction manuelle)
+  bouge le stock, y compris les lignes du même article additionnées. Un avoir
+  remis le stock via le même trigger.
+- **Les gestes humains passent par une fonction** (`enregistrer_mouvement_stock`)
+  qui refuse les motifs `invoice`/`credit` : un geste manuel ne se fait pas
+  passer pour une facture, sinon le journal ne sert plus de preuve.
+- **Le cache (`articles.stock`) reste pour l'instant** — les écrans lisent encore
+  la colonne ; la prochaine étape basculera les écrans sur le journal et
+  verrouillera la colonne. Ici tout est additif, donc déployable sans changer
+  un écran.
+- **La fusion future avec Android est facilitée** : mêmes motifs, même delta
+  signé, même coût unitaire sur les entrées, même `StockCost` (CMP/FIFO/none).
+  Fusionner devra être un rapprochement de données, pas une réécriture.

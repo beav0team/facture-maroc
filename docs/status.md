@@ -6,8 +6,8 @@ answering from memory.
 
 | | |
 |---|---|
-| Version Play | **0.11.1** (versionCode 18) en ligne ; **0.12.0** (23) prête à téléverser |
-| Aperçu | **0.12.0-beta.4** (versionCode 22) — GitHub ; la 0.12.0 (23) est la même base pour le Play |
+| Version Play | **0.12.0** (versionCode 23) en ligne — confirmé le 2026-11-14 ; la 0.11.1 (18) n’est plus servie |
+| Aperçu | **0.12.0-beta.4** (versionCode 22) — GitHub ; la 0.12.0 (23) est la même base que le Play |
 | Last commit | Audit du 2026-11-10 : paiements, stockage, catalogue, rapports, avoirs, sauvegarde Android |
 | Branch | `master` (tag `v0.11.1` à poser après le build R8) |
 | Tests | **629 JVM**, **20 instrumented** (les deux suites vertes) |
@@ -52,6 +52,17 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   solutions comparées, exemple chiffré avec TVA, ce qu’un tableur ne fait pas,
   FAQ). Cinq meta descriptions ramenées sous 160 caractères. `check-site.mjs`
   et `check-layout.mjs` passent (14 pages × 8 largeurs).
+- **Journal de stock** (2026-11-14, migration `0017_stock.sql`) : la table
+  `stock_movements` (ajout seul) vit en base, écrite par les mêmes règles
+  qu'Android — direction à l'émission (`facture`/`ticket`/… = -1, `avoir` = +1,
+  devis = 0), déclenchée par trigger `documents_stock` sur `statut = 'emis'`.
+  Les gestes humains (réception, inventaire, correction) passent par
+  `enregistrer_mouvement_stock()` qui refuse `invoice`/`credit` (un geste ne
+  se fait pas passer pour une facture). Lecture par `stock_soldes()` et
+  `stock_ecarts()` ; `articles.stock` reste le cache pour l'instant. Preuve
+  RLS dans `rls_stock.sql` : isolation boutiques, émission/avoir bougent le
+  journal, mouvements manuels avec coût, refus des motifs interdits, lecture
+  réservée aux membres, écriture directe bloquée.
   **Reste ouvert : `www.factureapp.ma` répond encore 404** (GitHub Pages,
   `Site not found`) — il faut ajouter `www` comme domaine personnalisé dans le
   projet Cloudflare Pages `factureapp` puis rediriger vers l’apex ; aucun
@@ -421,7 +432,8 @@ l'import d'une sauvegarde Android, l'export et la restauration ne changent pas.
 ## In progress — refonte de l'interface (2026-11-10)
 
 Publié sur **GitHub** `v0.12.0-beta.4` (APK R8 + AAB + mapping) ;
-la 0.11.1 reste la version Play et le téléchargement « Latest ». L'aperçu n'a
+**la 0.12.0 (23) est en ligne sur le Play depuis le 2026-11-14** et remplace la
+0.11.1. L'aperçu n'a
 pas été parcouru sur un appareil : l'émulateur de la machine de développement
 gèle, les 577 tests JVM passent et le rendu PDF est inchangé.
 
