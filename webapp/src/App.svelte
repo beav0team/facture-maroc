@@ -6,6 +6,8 @@
   import Accueil from './routes/Accueil.svelte'
   import Clients from './routes/Clients.svelte'
   import Articles from './routes/Articles.svelte'
+  import ArticleDetail from './routes/ArticleDetail.svelte'
+  import Stock from './routes/Stock.svelte'
   import Parametres from './routes/Parametres.svelte'
   import ParametresBoutique from './routes/parametres/Boutique.svelte'
   import ParametresFacturation from './routes/parametres/Facturation.svelte'
@@ -74,6 +76,10 @@
       <Releve id={releve[1]} />
     {:else if route.chemin === '/articles'}
       <Articles />
+    {:else if route.chemin === '/stock'}
+      <Stock />
+    {:else if route.chemin.startsWith('/articles/')}
+      <ArticleDetail />
     {:else if route.chemin.startsWith(PREFIXE_ARTICLES)}
       <Articles dossier={dossierArticles} />
     {:else if route.chemin === '/parametres'}

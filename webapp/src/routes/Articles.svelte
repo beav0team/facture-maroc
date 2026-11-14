@@ -9,6 +9,7 @@
     type Article,
     type SaisieArticle,
   } from '../lib/catalogue'
+  import { stockSoldes, articlesAvecSoldes } from '../lib/stock'
   import {
     afficher,
     aDuStock,
@@ -101,21 +102,25 @@
     chargement = true
     erreur = null
     const boutique = auth.boutique.id
-    const [listeArticles, listeDossiers] = await Promise.all([
-      supabase.from('articles').select('*').eq('shop_id', boutique).order('libelle', { ascending: true }),
-      supabase.from('article_folders').select('chemin').eq('shop_id', boutique).order('chemin', { ascending: true }),
-    ])
-    chargement = false
-    if (listeArticles.error) {
-      erreur = listeArticles.error.message
-      return
+    try {
+      const [resArticles, resDossiers, resSoldes] = await Promise.all([
+        supabase.from('articles').select('*').eq('shop_id', boutique).order('libelle', { ascending: true }),
+        supabase.from('article_folders').select('chemin').eq('shop_id', boutique).order('chemin', { ascending: true }),
+        stockSoldes(boutique),
+      ])
+      if (resArticles.error) throw new Error(resArticles.error.message)
+      const bruts = (resArticles.data as Article[]) ?? []
+      articles = articlesAvecSoldes(bruts, resSoldes)
+      // A missing article_folders table (migration not applied) must not empty the
+      // screen: the tree falls back to the folders the articles themselves carry.
+      dossiers = resDossiers.error
+        ? []
+        : ((resDossiers.data as { chemin: string }[]) ?? []).map((ligne) => ligne.chemin)
+    } catch (e) {
+      erreur = e instanceof Error ? e.message : 'Erreur de chargement'
+    } finally {
+      chargement = false
     }
-    articles = (listeArticles.data as Article[]) ?? []
-    // A missing article_folders table (migration not applied) must not empty the
-    // screen: the tree falls back to the folders the articles themselves carry.
-    dossiers = listeDossiers.error
-      ? []
-      : ((listeDossiers.data as { chemin: string }[]) ?? []).map((ligne) => ligne.chemin)
   }
 
   // -------------------------------------------------------------- les gestes
@@ -692,6 +697,7 @@
                   {#if article.code_barre}<p class="fiche__code">{article.code_barre}</p>{/if}
                 </div>
                 <div class="fiche__actions">
+                  <a class="btn btn--discret" href="/app/articles/{article.id}">Détail</a>
                   <button class="btn btn--discret" type="button" onclick={() => ouvrirEdition(article)}>
                     Modifier
                   </button>
@@ -777,6 +783,7 @@
                     {#if article.code_barre}<p class="fiche__code">{article.code_barre}</p>{/if}
                   </div>
                   <div class="fiche__actions">
+                    <a class="btn btn--discret" href="/app/articles/{article.id}">Détail</a>
                     <button class="btn btn--discret" type="button" onclick={() => ouvrirEdition(article)}>
                       Modifier
                     </button>

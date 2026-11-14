@@ -7,6 +7,7 @@
     { chemin: '/documents', libelle: 'Documents' },
     { chemin: '/clients', libelle: 'Clients' },
     { chemin: '/articles', libelle: 'Articles' },
+    { chemin: '/stock', libelle: 'Stock' },
     { chemin: '/parametres', libelle: 'Paramètres' },
   ]
 
