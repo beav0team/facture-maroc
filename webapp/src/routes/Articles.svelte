@@ -412,11 +412,15 @@
       return
     }
 
+    // Stock is now managed via the ledger (stock_movements).
+    // The cache column (articles.stock) is updated by triggers/RPCs, not direct writes.
+    const { stock: _unused, ...valeursSansStock } = valeurs
+
     erreur = null
     enregistrement = true
     const requete = edition
-      ? supabase.from('articles').update(valeurs).eq('id', edition.id)
-      : supabase.from('articles').insert({ ...valeurs, shop_id: auth.boutique.id })
+      ? supabase.from('articles').update(valeursSansStock).eq('id', edition.id)
+      : supabase.from('articles').insert({ ...valeursSansStock, shop_id: auth.boutique.id })
     const { error } = await requete
     enregistrement = false
 
@@ -625,8 +629,9 @@
 
               {#if !saisie.service}
                 <div class="champ">
-                  <label for="a-stock">Quantité en stock</label>
-                  <input id="a-stock" inputmode="numeric" bind:value={saisie.stock} placeholder="0" />
+                  <label for="a-stock">Quantité en stock (journal)</label>
+                  <input id="a-stock" inputmode="numeric" value={edition ? String(edition.stock ?? 0) : '0'} readonly />
+                  <p class="champ__aide">Modifiez le stock depuis l'onglet <a href="/app/stock">Stock</a> (réception, inventaire, correction).</p>
                 </div>
                 <div class="champ">
                   <label for="a-seuil">Seuil de réapprovisionnement</label>

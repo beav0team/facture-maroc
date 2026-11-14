@@ -63,6 +63,14 @@ servie sous `/app/`. L'app Android reste hors ligne et inchangée.
   RLS dans `rls_stock.sql` : isolation boutiques, émission/avoir bougent le
   journal, mouvements manuels avec coût, refus des motifs interdits, lecture
   réservée aux membres, écriture directe bloquée.
+- **Stock UI** (2026-11-14, commit `5283c81`) : onglet « Stock » dans la barre
+  (`/app/stock`), liste des articles comptés avec quantité réelle (depuis
+  `stock_soldes()`), seuil de réapprovisionnement, valeur au coût d'achat, et
+  « À commander » en tête. Actions inline : réception, inventaire, correction.
+  Page détail article (`/app/articles/<id>`) : infos, quantité journal, valeur,
+  tableau des 20 derniers mouvements (motif, Δ, référence, note, coût unitaire).
+  La liste Articles lit maintenant `stock_soldes()` via `articlesAvecSoldes()`.
+  Rendez-vous dans `src/lib/stock.ts` pour les appels RPC typés.
   **Reste ouvert : `www.factureapp.ma` répond encore 404** (GitHub Pages,
   `Site not found`) — il faut ajouter `www` comme domaine personnalisé dans le
   projet Cloudflare Pages `factureapp` puis rediriger vers l’apex ; aucun

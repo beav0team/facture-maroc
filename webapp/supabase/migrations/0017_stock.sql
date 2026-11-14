@@ -266,6 +266,12 @@ begin
     v_cout := 0;
   end if;
 
+  -- Empêcher un stock négatif : la quantité après mouvement ne doit pas descendre sous 0.
+  if (v_article.stock + p_delta) < 0 then
+    raise exception 'Stock insuffisant : le mouvement laisserait un stock négatif (' || (v_article.stock + p_delta) || ').'
+      using errcode = '22023';
+  end if;
+
   insert into public.stock_movements (
     shop_id, article_id, delta, motif, note, cout_unitaire, cree_par
   ) values (

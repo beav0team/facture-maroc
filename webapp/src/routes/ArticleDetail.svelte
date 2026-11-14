@@ -4,7 +4,7 @@
   import { auth } from '../lib/session.svelte'
   import { supabase } from '../lib/supabase'
   import { aller } from '../lib/router.svelte'
-  import { derniersMouvementsStock, libelleMotif, formaterDelta, classeDelta, type MouvementStock } from '../lib/stock'
+  import { derniersMouvementsStock, stockSoldes, libelleMotif, formaterDelta, classeDelta, type MouvementStock } from '../lib/stock'
   import Barre from '../lib/ui/Barre.svelte'
   import SansBoutique from '../lib/ui/SansBoutique.svelte'
 
@@ -53,12 +53,19 @@
     chargement = true
     erreur = null
     try {
-      const [resArticle, resMouvements] = await Promise.all([
+      const [resArticle, resMouvements, resSoldes] = await Promise.all([
         supabase.from('articles').select('*').eq('shop_id', auth.boutique.id).eq('id', articleId).single(),
         derniersMouvementsStock(auth.boutique.id, articleId, 20),
+        stockSoldes(auth.boutique.id),
       ])
       if (resArticle.error) throw new Error(resArticle.error.message)
-      article = resArticle.data as typeof article
+      let a = resArticle.data as typeof article
+      // Merge with ledger quantity
+      const solde = resSoldes.find((s: { article_id: string; quantite: number }) => s.article_id === articleId)
+      if (solde && a && a.stock !== null) {
+        a = { ...a, stock: solde.quantite }
+      }
+      article = a
       mouvements = resMouvements
       if (article) {
         saisie = {
@@ -113,9 +120,11 @@
       dossier: saisie.dossier,
       prix_achat: saisie.prix_achat ? Number(saisie.prix_achat.replace(',', '.')) : 0,
       code_barre: saisie.code_barre || null,
-      stock: saisie.service ? null : (saisie.stock ? Number(saisie.stock) : 0),
       seuil_rea: saisie.seuil_rea ? Number(saisie.seuil_rea) : null,
     }
+
+    // Stock is managed via the ledger (stock_movements), not direct writes.
+    // The cache column (articles.stock) is updated by triggers/RPCs.
 
     if (!valeurs.libelle) {
       message = 'Le libellé est obligatoire.'
@@ -260,8 +269,9 @@
 
               {#if !saisie.service}
                 <div class="champ">
-                  <label for="a-stock">Quantité en stock</label>
-                  <input id="a-stock" inputmode="numeric" bind:value={saisie.stock} placeholder="0" />
+                  <label for="a-stock">Quantité en stock (journal)</label>
+                  <input id="a-stock" inputmode="numeric" value={article?.stock !== null ? String(article.stock) : '0'} readonly />
+                  <p class="champ__aide">Modifiez le stock depuis l'onglet <a href="/app/stock">Stock</a> (réception, inventaire, correction).</p>
                 </div>
                 <div class="champ">
                   <label for="a-seuil">Seuil de réapprovisionnement</label>

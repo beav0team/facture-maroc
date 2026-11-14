@@ -7,7 +7,7 @@
   import Barre from '../lib/ui/Barre.svelte'
   import SansBoutique from '../lib/ui/SansBoutique.svelte'
 
-  let articles = $state<{ id: string; libelle: string; stock: number | null; seuil_rea: number | null; prix_achat: number }[]>([])
+  let articles = $state<{ id: string; libelle: string; stock: number | null; seuil_rea: number | null; prix_achat: number; code_barre: string }[]>([])
   let soldes = $state<StockSolde[]>([])
   let ecarts = $state<StockEcart[]>([])
   let chargement = $state(true)
@@ -15,6 +15,7 @@
   let message = $state<string | null>(null)
   let recherche = $state('')
   let occupation = $state<string | null>(null)
+  let costInputs = $state<Record<string, number>>({})
 
   const articlesAvecStock = $derived(
     articles.filter((a) => a.stock !== null).map((a) => {
@@ -59,7 +60,7 @@
     const boutique = auth.boutique.id
     try {
       const [resArticles, resSoldes, resEcarts] = await Promise.all([
-        supabase.from('articles').select('id, libelle, stock, seuil_rea, prix_achat').eq('shop_id', boutique).order('libelle', { ascending: true }),
+        supabase.from('articles').select('id, libelle, stock, seuil_rea, prix_achat, code_barre').eq('shop_id', boutique).order('libelle', { ascending: true }),
         stockSoldes(boutique),
         stockEcarts(boutique),
       ])
@@ -78,7 +79,8 @@
     recherche.trim() === ''
       ? articlesAvecStock
       : articlesAvecStock.filter((a) =>
-          a.libelle.toLowerCase().includes(recherche.toLowerCase()),
+          a.libelle.toLowerCase().includes(recherche.toLowerCase()) ||
+          (a.code_barre && a.code_barre.toLowerCase().includes(recherche.toLowerCase())),
         ),
   )
 
@@ -98,10 +100,11 @@
 
   async function inventaire(articleId: string, nouveau: number, note: string = '') {
     if (nouveau < 0) return
-    const article = articles.find((a) => a.id === articleId)
-    if (!article || article.stock === null) return
-    const delta = nouveau - (article.stock ?? 0)
+    const article = articlesAvecStock.find((a) => a.id === articleId)
+    if (!article) return
+    const delta = nouveau - article.reel
     if (delta === 0) return
+    if (!confirm(`Confirmer l'inventaire ?\nStock journal : ${article.reel}\nNouveau stock : ${nouveau}\nΔ : ${delta >= 0 ? '+' : ''}${delta}`)) return
     occupation = articleId
     try {
       await enregistrerMouvementStock(articleId, delta, 'stocktake', note)
@@ -116,6 +119,7 @@
 
   async function corriger(articleId: string, delta: number, note: string = '') {
     if (delta === 0) return
+    if (!confirm(`Confirmer la correction ?\nΔ : ${delta >= 0 ? '+' : ''}${delta}`)) return
     occupation = articleId
     try {
       await enregistrerMouvementStock(articleId, delta, 'adjustment', note)
@@ -216,13 +220,23 @@
                   <div class="groupe-actions">
                     <label>
                       <span class="action-label">Réception</span>
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        placeholder="+ qté"
-                        onkeydown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).value && recevoir(article.id, Number((e.target as HTMLInputElement).value), '', 0)}
-                      />
+                      <div style="display: flex; gap: 4px;">
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="+ qté"
+                          onkeydown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).value && recevoir(article.id, Number((e.target as HTMLInputElement).value), '', Number(costInputs[article.id] || 0))}
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="coût HT"
+                          bind:value={costInputs[article.id]}
+                          style="width: 80px;"
+                        />
+                      </div>
                     </label>
                     <label>
                       <span class="action-label">Inventaire</span>
